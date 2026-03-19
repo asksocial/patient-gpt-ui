@@ -1,0 +1,51 @@
+import { createClient } from "@supabase/supabase-js";
+import { auth } from "@clerk/nextjs/server";
+
+export const runtime = "nodejs";
+
+export async function POST(req) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (userId !== process.env.ADMIN_CLERK_USER_ID) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { clerk_user_id, therapeutic_area } = body || {};
+
+    if (!clerk_user_id || !therapeutic_area) {
+      return Response.json(
+        { error: "Missing clerk_user_id or therapeutic_area" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    const { error } = await supabase
+      .from("user_therapeutic_access")
+      .insert({
+        clerk_user_id,
+        therapeutic_area: therapeutic_area.trim(),
+      });
+
+    if (error && !String(error.message).toLowerCase().includes("duplicate")) {
+      return Response.json({ error: error.message }, { status: 500 });
+    }
+
+    return Response.json({ ok: true });
+  } catch (err) {
+    return Response.json(
+      { error: err?.message || "Unknown server error" },
+      { status: 500 }
+    );
+  }
+}

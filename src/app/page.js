@@ -1,403 +1,197 @@
-"use client";
+import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
+import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 
-import { useEffect, useMemo, useState } from "react";
-
-export default function Home() {
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [sources, setSources] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const [layer, setLayer] = useState("curated");
-  const [therapeuticArea, setTherapeuticArea] = useState("");
-  const [therapeuticAreas, setTherapeuticAreas] = useState([]);
-  const [blockType, setBlockType] = useState("");
-
-  useEffect(() => {
-    async function loadTherapeuticAreas() {
-      try {
-        const res = await fetch("/api/therapeutic-areas");
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data?.error || "Failed to load therapeutic areas");
-        }
-
-        const areas = Array.isArray(data?.therapeutic_areas)
-          ? data.therapeutic_areas
-          : [];
-
-        setTherapeuticAreas(areas);
-
-        if (areas.length && !areas.includes(therapeuticArea)) {
-          setTherapeuticArea(areas[0]);
-        }
-      } catch (err) {
-        console.error("Failed to load therapeutic areas:", err);
-      }
-    }
-
-    loadTherapeuticAreas();
-  }, []);
-
-  async function onSend() {
-    if (!question.trim()) return;
-
-    setLoading(true);
-    setAnswer("");
-    setSources([]);
-
-    try {
-      const res = await fetch("/api/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question,
-          therapeutic_area: therapeuticArea || null,
-          layer,
-          block_type: blockType || null,
-          match_count: 6,
-        }),
-      });
-
-      const raw = await res.text();
-
-      let data = null;
-      try {
-        data = raw ? JSON.parse(raw) : null;
-      } catch {
-        throw new Error(
-          `Non-JSON response (${res.status} ${res.statusText}): ${raw.slice(0, 300)}`
-        );
-      }
-
-      if (!res.ok) {
-        throw new Error(data?.error || `Request failed (${res.status})`);
-      }
-
-      setAnswer(data?.answer || "");
-      setSources(Array.isArray(data?.sources) ? data.sources : []);
-    } catch (e) {
-      setAnswer(`Error: ${e?.message || String(e)}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const groupedSources = useMemo(() => {
-    const insights = [];
-    const voices = [];
-    const other = [];
-
-    for (const source of sources) {
-      if (source?.block_type === "insight") {
-        insights.push(source);
-      } else if (source?.block_type === "voice") {
-        voices.push(source);
-      } else {
-        other.push(source);
-      }
-    }
-
-    return { insights, voices, other };
-  }, [sources]);
-
-  const sidebarButtonClass = (active) =>
-    [
-      "w-full text-left rounded-lg px-3 py-2 border transition",
-      active
-        ? "bg-white text-black border-white"
-        : "bg-white/5 text-white border-white/10 hover:bg-white/10",
-    ].join(" ");
+export default async function Home() {
+  const { userId } = await auth();
+  const isSignedIn = !!userId;
 
   return (
-    <main className="min-h-screen bg-black text-white flex">
-      <aside className="w-[280px] border-r border-white/10 p-4 flex flex-col gap-6">
-        <div>
-          <h1 className="text-xl font-semibold">Patient GPT</h1>
-          <p className="text-sm text-white/60 mt-1">
-            Query structured social intelligence.
-          </p>
-        </div>
-
-        <div>
-          <div className="text-xs uppercase tracking-wide text-white/50 mb-2">
-            Layer
+    <main className="min-h-screen bg-black text-white">
+      <section className="border-b border-white/10">
+        <div className="mx-auto max-w-6xl px-6 py-6 flex items-center justify-between">
+          <div className="text-2xl font-semibold tracking-tight">
+            AskSocial
           </div>
-          <div className="space-y-2">
-            <button
-              type="button"
-              className={sidebarButtonClass(layer === "curated")}
-              onClick={() => setLayer("curated")}
-            >
-              Curated (Reports)
-            </button>
 
-            <button
-              type="button"
-              className={sidebarButtonClass(layer === "live")}
-              onClick={() => setLayer("live")}
-            >
-              Live (Mentions)
-            </button>
-          </div>
-        </div>
+          <div className="flex items-center gap-3">
+            {!isSignedIn ? (
+              <>
+                <SignInButton mode="modal">
+                  <button className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-medium hover:bg-white/10">
+                    Login
+                  </button>
+                </SignInButton>
 
-        <div>
-          <div className="text-xs uppercase tracking-wide text-white/50 mb-2">
-            Therapeutic Area
-          </div>
-          <select
-            value={therapeuticArea}
-            onChange={(e) => setTherapeuticArea(e.target.value)}
-            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 outline-none"
-          >
-            {therapeuticAreas.length === 0 ? (
-              <option value="">No therapeutic areas loaded</option>
+                <SignUpButton mode="modal">
+                  <button className="rounded-xl bg-white text-black px-4 py-2 font-medium">
+                    Sign up
+                  </button>
+                </SignUpButton>
+              </>
             ) : (
-              therapeuticAreas.map((area) => (
-                <option key={area} value={area}>
-                  {area}
-                </option>
-              ))
+              <>
+                <Link
+                  href="/workspace"
+                  className="rounded-xl bg-white text-black px-4 py-2 font-medium"
+                >
+                  Open Workspace
+                </Link>
+                <UserButton />
+              </>
             )}
-          </select>
-        </div>
-
-        <div>
-          <div className="text-xs uppercase tracking-wide text-white/50 mb-2">
-            Block Type
           </div>
-          <select
-            value={blockType}
-            onChange={(e) => setBlockType(e.target.value)}
-            className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 outline-none"
-          >
-            <option value="">All</option>
-            <option value="insight">Insight</option>
-            <option value="voice">Representative Voice</option>
-          </select>
         </div>
+      </section>
 
-        <div className="text-xs text-white/40 leading-5">
-          Insight blocks summarize patterns across the conversation. Representative
-          voice blocks show real patient/caregiver expressions that bring those
-          patterns to life.
-        </div>
-      </aside>
-
-      <section className="flex-1 flex flex-col min-h-screen">
-        <header className="border-b border-white/10 px-6 py-4">
-          <div className="text-sm text-white/60">
-            Ask a question about{" "}
-            <span className="text-white">
-              {therapeuticArea || "your repository"}
-            </span>{" "}
-            using the{" "}
-            <span className="text-white">
-              {layer === "curated" ? "Curated" : "Live"}
-            </span>{" "}
-            layer.
+      <section className="mx-auto max-w-6xl px-6 py-20">
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">
+            AI-powered patient social intelligence
           </div>
-        </header>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <div className="text-xs uppercase tracking-wide text-white/50 mb-3">
-                Answer
-              </div>
+          <h1 className="mt-6 text-5xl font-semibold leading-tight tracking-tight">
+            Turn patient conversations into actionable intelligence.
+          </h1>
 
-              {loading ? (
-                <div className="text-white/70">Thinking…</div>
-              ) : answer ? (
-                <div className="whitespace-pre-wrap leading-7 text-white/90">
-                  {answer}
-                </div>
-              ) : (
-                <div className="text-white/50">
-                  Ask a question like:
-                  <div className="mt-2 text-white/80">
-                    “What are the main barriers to gene therapy adoption?”
-                  </div>
-                </div>
-              )}
+          <p className="mt-6 text-lg leading-8 text-white/70">
+            AskSocial helps pharma and biotech teams interrogate social listening
+            insights through natural language. Understand barriers, emotions,
+            misconceptions, and real patient voices—instantly.
+          </p>
+
+          <div className="mt-8 flex gap-3">
+            {!isSignedIn ? (
+              <SignUpButton mode="modal">
+                <button className="rounded-xl bg-white text-black px-5 py-3 font-medium">
+                  Get Started
+                </button>
+              </SignUpButton>
+            ) : (
+              <Link
+                href="/workspace"
+                className="rounded-xl bg-white text-black px-5 py-3 font-medium"
+              >
+                Launch AskSocial
+              </Link>
+            )}
+
+            <a
+              href="#how-it-works"
+              className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-medium hover:bg-white/10"
+            >
+              How it works
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-16 grid gap-6 md:grid-cols-3">
+          <FeatureCard
+            title="Ask strategic questions"
+            text="Identify barriers to treatment, patient concerns, emotional drivers, and unmet needs instantly."
+          />
+          <FeatureCard
+            title="Grounded in real evidence"
+            text="Every answer is backed by curated insights and representative patient voices."
+          />
+          <FeatureCard
+            title="Built for pharma teams"
+            text="Organize intelligence by therapeutic area and scale across brands and portfolios."
+          />
+        </div>
+      </section>
+
+      <section
+        id="how-it-works"
+        className="border-t border-white/10 bg-white/[0.02]"
+      >
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="max-w-2xl">
+            <div className="text-sm uppercase tracking-wide text-white/50">
+              How it works
             </div>
+
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+              From reports to intelligence in seconds
+            </h2>
+
+            <p className="mt-4 text-white/70 leading-7">
+              AskSocial transforms curated social listening reports into a
+              searchable intelligence layer. Ask questions and receive grounded,
+              source-backed answers instantly.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            <StepCard
+              number="01"
+              title="Ingest"
+              text="Upload reports and convert them into structured, searchable intelligence."
+            />
+            <StepCard
+              number="02"
+              title="Retrieve"
+              text="AI finds the most relevant insights, voices, and recommendations."
+            />
+            <StepCard
+              number="03"
+              title="Answer"
+              text="Get clear, evidence-backed answers to complex strategic questions."
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/10">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-10">
+            <h3 className="text-3xl font-semibold tracking-tight">
+              Start exploring patient intelligence with AskSocial.
+            </h3>
+
+            <p className="mt-4 text-white/70">
+              Launch the workspace to query your data, uncover insights, and
+              explore patient voices.
+            </p>
 
             <div className="mt-8">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-xs uppercase tracking-wide text-white/50">
-                  Supporting Evidence
-                </div>
-                <div className="text-sm text-white/50">
-                  {sources.length} result{sources.length === 1 ? "" : "s"}
-                </div>
-              </div>
-
-              {!loading && !sources.length && answer && (
-                <div className="rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-white/50">
-                  No sources returned.
-                </div>
-              )}
-
-              {!!groupedSources.insights.length && (
-                <SourceSection
-                  title="Insights"
-                  subtitle="Analyst-level pattern summaries"
+              {!isSignedIn ? (
+                <SignUpButton mode="modal">
+                  <button className="rounded-xl bg-white text-black px-5 py-3 font-medium">
+                    Create Account
+                  </button>
+                </SignUpButton>
+              ) : (
+                <Link
+                  href="/workspace"
+                  className="rounded-xl bg-white text-black px-5 py-3 font-medium"
                 >
-                  {groupedSources.insights.map((s, idx) => (
-                    <InsightCard key={s?.id ?? `insight-${idx}`} source={s} />
-                  ))}
-                </SourceSection>
-              )}
-
-              {!!groupedSources.voices.length && (
-                <SourceSection
-                  title="Representative Voices"
-                  subtitle="Direct human evidence from the conversation"
-                >
-                  {groupedSources.voices.map((s, idx) => (
-                    <VoiceCard key={s?.id ?? `voice-${idx}`} source={s} />
-                  ))}
-                </SourceSection>
-              )}
-
-              {!!groupedSources.other.length && (
-                <SourceSection
-                  title="Other Sources"
-                  subtitle="Ungrouped supporting material"
-                >
-                  {groupedSources.other.map((s, idx) => (
-                    <FallbackSourceCard key={s?.id ?? `other-${idx}`} source={s} />
-                  ))}
-                </SourceSection>
+                  Open Workspace
+                </Link>
               )}
             </div>
           </div>
         </div>
-
-        <footer className="border-t border-white/10 p-4">
-          <div className="max-w-5xl mx-auto flex gap-3">
-            <input
-              className="flex-1 rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none"
-              placeholder="Ask a question…"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  onSend();
-                }
-              }}
-            />
-            <button
-              type="button"
-              className="rounded-xl bg-white text-black px-5 py-3 font-medium disabled:opacity-50"
-              onClick={onSend}
-              disabled={loading}
-            >
-              {loading ? "Sending…" : "Send"}
-            </button>
-          </div>
-        </footer>
       </section>
     </main>
   );
 }
 
-function SourceSection({ title, subtitle, children }) {
+function FeatureCard({ title, text }) {
   return (
-    <section className="mb-8">
-      <div className="mb-3">
-        <div className="text-sm font-medium text-white">{title}</div>
-        <div className="text-xs text-white/50 mt-1">{subtitle}</div>
-      </div>
-      <div className="space-y-3">{children}</div>
-    </section>
-  );
-}
-
-function InsightCard({ source }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="text-xs uppercase tracking-wide text-white/40 mb-1">
-            Insight
-          </div>
-          <div className="font-medium text-white">{source?.title || "Untitled"}</div>
-          <div className="mt-1 text-xs text-white/50">
-            {(source?.layer || "—")} • {(source?.quarter || "—")}
-          </div>
-        </div>
-
-        {typeof source?.similarity === "number" && (
-          <div className="text-xs text-white/50">
-            Similarity: {source.similarity.toFixed(3)}
-          </div>
-        )}
-      </div>
-
-      {source?.content ? (
-        <div className="mt-3 text-sm text-white/85 leading-6">{source.content}</div>
-      ) : null}
-
-      {source?.source ? (
-        <div className="mt-3 text-xs text-white/40">Source: {source.source}</div>
-      ) : null}
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+      <div className="text-lg font-medium">{title}</div>
+      <div className="mt-3 text-sm text-white/65">{text}</div>
     </div>
   );
 }
 
-function VoiceCard({ source }) {
+function StepCard({ number, title, text }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/50 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="text-xs uppercase tracking-wide text-white/40 mb-1">
-            Representative Voice
-          </div>
-          <div className="font-medium text-white">{source?.title || "Untitled"}</div>
-          <div className="mt-1 text-xs text-white/50">
-            {(source?.layer || "—")} • {(source?.quarter || "—")}
-          </div>
-        </div>
-
-        {typeof source?.similarity === "number" && (
-          <div className="text-xs text-white/50">
-            Similarity: {source.similarity.toFixed(3)}
-          </div>
-        )}
-      </div>
-
-      {source?.content ? (
-        <blockquote className="mt-3 border-l-2 border-white/20 pl-4 italic text-white/85 leading-6">
-          “{source.content}”
-        </blockquote>
-      ) : null}
-
-      {source?.source ? (
-        <div className="mt-3 text-xs text-white/40">Source: {source.source}</div>
-      ) : null}
-    </div>
-  );
-}
-
-function FallbackSourceCard({ source }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-      <div className="font-medium text-white">{source?.title || "Untitled"}</div>
-      <div className="mt-1 text-xs text-white/50">
-        {(source?.layer || "—")} • {(source?.quarter || "—")}
-      </div>
-
-      {source?.content ? (
-        <div className="mt-3 text-sm text-white/80 leading-6">{source.content}</div>
-      ) : null}
-
-      {source?.source ? (
-        <div className="mt-3 text-xs text-white/40">Source: {source.source}</div>
-      ) : null}
+    <div className="rounded-2xl border border-white/10 bg-black/40 p-6">
+      <div className="text-xs text-white/40">{number}</div>
+      <div className="mt-3 text-xl font-medium">{title}</div>
+      <div className="mt-3 text-sm text-white/65">{text}</div>
     </div>
   );
 }
