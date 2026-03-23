@@ -1,14 +1,29 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 export default function AdminAccessPage() {
+  const router = useRouter();
+  const { userId, isLoaded } = useAuth();
+
   const [lookupUserId, setLookupUserId] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [newArea, setNewArea] = useState("");
   const [allAreas, setAllAreas] = useState([]);
   const [message, setMessage] = useState("");
+
+  const adminUserId = process.env.NEXT_PUBLIC_ADMIN_CLERK_USER_ID;
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!userId || userId !== adminUserId) {
+      router.replace("/workspace");
+    }
+  }, [isLoaded, userId, adminUserId, router]);
 
   async function parseResponse(res) {
     const raw = await res.text();
@@ -23,6 +38,8 @@ export default function AdminAccessPage() {
   }
 
   useEffect(() => {
+    if (!isLoaded || !userId || userId !== adminUserId) return;
+
     async function loadAreas() {
       try {
         const res = await fetch("/api/admin/therapeutic-areas");
@@ -39,7 +56,7 @@ export default function AdminAccessPage() {
     }
 
     loadAreas();
-  }, []);
+  }, [isLoaded, userId, adminUserId]);
 
   const availableAreas = useMemo(() => {
     const assigned = new Set(result?.therapeutic_areas || []);
@@ -63,7 +80,7 @@ export default function AdminAccessPage() {
       const res = await fetch("/api/admin/access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clerk_user_id: lookupUserId }),
+        body: JSON.stringify({ clerk_user_id: lookupUserId.trim() }),
       });
 
       const data = await parseResponse(res);
@@ -91,7 +108,7 @@ export default function AdminAccessPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clerk_user_id: lookupUserId,
+          clerk_user_id: lookupUserId.trim(),
           therapeutic_area: newArea,
         }),
       });
@@ -121,7 +138,7 @@ export default function AdminAccessPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clerk_user_id: lookupUserId,
+          clerk_user_id: lookupUserId.trim(),
           therapeutic_area: area,
         }),
       });
@@ -139,6 +156,22 @@ export default function AdminAccessPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!isLoaded) {
+    return (
+      <main className="min-h-screen bg-black text-white px-6 py-10">
+        <div className="mx-auto max-w-4xl">Loading...</div>
+      </main>
+    );
+  }
+
+  if (!userId || userId !== adminUserId) {
+    return (
+      <main className="min-h-screen bg-black text-white px-6 py-10">
+        <div className="mx-auto max-w-4xl">Redirecting...</div>
+      </main>
+    );
   }
 
   return (
@@ -162,7 +195,7 @@ export default function AdminAccessPage() {
             />
             <button
               onClick={loadUserAccess}
-              disabled={loading || !lookupUserId}
+              disabled={loading || !lookupUserId.trim()}
               className="rounded-xl bg-white text-black px-5 py-3 font-medium disabled:opacity-50"
             >
               {loading ? "Loading..." : "Search"}

@@ -1,0 +1,34 @@
+{
+  "curatedThemes": [
+    {
+      "theme_name": "Confusion Across Care Journey",
+      "theme_description": "Patients and caregivers report uncertainty at multiple stages of the Hepatitis B journey. This includes confusion about diagnosis, vaccination, monitoring, and disease progression."
+    },
+    {
+      "theme_name": "Emotional and Family Burden",
+      "theme_description": "The report highlights the emotional strain associated with Hepatitis B and its wider effect on family members. Family impact is described as a frequent concern alongside the personal burden of the condition."
+    },
+    {
+      "theme_name": "Reliance on Peer Communities",
+      "theme_description": "Patients and caregivers turn to peer communities for support and information, especially when formal healthcare pathways do not meet their needs."
+    }
+  ],
+  "liveThemes": [
+    {
+      "theme_name": "Newborn Hep B birth dose debate",
+      "theme_description": "Arguments over whether babies need the hepatitis B vaccine at birth.",
+      "source_type": "cluster",
+      "mention_count": 26,
+      "engagement_sum": 0,
+      "confidence": 0.8
+    },
+    {
+      "theme_name": "Hepatitis B vaccine online backlash",
+      "theme_description": "A doctor receiving insults and political pushback online for defending the Hepatitis B vaccine.",
+      "source_type": "cluster",
+      "mention_count": 21,
+      "engagement_sum": 0,
+      "confidence": 0.8
+    }
+  ]
+}

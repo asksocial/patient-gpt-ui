@@ -1,0 +1,18 @@
+[
+  {
+    "live_theme_name": "Newborn Hep B birth dose debate",
+    "curated_theme_name": "Confusion Across Care Journey",
+    "relationship": "partial",
+    "similarity_score": 0.42188022138050946,
+    "rationale": "The curated theme addresses general confusion throughout the Hepatitis B care journey, including vaccination, but does not specifically focus on the debate about newborn Hep B birth dose vaccination.",
+    "confidence": 0.85
+  },
+  {
+    "live_theme_name": "Hepatitis B vaccine online backlash",
+    "curated_theme_name": null,
+    "relationship": "emerging",
+    "similarity_score": 0.44401463214880244,
+    "rationale": "The live theme focuses on a specific social backlash against a doctor defending the Hepatitis B vaccine.",
+    "confidence": 0.85
+  }
+]

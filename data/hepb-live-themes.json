@@ -1,0 +1,18 @@
+[
+  {
+    "theme_name": "Newborn Hep B birth dose debate",
+    "theme_description": "Arguments over whether babies need the hepatitis B vaccine at birth.",
+    "source_type": "cluster",
+    "mention_count": 26,
+    "engagement_sum": 0,
+    "confidence": 0.8
+  },
+  {
+    "theme_name": "Hepatitis B vaccine online backlash",
+    "theme_description": "A doctor receiving insults and political pushback online for defending the Hepatitis B vaccine.",
+    "source_type": "cluster",
+    "mention_count": 21,
+    "engagement_sum": 0,
+    "confidence": 0.8
+  }
+]

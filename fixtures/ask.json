@@ -1,0 +1,53 @@
+{
+  "question": "What are people saying about Hep B vaccines right now?",
+  "curatedThemes": [
+    {
+      "theme_name": "Confusion Across Care Journey",
+      "theme_description": "Patients and caregivers report uncertainty at multiple stages of the Hepatitis B journey. This includes confusion about diagnosis, vaccination, monitoring, and disease progression."
+    },
+    {
+      "theme_name": "Emotional and Family Burden",
+      "theme_description": "The report highlights the emotional strain associated with Hepatitis B and its wider effect on family members. Family impact is described as a frequent concern alongside the personal burden of the condition."
+    },
+    {
+      "theme_name": "Reliance on Peer Communities",
+      "theme_description": "Patients and caregivers turn to peer communities for support and information, especially when formal healthcare pathways do not meet their needs."
+    }
+  ],
+  "liveThemes": [
+    {
+      "theme_name": "Newborn Hep B birth dose debate",
+      "theme_description": "Arguments over whether babies need the hepatitis B vaccine at birth.",
+      "source_type": "cluster",
+      "mention_count": 26,
+      "engagement_sum": 0,
+      "confidence": 0.8
+    },
+    {
+      "theme_name": "Hepatitis B vaccine online backlash",
+      "theme_description": "A doctor receiving insults and political pushback online for defending the Hepatitis B vaccine.",
+      "source_type": "cluster",
+      "mention_count": 21,
+      "engagement_sum": 0,
+      "confidence": 0.8
+    }
+  ],
+  "matches": [
+    {
+      "live_theme_name": "Newborn Hep B birth dose debate",
+      "curated_theme_name": "Confusion Across Care Journey",
+      "relationship": "partial",
+      "similarity_score": 0.42188022138050946,
+      "rationale": "The curated theme addresses general confusion throughout the Hepatitis B care journey, including vaccination, but does not specifically focus on the debate about newborn Hep B birth dose vaccination.",
+      "confidence": 0.85
+    },
+    {
+      "live_theme_name": "Hepatitis B vaccine online backlash",
+      "curated_theme_name": null,
+      "relationship": "emerging",
+      "similarity_score": 0.44401463214880244,
+      "rationale": "The live theme focuses on a specific social backlash against a doctor defending the Hepatitis B vaccine.",
+      "confidence": 0.85
+    }
+  ]
+}
