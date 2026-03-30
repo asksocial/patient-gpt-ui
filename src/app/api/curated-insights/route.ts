@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loadCuratedInsights } from "../../../lib/curated/loadCuratedInsights";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const therapeuticArea =
-      req.nextUrl.searchParams.get("therapeuticArea") || "";
-    const insightType = req.nextUrl.searchParams.get("insightType") || "";
-    const country = req.nextUrl.searchParams.get("country") || "";
-    const persona = req.nextUrl.searchParams.get("persona") || "";
-    const platform = req.nextUrl.searchParams.get("platform") || "";
+    const { searchParams } = new URL(req.url);
 
-    console.log("[curated-insights] params", {
-      therapeuticArea,
-      insightType,
-      country,
-      persona,
-      platform,
-    });
+    const therapeuticArea = searchParams.get("therapeuticArea");
+    const persona = searchParams.get("persona");
+    const country = searchParams.get("country");
+    const insightType = searchParams.get("insightType");
 
     if (!therapeuticArea) {
       return NextResponse.json(
@@ -27,29 +19,41 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const insights = await loadCuratedInsights({
-      therapeuticArea,
-      insightTypes: insightType ? [insightType] : undefined,
-      country: country || undefined,
-      persona: persona || undefined,
-      platform: platform || undefined,
-      limit: 100,
-    });
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
-    console.log("[curated-insights] loaded", insights?.length ?? 0);
+    let query = supabase
+      .from("curated_insights")
+      .select("*")
+      .ilike("therapeutic_area", therapeuticArea);
+
+    if (persona) {
+      query = query.ilike("persona", `%${persona}%`);
+    }
+
+    if (country) {
+      query = query.ilike("country", `%${country}%`);
+    }
+
+    if (insightType) {
+      query = query.ilike("insight_type", `%${insightType}%`);
+    }
+
+    const { data, error } = await query.limit(50);
+
+    if (error) throw error;
 
     return NextResponse.json({
       ok: true,
-      insights,
+      insights: data || [],
     });
   } catch (error: any) {
     console.error("[curated-insights] error", error);
 
     return NextResponse.json(
-      {
-        ok: false,
-        error: error?.message || "Failed to load curated insights",
-      },
+      { ok: false, error: error.message },
       { status: 500 }
     );
   }
