@@ -25,6 +25,14 @@ function formatDate(value) {
   }
 }
 
+function formatInsightTypeLabel(value) {
+  if (!value) return "Curated Insight";
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 function Badge({ children, tone = "default", tooltip }) {
   const styles = {
     default: "border-white/10 bg-white/5 text-white/70",
@@ -33,6 +41,11 @@ function Badge({ children, tone = "default", tooltip }) {
     covered: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
     cluster: "border-violet-500/20 bg-violet-500/10 text-violet-300",
     noise: "border-rose-500/20 bg-rose-500/10 text-rose-300",
+    insight: "border-cyan-500/20 bg-cyan-500/10 text-cyan-300",
+    country: "border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-300",
+    persona: "border-lime-500/20 bg-lime-500/10 text-lime-300",
+    platform: "border-sky-500/20 bg-sky-500/10 text-sky-300",
+    action: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
   };
 
   const pill = (
@@ -68,10 +81,201 @@ function Panel({ title, subtitle, children }) {
   );
 }
 
-function AssistantAnswer({ answer }) {
+function groupInsightsByCountry(insights = []) {
+  return insights.reduce((acc, insight) => {
+    const key = insight.country || "Other";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(insight);
+    return acc;
+  }, {});
+}
+
+function buildMarketDifferenceBullets(insights = []) {
+  const grouped = groupInsightsByCountry(insights);
+
+  const countries = Object.keys(grouped).filter(
+    (country) => country !== "Global" && country !== "Other"
+  );
+
+  if (countries.length < 2) return [];
+
+  return countries
+    .map((country) => {
+      const topInsights = [...grouped[country]]
+        .sort(
+          (a, b) =>
+            (typeof b.importance === "number" ? b.importance : 0) -
+            (typeof a.importance === "number" ? a.importance : 0)
+        )
+        .slice(0, 2);
+
+      const summary = topInsights
+        .map((item) => item.summary || item.title)
+        .filter(Boolean)
+        .join(" ");
+
+      return { country, summary };
+    })
+    .slice(0, 4);
+}
+
+function KeyMarketDifferences({ insights = [] }) {
+  const bullets = buildMarketDifferenceBullets(insights);
+
+  if (bullets.length < 2) return null;
+
+  return (
+    <Panel
+      title="Key Market Differences"
+      subtitle="High-level comparison across the most relevant countries in the retrieved curated intelligence"
+    >
+      <div className="space-y-3">
+        {bullets.map((item) => (
+          <div
+            key={item.country}
+            className="rounded-xl border border-white/10 bg-black/30 px-4 py-3"
+          >
+            <p className="text-sm leading-6 text-white/75">
+              <span className="font-semibold text-white">{item.country}:</span>{" "}
+              {item.summary}
+            </p>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function RelevantCuratedInsights({ insights = [] }) {
+  if (!insights.length) return null;
+
+  const grouped = groupInsightsByCountry(insights);
+
+  const orderedCountries = Object.keys(grouped).sort((a, b) => {
+    if (a === "Global") return 1;
+    if (b === "Global") return -1;
+    if (a === "Other") return 1;
+    if (b === "Other") return -1;
+    return a.localeCompare(b);
+  });
+
+  return (
+    <Panel
+      title="Relevant Curated Insights"
+      subtitle="Structured country, persona, platform, barrier, trust, and information signals used to ground the answer"
+    >
+      <div className="space-y-6">
+        {orderedCountries.map((country) => (
+          <div key={country}>
+            <div className="mb-3 flex items-center gap-2">
+              <h4 className="text-sm font-semibold uppercase tracking-[0.16em] text-white/85">
+                {country}
+              </h4>
+              <span className="h-px flex-1 bg-white/10" />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              {grouped[country].map((insight, idx) => (
+                <div
+                  key={insight.id || `${insight.title}-${idx}`}
+                  className="rounded-xl border border-white/10 bg-black/30 p-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h5 className="text-sm font-semibold text-white">
+                      {insight.title}
+                    </h5>
+
+                    <Badge
+                      tone="insight"
+                      tooltip="The normalized curated insight type used for retrieval and synthesis."
+                    >
+                      {formatInsightTypeLabel(insight.insight_type)}
+                    </Badge>
+
+                    {insight.persona ? (
+                      <Badge
+                        tone="persona"
+                        tooltip="Patient or audience segment reflected in this curated insight."
+                      >
+                        {insight.persona}
+                      </Badge>
+                    ) : null}
+
+                    {insight.platform ? (
+                      <Badge
+                        tone="platform"
+                        tooltip="Primary platform or channel associated with this curated insight."
+                      >
+                        {insight.platform}
+                      </Badge>
+                    ) : null}
+                  </div>
+
+                  {insight.summary ? (
+                    <p className="mt-3 text-sm leading-6 text-white/70">
+                      {insight.summary}
+                    </p>
+                  ) : null}
+
+                  {insight.evidence_excerpt ? (
+                    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                        Evidence Excerpt
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-white/55">
+                        {insight.evidence_excerpt}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function RecommendedActions({ actions = [] }) {
+  if (!actions.length) return null;
+
+  return (
+    <Panel
+      title="Recommended Actions"
+      subtitle="Suggested next moves based on the strongest current signals"
+    >
+      <div className="space-y-3">
+        {actions.map((action, idx) => (
+          <div
+            key={`${action}-${idx}`}
+            className="rounded-xl border border-white/10 bg-black/30 px-4 py-3"
+          >
+            <div className="flex items-start gap-3">
+              <Badge
+                tone="action"
+                tooltip="A practical next step derived from the strongest curated and live signals."
+              >
+                Action {idx + 1}
+              </Badge>
+              <p className="text-sm leading-6 text-white/75">{action}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function AssistantAnswer({ responsePayload }) {
+  const answer = responsePayload?.answer || null;
+  const curatedInsights = responsePayload?.relevantCuratedInsights || [];
   const curatedThemes = answer?.curatedIntelligence?.themes || [];
   const liveThemes = answer?.liveData?.themes || [];
   const emergingNarratives = answer?.liveData?.emergingNarratives || [];
+  const recommendedActions = answer?.recommendedActions || [];
+
+  if (!answer) return null;
 
   return (
     <div className="space-y-4">
@@ -80,9 +284,11 @@ function AssistantAnswer({ answer }) {
         subtitle="Report-backed, live-enhanced summary"
       >
         <p className="text-[15px] leading-7 text-white/80">
-          {answer?.directAnswer}
+          {answer.directAnswer}
         </p>
       </Panel>
+
+      <KeyMarketDifferences insights={curatedInsights} />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel
@@ -90,19 +296,25 @@ function AssistantAnswer({ answer }) {
           subtitle="Baseline themes from existing reports"
         >
           <div className="space-y-4">
-            {curatedThemes.map((theme, idx) => (
-              <div
-                key={`${theme.name}-${idx}`}
-                className="rounded-xl border border-white/10 bg-black/30 p-4"
-              >
-                <h4 className="text-sm font-semibold text-white">
-                  {theme.name}
-                </h4>
-                <p className="mt-2 text-sm leading-6 text-white/60">
-                  {theme.description}
-                </p>
+            {curatedThemes.length ? (
+              curatedThemes.map((theme, idx) => (
+                <div
+                  key={`${theme.name}-${idx}`}
+                  className="rounded-xl border border-white/10 bg-black/30 p-4"
+                >
+                  <h4 className="text-sm font-semibold text-white">
+                    {theme.name}
+                  </h4>
+                  <p className="mt-2 text-sm leading-6 text-white/60">
+                    {theme.description}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-white/40">
+                No baseline report themes were available for this response.
               </div>
-            ))}
+            )}
           </div>
         </Panel>
 
@@ -115,58 +327,66 @@ function AssistantAnswer({ answer }) {
           }
         >
           <div className="space-y-4">
-            {liveThemes.map((theme, idx) => (
-              <div
-                key={`${theme.name}-${idx}`}
-                className="rounded-xl border border-white/10 bg-black/30 p-4"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-sm font-semibold text-white">
-                    {theme.name}
-                  </h4>
+            {liveThemes.length ? (
+              liveThemes.map((theme, idx) => (
+                <div
+                  key={`${theme.name}-${idx}`}
+                  className="rounded-xl border border-white/10 bg-black/30 p-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h4 className="text-sm font-semibold text-white">
+                      {theme.name}
+                    </h4>
 
-                  <Badge
-                    tone={
-                      theme.relationship === "emerging"
-                        ? "emerging"
+                    <Badge
+                      tone={
+                        theme.relationship === "emerging"
+                          ? "emerging"
+                          : theme.relationship === "partial"
+                            ? "partial"
+                            : "covered"
+                      }
+                      tooltip={
+                        theme.relationship === "emerging"
+                          ? "This live theme adds materially new context that is not clearly represented in the baseline report."
+                          : theme.relationship === "partial"
+                            ? "This live theme overlaps with the baseline report, but adds more specificity or a distinct angle."
+                            : "This live theme is already well represented in the baseline report."
+                      }
+                    >
+                      {theme.relationship === "emerging"
+                        ? "Emerging"
                         : theme.relationship === "partial"
-                          ? "partial"
-                          : "covered"
-                    }
-                    tooltip={
-                      theme.relationship === "emerging"
-                        ? "This live theme adds materially new context that is not clearly represented in the baseline report."
-                        : theme.relationship === "partial"
-                          ? "This live theme overlaps with the baseline report, but adds more specificity or a distinct angle."
-                          : "This live theme is already well represented in the baseline report."
-                    }
-                  >
-                    {theme.relationship === "emerging"
-                      ? "Emerging"
-                      : theme.relationship === "partial"
-                        ? "Partial"
-                        : "Covered"}
-                  </Badge>
+                          ? "Partial"
+                          : "Covered"}
+                    </Badge>
 
-                  <Badge
-                    tone={theme.sourceType === "noise_llm" ? "noise" : "cluster"}
-                    tooltip={
-                      theme.sourceType === "noise_llm"
-                        ? "An inferred live narrative pulled from noisier, lower-density conversation patterns that still appear strategically meaningful."
-                        : "A structured live theme identified from clustered conversation data with clearer pattern consistency."
-                    }
-                  >
-                    {theme.sourceType === "noise_llm"
-                      ? "Emerging Narrative"
-                      : "Structured Live Theme"}
-                  </Badge>
+                    <Badge
+                      tone={
+                        theme.sourceType === "noise_llm" ? "noise" : "cluster"
+                      }
+                      tooltip={
+                        theme.sourceType === "noise_llm"
+                          ? "An inferred live narrative pulled from noisier, lower-density conversation patterns that still appear strategically meaningful."
+                          : "A structured live theme identified from clustered conversation data with clearer pattern consistency."
+                      }
+                    >
+                      {theme.sourceType === "noise_llm"
+                        ? "Emerging Narrative"
+                        : "Structured Live Theme"}
+                    </Badge>
+                  </div>
+
+                  <p className="mt-2 text-sm leading-6 text-white/60">
+                    {theme.description}
+                  </p>
                 </div>
-
-                <p className="mt-2 text-sm leading-6 text-white/60">
-                  {theme.description}
-                </p>
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-white/40">
+                No live themes were returned for this response.
               </div>
-            ))}
+            )}
           </div>
 
           {emergingNarratives.length ? (
@@ -190,14 +410,18 @@ function AssistantAnswer({ answer }) {
         </Panel>
       </div>
 
+      <RelevantCuratedInsights insights={curatedInsights} />
+
       <Panel
         title="What This Means"
         subtitle="Strategic synthesis for decision-making"
       >
         <p className="text-[15px] leading-7 text-white/80">
-          {answer?.whatThisMeans}
+          {answer.whatThisMeans}
         </p>
       </Panel>
+
+      <RecommendedActions actions={recommendedActions} />
     </div>
   );
 }
@@ -212,11 +436,11 @@ function UserMessage({ text }) {
   );
 }
 
-function AssistantMessage({ answer }) {
+function AssistantMessage({ responsePayload }) {
   return (
     <div className="flex justify-start">
       <div className="w-full max-w-6xl rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 md:p-5">
-        <AssistantAnswer answer={answer} />
+        <AssistantAnswer responsePayload={responsePayload} />
       </div>
     </div>
   );
@@ -268,7 +492,6 @@ export default function WorkspaceShell() {
     async function loadTherapeuticAreas() {
       try {
         setLoadingAreas(true);
-
         const res = await fetch("/api/therapeutic-areas");
         const data = await res.json();
 
@@ -280,7 +503,10 @@ export default function WorkspaceShell() {
         setTherapeuticAreas(areas);
 
         if (areas.length > 0) {
-          setTherapeuticArea((current) => current || areas[0]);
+          setTherapeuticArea((current) => {
+            if (current && areas.includes(current)) return current;
+            return areas[0];
+          });
         }
       } catch (err) {
         setError(err?.message || "Failed to load therapeutic areas");
@@ -296,7 +522,6 @@ export default function WorkspaceShell() {
     async function loadSessions() {
       try {
         setLoadingSessions(true);
-
         const res = await fetch("/api/chat/sessions");
         const data = await res.json();
 
@@ -386,7 +611,6 @@ export default function WorkspaceShell() {
   async function openSession(sessionId) {
     try {
       setError("");
-
       const res = await fetch(`/api/chat/session?sessionId=${sessionId}`);
       const data = await res.json();
 
@@ -403,7 +627,15 @@ export default function WorkspaceShell() {
         role: message.role,
         ...(message.role === "user"
           ? { text: message.content.text }
-          : { answer: message.content.answer }),
+          : {
+              responsePayload: {
+                answer: message.content.answer,
+                relevantCuratedInsights:
+                  message.content.relevantCuratedInsights ||
+                  message.content.curatedInsights ||
+                  [],
+              },
+            }),
       }));
 
       setMessages(restoredMessages);
@@ -487,9 +719,7 @@ export default function WorkspaceShell() {
         throw new Error(data.error || "Failed to delete session");
       }
 
-      setSessions((prev) =>
-        prev.filter((session) => session.id !== sessionId)
-      );
+      setSessions((prev) => prev.filter((session) => session.id !== sessionId));
 
       if (activeSessionId === sessionId) {
         startNewConversation();
@@ -576,10 +806,16 @@ export default function WorkspaceShell() {
         throw new Error(data.error || "Failed to generate AskSocial answer");
       }
 
+      const responsePayload = {
+        answer: data.answer,
+        relevantCuratedInsights: data.relevantCuratedInsights || [],
+        debug: data.debug || {},
+      };
+
       const assistantMessage = {
         id: `${Date.now()}-assistant`,
         role: "assistant",
-        answer: data.answer,
+        responsePayload,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -587,7 +823,10 @@ export default function WorkspaceShell() {
       await appendMessages(sessionId, [
         {
           role: "assistant",
-          content: { answer: data.answer },
+          content: {
+            answer: data.answer,
+            relevantCuratedInsights: data.relevantCuratedInsights || [],
+          },
         },
       ]);
 
@@ -877,8 +1116,8 @@ export default function WorkspaceShell() {
                     </h2>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">
                       Ask about baseline themes, emerging narratives, changing
-                      concerns, trust signals, or what has shifted since the
-                      last report.
+                      concerns, trust signals, country differences, platform
+                      behavior, or what has shifted since the last report.
                     </p>
                   </div>
                 </div>
@@ -887,7 +1126,10 @@ export default function WorkspaceShell() {
                   message.role === "user" ? (
                     <UserMessage key={message.id} text={message.text} />
                   ) : (
-                    <AssistantMessage key={message.id} answer={message.answer} />
+                    <AssistantMessage
+                      key={message.id}
+                      responsePayload={message.responsePayload}
+                    />
                   )
                 )
               )}
@@ -913,14 +1155,15 @@ export default function WorkspaceShell() {
                   <textarea
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Ask about baseline themes, emerging narratives, trust dynamics, or what changed since the last report..."
+                    placeholder="Ask about country differences, personas, platform preferences, trust dynamics, barriers, or what changed since the last report..."
                     rows={3}
                     className="w-full resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
                   />
 
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs text-white/40">
-                      Report-backed insights + live narrative discovery
+                      Report-backed insights + structured curated intelligence +
+                      live narrative discovery
                     </p>
                     <button
                       type="submit"

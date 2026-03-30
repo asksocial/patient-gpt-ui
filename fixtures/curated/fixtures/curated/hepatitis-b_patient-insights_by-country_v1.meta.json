@@ -1,0 +1,8 @@
+{
+  "therapeutic_area": "Hepatitis B",
+  "source_type": "curated_pdf",
+  "insight_types": ["persona", "conversation", "platform_preference"],
+  "geography": "global",
+  "version": "v1",
+  "notes": "Country-level patient insights and platform behavior"
+}
