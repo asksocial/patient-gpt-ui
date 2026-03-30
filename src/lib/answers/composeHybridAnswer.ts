@@ -82,11 +82,11 @@ function compactText(value?: string | null) {
   return (value || "").replace(/\s+/g, " ").trim();
 }
 
-function uniq<T>(items: T[]) {
+function uniq<T>(items: T[]): T[] {
   return Array.from(new Set(items));
 }
 
-function uniqByKey<T>(items: T[], getKey: (item: T) => string) {
+function uniqByKey<T>(items: T[], getKey: (item: T) => string): T[] {
   const seen = new Set<string>();
   const result: T[] = [];
 
@@ -230,7 +230,8 @@ function deriveCuratedThemesFromInsights(
       name: parts.join(" • "),
       description:
         descriptionParts[0] || compactText(insight.title) || "Curated insight",
-      importance: typeof insight.importance === "number" ? insight.importance : 0,
+      importance:
+        typeof insight.importance === "number" ? insight.importance : 0,
     };
   });
 
@@ -255,7 +256,7 @@ function deriveRecommendedActions({
   curatedInsights?: CuratedInsight[];
   curatedThemes?: CuratedTheme[];
   liveThemes?: LiveTheme[];
-}) {
+}): string[] {
   const actions: string[] = [];
 
   const topCountryInsights = uniqByKey(
@@ -271,7 +272,8 @@ function deriveRecommendedActions({
 
   topCountryInsights.forEach((insight) => {
     const country = insight.country || "priority markets";
-    const topic = compactText(insight.topic) || formatInsightTypeLabel(insight.insight_type);
+    const topic =
+      compactText(insight.topic) || formatInsightTypeLabel(insight.insight_type);
     const platform = compactText(insight.platform);
     const persona = compactText(insight.persona);
 
@@ -315,17 +317,17 @@ function deriveRecommendedActions({
 
   if (!actions.length && curatedThemes.length) {
     actions.push(
-      `Turn the top curated themes into market-ready messaging briefs and channel-specific content hypotheses.`
+      "Turn the top curated themes into market-ready messaging briefs and channel-specific content hypotheses."
     );
   }
 
   if (!actions.length) {
     actions.push(
-      `Use this answer as a starting point for localized message testing and deeper qualitative validation.`
+      "Use this answer as a starting point for localized message testing and deeper qualitative validation."
     );
   }
 
-  return uniq(actions).slice(0, 4);
+  return uniq<string>(actions).slice(0, 4);
 }
 
 function buildFallbackAnswer({
@@ -340,13 +342,13 @@ function buildFallbackAnswer({
 
   const topCuratedThemes = effectiveCuratedThemes.slice(0, 6);
   const topLiveThemes = liveThemes.slice(0, 6);
-  const emergingNarratives = uniq(extractEmergingNarratives(liveThemes));
+  const emergingNarratives = uniq<string>(extractEmergingNarratives(liveThemes));
   const topCuratedInsights = curatedInsights.slice(0, 6);
 
-  const countries = uniq(
+  const countries = uniq<string>(
     topCuratedInsights
       .map((insight) => compactText(insight.country))
-      .filter(Boolean)
+      .filter((value): value is string => Boolean(value))
   );
 
   const directAnswer = topCuratedInsights.length
@@ -365,8 +367,8 @@ function buildFallbackAnswer({
       }.`;
 
   const whatThisMeans = topCuratedInsights.length
-    ? `This suggests strategy should be tailored to the country-, persona-, and platform-specific signals present in the curated intelligence, rather than relying on generic category messaging alone.`
-    : `This suggests the most useful strategy is to anchor on the baseline report themes while using live data to identify where new narratives are emerging, intensifying, or changing in tone.`;
+    ? "This suggests strategy should be tailored to the country-, persona-, and platform-specific signals present in the curated intelligence, rather than relying on generic category messaging alone."
+    : "This suggests the most useful strategy is to anchor on the baseline report themes while using live data to identify where new narratives are emerging, intensifying, or changing in tone.";
 
   const recommendedActions = deriveRecommendedActions({
     question,
@@ -445,6 +447,12 @@ function normalizeAnswerShape(
       ? value.recommendedActions
       : fallbackAnswer.recommendedActions;
 
+  const normalizedRecommendedActions: string[] = uniq<string>(
+    recommendedActions
+      .map((item: any) => compactText(item))
+      .filter((item: string) => Boolean(item))
+  ).slice(0, 4);
+
   return {
     directAnswer:
       compactText(value?.directAnswer) || fallbackAnswer.directAnswer,
@@ -461,19 +469,15 @@ function normalizeAnswerShape(
         sourceType: compactText(theme?.sourceType) || undefined,
         relationship: compactText(theme?.relationship) || undefined,
       })),
-      emergingNarratives: uniq(
+      emergingNarratives: uniq<string>(
         emergingNarratives
           .map((item: any) => compactText(item))
-          .filter(Boolean)
+          .filter((item: string) => Boolean(item))
       ),
     },
     whatThisMeans:
       compactText(value?.whatThisMeans) || fallbackAnswer.whatThisMeans,
-    recommendedActions: uniq(
-      recommendedActions
-        .map((item: any) => compactText(item))
-        .filter(Boolean)
-    ).slice(0, 4),
+    recommendedActions: normalizedRecommendedActions,
   };
 }
 

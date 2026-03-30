@@ -5,6 +5,30 @@ import { getRelevantCuratedInsights } from "../../../lib/curated/getRelevantCura
 
 export const dynamic = "force-dynamic";
 
+function normalizeCuratedThemes(items: any[] = []) {
+  return items.map((item) => ({
+    name: item?.name ?? item?.theme_name ?? "Unnamed theme",
+    description:
+      item?.description ??
+      item?.theme_description ??
+      item?.report_excerpt ??
+      "",
+  }));
+}
+
+function normalizeLiveThemes(items: any[] = []) {
+  return items.map((item) => ({
+    name: item?.name ?? item?.theme_name ?? "Unnamed live theme",
+    description:
+      item?.description ??
+      item?.theme_description ??
+      item?.summary ??
+      "",
+    sourceType: item?.sourceType ?? item?.source_type ?? undefined,
+    relationship: item?.relationship ?? undefined,
+  }));
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -25,14 +49,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const {
-      curatedThemes = [],
-      liveThemes = [],
-      matches = [],
-    } = await loadHybridData({
-      therapeuticArea,
-      question,
-    });
+    const hybridData = await loadHybridData(therapeuticArea);
+
+    const curatedThemes = normalizeCuratedThemes(hybridData?.curatedThemes || []);
+    const liveThemes = normalizeLiveThemes(hybridData?.liveThemes || []);
+    const matches = hybridData?.matches || [];
 
     const curatedInsights = await getRelevantCuratedInsights({
       therapeuticArea,
