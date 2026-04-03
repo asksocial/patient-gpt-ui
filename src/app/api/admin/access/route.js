@@ -1,20 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import { auth } from "@clerk/nextjs/server";
+import { withAdmin } from "@/lib/auth/isAdmin";
 
 export const runtime = "nodejs";
 
-export async function POST(req) {
+export const POST = withAdmin(async (req) => {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (userId !== process.env.ADMIN_CLERK_USER_ID) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const body = await req.json();
     const { clerk_user_id } = body || {};
 
@@ -48,4 +38,4 @@ export async function POST(req) {
       { status: 500 }
     );
   }
-}
+});

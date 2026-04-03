@@ -1,20 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import { auth } from "@clerk/nextjs/server";
+import { withAdmin } from "@/lib/auth/isAdmin";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export const GET = withAdmin(async () => {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (userId !== process.env.ADMIN_CLERK_USER_ID) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -39,4 +29,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});
