@@ -19,11 +19,23 @@ const isAdminApiRoute = createRouteMatcher([
   "/api/admin(.*)",
 ]);
 
+function getRoleFromClaims(sessionClaims: unknown): string | undefined {
+  if (!sessionClaims || typeof sessionClaims !== "object") return undefined;
+
+  const publicMetadata = (sessionClaims as { publicMetadata?: unknown }).publicMetadata;
+
+  if (!publicMetadata || typeof publicMetadata !== "object") return undefined;
+
+  const role = (publicMetadata as { role?: unknown }).role;
+
+  return typeof role === "string" ? role : undefined;
+}
+
 export default clerkMiddleware(async (auth, req) => {
   const { userId, sessionClaims, redirectToSignIn } = await auth();
 
   const isSignedIn = !!userId;
-  const isAdmin = sessionClaims?.publicMetadata?.role === "admin";
+  const isAdmin = getRoleFromClaims(sessionClaims) === "admin";
 
   // Keep your existing public-route behavior
   if (isPublicRoute(req)) {

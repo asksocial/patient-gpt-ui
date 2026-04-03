@@ -1,12 +1,24 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+function getRoleFromClaims(sessionClaims: unknown): string | undefined {
+  if (!sessionClaims || typeof sessionClaims !== "object") return undefined;
+
+  const publicMetadata = (sessionClaims as { publicMetadata?: unknown }).publicMetadata;
+
+  if (!publicMetadata || typeof publicMetadata !== "object") return undefined;
+
+  const role = (publicMetadata as { role?: unknown }).role;
+
+  return typeof role === "string" ? role : undefined;
+}
+
 export async function isAdmin() {
   const { userId, sessionClaims } = await auth();
 
   if (!userId) return false;
 
-  return sessionClaims?.publicMetadata?.role === "admin";
+  return getRoleFromClaims(sessionClaims) === "admin";
 }
 
 export async function requireAdmin() {
