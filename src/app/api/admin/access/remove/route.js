@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { withAdmin } from "@/lib/auth/isAdmin";
+import { withAdmin } from "../../../../../lib/auth/isAdmin";
 
 export const runtime = "nodejs";
 
