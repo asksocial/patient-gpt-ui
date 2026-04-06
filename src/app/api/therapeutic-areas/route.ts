@@ -1,118 +1,55 @@
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-function titleCaseFromSlug(value: string) {
-  return value
-    .replace(/\.[^/.]+$/, "")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function normalizeArea(value: string) {
-  return value.replace(/\s+/g, " ").trim();
-}
-
-async function getFixtureTherapeuticAreas() {
-  const fixturesDir = path.join(process.cwd(), "fixtures", "curated");
-
+export async function GET() {
   try {
-    const files = await fs.readdir(fixturesDir);
-    const areas = new Set<string>();
+    const url =
+      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    for (const file of files) {
-      const lower = file.toLowerCase();
-
-      if (
-        !lower.endsWith(".csv") &&
-        !lower.endsWith(".pdf") &&
-        !lower.endsWith(".json")
-      ) {
-        continue;
-      }
-
-      let base = file;
-
-      base = base.replace(/\.[^/.]+$/, "");
-      base = base.replace(/_insights_sample$/i, "");
-      base = base.replace(/_patient-insights_by-country_v\d+$/i, "");
-      base = base.replace(/_patient insights_by-country_v\d+$/i, "");
-      base = base.replace(/_meta$/i, "");
-
-      const area = normalizeArea(titleCaseFromSlug(base));
-      if (area) areas.add(area);
+    if (!url || !key) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Missing Supabase environment variables",
+          therapeuticAreas: [],
+        },
+        { status: 500 }
+      );
     }
 
-    return Array.from(areas);
-  } catch {
-    return [];
-  }
-}
-
-async function getSupabaseTherapeuticAreas() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    return [];
-  }
-
-  try {
     const supabase = createClient(url, key);
 
     const { data, error } = await supabase
-      .from("curated_insights")
-      .select("therapeutic_area")
-      .not("therapeutic_area", "is", null)
-      .limit(1000);
+      .from("therapeutic_areas")
+      .select("name")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
 
     if (error) {
-      console.error("[therapeutic-areas] supabase error", error);
-      return [];
+      console.error("[/api/therapeutic-areas] supabase error", error);
+
+      return NextResponse.json(
+        {
+          ok: false,
+          error: error.message || "Failed to load therapeutic areas",
+          therapeuticAreas: [],
+        },
+        { status: 500 }
+      );
     }
-
-    const areas = Array.from(
-      new Set(
-        (data || [])
-          .map((row) => normalizeArea(row.therapeutic_area || ""))
-          .filter(Boolean)
-      )
-    );
-
-    return areas;
-  } catch (error) {
-    console.error("[therapeutic-areas] unexpected supabase error", error);
-    return [];
-  }
-}
-
-export async function GET() {
-  try {
-    const [supabaseAreas, fixtureAreas] = await Promise.all([
-      getSupabaseTherapeuticAreas(),
-      getFixtureTherapeuticAreas(),
-    ]);
-
-    const therapeuticAreas = Array.from(
-      new Set([...supabaseAreas, ...fixtureAreas].filter(Boolean))
-    ).sort((a, b) => a.localeCompare(b));
 
     return NextResponse.json({
       ok: true,
-      therapeuticAreas,
-      debug: {
-        supabaseAreasCount: supabaseAreas.length,
-        fixtureAreasCount: fixtureAreas.length,
-      },
+      therapeuticAreas: (data || [])
+        .map((row) => row.name)
+        .filter(Boolean),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[/api/therapeutic-areas] error", error);
 
     return NextResponse.json(
