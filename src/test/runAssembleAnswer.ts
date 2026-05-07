@@ -30,6 +30,6 @@ const rawCards = [
   },
 ];
 
-const result = assembleAnswer(rawCards, "symptom_qol_burden");
+const result = assembleAnswer(rawCards as any);
 
 console.log(JSON.stringify(result, null, 2));

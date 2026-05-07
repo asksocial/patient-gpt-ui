@@ -12,14 +12,15 @@ const QUESTION_INTENT = "symptom_qol_burden";
 function main() {
   console.log("📥 Loading Meltwater CSV...");
 
-  const rawCards = ingestMeltwaterCsv(CSV_PATH, {
-    sourceType: "meltwater",
-    therapeuticArea: "hepatitis_b",
-  });
+const rawCards = ingestMeltwaterCsv(CSV_PATH, {
+  sourceType: "meltwater",
+  therapeuticArea: "hepatitis_b",
+  profileId: "hepatitis_b",
+});
 
   console.log(`Mapped ${rawCards.length} high-signal cards`);
 
-  const answer = assembleAnswer(rawCards, QUESTION_INTENT);
+const answer = assembleAnswer(rawCards as any);
 
   console.log("\n================ OUTPUT ================\n");
   console.log(JSON.stringify(answer, null, 2));

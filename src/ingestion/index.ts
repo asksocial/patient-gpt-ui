@@ -7,6 +7,8 @@ import {
 import { getDiseaseProfile } from "./profiles";
 import { IngestionContext } from "./types";
 
+export { ingestCurated };
+
 export function ingestMeltwaterCsv(
   filePath: string,
   context: IngestionContext & { profileId: string }
