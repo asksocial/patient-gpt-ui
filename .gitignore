@@ -45,4 +45,5 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+next-env.d.tssrc/ingestion/curated/*.json
+data/*
