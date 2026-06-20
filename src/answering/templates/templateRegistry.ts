@@ -4,6 +4,11 @@ export type AnswerIntent =
   | "diagnosis_barriers"
   | "safety_signals"
   | "market_landscape"
+  | "market_interest"
+  | "education_barriers"
+  | "competitive_alternatives"
+  | "adoption_drivers"
+  | "market_opportunities"
   | "general";
 
 export type SectionKey =
@@ -65,6 +70,9 @@ export const TEMPLATE_REGISTRY: Record<AnswerIntent, AnswerTemplateRule> = {
       "perceived_benefit",
       "persona_pattern",
       "country_pattern",
+      "adoption_driver",
+      "competitive_alternative",
+      "market_opportunity",
     ],
   },
 
@@ -81,6 +89,7 @@ export const TEMPLATE_REGISTRY: Record<AnswerIntent, AnswerTemplateRule> = {
     maxSupportingCards: 5,
     allowedFindingTypes: [
       "diagnosis_barrier",
+      "education_barrier",
       "persona_pattern",
       "country_pattern",
     ],
@@ -118,6 +127,130 @@ export const TEMPLATE_REGISTRY: Record<AnswerIntent, AnswerTemplateRule> = {
       "country_pattern",
       "platform_preference",
       "persona_pattern",
+      "market_interest",
+      "education_barrier",
+      "competitive_alternative",
+      "adoption_driver",
+      "market_opportunity",
+      "channel_insight",
+      "market_insight",
+    ],
+  },
+
+  market_interest: {
+    intent: "market_interest",
+    requiredSections: [
+      "direct_answer",
+      "top_drivers",
+      "platforms",
+      "evidence",
+      "live_data_check",
+    ],
+    maxDirectAnswerSentences: 4,
+    maxSupportingCards: 6,
+    allowedFindingTypes: [
+      "market_interest",
+      "adoption_driver",
+      "perceived_benefit",
+      "platform_preference",
+      "channel_insight",
+      "market_insight",
+      "persona_pattern",
+      "country_pattern",
+    ],
+  },
+
+  education_barriers: {
+    intent: "education_barriers",
+    requiredSections: [
+      "direct_answer",
+      "barriers",
+      "evidence",
+      "live_data_check",
+    ],
+    maxDirectAnswerSentences: 4,
+    maxSupportingCards: 6,
+    allowedFindingTypes: [
+      "education_barrier",
+      "diagnosis_barrier",
+      "safety_signal",
+      "persona_pattern",
+      "platform_preference",
+      "channel_insight",
+      "market_insight",
+      "other",
+    ],
+  },
+
+  competitive_alternatives: {
+    intent: "competitive_alternatives",
+    requiredSections: [
+      "direct_answer",
+      "top_drivers",
+      "market_variation",
+      "evidence",
+      "live_data_check",
+    ],
+    maxDirectAnswerSentences: 4,
+    maxSupportingCards: 6,
+    allowedFindingTypes: [
+      "competitive_alternative",
+      "treatment_concern",
+      "treatment_journey",
+      "perceived_benefit",
+      "platform_preference",
+      "channel_insight",
+      "market_insight",
+      "other",
+    ],
+  },
+
+  adoption_drivers: {
+    intent: "adoption_drivers",
+    requiredSections: [
+      "direct_answer",
+      "top_drivers",
+      "evidence",
+      "live_data_check",
+    ],
+    maxDirectAnswerSentences: 4,
+    maxSupportingCards: 6,
+    allowedFindingTypes: [
+      "adoption_driver",
+      "market_interest",
+      "perceived_benefit",
+      "persona_pattern",
+      "platform_preference",
+      "channel_insight",
+      "market_insight",
+      "symptom_burden",
+      "other",
+    ],
+  },
+
+  market_opportunities: {
+    intent: "market_opportunities",
+    requiredSections: [
+      "direct_answer",
+      "market_variation",
+      "platforms",
+      "supporting_findings",
+      "evidence",
+      "live_data_check",
+    ],
+    maxDirectAnswerSentences: 4,
+    maxSupportingCards: 6,
+    allowedFindingTypes: [
+      "market_opportunity",
+      "education_barrier",
+      "competitive_alternative",
+      "adoption_driver",
+      "market_interest",
+      "channel_insight",
+      "market_insight",
+      "platform_preference",
+      "country_pattern",
+      "other",
     ],
   },
 
@@ -139,9 +272,16 @@ export const TEMPLATE_REGISTRY: Record<AnswerIntent, AnswerTemplateRule> = {
       "platform_preference",
       "treatment_concern",
       "diagnosis_barrier",
+      "education_barrier",
       "safety_signal",
       "treatment_journey",
       "perceived_benefit",
+      "market_interest",
+      "competitive_alternative",
+      "adoption_driver",
+      "market_opportunity",
+      "channel_insight",
+      "market_insight",
       "other",
     ],
   },

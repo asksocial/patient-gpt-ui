@@ -9,7 +9,7 @@ function normalizeText(value: string): string {
 }
 
 function includesAny(text: string, phrases: string[]): boolean {
-  return phrases.some((phrase) => text.includes(phrase));
+  return phrases.some((phrase) => text.includes(phrase.toLowerCase()));
 }
 
 function extractByPatternMap(
@@ -18,7 +18,7 @@ function extractByPatternMap(
 ): string[] {
   const detected: string[] = [];
 
-  for (const [label, patterns] of Object.entries(patternMap)) {
+  for (const [label, patterns] of Object.entries(patternMap || {})) {
     if (includesAny(text, patterns)) {
       detected.push(label);
     }
@@ -61,18 +61,19 @@ function hasBurdenLanguage(text: string, profile: DiseaseProfile): boolean {
   return includesAny(text, profile.burdenTerms || []);
 }
 
-function isEducationalContent(text: string, profile: DiseaseProfile): boolean {
-  const builtInPatterns = [
-    "did you know",
-    "join us",
-    "learn more",
-    "awareness month",
-    "raise awareness",
-  ];
+function isRegenerativeAestheticsProfile(profile: DiseaseProfile): boolean {
+  return profile.profileId === "regenerative_aesthetics";
+}
 
+function isEducationalContent(text: string, profile: DiseaseProfile): boolean {
   return (
-    includesAny(text, builtInPatterns) ||
-    includesAny(text, profile.educationalExclusionPatterns || [])
+    includesAny(text, [
+      "did you know",
+      "join us",
+      "learn more",
+      "awareness month",
+      "raise awareness",
+    ]) || includesAny(text, profile.educationalExclusionPatterns || [])
   );
 }
 
@@ -96,6 +97,394 @@ function isExtraExcluded(text: string, profile: DiseaseProfile): boolean {
   return includesAny(text, profile.extraExclusionPatterns || []);
 }
 
+function isCommercialShoppingNoise(text: string): boolean {
+  return includesAny(text, [
+    "amazon",
+    "amzn.to",
+    "buy link",
+    "shop now",
+    "shop on",
+    "add to cart",
+    "tiktok shop",
+    "ltk",
+    "liketk",
+    "affiliate",
+    "#ad",
+    "promo code",
+    "discount",
+    "sale",
+    "special launch price",
+    "price list",
+    "available at",
+    "available now",
+    "now available",
+    "olive young",
+    "global.oliveyoung",
+    "jastip",
+    "handcarry",
+    "ready ina",
+    "dp280k",
+    "wts",
+    "wtb",
+    "minat dm",
+    "order dm",
+    "link in bio",
+    "link mua",
+    "mediafire",
+    "download all in one",
+  ]);
+}
+
+function isPressOrCorporateNoise(text: string): boolean {
+  return includesAny(text, [
+    "pr newswire",
+    "prnewswire",
+    "einpresswire",
+    "businesswire",
+    "business wire",
+    "globe newswire",
+    "newmediawire",
+    "press release",
+    "media contact",
+    "announces",
+    "announced",
+    "launches",
+    "launching",
+    "expands",
+    "expansion",
+    "strategic investment",
+    "secures board representation",
+    "appoints",
+    "appointed",
+    "named ceo",
+    "board of directors",
+    "series a",
+    "series b",
+    "financing",
+    "acquisition",
+    "merger",
+    "shareholder",
+    "investor",
+    "forward-looking statements",
+    "nasdaq",
+    "form 10-k",
+    "form 8-k",
+    "clinical-stage",
+    "clinical stage",
+    "gmp-grade",
+    "cmo",
+    "cdmo",
+    "crdmo",
+    "manufacturing contract",
+  ]);
+}
+
+function isClinicPromoNoise(text: string): boolean {
+  return includesAny(text, [
+    "call:",
+    "phone:",
+    "whatsapp",
+    "call/whatsapp",
+    "book now",
+    "book your",
+    "appointment",
+    "free consultation",
+    "contact us",
+    "visit us",
+    "clinic location",
+    "clinic details",
+    "address:",
+    "near bank",
+    "plot no",
+    "open jastip",
+    "limited offer",
+    "dm us",
+    "dm me",
+    "comment booty",
+    "tap our link",
+    "online booking",
+    "course",
+    "training program",
+    "academy",
+    "enroll now",
+    "webinar",
+    "symposium",
+    "masterclass",
+  ]);
+}
+
+function isCelebrityFanNoise(text: string): boolean {
+  return includesAny(text, [
+    "brand ambassador",
+    "global ambassador",
+    "regional ambassador",
+    "friend of amazing thailand",
+    "prada beauty",
+    "winmetawin",
+    "kimsejeong",
+    "sejeong",
+    "beckysangels",
+    "ba of",
+    "presenter of",
+    "fanclub",
+    "fan club",
+    "dinner on a yacht",
+    "the grand gambit",
+  ]);
+}
+
+function isHairOrNonFacialTreatmentNoise(text: string): boolean {
+  return includesAny(text, [
+    "hair transplant",
+    "hair restoration",
+    "hair regrowth",
+    "hair growth",
+    "hair fall",
+    "hair loss",
+    "thinning hair",
+    "hair thinning",
+    "scalp",
+    "alopecia",
+    "androgenetic alopecia",
+    "beard transplant",
+    "fue",
+    "dhi",
+    "hybrid",
+    "hairline",
+    "roots clinic",
+    "prp hair",
+    "hair prp",
+    "prp therapy for hair",
+    "scalp micropigmentation",
+    "haircare",
+    "hair care",
+    "rosemary hair",
+    "vaginal rejuvenation",
+    "erectile dysfunction",
+    "urology",
+    "fertility",
+    "ovarian",
+    "endometrial",
+    "knee",
+    "orthopedic",
+    "orthopaedic",
+    "sports medicine",
+    "joint pain",
+    "osteoarthritis",
+    "tinnitus",
+    "hearing loss",
+    "autism",
+    "duchenne",
+    "cns",
+    "central nervous system",
+    "ophthalmology",
+    "eye drops",
+    "long covid",
+    "covid injections",
+  ]);
+}
+
+function hasAestheticAnchor(text: string): boolean {
+  return includesAny(text, [
+    "regenerative aesthetics",
+    "regenerative esthetics",
+    "aesthetic",
+    "aesthetics",
+    "esthetic",
+    "esthetics",
+    "beauty",
+    "skincare",
+    "skin care",
+    "skin",
+    "face",
+    "facial",
+    "dermatology",
+    "dermatologist",
+    "cosmetic",
+    "cosmetics",
+    "med spa",
+    "medspa",
+    "injectable",
+    "injectables",
+    "botox",
+    "filler",
+    "fillers",
+    "sculptra",
+    "radiesse",
+    "skin booster",
+    "skin boosters",
+    "rejuran",
+    "juvelook",
+    "pdrn",
+    "polynucleotide",
+    "polynucleotides",
+    "exosome skincare",
+    "exosome facial",
+    "prp facial",
+    "prf facial",
+    "vampire facial",
+    "microneedling",
+    "laser",
+    "glow",
+    "wrinkle",
+    "wrinkles",
+    "collagen",
+    "rejuvenation",
+    "natural results",
+    "skin quality",
+    "glass skin",
+    "anti-aging",
+    "anti aging",
+    "skin longevity",
+  ]);
+}
+
+function hasMarketSignal(text: string): boolean {
+  return includesAny(text, [
+    "interest",
+    "growing interest",
+    "demand",
+    "trend",
+    "trending",
+    "buzzy",
+    "buzz",
+    "hype",
+    "worth it",
+    "why i love",
+    "game changer",
+    "must-have",
+    "must have",
+    "results",
+    "before and after",
+    "natural results",
+    "visible results",
+    "clinical results",
+    "science-backed",
+    "clinically proven",
+    "education",
+    "confused",
+    "confusing",
+    "skeptical",
+    "safety",
+    "downtime",
+    "cost",
+    "price",
+    "market",
+    "opportunity",
+    "white space",
+    "innovation",
+    "adoption",
+    "awareness",
+    "consumer",
+    "consumers",
+    "patients",
+    "clients",
+    "skin quality",
+    "skin longevity",
+  ]);
+}
+
+function hasStrongConsumerOrProviderSignal(text: string): boolean {
+  return includesAny(text, [
+    "i tried",
+    "i got",
+    "i had",
+    "i've been loving",
+    "i’ve been loving",
+    "i love",
+    "my skin",
+    "my face",
+    "my results",
+    "my routine",
+    "patients ask",
+    "clients ask",
+    "my patient",
+    "my client",
+    "our patients",
+    "our clients",
+    "as a dermatologist",
+    "as an injector",
+    "as a provider",
+    "in my clinic",
+    "in our clinic",
+    "when patients ask",
+    "before and after",
+    "worth it",
+    "confused between",
+    "help me choose",
+  ]);
+}
+
+function shouldExcludeRegenerativeAestheticsRow(text: string): boolean {
+  if (!hasAestheticAnchor(text)) return true;
+
+  // Remove non-aesthetic regenerative medicine entirely
+  if (isHairOrNonFacialTreatmentNoise(text)) return true;
+
+  const marketSignal = hasMarketSignal(text);
+  const humanSignal = hasStrongConsumerOrProviderSignal(text);
+
+  // Always remove celebrity/fan content
+  if (isCelebrityFanNoise(text)) return true;
+
+  // Always remove shopping/e-commerce content
+  if (isCommercialShoppingNoise(text)) return true;
+
+  // Always remove corporate/PR content
+  if (isPressOrCorporateNoise(text)) return true;
+
+  // Remove clinic marketing unless it contains a true patient/provider insight
+  if (isClinicPromoNoise(text) && !humanSignal) return true;
+
+  // Additional hard exclusions discovered during validation
+  if (
+    includesAny(text, [
+      "market report",
+      "industry report",
+      "forecast period",
+      "selected companies",
+      "competitive landscape",
+      "chapter 1",
+      "chapter 2",
+      "chapter 3",
+      "quarterly revenue",
+      "annual revenue",
+      "market size",
+      "market share",
+      "earnings",
+      "investor relations",
+      "conference call",
+      "best stem cell clinics",
+      "clinic expands",
+      "grand opening",
+      "new location",
+      "clinic hotline",
+      "luxury facials",
+      "best facial spas",
+      "price list",
+      "course fee",
+      "training academy",
+      "certification course",
+      "register now",
+      "available worldwide",
+      "global distributor",
+      "wholesale",
+      "retailer",
+      "reseller",
+      "authorized seller",
+    ])
+  ) {
+    return true;
+  }
+
+  // Require actual market or consumer intelligence
+  if (!marketSignal && !humanSignal) {
+    return true;
+  }
+
+  return false;
+}
+
 function chooseSummary(row: MeltwaterRow): string {
   const hit = normalizeText(row["Hit Sentence"] || "");
   const open = normalizeText(row["Opening Text"] || "");
@@ -104,6 +493,133 @@ function chooseSummary(row: MeltwaterRow): string {
   if (hit) return hit;
   if (open) return open.slice(0, 220);
   return title;
+}
+
+function inferFindingType(
+  text: string,
+  symptoms: string[],
+  treatments: string[],
+  burden: boolean,
+  patientVoice: boolean,
+  caregiverVoice: boolean,
+  profile: DiseaseProfile
+): string {
+  if (isRegenerativeAestheticsProfile(profile)) {
+    if (
+      includesAny(text, [
+        "confused",
+        "confusing",
+        "what is",
+        "skeptical",
+        "safety",
+        "risk",
+        "side effects",
+        "downtime",
+        "worth it",
+        "cost",
+        "price",
+        "education",
+        "learn",
+        "misconception",
+        "misconceptions",
+      ])
+    ) {
+      return "education_barrier";
+    }
+
+    if (
+      includesAny(text, [
+        "botox",
+        "filler",
+        "fillers",
+        "laser",
+        "microneedling",
+        "chemical peel",
+        "hydrafacial",
+        "facelift",
+        "surgery",
+        "retinol",
+        "serum",
+        "skincare routine",
+        "ultherapy",
+        "morpheus8",
+        "hifu",
+        "sofwave",
+      ])
+    ) {
+      return "competitive_alternative";
+    }
+
+    if (
+      includesAny(text, [
+        "natural results",
+        "visible results",
+        "before and after",
+        "game changer",
+        "must-have",
+        "must have",
+        "why i love",
+        "glow",
+        "glass skin",
+        "smooth",
+        "hydration",
+        "collagen",
+        "long-lasting",
+        "long lasting",
+        "minimal downtime",
+        "clinically proven",
+        "science-backed",
+        "skin quality",
+        "skin longevity",
+      ])
+    ) {
+      return "adoption_driver";
+    }
+
+    if (
+      includesAny(text, [
+        "growing demand",
+        "strong demand",
+        "growing interest",
+        "trend",
+        "trending",
+        "buzzy",
+        "buzz",
+        "market",
+        "opportunity",
+        "white space",
+        "innovation",
+        "consumer",
+        "consumers",
+        "adoption",
+        "awareness",
+      ])
+    ) {
+      return "market_interest";
+    }
+
+    if (treatments.length > 0 || burden || patientVoice || caregiverVoice) {
+      return "market_interest";
+    }
+  }
+
+  if (symptoms.length > 0) return "symptom_burden";
+  if (treatments.length > 0) return "treatment_concern";
+  if (burden) return "quality_of_life";
+
+  return "other";
+}
+
+function makeLabels(findingType: string): string[] {
+  if (findingType === "education_barrier") return ["education", "barrier"];
+  if (findingType === "competitive_alternative") return ["competitive", "alternative"];
+  if (findingType === "adoption_driver") return ["adoption", "driver"];
+  if (findingType === "market_interest") return ["market", "interest"];
+  if (findingType === "market_opportunity") return ["market", "opportunity"];
+  if (findingType === "symptom_burden") return ["symptom"];
+  if (findingType === "treatment_concern") return ["treatment"];
+  if (findingType === "quality_of_life") return ["quality_of_life"];
+  return ["other"];
 }
 
 export function parseMeltwaterCsv(filePath: string): MeltwaterRow[] {
@@ -148,7 +664,6 @@ export function adaptMeltwaterRows(
 
       if (!combinedText || combinedText.length < 20) return null;
 
-      // 🚨 HARD BLOCK: vaccine / misinformation
       if (
         combinedText.includes("vaccine") ||
         combinedText.includes("shot") ||
@@ -159,45 +674,47 @@ export function adaptMeltwaterRows(
       }
 
       if (isHardExcluded(combinedText, profile)) return null;
-      if (isLowQualityNoise(combinedText, profile)) return null;
       if (isExtraExcluded(combinedText, profile)) return null;
+      if (isLowQualityNoise(combinedText, profile)) return null;
 
-      // -------------------------
-      // SYMPTOM EXTRACTION (NEW LOGIC)
-      // -------------------------
+      if (
+        isRegenerativeAestheticsProfile(profile) &&
+        shouldExcludeRegenerativeAestheticsRow(combinedText)
+      ) {
+        return null;
+      }
+
       const rawSymptoms = extractByPatternMap(
         combinedText,
         profile.symptomPatterns || {}
       );
-
-      const burden = hasBurdenLanguage(combinedText, profile);
-      const patientVoice = hasPatientVoice(combinedText, profile);
-      const caregiverVoice = hasCaregiverVoice(combinedText, profile);
-
-      const symptoms = rawSymptoms.filter((symptom) => {
-        // must be tied to lived experience
-        if (!patientVoice && !burden) return false;
-
-        // prevent false-positive jaundice inflation
-        if (symptom === "jaundice" && !patientVoice && !burden) {
-          return false;
-        }
-
-        return true;
-      });
 
       const treatments = extractByPatternMap(
         combinedText,
         profile.treatmentPatterns || {}
       );
 
-      // Balanced filtering
+      const burden = hasBurdenLanguage(combinedText, profile);
+      const patientVoice = hasPatientVoice(combinedText, profile);
+      const caregiverVoice = hasCaregiverVoice(combinedText, profile);
+      const marketSignal = hasMarketSignal(combinedText);
+
+      const symptoms = isRegenerativeAestheticsProfile(profile)
+        ? rawSymptoms
+        : rawSymptoms.filter((symptom) => {
+            if (!patientVoice && !burden) return false;
+            if (symptom === "jaundice" && !patientVoice && !burden) return false;
+            return true;
+          });
+
       if (
         isEducationalContent(combinedText, profile) &&
         symptoms.length === 0 &&
+        treatments.length === 0 &&
         !burden &&
         !patientVoice &&
-        !caregiverVoice
+        !caregiverVoice &&
+        !marketSignal
       ) {
         return null;
       }
@@ -205,7 +722,9 @@ export function adaptMeltwaterRows(
       if (
         isStatHeavy(combinedText) &&
         symptoms.length === 0 &&
-        !patientVoice
+        treatments.length === 0 &&
+        !patientVoice &&
+        !isRegenerativeAestheticsProfile(profile)
       ) {
         return null;
       }
@@ -217,33 +736,68 @@ export function adaptMeltwaterRows(
         return null;
       }
 
-      // must have signal
-      if (symptoms.length === 0 && !burden) return null;
+      if (isRegenerativeAestheticsProfile(profile)) {
+        if (
+          symptoms.length === 0 &&
+          treatments.length === 0 &&
+          !burden &&
+          !patientVoice &&
+          !caregiverVoice &&
+          !marketSignal
+        ) {
+          return null;
+        }
+      } else {
+        if (
+          symptoms.length === 0 &&
+          treatments.length === 0 &&
+          !burden &&
+          !patientVoice &&
+          !caregiverVoice
+        ) {
+          return null;
+        }
+      }
 
-      // must be tied to human context
-      if (symptoms.length > 0 && !patientVoice && !caregiverVoice) {
+      if (
+        !isRegenerativeAestheticsProfile(profile) &&
+        symptoms.length > 0 &&
+        !patientVoice &&
+        !caregiverVoice
+      ) {
         return null;
       }
 
       const persona = detectPersona(combinedText, tags, profile);
 
-      // caregiver guardrail
-      if (persona === "caregiver" && symptoms.length === 0) {
-        return null;
+      if (!isRegenerativeAestheticsProfile(profile)) {
+        if (persona === "caregiver" && symptoms.length === 0) {
+          return null;
+        }
       }
 
       const summary = chooseSummary(row);
       if (!summary) return null;
 
+      const findingType = inferFindingType(
+        combinedText,
+        symptoms,
+        treatments,
+        burden,
+        patientVoice,
+        caregiverVoice,
+        profile
+      );
+
       return {
         id: row["Document ID"] || Math.random().toString(36).slice(2),
-        findingType: "symptom_burden",
+        findingType,
         title,
         summary,
         description: summary,
         text: opening,
         excerpt: hit,
-        labels: ["symptom"],
+        labels: makeLabels(findingType),
         symptoms,
         treatments,
         country: normalizeText(row["Country"] || ""),
@@ -254,7 +808,10 @@ export function adaptMeltwaterRows(
         sourceId: row["Document ID"],
         therapeuticArea: profile.therapeuticArea,
         score: Number(row["Engagement"] || 0),
-        confidence: symptoms.length > 0 ? 0.85 : 0.7,
+        confidence:
+          symptoms.length > 0 || treatments.length > 0 || marketSignal
+            ? 0.85
+            : 0.7,
       };
     })
     .filter(Boolean);

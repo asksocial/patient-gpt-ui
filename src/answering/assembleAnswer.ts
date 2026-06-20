@@ -8,12 +8,17 @@ export function assembleAnswer(params: {
   debug: any;
   liveDataStatus: "not_found" | "extends" | "only";
 }) {
-  const { findings, debug, liveDataStatus } = params;
+  const { intent, findings, debug, liveDataStatus } = params;
 
-  // 🚨 THIS MUST CALL THE GUARDED RENDERER
+  const enrichedDebug = {
+    ...debug,
+    questionIntent: debug?.questionIntent || intent,
+    templateUsed: debug?.templateUsed || intent,
+  };
+
   const rendered = buildRenderedAnswer(
     findings,
-    debug,
+    enrichedDebug,
     liveDataStatus
   );
 
