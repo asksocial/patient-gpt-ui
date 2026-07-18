@@ -1,26 +1,46 @@
-import { buildRenderedAnswer } from "./rendering/buildRenderedAnswer";
-import { CanonicalFinding } from "./models/finding";
+import {
+  buildRenderedAnswer,
+} from "./rendering/buildRenderedAnswer";
+import {
+  CanonicalFinding,
+} from "./models/finding";
+import {
+  ThemeMatch,
+  ThemeLongitudinalTracking,
+  ThemeRelationship,
+} from "./themes/themeModels";
 
 export function assembleAnswer(params: {
   question: string;
   intent: string;
   findings: CanonicalFinding[];
+  themeSummary?: ThemeMatch[];
+  themeRelationships?: ThemeRelationship[];
+  themeLongitudinalTracking?:
+    ThemeLongitudinalTracking;
   debug: any;
-  liveDataStatus: "not_found" | "extends" | "only";
+  liveDataStatus:
+    | "not_found"
+    | "extends"
+    | "only";
 }) {
-  const { intent, findings, debug, liveDataStatus } = params;
-
-  const enrichedDebug = {
-    ...debug,
-    questionIntent: debug?.questionIntent || intent,
-    templateUsed: debug?.templateUsed || intent,
-  };
-
-  const rendered = buildRenderedAnswer(
+  const {
+    intent,
     findings,
-    enrichedDebug,
-    liveDataStatus
-  );
+    themeSummary = [],
+    themeRelationships = [],
+    themeLongitudinalTracking,
+    debug,
+    liveDataStatus,
+  } = params;
 
-  return rendered;
+  return buildRenderedAnswer(
+    findings,
+    debug,
+    liveDataStatus,
+    themeSummary,
+    themeRelationships,
+    intent,
+    themeLongitudinalTracking
+  );
 }

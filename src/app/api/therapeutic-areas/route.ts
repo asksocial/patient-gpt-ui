@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import {
+  getTherapeuticAreaCoverage,
+} from "../../../lib/analytics/coverage";
 
 export const dynamic = "force-dynamic";
 
@@ -43,11 +46,19 @@ export async function GET() {
       );
     }
 
+    const therapeuticAreas = (data || [])
+      .map((row) => row.name)
+      .filter(Boolean);
+
     return NextResponse.json({
       ok: true,
-      therapeuticAreas: (data || [])
-        .map((row) => row.name)
-        .filter(Boolean),
+      therapeuticAreas,
+      analyticalCoverage:
+        therapeuticAreas.map((area) =>
+          getTherapeuticAreaCoverage(
+            area
+          )
+        ),
     });
   } catch (error) {
     console.error("[/api/therapeutic-areas] error", error);

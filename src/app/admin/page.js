@@ -162,6 +162,13 @@ export default function AdminPage() {
           Search a Clerk user and manage their therapeutic area access.
         </p>
 
+        <a
+          href="/admin/entitlements"
+          className="mt-5 inline-flex rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-400/15"
+        >
+          Manage capability entitlements
+        </a>
+
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6">
           <label className="block text-sm text-white/70 mb-2">
             Clerk User ID

@@ -1,298 +1,407 @@
-import { assembleAnswer } from "../../answering/assembleAnswer";
-import { CanonicalFinding } from "../../answering/models/finding";
 import {
+  assembleAnswer,
+} from "../../answering/assembleAnswer";
+import type {
+  CanonicalFinding,
+} from "../../answering/models/finding";
+import type {
   AnswerIntent,
+} from "../../answering/templates/templateRegistry";
+import {
   TEMPLATE_REGISTRY,
 } from "../../answering/templates/templateRegistry";
+import {
+  assignThemesToFindings,
+} from "../../answering/themes/assignThemes";
+import {
+  aggregateThemes,
+} from "../../answering/themes/aggregateThemes";
+import {
+  detectThemeRelationships,
+} from "../../answering/themes/detectThemeRelationships";
+import {
+  buildThemeStrategicImplications,
+} from "../../answering/themes/buildThemeStrategicImplications";
+import {
+  buildThemeLongitudinalTracking,
+} from "../../answering/themes/buildThemeLongitudinalTracking";
+import {
+  getRankingProfile,
+} from "../../answering/ranking/getRankingProfile";
+import {
+  rankFindings,
+} from "../../answering/ranking/rankFindings";
+import {
+  enrichFindingsWithEvidenceIntelligence,
+} from "../../answering/evidence";
+import {
+  buildThemeKnowledgeSnapshot,
+} from "../../answering/knowledge";
+import {
+  buildExecutiveIntelligenceBrief,
+} from "../../answering/executive";
 
-const MAX_FINDINGS_FOR_RENDERING = 50;
+const MAX_FINDINGS_FOR_RENDERING =
+  50;
 
-const HIGH_VALUE_MARKET_INTEREST_TERMS = [
-  "regenerative aesthetics",
-  "regenerative esthetics",
-  "regenerative medicine",
-  "regenerative biology",
-  "medical aesthetics",
-  "aesthetic medicine",
-  "biostimulation",
-  "biostimulator",
-  "collagen stimulation",
-  "collagen biostimulator",
-  "skin longevity",
-  "preventative aesthetics",
-  "preventative treatments",
-  "natural results",
-  "natural-looking results",
-  "subtle results",
-  "tissue regeneration",
-  "tissue health",
-  "skin quality",
-  "physician-led",
-  "doctor-led",
-  "clinically driven",
-  "provider-led",
-  "aesthetic clinic",
-  "dermatologist",
-  "injector",
-  "exosome therapy",
-  "polynucleotide treatment",
-  "pdrn treatment",
-  "prp",
-  "prf",
-  "sculptra",
-  "radiesse",
-  "skin booster treatment",
-  "younger demographic",
-  "younger consumers",
-  "entering aesthetic clinics earlier",
-  "skin health",
-  "collagen",
-  "regenerative positioning",
-  "volume",
-  "not volume",
-  "skin quality over volume",
-];
-
-const LOW_VALUE_CONSUMER_SKINCARE_TERMS = [
-  "moisturizer",
-  "cream",
-  "cleanser",
-  "lip oil",
-  "lip mask",
-  "toner",
-  "mist",
-  "spray",
-  "mask",
-  "ampoule",
-  "capsule cream",
-  "gel mask",
-  "whipped cleanser",
-  "routine",
-  "haul",
-  "sephora",
-  "boots",
-  "amazon",
-  "olive young",
-  "shopwithme",
-  "k-beauty edit",
-  "favorite moisturizer",
-  "product of the day",
-  "skincare favorites",
-  "skincare routine",
-  "link in bio",
-  "affiliate",
-];
-
-const CLINIC_PROMOTION_TERMS = [
-  "call",
-  "call:",
-  "phone",
-  "phone:",
-  "whatsapp",
-  "map :",
-  "map:",
-  "address:",
-  "book now",
-  "book your",
-  "appointment",
-  "free consultation",
-  "contact us",
-  "visit us",
-  "dm us",
-  "dm me",
-  "special offer",
-  "anniversary offer",
-  "limited offer",
-  "price list",
-  "promo",
-  "discount",
-  "clinic hotline",
-  "clinic located",
-  "near bank",
-  "plot no",
-];
-
-const HARD_REJECT_MARKET_INTEREST_TERMS = [
-  "call :",
-  "call:",
-  "phone:",
-  "whatsapp",
-  "map :",
-  "map:",
-  "address:",
-  "book now",
-  "book your",
-  "appointment",
-  "free consultation",
-  "contact us",
-  "visit us",
-  "special anniversary offer",
-  "anniversary offer",
-  "special offer",
-  "limited offer",
-  "price list",
-  "discount",
-  "promo code",
-  "clinic hotline",
-  "clinic located",
-  "near bank",
-  "plot no",
-  "amazon",
-  "sephora haul",
-  "shopwithme",
-  "link in bio",
-  "affiliate",
-  "prnewswire",
-  "pr newswire",
-  "business wire",
-  "businesswire",
-  "globe newswire",
-  "press release",
-  "media contact",
-  "investor",
-  "shareholder",
-  "nasdaq",
-  "quarterly revenue",
-  "market report",
-  "forecast period",
-  "selected companies",
-  "restructuring plans",
-  "intellectual property portfolio",
-  "global ambassador",
-  "brand ambassador",
-  "fan club",
-  "fanclub",
-  "korea's best barber",
-  "haircut",
-  "male makeup",
-];
-
-function classifyIntent(question: string): AnswerIntent {
-  const q = question.toLowerCase();
+function classifyIntent(
+  question: string
+): AnswerIntent {
+  const normalizedQuestion =
+    question
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
 
   if (
-    q.includes("growing interest") ||
-    q.includes("interest in") ||
-    q.includes("demand") ||
-    q.includes("buzz") ||
-    q.includes("trend") ||
-    q.includes("trending") ||
-    q.includes("why are people interested") ||
-    q.includes("what is driving interest") ||
-    q.includes("what is driving growing interest")
+    normalizedQuestion.includes(
+      "growing interest"
+    ) ||
+    normalizedQuestion.includes(
+      "interest in"
+    ) ||
+    normalizedQuestion.includes(
+      "market interest"
+    ) ||
+    normalizedQuestion.includes(
+      "demand"
+    ) ||
+    normalizedQuestion.includes(
+      "buzz"
+    ) ||
+    normalizedQuestion.includes(
+      "trend"
+    ) ||
+    normalizedQuestion.includes(
+      "trending"
+    ) ||
+    normalizedQuestion.includes(
+      "why are people interested"
+    ) ||
+    normalizedQuestion.includes(
+      "what is driving interest"
+    ) ||
+    normalizedQuestion.includes(
+      "what is driving growing interest"
+    )
   ) {
     return "market_interest";
   }
 
   if (
-    q.includes("education barrier") ||
-    q.includes("education barriers") ||
-    q.includes("awareness barrier") ||
-    q.includes("knowledge gap") ||
-    q.includes("confusion") ||
-    q.includes("misunderstanding") ||
-    q.includes("skepticism") ||
-    q.includes("skeptical")
+    normalizedQuestion.includes(
+      "education barrier"
+    ) ||
+    normalizedQuestion.includes(
+      "education barriers"
+    ) ||
+    normalizedQuestion.includes(
+      "awareness barrier"
+    ) ||
+    normalizedQuestion.includes(
+      "awareness barriers"
+    ) ||
+    normalizedQuestion.includes(
+      "knowledge gap"
+    ) ||
+    normalizedQuestion.includes(
+      "knowledge gaps"
+    ) ||
+    normalizedQuestion.includes(
+      "education gap"
+    ) ||
+    normalizedQuestion.includes(
+      "education gaps"
+    ) ||
+    normalizedQuestion.includes(
+      "confusion"
+    ) ||
+    normalizedQuestion.includes(
+      "confused"
+    ) ||
+    normalizedQuestion.includes(
+      "misunderstanding"
+    ) ||
+    normalizedQuestion.includes(
+      "misinformation"
+    ) ||
+    normalizedQuestion.includes(
+      "skepticism"
+    ) ||
+    normalizedQuestion.includes(
+      "skeptical"
+    )
   ) {
     return "education_barriers";
   }
 
   if (
-    q.includes("competitive alternative") ||
-    q.includes("competitive alternatives") ||
-    q.includes("alternative") ||
-    q.includes("alternatives") ||
-    q.includes("compare") ||
-    q.includes("compared against") ||
-    q.includes("versus") ||
-    q.includes("vs ") ||
-    q.includes("instead of")
+    normalizedQuestion.includes(
+      "competitive alternative"
+    ) ||
+    normalizedQuestion.includes(
+      "competitive alternatives"
+    ) ||
+    normalizedQuestion.includes(
+      "alternative"
+    ) ||
+    normalizedQuestion.includes(
+      "alternatives"
+    ) ||
+    normalizedQuestion.includes(
+      "compare"
+    ) ||
+    normalizedQuestion.includes(
+      "comparison"
+    ) ||
+    normalizedQuestion.includes(
+      "compared against"
+    ) ||
+    normalizedQuestion.includes(
+      "versus"
+    ) ||
+    normalizedQuestion.includes(
+      " vs "
+    ) ||
+    normalizedQuestion.includes(
+      "instead of"
+    )
   ) {
     return "competitive_alternatives";
   }
 
   if (
-    q.includes("adoption driver") ||
-    q.includes("adoption drivers") ||
-    q.includes("drive adoption") ||
-    q.includes("driving adoption") ||
-    q.includes("what drives adoption") ||
-    q.includes("motivates adoption")
+    normalizedQuestion.includes(
+      "adoption driver"
+    ) ||
+    normalizedQuestion.includes(
+      "adoption drivers"
+    ) ||
+    normalizedQuestion.includes(
+      "drive adoption"
+    ) ||
+    normalizedQuestion.includes(
+      "driving adoption"
+    ) ||
+    normalizedQuestion.includes(
+      "what drives adoption"
+    ) ||
+    normalizedQuestion.includes(
+      "motivates adoption"
+    ) ||
+    normalizedQuestion.includes(
+      "motivate adoption"
+    )
   ) {
     return "adoption_drivers";
   }
 
   if (
-    q.includes("market opportunity") ||
-    q.includes("market opportunities") ||
-    q.includes("opportunity") ||
-    q.includes("opportunities") ||
-    q.includes("white space") ||
-    q.includes("whitespace")
+    normalizedQuestion.includes(
+      "market opportunity"
+    ) ||
+    normalizedQuestion.includes(
+      "market opportunities"
+    ) ||
+    normalizedQuestion.includes(
+      "opportunity"
+    ) ||
+    normalizedQuestion.includes(
+      "opportunities"
+    ) ||
+    normalizedQuestion.includes(
+      "white space"
+    ) ||
+    normalizedQuestion.includes(
+      "whitespace"
+    ) ||
+    normalizedQuestion.includes(
+      "unmet market need"
+    ) ||
+    normalizedQuestion.includes(
+      "unmet market needs"
+    )
   ) {
     return "market_opportunities";
   }
 
   if (
-    q.includes("day-to-day impact") ||
-    q.includes("day to day impact") ||
-    q.includes("quality of life") ||
-    q.includes("qol") ||
-    q.includes("symptom burden") ||
-    q.includes("biggest symptoms") ||
-    q.includes("what symptoms") ||
-    q.includes("symptom") ||
-    q.includes("symptoms") ||
-    q.includes("burden")
+    normalizedQuestion.includes(
+      "day-to-day impact"
+    ) ||
+    normalizedQuestion.includes(
+      "day to day impact"
+    ) ||
+    normalizedQuestion.includes(
+      "quality of life"
+    ) ||
+    normalizedQuestion.includes(
+      "qol"
+    ) ||
+    normalizedQuestion.includes(
+      "symptom burden"
+    ) ||
+    normalizedQuestion.includes(
+      "biggest symptoms"
+    ) ||
+    normalizedQuestion.includes(
+      "most significant symptoms"
+    ) ||
+    normalizedQuestion.includes(
+      "what symptoms"
+    ) ||
+    normalizedQuestion.includes(
+      "symptom"
+    ) ||
+    normalizedQuestion.includes(
+      "symptoms"
+    ) ||
+    normalizedQuestion.includes(
+      "burden"
+    )
   ) {
     return "symptom_qol_burden";
   }
 
   if (
-    q.includes("treatment decision") ||
-    q.includes("treatment decisions") ||
-    q.includes("treatment choice") ||
-    q.includes("why do patients choose") ||
-    q.includes("treatment journey") ||
-    q.includes("choose") ||
-    q.includes("choice") ||
-    q.includes("preference") ||
-    q.includes("switch")
+    normalizedQuestion.includes(
+      "treatment decision"
+    ) ||
+    normalizedQuestion.includes(
+      "treatment decisions"
+    ) ||
+    normalizedQuestion.includes(
+      "treatment choice"
+    ) ||
+    normalizedQuestion.includes(
+      "treatment choices"
+    ) ||
+    normalizedQuestion.includes(
+      "why do patients choose"
+    ) ||
+    normalizedQuestion.includes(
+      "why are patients choosing"
+    ) ||
+    normalizedQuestion.includes(
+      "treatment journey"
+    ) ||
+    normalizedQuestion.includes(
+      "choose"
+    ) ||
+    normalizedQuestion.includes(
+      "choice"
+    ) ||
+    normalizedQuestion.includes(
+      "preference"
+    ) ||
+    normalizedQuestion.includes(
+      "switch"
+    ) ||
+    normalizedQuestion.includes(
+      "switching"
+    )
   ) {
     return "treatment_decision_drivers";
   }
 
   if (
-    q.includes("diagnosis") ||
-    q.includes("misdiagnosed") ||
-    q.includes("time to diagnosis") ||
-    q.includes("barriers to diagnosis") ||
-    q.includes("access") ||
-    q.includes("delay")
+    normalizedQuestion.includes(
+      "diagnosis"
+    ) ||
+    normalizedQuestion.includes(
+      "diagnostic"
+    ) ||
+    normalizedQuestion.includes(
+      "misdiagnosed"
+    ) ||
+    normalizedQuestion.includes(
+      "misdiagnosis"
+    ) ||
+    normalizedQuestion.includes(
+      "time to diagnosis"
+    ) ||
+    normalizedQuestion.includes(
+      "barriers to diagnosis"
+    ) ||
+    normalizedQuestion.includes(
+      "diagnosis barrier"
+    ) ||
+    normalizedQuestion.includes(
+      "diagnosis barriers"
+    ) ||
+    normalizedQuestion.includes(
+      "access barrier"
+    ) ||
+    normalizedQuestion.includes(
+      "access barriers"
+    ) ||
+    normalizedQuestion.includes(
+      "diagnostic delay"
+    )
   ) {
     return "diagnosis_barriers";
   }
 
   if (
-    q.includes("side effect") ||
-    q.includes("side effects") ||
-    q.includes("safety") ||
-    q.includes("tolerability") ||
-    q.includes("risk")
+    normalizedQuestion.includes(
+      "side effect"
+    ) ||
+    normalizedQuestion.includes(
+      "side effects"
+    ) ||
+    normalizedQuestion.includes(
+      "adverse event"
+    ) ||
+    normalizedQuestion.includes(
+      "adverse events"
+    ) ||
+    normalizedQuestion.includes(
+      "safety"
+    ) ||
+    normalizedQuestion.includes(
+      "tolerability"
+    ) ||
+    normalizedQuestion.includes(
+      "risk"
+    ) ||
+    normalizedQuestion.includes(
+      "risks"
+    )
   ) {
     return "safety_signals";
   }
 
   if (
-    q.includes("market") ||
-    q.includes("country") ||
-    q.includes("countries") ||
-    q.includes("geography") ||
-    q.includes("regional") ||
-    q.includes("market intelligence") ||
-    q.includes("landscape") ||
-    q.includes("platform") ||
-    q.includes("channel")
+    normalizedQuestion.includes(
+      "market landscape"
+    ) ||
+    normalizedQuestion.includes(
+      "market intelligence"
+    ) ||
+    normalizedQuestion.includes(
+      "country"
+    ) ||
+    normalizedQuestion.includes(
+      "countries"
+    ) ||
+    normalizedQuestion.includes(
+      "geography"
+    ) ||
+    normalizedQuestion.includes(
+      "geographic"
+    ) ||
+    normalizedQuestion.includes(
+      "regional"
+    ) ||
+    normalizedQuestion.includes(
+      "region"
+    ) ||
+    normalizedQuestion.includes(
+      "platform"
+    ) ||
+    normalizedQuestion.includes(
+      "channel"
+    )
   ) {
     return "market_landscape";
   }
@@ -300,509 +409,943 @@ function classifyIntent(question: string): AnswerIntent {
   return "general";
 }
 
-function normalizeText(value?: string): string {
-  return (value || "").toLowerCase().replace(/\s+/g, " ").trim();
-}
-
-function getFindingText(finding: CanonicalFinding): string {
-  const f: any = finding;
-
-  return [
-    f.canonicalClaim,
-    f.summary,
-    f.title,
-    f.description,
-    f.text,
-    f.excerpt,
-    ...(f.labels || []),
-    ...(f.normalizedLabels || []),
-    ...(f.symptoms || []),
-    ...(f.treatments || []),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
-
 function filterFindingsByTemplate(
   findings: CanonicalFinding[],
   intent: AnswerIntent
 ): CanonicalFinding[] {
-  const template = TEMPLATE_REGISTRY[intent] || TEMPLATE_REGISTRY.general;
+  const template =
+    TEMPLATE_REGISTRY[intent] ||
+    TEMPLATE_REGISTRY.general;
 
   return findings
-    .filter((finding) => !finding.duplicateOf)
-    .filter((finding) =>
-      template.allowedFindingTypes.includes(String((finding as any).findingType))
-    )
     .filter(
       (finding) =>
-        !(template.disallowedFindingTypes || []).includes(
-          String((finding as any).findingType)
-        )
-    );
+        !(finding as any)
+          .duplicateOf
+    )
+    .filter((finding) => {
+      const findingType =
+        String(
+          (finding as any)
+            .findingType ||
+            ""
+        );
+
+      return template
+        .allowedFindingTypes
+        .includes(
+          findingType as any
+        );
+    })
+    .filter((finding) => {
+      const findingType =
+        String(
+          (finding as any)
+            .findingType ||
+            ""
+        );
+
+      return !(
+        template
+          .disallowedFindingTypes ||
+        []
+      ).includes(
+        findingType as any
+      );
+    });
 }
 
-function countFindingTypes(findings: CanonicalFinding[]): Record<string, number> {
-  return findings.reduce<Record<string, number>>((acc, finding) => {
-    const findingType = String((finding as any).findingType);
-    acc[findingType] = (acc[findingType] || 0) + 1;
-    return acc;
-  }, {});
-}
+function countFindingTypes(
+  findings: CanonicalFinding[]
+): Record<string, number> {
+  return findings.reduce<
+    Record<string, number>
+  >(
+    (
+      counts,
+      finding
+    ) => {
+      const findingType =
+        String(
+          (finding as any)
+            .findingType ||
+            "unknown"
+        );
 
-function hasAny(text: string, patterns: string[]): boolean {
-  return patterns.some((pattern) => text.includes(pattern));
-}
+      counts[findingType] =
+        (
+          counts[
+            findingType
+          ] || 0
+        ) + 1;
 
-function shouldHardRejectMarketInterest(finding: CanonicalFinding): boolean {
-  const text = getFindingText(finding);
-  return hasAny(text, HARD_REJECT_MARKET_INTEREST_TERMS);
-}
-
-function getIntentSignalScore(
-  finding: CanonicalFinding,
-  intent: AnswerIntent
-): number {
-  const text = getFindingText(finding);
-  let score = 0;
-
-  const f: any = finding;
-  const findingType = String((finding as any).findingType);
-
-  if (typeof f.confidence === "number") score += f.confidence * 10;
-  if (typeof f.score === "number") score += Math.min(f.score, 100) / 20;
-
-  if (f.sourceType === "live") score += 1;
-  if ((f.evidence || []).length > 0) score += 1;
-
-  if (intent === "market_interest") {
-    if (findingType === "market_interest") score += 8;
-    if (findingType === "adoption_driver") score += 6;
-
-    if (
-      hasAny(text, [
-        "growing interest",
-        "growing demand",
-        "strong demand",
-        "trend",
-        "trending",
-        "buzzy",
-        "buzz",
-        "consumer",
-        "consumers",
-        "awareness",
-        "adoption",
-        "market",
-      ])
-    ) {
-      score += 8;
-    }
-
-    if (
-      hasAny(text, [
-        "younger demographic",
-        "younger consumers",
-        "entering aesthetic clinics earlier",
-        "preventative treatments",
-        "preventative aesthetics",
-        "natural-looking results",
-        "natural results",
-        "collagen stimulation",
-        "collagen synthesis",
-        "tissue regeneration",
-        "tissue health",
-        "biostimulation",
-        "biostimulator",
-        "regenerative biology",
-        "regenerative aesthetics",
-        "skin quality over volume",
-        "skin quality",
-        "medical aesthetics",
-        "aesthetic medicine",
-      ])
-    ) {
-      score += 20;
-    }
-
-    if (
-      hasAny(text, [
-        "skin quality",
-        "skin longevity",
-        "visible results",
-        "before and after",
-        "collagen",
-        "regenerative",
-        "exosomes",
-        "pdrn",
-        "polynucleotide",
-        "sculptra",
-        "radiesse",
-        "skin booster",
-        "glow",
-        "glass skin",
-      ])
-    ) {
-      score += 5;
-    }
-
-    if (
-      hasAny(text, [
-        "i tried",
-        "i got",
-        "i had",
-        "my skin",
-        "my face",
-        "my results",
-        "patients ask",
-        "clients ask",
-        "as a dermatologist",
-        "as an injector",
-        "as a provider",
-      ])
-    ) {
-      score += 3;
-    }
-
-    for (const term of HIGH_VALUE_MARKET_INTEREST_TERMS) {
-      if (text.includes(term)) score += 8;
-    }
-
-    for (const term of LOW_VALUE_CONSUMER_SKINCARE_TERMS) {
-      if (text.includes(term)) score -= 15;
-    }
-  }
-
-  if (intent === "education_barriers") {
-    if (findingType === "education_barrier") score += 8;
-
-    if (
-      hasAny(text, [
-        "confused",
-        "confusing",
-        "what is",
-        "skeptical",
-        "misunderstanding",
-        "education",
-        "learn",
-        "worth it",
-        "safety",
-        "risk",
-        "downtime",
-        "cost",
-        "price",
-      ])
-    ) {
-      score += 8;
-    }
-  }
-
-  if (intent === "competitive_alternatives") {
-    if (findingType === "competitive_alternative") score += 8;
-
-    if (
-      hasAny(text, [
-        "botox",
-        "filler",
-        "fillers",
-        "laser",
-        "microneedling",
-        "chemical peel",
-        "hydrafacial",
-        "facelift",
-        "retinol",
-        "serum",
-        "skincare routine",
-        "versus",
-        "vs ",
-        "instead of",
-      ])
-    ) {
-      score += 8;
-    }
-  }
-
-  if (intent === "adoption_drivers") {
-    if (findingType === "adoption_driver") score += 8;
-
-    if (
-      hasAny(text, [
-        "natural results",
-        "visible results",
-        "before and after",
-        "game changer",
-        "must-have",
-        "why i love",
-        "glow",
-        "glass skin",
-        "smooth",
-        "hydration",
-        "collagen",
-        "minimal downtime",
-        "clinically proven",
-        "science-backed",
-      ])
-    ) {
-      score += 8;
-    }
-  }
-
-  if (intent === "market_opportunities") {
-    if (findingType === "market_opportunity") score += 8;
-    if (findingType === "market_interest") score += 5;
-    if (findingType === "adoption_driver") score += 4;
-
-    if (
-      hasAny(text, [
-        "opportunity",
-        "white space",
-        "market",
-        "education",
-        "awareness",
-        "adoption",
-        "demand",
-        "trend",
-      ])
-    ) {
-      score += 8;
-    }
-  }
-
-  return score;
-}
-
-function getNoisePenalty(finding: CanonicalFinding): number {
-  const text = getFindingText(finding);
-  let penalty = 0;
-
-  for (const term of LOW_VALUE_CONSUMER_SKINCARE_TERMS) {
-    if (text.includes(term)) penalty += 75;
-  }
-
-  for (const term of CLINIC_PROMOTION_TERMS) {
-    if (text.includes(term)) penalty += 150;
-  }
-
-  if (
-    hasAny(text, [
-      "call",
-      "call:",
-      "phone",
-      "phone:",
-      "whatsapp",
-      "map :",
-      "map:",
-      "address:",
-      "book now",
-      "book your",
-      "appointment",
-      "free consultation",
-      "contact us",
-      "visit us",
-      "dm us",
-      "dm me",
-      "special offer",
-      "anniversary offer",
-      "limited offer",
-      "price list",
-      "promo",
-      "discount",
-      "clinic hotline",
-      "clinic located",
-      "near bank",
-      "plot no",
-    ])
-  ) {
-    penalty += 150;
-  }
-
-  if (
-    hasAny(text, [
-      "amazon",
-      "shop now",
-      "add to cart",
-      "promo code",
-      "discount",
-      "price list",
-      "affiliate",
-      "available now",
-      "now available",
-      "olive young",
-      "global.oliveyoung",
-      "sephora",
-      "boots",
-      "shopwithme",
-      "haul",
-      "jastip",
-      "handcarry",
-      "link in bio",
-      "ltk",
-      "liketk",
-      "favorite moisturizer",
-      "product of the day",
-      "capsule cream",
-      "gel mask",
-      "lip oil",
-      "cleanser",
-      "spray",
-      "mist",
-    ])
-  ) {
-    penalty += 75;
-  }
-
-  if (
-    hasAny(text, [
-      "pr newswire",
-      "prnewswire",
-      "businesswire",
-      "business wire",
-      "globe newswire",
-      "press release",
-      "media contact",
-      "announces",
-      "announced",
-      "launches",
-      "expands",
-      "expanding presence",
-      "partnership",
-      "in partnership",
-      "restructuring plans",
-      "intellectual property",
-      "portfolio",
-      "strengthening our intellectual property portfolio",
-      "series a",
-      "series b",
-      "investor",
-      "shareholder",
-      "nasdaq",
-      "quarterly revenue",
-      "market report",
-      "forecast period",
-      "selected companies",
-      "chapter 8",
-      "e-commerce availability",
-      "commercialize",
-      "clinical validation",
-      "global distributor",
-      "north american market",
-    ])
-  ) {
-    penalty += 100;
-  }
-
-  if (
-    hasAny(text, [
-      "brand ambassador",
-      "global ambassador",
-      "fanclub",
-      "fan club",
-      "presenter of",
-      "k pop",
-      "k-pop",
-      "barber",
-      "haircut",
-      "male makeup",
-    ])
-  ) {
-    penalty += 100;
-  }
-
-  if (
-    hasAny(text, [
-      "skin longevity explained",
-      "gut microbiome",
-      "metabolic skin longevity",
-      "marine collagen",
-      "perfume",
-      "fragrance",
-      "skincare simple",
-      "orchid",
-      "lavera",
-      "lba : exceptional skincare",
-      "gifted by",
-      "general information only",
-    ])
-  ) {
-    penalty += 75;
-  }
-
-  return penalty;
-}
-
-function uniqueByClaim(findings: CanonicalFinding[]): CanonicalFinding[] {
-  const seen = new Set<string>();
-  const output: CanonicalFinding[] = [];
-
-  for (const finding of findings) {
-    const f: any = finding;
-    const claim = normalizeText(f.canonicalClaim || f.summary || f.title);
-
-    if (!claim) continue;
-
-    const key = claim.slice(0, 180);
-    if (seen.has(key)) continue;
-
-    seen.add(key);
-    output.push(finding);
-  }
-
-  return output;
-}
-
-function rankAndCapFindings(
-  findings: CanonicalFinding[],
-  intent: AnswerIntent
-): CanonicalFinding[] {
-  const candidates = findings.filter(
-    (finding) =>
-      !(intent === "market_interest" && shouldHardRejectMarketInterest(finding))
+      return counts;
+    },
+    {}
   );
-
-  const ranked = [...candidates]
-    .map((finding) => ({
-      finding,
-      rankScore:
-        getIntentSignalScore(finding, intent) - getNoisePenalty(finding),
-    }))
-    .filter((item) => item.rankScore > 0)
-    .sort((a, b) => b.rankScore - a.rankScore)
-    .map((item) => item.finding);
-
-  return uniqueByClaim(ranked).slice(0, MAX_FINDINGS_FOR_RENDERING);
 }
 
-export function askSocial(question: string, rawCards: CanonicalFinding[]) {
-  const intent = classifyIntent(question);
-  const templateFilteredCards = filterFindingsByTemplate(rawCards, intent);
-  const rankedCards = rankAndCapFindings(templateFilteredCards, intent);
+function countThemes(
+  findings: CanonicalFinding[]
+): Record<string, number> {
+  const counts: Record<
+    string,
+    number
+  > = {};
+
+  for (
+    const finding of findings
+  ) {
+    const themes =
+      Array.isArray(
+        (finding as any)
+          .themes
+      )
+        ? (finding as any)
+            .themes
+        : [];
+
+    for (
+      const theme of themes
+    ) {
+      const key =
+        String(
+          theme || ""
+        ).trim();
+
+      if (!key) {
+        continue;
+      }
+
+      counts[key] =
+        (counts[key] || 0) +
+        1;
+    }
+  }
+
+  return counts;
+}
+
+function countEvidenceField(
+  findings: CanonicalFinding[],
+  field: string
+): Record<string, number> {
+  const counts: Record<
+    string,
+    number
+  > = {};
+
+  for (
+    const finding of findings
+  ) {
+    const intelligence =
+      (finding as any)
+        .evidenceIntelligence;
+
+    const value =
+      String(
+        intelligence?.[
+          field
+        ] || ""
+      ).trim();
+
+    if (!value) {
+      continue;
+    }
+
+    counts[value] =
+      (counts[value] || 0) +
+      1;
+  }
+
+  return counts;
+}
+
+function countOntologyField(
+  findings: CanonicalFinding[],
+  field: string
+): Record<string, number> {
+  const counts: Record<
+    string,
+    number
+  > = {};
+
+  for (
+    const finding of findings
+  ) {
+    const ontology =
+      (finding as any)
+        .evidenceIntelligence
+        ?.ontology;
+
+    const value =
+      String(
+        ontology?.[
+          field
+        ] || ""
+      ).trim();
+
+    if (!value) {
+      continue;
+    }
+
+    counts[value] =
+      (counts[value] || 0) +
+      1;
+  }
+
+  return counts;
+}
+
+function countOntologyCandidates(
+  findings: CanonicalFinding[],
+  field:
+    | "authorCandidates"
+    | "intentCandidates"
+    | "publicationCandidates",
+  limitPerFinding = 3
+): Record<string, number> {
+  const counts: Record<
+    string,
+    number
+  > = {};
+
+  for (
+    const finding of findings
+  ) {
+    const ontology =
+      (finding as any)
+        .evidenceIntelligence
+        ?.ontology;
+
+    const candidates =
+      Array.isArray(
+        ontology?.[field]
+      )
+        ? ontology[field]
+        : [];
+
+    for (
+      const candidate of candidates.slice(
+        0,
+        limitPerFinding
+      )
+    ) {
+      const value =
+        String(
+          candidate?.value ||
+            ""
+        ).trim();
+
+      if (!value) {
+        continue;
+      }
+
+      counts[value] =
+        (counts[value] || 0) +
+        1;
+    }
+  }
+
+  return counts;
+}
+
+function calculateAverageOntologyConfidence(
+  findings: CanonicalFinding[]
+): number {
+  const values =
+    findings
+      .map((finding) =>
+        Number(
+          (finding as any)
+            .evidenceIntelligence
+            ?.ontology
+            ?.overallConfidence
+        )
+      )
+      .filter(
+        (
+          value
+        ): value is number =>
+          Number.isFinite(value)
+      );
+
+  if (
+    values.length === 0
+  ) {
+    return 0;
+  }
+
+  const average =
+    values.reduce(
+      (sum, value) =>
+        sum + value,
+      0
+    ) / values.length;
+
+  return Number(
+    average.toFixed(2)
+  );
+}
+
+function countLowConfidenceOntologies(
+  findings: CanonicalFinding[],
+  threshold = 0.4
+): number {
+  return findings.filter(
+    (finding) => {
+      const confidence =
+        Number(
+          (finding as any)
+            .evidenceIntelligence
+            ?.ontology
+            ?.overallConfidence
+        );
+
+      return (
+        Number.isFinite(
+          confidence
+        ) &&
+        confidence <
+          threshold
+      );
+    }
+  ).length;
+}
+
+function countUnknownOntologyDimensions(
+  findings: CanonicalFinding[]
+): {
+  unknownAuthors: number;
+  unknownIntents: number;
+  unknownPublications: number;
+  unknownRoles: number;
+} {
+  let unknownAuthors = 0;
+  let unknownIntents = 0;
+  let unknownPublications = 0;
+  let unknownRoles = 0;
+
+  for (
+    const finding of findings
+  ) {
+    const ontology =
+      (finding as any)
+        .evidenceIntelligence
+        ?.ontology;
+
+    if (
+      ontology
+        ?.authorIdentity ===
+      "unknown"
+    ) {
+      unknownAuthors += 1;
+    }
+
+    if (
+      ontology
+        ?.communicationIntent ===
+      "unknown"
+    ) {
+      unknownIntents += 1;
+    }
+
+    if (
+      ontology
+        ?.publicationArchetype ===
+      "unknown"
+    ) {
+      unknownPublications +=
+        1;
+    }
+
+    if (
+      ontology
+        ?.evidenceRole ===
+      "noise_or_low_trust"
+    ) {
+      unknownRoles += 1;
+    }
+  }
+
+  return {
+    unknownAuthors,
+    unknownIntents,
+    unknownPublications,
+    unknownRoles,
+  };
+}
+
+function getTherapeuticArea(
+  findings: CanonicalFinding[]
+): string | undefined {
+  for (
+    const finding of findings
+  ) {
+    const value =
+      finding as any;
+
+    const therapeuticArea =
+      value
+        .therapeuticArea ||
+      value.diseaseArea ||
+      value.profileId;
+
+    if (
+      typeof therapeuticArea ===
+        "string" &&
+      therapeuticArea.trim()
+    ) {
+      return therapeuticArea.trim();
+    }
+  }
+
+  return undefined;
+}
+
+function determineLiveDataStatus(
+  findings: CanonicalFinding[]
+):
+  | "not_found"
+  | "extends"
+  | "only" {
+  if (
+    findings.length === 0
+  ) {
+    return "not_found";
+  }
+
+  const sourceTypes =
+    new Set(
+      findings
+        .map((finding) =>
+          String(
+            (finding as any)
+              .sourceType ||
+              (
+                finding as any
+              )
+                .structuredData
+                ?.sourceType ||
+              (
+                finding as any
+              )
+                .evidence?.[0]
+                ?.sourceType ||
+              ""
+          )
+            .toLowerCase()
+            .trim()
+        )
+        .filter(Boolean)
+    );
+
+  const hasLive =
+    sourceTypes.has(
+      "live"
+    ) ||
+    sourceTypes.has(
+      "meltwater"
+    );
+
+  const hasCurated =
+    sourceTypes.has(
+      "curated"
+    ) ||
+    sourceTypes.has(
+      "pdf"
+    ) ||
+    sourceTypes.has(
+      "pptx"
+    ) ||
+    sourceTypes.has(
+      "docx"
+    );
+
+  if (
+    hasLive &&
+    !hasCurated
+  ) {
+    return "only";
+  }
+
+  if (
+    !hasLive &&
+    !hasCurated
+  ) {
+    return "not_found";
+  }
+
+  return "extends";
+}
+
+export function askSocial(
+  question: string,
+  rawCards: CanonicalFinding[]
+) {
+  const intent =
+    classifyIntent(
+      question
+    );
+
+  const therapeuticArea =
+    getTherapeuticArea(
+      rawCards
+    );
+
+  const templateFilteredCards =
+    filterFindingsByTemplate(
+      rawCards,
+      intent
+    );
+
+  /**
+   * Evidence Intelligence, Social Evidence Recovery,
+   * and the Evidence Ontology Layer run across the full
+   * template-filtered dataset before theme assignment,
+   * aggregation, relationship detection, ranking, or
+   * answer rendering.
+   */
+  const evidenceEnrichedCards =
+    enrichFindingsWithEvidenceIntelligence(
+      templateFilteredCards
+    );
+
+  const themedCards =
+    assignThemesToFindings(
+      evidenceEnrichedCards,
+      therapeuticArea
+    );
+
+  const themeSummary =
+    aggregateThemes(
+      themedCards,
+      therapeuticArea
+    );
+
+  const themeRelationships =
+    detectThemeRelationships(
+      themedCards,
+      themeSummary,
+      therapeuticArea
+    );
+
+  const themeStrategicImplications =
+    buildThemeStrategicImplications(
+      themeSummary,
+      themeRelationships
+    );
+
+  const themeLongitudinalTracking =
+    buildThemeLongitudinalTracking(
+      themedCards,
+      themeSummary
+    );
+
+  const knowledgeSnapshot =
+    buildThemeKnowledgeSnapshot({
+      therapeuticArea:
+        therapeuticArea ||
+        "unknown",
+      themes: themeSummary,
+      relationships:
+        themeRelationships,
+      strategicImplications:
+        themeStrategicImplications,
+      longitudinalTracking:
+        themeLongitudinalTracking,
+      sourceQuery: question,
+    });
+
+  const executiveIntelligence =
+    buildExecutiveIntelligenceBrief({
+      snapshot:
+        knowledgeSnapshot,
+    });
+
+  const rankingProfile =
+    getRankingProfile(
+      therapeuticArea
+    );
+
+  const rankedCards =
+    rankFindings({
+      findings:
+        themedCards,
+
+      intent,
+
+      profile:
+        rankingProfile,
+
+      limit:
+        MAX_FINDINGS_FOR_RENDERING,
+    });
+
+  const liveDataStatus =
+    determineLiveDataStatus(
+      rankedCards
+    );
+
+  const ontologyUnknownCounts =
+    countUnknownOntologyDimensions(
+      evidenceEnrichedCards
+    );
+
+  const rankedOntologyUnknownCounts =
+    countUnknownOntologyDimensions(
+      rankedCards
+    );
 
   const debug = {
-    rawCount: rawCards.length,
-    normalizedCount: rawCards.length,
-    exactDedupedCount: rawCards.length,
-    clusteredCount: rawCards.length,
-    representativeCount: rawCards.length,
-    templateFilteredCount: templateFilteredCards.length,
-    rankedCount: rankedCards.length,
-    questionIntent: intent,
-    templateUsed: intent,
-    rawFindingTypeCounts: countFindingTypes(rawCards),
-    templateFilteredFindingTypeCounts: countFindingTypes(templateFilteredCards),
-    rankedFindingTypeCounts: countFindingTypes(rankedCards),
+    rawCount:
+      rawCards.length,
+
+    normalizedCount:
+      rawCards.length,
+
+    exactDedupedCount:
+      rawCards.length,
+
+    clusteredCount:
+      rawCards.length,
+
+    representativeCount:
+      rawCards.length,
+
+    templateFilteredCount:
+      templateFilteredCards.length,
+
+    evidenceEnrichedCount:
+      evidenceEnrichedCards.length,
+
+    themedCount:
+      themedCards.length,
+
+    rankedCount:
+      rankedCards.length,
+
+    therapeuticArea:
+      therapeuticArea ||
+      null,
+
+    questionIntent:
+      intent,
+
+    templateUsed:
+      intent,
+
+    rankingProfileUsed:
+      rankingProfile.profileId,
+
+    rawFindingTypeCounts:
+      countFindingTypes(
+        rawCards
+      ),
+
+    templateFilteredFindingTypeCounts:
+      countFindingTypes(
+        templateFilteredCards
+      ),
+
+    themedFindingTypeCounts:
+      countFindingTypes(
+        themedCards
+      ),
+
+    rankedFindingTypeCounts:
+      countFindingTypes(
+        rankedCards
+      ),
+
+    themeCounts:
+      countThemes(
+        themedCards
+      ),
+
+    themeRelationshipCount:
+      themeRelationships.length,
+
+    /**
+     * Core Evidence Intelligence diagnostics.
+     */
+    evidenceClassCounts:
+      countEvidenceField(
+        evidenceEnrichedCards,
+        "evidenceClass"
+      ),
+
+    evidenceVoiceCounts:
+      countEvidenceField(
+        evidenceEnrichedCards,
+        "voice"
+      ),
+
+    publicationTypeCounts:
+      countEvidenceField(
+        evidenceEnrichedCards,
+        "publicationType"
+      ),
+
+    commercialIntentCounts:
+      countEvidenceField(
+        evidenceEnrichedCards,
+        "commercialIntent"
+      ),
+
+    researchCredibilityCounts:
+      countEvidenceField(
+        evidenceEnrichedCards,
+        "researchCredibility"
+      ),
+
+    evidenceQualityBandCounts:
+      countEvidenceField(
+        evidenceEnrichedCards,
+        "qualityBand"
+      ),
+
+    rankedEvidenceClassCounts:
+      countEvidenceField(
+        rankedCards,
+        "evidenceClass"
+      ),
+
+    rankedEvidenceVoiceCounts:
+      countEvidenceField(
+        rankedCards,
+        "voice"
+      ),
+
+    rankedPublicationTypeCounts:
+      countEvidenceField(
+        rankedCards,
+        "publicationType"
+      ),
+
+    rankedCommercialIntentCounts:
+      countEvidenceField(
+        rankedCards,
+        "commercialIntent"
+      ),
+
+    rankedResearchCredibilityCounts:
+      countEvidenceField(
+        rankedCards,
+        "researchCredibility"
+      ),
+
+    rankedEvidenceQualityBandCounts:
+      countEvidenceField(
+        rankedCards,
+        "qualityBand"
+      ),
+
+    /**
+     * Evidence Ontology diagnostics across the complete
+     * template-filtered and enriched dataset.
+     */
+    ontologyAuthorIdentityCounts:
+      countOntologyField(
+        evidenceEnrichedCards,
+        "authorIdentity"
+      ),
+
+    ontologyCommunicationIntentCounts:
+      countOntologyField(
+        evidenceEnrichedCards,
+        "communicationIntent"
+      ),
+
+    ontologyPublicationArchetypeCounts:
+      countOntologyField(
+        evidenceEnrichedCards,
+        "publicationArchetype"
+      ),
+
+    ontologyAuthorityLevelCounts:
+      countOntologyField(
+        evidenceEnrichedCards,
+        "authorityLevel"
+      ),
+
+    ontologyEvidenceRoleCounts:
+      countOntologyField(
+        evidenceEnrichedCards,
+        "evidenceRole"
+      ),
+
+    ontologyDerivedEvidenceClassCounts:
+      countOntologyField(
+        evidenceEnrichedCards,
+        "derivedEvidenceClass"
+      ),
+
+    ontologyAuthorCandidateCounts:
+      countOntologyCandidates(
+        evidenceEnrichedCards,
+        "authorCandidates"
+      ),
+
+    ontologyIntentCandidateCounts:
+      countOntologyCandidates(
+        evidenceEnrichedCards,
+        "intentCandidates"
+      ),
+
+    ontologyPublicationCandidateCounts:
+      countOntologyCandidates(
+        evidenceEnrichedCards,
+        "publicationCandidates"
+      ),
+
+    ontologyAverageConfidence:
+      calculateAverageOntologyConfidence(
+        evidenceEnrichedCards
+      ),
+
+    ontologyLowConfidenceCount:
+      countLowConfidenceOntologies(
+        evidenceEnrichedCards
+      ),
+
+    ontologyUnknownAuthorCount:
+      ontologyUnknownCounts
+        .unknownAuthors,
+
+    ontologyUnknownIntentCount:
+      ontologyUnknownCounts
+        .unknownIntents,
+
+    ontologyUnknownPublicationCount:
+      ontologyUnknownCounts
+        .unknownPublications,
+
+    ontologyNoiseOrLowTrustRoleCount:
+      ontologyUnknownCounts
+        .unknownRoles,
+
+    /**
+     * Ontology diagnostics after evidence-aware ranking.
+     */
+    rankedOntologyAuthorIdentityCounts:
+      countOntologyField(
+        rankedCards,
+        "authorIdentity"
+      ),
+
+    rankedOntologyCommunicationIntentCounts:
+      countOntologyField(
+        rankedCards,
+        "communicationIntent"
+      ),
+
+    rankedOntologyPublicationArchetypeCounts:
+      countOntologyField(
+        rankedCards,
+        "publicationArchetype"
+      ),
+
+    rankedOntologyAuthorityLevelCounts:
+      countOntologyField(
+        rankedCards,
+        "authorityLevel"
+      ),
+
+    rankedOntologyEvidenceRoleCounts:
+      countOntologyField(
+        rankedCards,
+        "evidenceRole"
+      ),
+
+    rankedOntologyDerivedEvidenceClassCounts:
+      countOntologyField(
+        rankedCards,
+        "derivedEvidenceClass"
+      ),
+
+    rankedOntologyAverageConfidence:
+      calculateAverageOntologyConfidence(
+        rankedCards
+      ),
+
+    rankedOntologyLowConfidenceCount:
+      countLowConfidenceOntologies(
+        rankedCards
+      ),
+
+    rankedOntologyUnknownAuthorCount:
+      rankedOntologyUnknownCounts
+        .unknownAuthors,
+
+    rankedOntologyUnknownIntentCount:
+      rankedOntologyUnknownCounts
+        .unknownIntents,
+
+    rankedOntologyUnknownPublicationCount:
+      rankedOntologyUnknownCounts
+        .unknownPublications,
+
+    rankedOntologyNoiseOrLowTrustRoleCount:
+      rankedOntologyUnknownCounts
+        .unknownRoles,
+
+    themeSummary,
+
+    themeRelationships,
+
+    themeStrategicImplications,
+
+    themeLongitudinalTracking,
+
+    knowledgeSnapshotKey:
+      knowledgeSnapshot.snapshotKey,
+
+    executiveBriefId:
+      executiveIntelligence.briefId,
   };
 
-  const answer = assembleAnswer({
-    question,
-    intent,
-    findings: rankedCards,
-    debug,
-    liveDataStatus: rankedCards.length > 0 ? "extends" : "not_found",
-  });
+  const answer =
+    assembleAnswer({
+      question,
+
+      intent,
+
+      findings:
+        rankedCards,
+
+      themeSummary,
+
+      themeRelationships,
+
+      themeLongitudinalTracking,
+
+      debug,
+
+      liveDataStatus,
+    });
 
   return {
     question,
+
     intent,
+
+    therapeuticArea:
+      therapeuticArea ||
+      null,
+
+    themeSummary,
+
+    themeRelationships,
+
+    themeStrategicImplications,
+
+    themeLongitudinalTracking,
+
+    knowledgeSnapshot,
+
+    executiveIntelligence,
+
     answer,
   };
 }

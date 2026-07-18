@@ -399,6 +399,28 @@ function buildFallbackAnswer({
   };
 }
 
+function buildNoEvidenceAnswer(
+  therapeuticArea: string
+): HybridAnswer {
+  return {
+    directAnswer:
+      `AskSocial does not currently have curated or live social intelligence loaded for ${therapeuticArea}, so it cannot provide a source-grounded answer yet.`,
+    curatedIntelligence: {
+      themes: [],
+    },
+    liveData: {
+      themes: [],
+      emergingNarratives: [],
+    },
+    whatThisMeans:
+      "This is a source-coverage gap, not evidence that relevant conversation is absent. Load and validate the therapeutic-area dataset before drawing a strategic conclusion.",
+    recommendedActions: [
+      `Load or approve a curated or live social dataset for ${therapeuticArea}.`,
+      "Rerun the question after ingestion and coverage validation complete.",
+    ],
+  };
+}
+
 function stripCodeFences(text: string) {
   return text
     .replace(/^```json\s*/i, "")
@@ -496,6 +518,18 @@ export async function composeHybridAnswer(
   const effectiveCuratedThemes = curatedInsights.length
     ? deriveCuratedThemesFromInsights(curatedInsights)
     : curatedThemes;
+
+  const hasSourceEvidence =
+    effectiveCuratedThemes.length > 0 ||
+    liveThemes.length > 0 ||
+    matches.length > 0 ||
+    curatedInsights.length > 0;
+
+  if (!hasSourceEvidence) {
+    return buildNoEvidenceAnswer(
+      therapeuticArea
+    );
+  }
 
   const shouldUseDeterministicFallback =
     curatedInsights.length > 0 &&
