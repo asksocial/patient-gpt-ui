@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadHybridData } from "../../../lib/answers/loadHybridData";
 import { composeHybridAnswer } from "../../../lib/answers/composeHybridAnswer";
+import { enrichHybridAnswerWithAnalytical } from "../../../lib/answers/enrichHybridAnswerWithAnalytical";
 import { getRelevantCuratedInsights } from "../../../lib/curated/getRelevantCuratedInsights";
 import { loadCanonicalFindingsForAsk } from "../../../lib/answers/loadCanonicalFindingsForAsk";
 import { askSocial } from "../ask";
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest) {
           )
         : null;
 
-    const answer = await composeHybridAnswer({
+    const hybridAnswer = await composeHybridAnswer({
       question,
       therapeuticArea,
       curatedThemes,
@@ -183,6 +184,10 @@ export async function POST(req: NextRequest) {
       matches,
       curatedInsights,
     });
+    const answer = enrichHybridAnswerWithAnalytical(
+      hybridAnswer,
+      intelligence
+    );
 
     return NextResponse.json({
       ok: true,

@@ -351,6 +351,8 @@ function AssistantAnswer({
                           ? "emerging"
                           : theme.relationship === "partial"
                             ? "partial"
+                            : theme.relationship === "live"
+                              ? "insight"
                             : "covered"
                       }
                       tooltip={
@@ -358,6 +360,8 @@ function AssistantAnswer({
                           ? "This live theme adds materially new context that is not clearly represented in the baseline report."
                           : theme.relationship === "partial"
                             ? "This live theme overlaps with the baseline report, but adds more specificity or a distinct angle."
+                            : theme.relationship === "live"
+                              ? "This theme was derived directly from the validated live social corpus; no curated baseline relationship is implied."
                             : "This live theme is already well represented in the baseline report."
                       }
                     >
@@ -365,6 +369,8 @@ function AssistantAnswer({
                         ? "Emerging"
                         : theme.relationship === "partial"
                           ? "Partial"
+                          : theme.relationship === "live"
+                            ? "Live Signal"
                           : "Covered"}
                     </Badge>
 
@@ -382,6 +388,48 @@ function AssistantAnswer({
                         ? "Emerging Narrative"
                         : "Structured Live Theme"}
                     </Badge>
+
+                    {theme.confidenceLabel ? (
+                      <Badge tooltip="Confidence assigned by the evidence-qualified theme engine.">
+                        {`${theme.confidenceLabel.charAt(0).toUpperCase()}${theme.confidenceLabel.slice(1)} confidence`}
+                      </Badge>
+                    ) : null}
+
+                    {typeof theme.percent === "number" ? (
+                      <Badge tooltip="Share of validated findings assigned to this theme.">
+                        {`${theme.percent}% of findings`}
+                      </Badge>
+                    ) : null}
+
+                    {(theme.personas || []).map((persona) => (
+                      <Badge
+                        key={`persona-${persona}`}
+                        tone="persona"
+                        tooltip="Leading audience or persona represented in this live theme."
+                      >
+                        {persona}
+                      </Badge>
+                    ))}
+
+                    {(theme.platforms || []).map((platform) => (
+                      <Badge
+                        key={`platform-${platform}`}
+                        tone="platform"
+                        tooltip="Leading platform represented in this live theme."
+                      >
+                        {platform}
+                      </Badge>
+                    ))}
+
+                    {(theme.countries || []).map((country) => (
+                      <Badge
+                        key={`country-${country}`}
+                        tone="country"
+                        tooltip="Leading market represented in this live theme."
+                      >
+                        {country}
+                      </Badge>
+                    ))}
                   </div>
 
                   <p className="mt-2 text-sm leading-6 text-white/60">

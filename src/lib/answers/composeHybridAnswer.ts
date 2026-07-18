@@ -67,6 +67,11 @@ export type HybridAnswer = {
       description: string;
       sourceType?: string;
       relationship?: string;
+      confidenceLabel?: string;
+      percent?: number;
+      countries?: string[];
+      platforms?: string[];
+      personas?: string[];
     }>;
     emergingNarratives: string[];
   };
