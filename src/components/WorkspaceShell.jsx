@@ -427,6 +427,54 @@ function AssistantAnswer({ responsePayload }) {
   );
 }
 
+function AnalyticalAssistantAnswer({ responsePayload }) {
+  const analyticalAnswer = responsePayload?.analyticalAnswer || null;
+  const sections = analyticalAnswer?.sections || [];
+
+  if (!analyticalAnswer) return null;
+
+  return (
+    <div className="space-y-4">
+      <Panel
+        title="Analytical Answer"
+        subtitle="Finding-level, evidence-qualified social intelligence"
+      >
+        <p className="text-[15px] leading-7 text-white/80">
+          {analyticalAnswer.directAnswer}
+        </p>
+      </Panel>
+
+      {sections.map((section, index) => (
+        <Panel
+          key={`${section.key || section.title}-${index}`}
+          title={section.title || "Supporting Intelligence"}
+          subtitle="Derived from the validated analytical corpus"
+        >
+          {section.text ? (
+            <p className="text-[15px] leading-7 text-white/75">
+              {section.text}
+            </p>
+          ) : null}
+
+          {section.bullets?.length ? (
+            <ul className="space-y-2 text-sm leading-6 text-white/70">
+              {section.bullets.map((bullet, bulletIndex) => (
+                <li
+                  key={`${bullet}-${bulletIndex}`}
+                  className="flex gap-3"
+                >
+                  <span className="text-cyan-300">•</span>
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </Panel>
+      ))}
+    </div>
+  );
+}
+
 function UserMessage({ text }) {
   return (
     <div className="flex justify-end">
@@ -438,10 +486,18 @@ function UserMessage({ text }) {
 }
 
 function AssistantMessage({ responsePayload }) {
+  const hasAnalyticalAnswer =
+    responsePayload?.analyticalStatus === "available" &&
+    responsePayload?.analyticalAnswer?.directAnswer;
+
   return (
     <div className="flex justify-start">
       <div className="w-full max-w-6xl rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 md:p-5">
-        <AssistantAnswer responsePayload={responsePayload} />
+        {hasAnalyticalAnswer ? (
+          <AnalyticalAssistantAnswer responsePayload={responsePayload} />
+        ) : (
+          <AssistantAnswer responsePayload={responsePayload} />
+        )}
       </div>
     </div>
   );
@@ -689,6 +745,8 @@ export default function WorkspaceShell() {
                   message.content.analyticalStatus || null,
                 analyticalCoverage:
                   message.content.analyticalCoverage || null,
+                analyticalAnswer:
+                  message.content.analyticalAnswer || null,
               },
             }),
       }));
@@ -701,6 +759,21 @@ export default function WorkspaceShell() {
   }
 
   function startNewConversation() {
+    setActiveSessionId(null);
+    setMessages([]);
+    setQuestion("");
+    setError("");
+    setEditingSessionId(null);
+    setEditingTitle("");
+    setActiveView("conversation");
+  }
+
+  function handleTherapeuticAreaChange(event) {
+    const nextTherapeuticArea = event.target.value;
+
+    if (nextTherapeuticArea === therapeuticArea) return;
+
+    setTherapeuticArea(nextTherapeuticArea);
     setActiveSessionId(null);
     setMessages([]);
     setQuestion("");
@@ -874,6 +947,8 @@ export default function WorkspaceShell() {
           data.analyticalStatus || null,
         analyticalCoverage:
           data.analyticalCoverage || null,
+        analyticalAnswer:
+          data.analyticalAnswer || null,
         entitlements:
           data.entitlements || null,
       };
@@ -898,6 +973,8 @@ export default function WorkspaceShell() {
               responsePayload.analyticalStatus,
             analyticalCoverage:
               responsePayload.analyticalCoverage,
+            analyticalAnswer:
+              responsePayload.analyticalAnswer,
           },
         },
       ]);
@@ -988,7 +1065,7 @@ export default function WorkspaceShell() {
 
               <select
                 value={therapeuticArea}
-                onChange={(e) => setTherapeuticArea(e.target.value)}
+                onChange={handleTherapeuticAreaChange}
                 disabled={loadingAreas || therapeuticAreas.length === 0}
                 className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none transition focus:border-white/30 disabled:opacity-60"
               >
