@@ -7,6 +7,7 @@ import {
 
 const supportedAreas = [
   "Regenerative Aesthetics",
+  "Medical Aesthetics",
   "Hepatitis B",
   "Gene Therapy",
 ];

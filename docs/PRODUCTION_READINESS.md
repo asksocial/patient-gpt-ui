@@ -17,15 +17,17 @@ Do not set the mode to `persistent` until the Knowledge Store migration has been
 Validated full analytical coverage:
 
 - Regenerative Aesthetics
+- Medical Aesthetics
 - Hepatitis B
 - Gene Therapy
 
 Conversation-only coverage:
 
-- Medical Aesthetics
 - Uterine Fibroids
 
-Conversation-only areas continue using the existing hybrid answer pipeline. They do not receive prevalence, longitudinal, Knowledge Store, or Executive Intelligence output until a finding-level canonical corpus is approved.
+Uterine Fibroids continues using the existing hybrid answer pipeline. It does not receive prevalence, longitudinal, Knowledge Store, or Executive Intelligence output until a finding-level canonical corpus is approved.
+
+Medical Aesthetics is explicitly approved to reuse `data/regen-aesthetics.csv` with the Medical Aesthetics ingestion profile. Regenerative and Medical Aesthetics therefore share source rows while retaining distinct therapeutic-area identifiers and profile-specific interpretation.
 
 ## Entitlements
 
@@ -93,6 +95,6 @@ The authenticated test verifies entitlement resolution, analytical coverage, the
 5. Deploy to staging.
 6. Run the authenticated staging smoke test.
 7. Verify the Executive Brief UI for a validated therapeutic area.
-8. Verify conversation-only labeling for Medical Aesthetics and Uterine Fibroids.
+8. Verify analytical coverage for Medical Aesthetics and conversation-only labeling for Uterine Fibroids.
 9. Confirm entitlement grants and denials with non-admin test users.
 10. Promote the exact staging commit to production.

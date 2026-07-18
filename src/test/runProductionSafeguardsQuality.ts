@@ -46,8 +46,8 @@ const conversationOnly =
 
 if (
   coverage.length !== 5 ||
-  validated.length !== 3 ||
-  conversationOnly.length !== 2
+  validated.length !== 4 ||
+  conversationOnly.length !== 1
 ) {
   throw new Error(
     "The production coverage registry must explicitly classify all five active therapeutic areas."

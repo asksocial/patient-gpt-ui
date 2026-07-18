@@ -55,13 +55,13 @@ const COVERAGE: TherapeuticAreaCoverage[] = [
       "Medical Aesthetics",
     therapeuticAreaId:
       "medical_aesthetics",
-    status: "conversation_only",
+    status: "validated",
     executiveIntelligenceAvailable:
-      false,
+      true,
     longitudinalIntelligenceAvailable:
-      false,
-    reason:
-      "A validated finding-level canonical corpus has not yet been approved for this therapeutic area.",
+      true,
+    sourceLabel:
+      "Medical Aesthetics approved shared Meltwater canonical corpus",
   },
   {
     therapeuticArea:

@@ -98,6 +98,24 @@ const CORPORA: Record<
         }
       ) as CanonicalFinding[],
   },
+  medical_aesthetics: {
+    source: "meltwater_csv",
+    sourceLabel:
+      "Medical Aesthetics approved shared Meltwater canonical corpus",
+    load: () =>
+      ingestMeltwaterCsv(
+        requireFile(
+          "data/regen-aesthetics.csv"
+        ),
+        {
+          sourceType: "meltwater",
+          therapeuticArea:
+            "medical_aesthetics",
+          profileId:
+            "medical_aesthetics",
+        }
+      ) as CanonicalFinding[],
+  },
   gene_therapy: {
     source: "curated_findings",
     sourceLabel:
