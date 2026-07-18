@@ -1,11 +1,25 @@
 import { ThemeTaxonomy } from "../themeModels";
 import { regenerativeAestheticsThemeTaxonomy } from "./regenerativeAesthetics";
 
+const medicalAestheticsThemeTaxonomy: ThemeTaxonomy = {
+  ...regenerativeAestheticsThemeTaxonomy,
+  therapeuticArea: "medical_aesthetics",
+};
+
 export const THEME_TAXONOMIES: Record<string, ThemeTaxonomy> = {
   regenerative_aesthetics: regenerativeAestheticsThemeTaxonomy,
+  medical_aesthetics: medicalAestheticsThemeTaxonomy,
 };
 
 export function getThemeTaxonomy(therapeuticArea?: string): ThemeTaxonomy | null {
   if (!therapeuticArea) return null;
-  return THEME_TAXONOMIES[therapeuticArea] || null;
+
+  const normalizedTherapeuticArea =
+    therapeuticArea
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+
+  return THEME_TAXONOMIES[normalizedTherapeuticArea] || null;
 }

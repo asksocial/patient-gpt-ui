@@ -4,6 +4,24 @@ import {
 import type {
   HybridAnswer,
 } from "../lib/answers/composeHybridAnswer";
+import {
+  getThemeTaxonomy,
+} from "../answering/themes/taxonomies";
+
+const medicalAestheticsTaxonomy =
+  getThemeTaxonomy(
+    "medical_aesthetics"
+  );
+
+if (
+  !medicalAestheticsTaxonomy ||
+  medicalAestheticsTaxonomy
+    .themes.length === 0
+) {
+  throw new Error(
+    "Medical Aesthetics must share the approved Regenerative Aesthetics theme taxonomy when it uses the shared CSV corpus."
+  );
+}
 
 const emptyHybridAnswer: HybridAnswer = {
   directAnswer: "No hybrid evidence was available.",
@@ -132,6 +150,8 @@ console.log(
       liveThemeFallback: true,
       intelligenceTags: true,
       strategicActions: true,
+      medicalAestheticsSharedTaxonomy:
+        true,
       existingHybridEvidencePreserved: true,
     },
     null,
