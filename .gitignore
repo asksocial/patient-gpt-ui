@@ -36,6 +36,7 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+!.env.example
 
 # vercel
 .vercel
@@ -45,5 +46,22 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.tssrc/ingestion/curated/*.json
-data/*
+next-env.d.ts
+
+# local diagnostics and backups
+/.backups/
+/clean-output.json
+/evidence-output.json
+/ingestion-audit.json
+/meltwater-author-audit.json
+/meltwater-raw-fields.json
+/ontology-audit*.json
+/output.json
+/unknown-ontology-*.json
+
+# generated ingestion intermediates; retain only validated production corpora
+/src/ingestion/curated/*.json
+!/src/ingestion/curated/gene_therapy.json
+/data/*
+!/data/regen-aesthetics.csv
+!/data/HepB_-_Patients__Caregivers - Mar 11, 2026 - 11 47 15 AM.csv

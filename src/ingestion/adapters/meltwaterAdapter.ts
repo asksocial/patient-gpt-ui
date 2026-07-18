@@ -1,6 +1,9 @@
 import fs from "fs";
 import { IngestionContext } from "../types";
 import { DiseaseProfile } from "../profiles";
+import {
+  preserveRawMetadata,
+} from "../metadata";
 
 export type MeltwaterRow = Record<string, any>;
 
@@ -25,6 +28,26 @@ function extractByPatternMap(
   }
 
   return Array.from(new Set(detected));
+}
+
+function extractKnowledgeDomains(
+  text: string,
+  profile: DiseaseProfile
+): string[] {
+  const matchedDomains: string[] = [];
+
+  for (const domain of profile.knowledgeDomains || []) {
+    const phrases = [
+      ...(domain.signalPhrases || []),
+      ...(domain.keywords || []),
+    ];
+
+    if (includesAny(text, phrases)) {
+      matchedDomains.push(domain.name);
+    }
+  }
+
+  return Array.from(new Set(matchedDomains));
 }
 
 function detectPersona(
@@ -61,8 +84,11 @@ function hasBurdenLanguage(text: string, profile: DiseaseProfile): boolean {
   return includesAny(text, profile.burdenTerms || []);
 }
 
-function isRegenerativeAestheticsProfile(profile: DiseaseProfile): boolean {
-  return profile.profileId === "regenerative_aesthetics";
+function isAestheticsProfile(profile: DiseaseProfile): boolean {
+  return (
+    profile.profileId === "regenerative_aesthetics" ||
+    profile.profileId === "medical_aesthetics"
+  );
 }
 
 function isEducationalContent(text: string, profile: DiseaseProfile): boolean {
@@ -415,28 +441,18 @@ function hasStrongConsumerOrProviderSignal(text: string): boolean {
   ]);
 }
 
-function shouldExcludeRegenerativeAestheticsRow(text: string): boolean {
+function shouldExcludeAestheticsRow(text: string): boolean {
   if (!hasAestheticAnchor(text)) return true;
-
-  // Remove non-aesthetic regenerative medicine entirely
   if (isHairOrNonFacialTreatmentNoise(text)) return true;
 
   const marketSignal = hasMarketSignal(text);
   const humanSignal = hasStrongConsumerOrProviderSignal(text);
 
-  // Always remove celebrity/fan content
   if (isCelebrityFanNoise(text)) return true;
-
-  // Always remove shopping/e-commerce content
   if (isCommercialShoppingNoise(text)) return true;
-
-  // Always remove corporate/PR content
   if (isPressOrCorporateNoise(text)) return true;
-
-  // Remove clinic marketing unless it contains a true patient/provider insight
   if (isClinicPromoNoise(text) && !humanSignal) return true;
 
-  // Additional hard exclusions discovered during validation
   if (
     includesAny(text, [
       "market report",
@@ -477,10 +493,7 @@ function shouldExcludeRegenerativeAestheticsRow(text: string): boolean {
     return true;
   }
 
-  // Require actual market or consumer intelligence
-  if (!marketSignal && !humanSignal) {
-    return true;
-  }
+  if (!marketSignal && !humanSignal) return true;
 
   return false;
 }
@@ -504,7 +517,7 @@ function inferFindingType(
   caregiverVoice: boolean,
   profile: DiseaseProfile
 ): string {
-  if (isRegenerativeAestheticsProfile(profile)) {
+  if (isAestheticsProfile(profile)) {
     if (
       includesAny(text, [
         "confused",
@@ -655,6 +668,26 @@ export function adaptMeltwaterRows(
 
   return rows
     .map((row) => {
+      const rawMetadata =
+        preserveRawMetadata(
+          row,
+          {
+            adapter:
+              "meltwater",
+
+            sourceProvider:
+              "meltwater",
+
+            /**
+             * Add normalized field names here only when
+             * a future export contains credentials,
+             * access tokens, or other fields that should
+             * never be retained.
+             */
+            excludedFields: [],
+          }
+        );
+
       const title = normalizeText(row["Title"] || "");
       const opening = normalizeText(row["Opening Text"] || "");
       const hit = normalizeText(row["Hit Sentence"] || "");
@@ -678,8 +711,8 @@ export function adaptMeltwaterRows(
       if (isLowQualityNoise(combinedText, profile)) return null;
 
       if (
-        isRegenerativeAestheticsProfile(profile) &&
-        shouldExcludeRegenerativeAestheticsRow(combinedText)
+        isAestheticsProfile(profile) &&
+        shouldExcludeAestheticsRow(combinedText)
       ) {
         return null;
       }
@@ -694,12 +727,14 @@ export function adaptMeltwaterRows(
         profile.treatmentPatterns || {}
       );
 
+      const knowledgeDomains = extractKnowledgeDomains(combinedText, profile);
+
       const burden = hasBurdenLanguage(combinedText, profile);
       const patientVoice = hasPatientVoice(combinedText, profile);
       const caregiverVoice = hasCaregiverVoice(combinedText, profile);
       const marketSignal = hasMarketSignal(combinedText);
 
-      const symptoms = isRegenerativeAestheticsProfile(profile)
+      const symptoms = isAestheticsProfile(profile)
         ? rawSymptoms
         : rawSymptoms.filter((symptom) => {
             if (!patientVoice && !burden) return false;
@@ -711,6 +746,7 @@ export function adaptMeltwaterRows(
         isEducationalContent(combinedText, profile) &&
         symptoms.length === 0 &&
         treatments.length === 0 &&
+        knowledgeDomains.length === 0 &&
         !burden &&
         !patientVoice &&
         !caregiverVoice &&
@@ -723,8 +759,9 @@ export function adaptMeltwaterRows(
         isStatHeavy(combinedText) &&
         symptoms.length === 0 &&
         treatments.length === 0 &&
+        knowledgeDomains.length === 0 &&
         !patientVoice &&
-        !isRegenerativeAestheticsProfile(profile)
+        !isAestheticsProfile(profile)
       ) {
         return null;
       }
@@ -736,10 +773,11 @@ export function adaptMeltwaterRows(
         return null;
       }
 
-      if (isRegenerativeAestheticsProfile(profile)) {
+      if (isAestheticsProfile(profile)) {
         if (
           symptoms.length === 0 &&
           treatments.length === 0 &&
+          knowledgeDomains.length === 0 &&
           !burden &&
           !patientVoice &&
           !caregiverVoice &&
@@ -751,6 +789,7 @@ export function adaptMeltwaterRows(
         if (
           symptoms.length === 0 &&
           treatments.length === 0 &&
+          knowledgeDomains.length === 0 &&
           !burden &&
           !patientVoice &&
           !caregiverVoice
@@ -760,7 +799,7 @@ export function adaptMeltwaterRows(
       }
 
       if (
-        !isRegenerativeAestheticsProfile(profile) &&
+        !isAestheticsProfile(profile) &&
         symptoms.length > 0 &&
         !patientVoice &&
         !caregiverVoice
@@ -770,7 +809,7 @@ export function adaptMeltwaterRows(
 
       const persona = detectPersona(combinedText, tags, profile);
 
-      if (!isRegenerativeAestheticsProfile(profile)) {
+      if (!isAestheticsProfile(profile)) {
         if (persona === "caregiver" && symptoms.length === 0) {
           return null;
         }
@@ -789,9 +828,16 @@ export function adaptMeltwaterRows(
         profile
       );
 
-      return {
-        id: row["Document ID"] || Math.random().toString(36).slice(2),
+        return {
+        id:
+          row["Document ID"] ||
+          Math.random()
+            .toString(36)
+            .slice(2),
+
         findingType,
+
+        rawMetadata,
         title,
         summary,
         description: summary,
@@ -800,6 +846,7 @@ export function adaptMeltwaterRows(
         labels: makeLabels(findingType),
         symptoms,
         treatments,
+        knowledgeDomains,
         country: normalizeText(row["Country"] || ""),
         platform: normalizeText(row["Source Type"] || ""),
         persona,
@@ -809,7 +856,10 @@ export function adaptMeltwaterRows(
         therapeuticArea: profile.therapeuticArea,
         score: Number(row["Engagement"] || 0),
         confidence:
-          symptoms.length > 0 || treatments.length > 0 || marketSignal
+          symptoms.length > 0 ||
+          treatments.length > 0 ||
+          knowledgeDomains.length > 0 ||
+          marketSignal
             ? 0.85
             : 0.7,
       };

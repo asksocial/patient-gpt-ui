@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { loadHybridData } from "../../../lib/answers/loadHybridData";
 import { composeHybridAnswer } from "../../../lib/answers/composeHybridAnswer";
 import { getRelevantCuratedInsights } from "../../../lib/curated/getRelevantCuratedInsights";
+import { loadCanonicalFindingsForAsk } from "../../../lib/answers/loadCanonicalFindingsForAsk";
+import { askSocial } from "../ask";
+import {
+  getKnowledgePersistenceStatus,
+} from "../../../lib/knowledge/mode";
+import {
+  getTherapeuticAreaCoverage,
+} from "../../../lib/analytics/coverage";
+import {
+  getCurrentEntitlements,
+} from "../../../lib/entitlements/server";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +40,71 @@ function normalizeLiveThemes(items: any[] = []) {
   }));
 }
 
+function compactAnalyticalAnswer(
+  intelligence:
+    ReturnType<typeof askSocial> | null
+) {
+  if (!intelligence) {
+    return null;
+  }
+
+  const answer =
+    intelligence.answer;
+
+  return {
+    directAnswer:
+      answer.directAnswer,
+    sections: answer.sections.map(
+      (section) => ({
+        key: section.key,
+        title: section.title,
+        bullets:
+          section.bullets,
+        text: section.text,
+      })
+    ),
+    usedFindingIds:
+      answer.usedFindingIds,
+    usedClaims:
+      answer.usedClaims,
+    liveDataStatus:
+      answer.liveDataStatus,
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const entitlements =
+      await getCurrentEntitlements();
+
+    if (!entitlements) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Unauthorized",
+        },
+        { status: 401 }
+      );
+    }
+
+    if (
+      !entitlements.capabilities
+        .platform_core.granted
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code:
+            "ENTITLEMENT_REQUIRED",
+          error:
+            "Enterprise Platform access is required.",
+          requiredEntitlement:
+            "platform_core",
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const question = body?.question?.trim();
     const therapeuticArea = body?.therapeuticArea?.trim();
@@ -49,16 +123,57 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const hybridData = await loadHybridData(therapeuticArea);
+    const [
+      hybridData,
+      curatedInsights,
+    ] = await Promise.all([
+      loadHybridData(
+        therapeuticArea
+      ),
+      getRelevantCuratedInsights({
+        therapeuticArea,
+        question,
+      }),
+    ]);
 
     const curatedThemes = normalizeCuratedThemes(hybridData?.curatedThemes || []);
     const liveThemes = normalizeLiveThemes(hybridData?.liveThemes || []);
     const matches = hybridData?.matches || [];
 
-    const curatedInsights = await getRelevantCuratedInsights({
-      therapeuticArea,
-      question,
-    });
+    const canonicalData =
+      loadCanonicalFindingsForAsk(
+        therapeuticArea
+      );
+    const analyticalCoverage =
+      getTherapeuticAreaCoverage(
+        therapeuticArea
+      );
+
+    const themeIntelligenceGranted =
+      entitlements.capabilities
+        .theme_intelligence.granted;
+    const longitudinalGranted =
+      entitlements.capabilities
+        .longitudinal_intelligence
+        .granted;
+    const executiveGranted =
+      entitlements.capabilities
+        .executive_intelligence
+        .granted;
+    const knowledgeGranted =
+      entitlements.capabilities
+        .knowledge_intelligence
+        .granted;
+
+    const intelligence =
+      themeIntelligenceGranted &&
+      canonicalData.status ===
+        "available"
+        ? askSocial(
+            question,
+            canonicalData.findings
+          )
+        : null;
 
     const answer = await composeHybridAnswer({
       question,
@@ -73,11 +188,82 @@ export async function POST(req: NextRequest) {
       ok: true,
       answer,
       relevantCuratedInsights: curatedInsights,
+      analyticalStatus:
+        !themeIntelligenceGranted
+          ? "forbidden"
+          : canonicalData.status,
+      analyticalCoverage,
+      knowledgePersistence:
+        getKnowledgePersistenceStatus(),
+      analyticalSource:
+        canonicalData.status ===
+        "available"
+          ? {
+              therapeuticAreaId:
+                canonicalData.therapeuticAreaId,
+              source:
+                canonicalData.source,
+              sourceLabel:
+                canonicalData.sourceLabel,
+              findingCount:
+                canonicalData.findings.length,
+            }
+          : {
+              therapeuticAreaId:
+                canonicalData.therapeuticAreaId,
+              reason:
+                canonicalData.reason,
+              findingCount: 0,
+            },
+      intent:
+        intelligence?.intent || null,
+      themeSummary:
+        intelligence?.themeSummary || [],
+      themeRelationships:
+        intelligence?.themeRelationships ||
+        [],
+      themeStrategicImplications:
+        intelligence?.themeStrategicImplications ||
+        [],
+      themeLongitudinalTracking:
+        longitudinalGranted
+          ? intelligence?.themeLongitudinalTracking ||
+            null
+          : null,
+      knowledgeSnapshot:
+        knowledgeGranted
+          ? intelligence?.knowledgeSnapshot ||
+            null
+          : null,
+      executiveIntelligence:
+        executiveGranted
+          ? intelligence?.executiveIntelligence ||
+            null
+          : null,
+      analyticalAnswer:
+        compactAnalyticalAnswer(
+          intelligence
+        ),
+      entitlements,
       debug: {
         curatedThemesCount: curatedThemes.length,
         liveThemesCount: liveThemes.length,
         matchesCount: matches.length,
         curatedInsightsCount: curatedInsights.length,
+        analyticalStatus:
+          !themeIntelligenceGranted
+            ? "forbidden"
+            : canonicalData.status,
+        canonicalFindingCount:
+          canonicalData.findings.length,
+        analyticalThemeCount:
+          intelligence?.themeSummary.length ||
+          0,
+        executiveBriefId:
+          executiveGranted
+            ? intelligence?.executiveIntelligence
+                .briefId || null
+            : null,
       },
     });
   } catch (error: any) {

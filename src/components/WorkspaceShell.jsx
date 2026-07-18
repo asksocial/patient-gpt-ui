@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Tooltip from "./ui/Tooltip";
+import ExecutiveIntelligenceView from "./ExecutiveIntelligenceView";
 
 const QUICK_ACTIONS = [
   "What are people saying right now?",
@@ -458,6 +459,8 @@ function LoadingMessage() {
 
 export default function WorkspaceShell() {
   const [therapeuticAreas, setTherapeuticAreas] = useState([]);
+  const [analyticalCoverage, setAnalyticalCoverage] = useState([]);
+  const [entitlements, setEntitlements] = useState(null);
   const [therapeuticArea, setTherapeuticArea] = useState("");
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
@@ -471,6 +474,7 @@ export default function WorkspaceShell() {
   const [loadingAreas, setLoadingAreas] = useState(true);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [error, setError] = useState("");
+  const [activeView, setActiveView] = useState("conversation");
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) || null,
@@ -488,6 +492,34 @@ export default function WorkspaceShell() {
     });
   }, [sessions, sessionSearch]);
 
+  const latestExecutiveIntelligence = useMemo(() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const brief = messages[index]?.responsePayload?.executiveIntelligence;
+      if (brief) return brief;
+    }
+
+    return null;
+  }, [messages]);
+
+  const latestAnalyticalStatus = useMemo(() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const payload = messages[index]?.responsePayload;
+      if (payload?.analyticalStatus) return payload;
+    }
+    return null;
+  }, [messages]);
+
+  const selectedCoverage = useMemo(
+    () =>
+      analyticalCoverage.find(
+        (item) => item.therapeuticArea === therapeuticArea
+      ) || null,
+    [analyticalCoverage, therapeuticArea]
+  );
+
+  const canUseExecutiveIntelligence =
+    entitlements?.capabilities?.executive_intelligence?.granted !== false;
+
   useEffect(() => {
     async function loadTherapeuticAreas() {
       try {
@@ -501,6 +533,7 @@ export default function WorkspaceShell() {
 
         const areas = data.therapeuticAreas || [];
         setTherapeuticAreas(areas);
+        setAnalyticalCoverage(data.analyticalCoverage || []);
 
         if (areas.length > 0) {
           setTherapeuticArea((current) => {
@@ -516,6 +549,22 @@ export default function WorkspaceShell() {
     }
 
     loadTherapeuticAreas();
+  }, []);
+
+  useEffect(() => {
+    async function loadEntitlements() {
+      try {
+        const response = await fetch("/api/entitlements/me");
+        const data = await response.json();
+        if (response.ok && data.ok) {
+          setEntitlements(data.entitlements);
+        }
+      } catch (loadError) {
+        console.error("Failed to load entitlements", loadError);
+      }
+    }
+
+    loadEntitlements();
   }, []);
 
   useEffect(() => {
@@ -634,6 +683,12 @@ export default function WorkspaceShell() {
                   message.content.relevantCuratedInsights ||
                   message.content.curatedInsights ||
                   [],
+                executiveIntelligence:
+                  message.content.executiveIntelligence || null,
+                analyticalStatus:
+                  message.content.analyticalStatus || null,
+                analyticalCoverage:
+                  message.content.analyticalCoverage || null,
               },
             }),
       }));
@@ -652,6 +707,7 @@ export default function WorkspaceShell() {
     setError("");
     setEditingSessionId(null);
     setEditingTitle("");
+    setActiveView("conversation");
   }
 
   function beginRename(session) {
@@ -810,6 +866,16 @@ export default function WorkspaceShell() {
         answer: data.answer,
         relevantCuratedInsights: data.relevantCuratedInsights || [],
         debug: data.debug || {},
+        executiveIntelligence:
+          data.executiveIntelligence ||
+          data.answer?.executiveIntelligence ||
+          null,
+        analyticalStatus:
+          data.analyticalStatus || null,
+        analyticalCoverage:
+          data.analyticalCoverage || null,
+        entitlements:
+          data.entitlements || null,
       };
 
       const assistantMessage = {
@@ -826,6 +892,12 @@ export default function WorkspaceShell() {
           content: {
             answer: data.answer,
             relevantCuratedInsights: data.relevantCuratedInsights || [],
+            executiveIntelligence:
+              responsePayload.executiveIntelligence,
+            analyticalStatus:
+              responsePayload.analyticalStatus,
+            analyticalCoverage:
+              responsePayload.analyticalCoverage,
           },
         },
       ]);
@@ -878,6 +950,37 @@ export default function WorkspaceShell() {
               </button>
             </div>
 
+            <div className="mt-4 grid grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1">
+              <button
+                type="button"
+                onClick={() => setActiveView("conversation")}
+                className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
+                  activeView === "conversation"
+                    ? "bg-white text-black"
+                    : "text-white/55 hover:text-white"
+                }`}
+              >
+                Conversation
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveView("executive")}
+                disabled={!canUseExecutiveIntelligence}
+                title={
+                  canUseExecutiveIntelligence
+                    ? "Open the latest executive brief"
+                    : "Executive Intelligence is not included in your entitlements"
+                }
+                className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
+                  activeView === "executive"
+                    ? "bg-white text-black"
+                    : "text-white/55 hover:text-white"
+                } disabled:cursor-not-allowed disabled:opacity-35`}
+              >
+                Executive brief
+              </button>
+            </div>
+
             <div className="mt-8">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                 Therapeutic area
@@ -897,6 +1000,11 @@ export default function WorkspaceShell() {
                   therapeuticAreas.map((area) => (
                     <option key={area} value={area}>
                       {area}
+                      {analyticalCoverage.find(
+                        (item) => item.therapeuticArea === area
+                      )?.status === "conversation_only"
+                        ? " — conversation only"
+                        : ""}
                     </option>
                   ))
                 )}
@@ -1091,22 +1199,46 @@ export default function WorkspaceShell() {
           <header className="border-b border-white/10 bg-black/70 px-6 py-5 backdrop-blur">
             <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                AskSocial Workspace
+                {activeView === "executive"
+                  ? "Leadership Intelligence"
+                  : "AskSocial Workspace"}
               </p>
               <h1 className="text-2xl font-semibold tracking-tight text-white">
-                {activeSession?.title || "Conversational social intelligence"}
+                {activeView === "executive"
+                  ? "Executive decision brief"
+                  : activeSession?.title || "Conversational social intelligence"}
               </h1>
               <p className="max-w-3xl text-sm leading-6 text-white/60">
-                {activeSession
-                  ? `Working across ${activeSession.therapeutic_area}. Last updated ${formatDate(
-                      activeSession.updated_at
-                    )}.`
-                  : "Ask questions across your baseline report themes and live narrative signals to understand what people are saying, what is changing, and what it means."}
+                {activeView === "executive"
+                  ? "A concise, evidence-qualified view of theme momentum, decision signals, recommended actions, and items requiring validation."
+                  : activeSession
+                    ? `Working across ${activeSession.therapeutic_area}. Last updated ${formatDate(
+                        activeSession.updated_at
+                      )}.`
+                    : "Ask questions across your baseline report themes and live narrative signals to understand what people are saying, what is changing, and what it means."}
               </p>
+              {selectedCoverage?.status === "conversation_only" ? (
+                <div className="mt-2 max-w-3xl rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-200/75">
+                  Conversation-only coverage: {selectedCoverage.reason}
+                </div>
+              ) : null}
             </div>
           </header>
 
           <div className="flex-1 px-6 py-6">
+            {activeView === "executive" ? (
+              <ExecutiveIntelligenceView
+                brief={latestExecutiveIntelligence}
+                unavailableReason={
+                  !canUseExecutiveIntelligence
+                    ? "Executive Intelligence is not included in your current account or user entitlements."
+                    : latestAnalyticalStatus?.analyticalStatus === "forbidden"
+                      ? "Theme Intelligence is not included in your current entitlements."
+                      : latestAnalyticalStatus?.analyticalCoverage?.reason ||
+                        selectedCoverage?.reason
+                }
+              />
+            ) : (
             <section className="flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
               {messages.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
@@ -1142,8 +1274,10 @@ export default function WorkspaceShell() {
                 </div>
               ) : null}
             </section>
+            )}
           </div>
 
+          {activeView === "conversation" ? (
           <div className="sticky bottom-0 border-t border-white/10 bg-black/95 px-6 py-4 backdrop-blur">
             <form onSubmit={handleSubmit}>
               <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
@@ -1177,6 +1311,7 @@ export default function WorkspaceShell() {
               </div>
             </form>
           </div>
+          ) : null}
         </main>
       </div>
     </div>
