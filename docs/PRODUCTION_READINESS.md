@@ -95,6 +95,6 @@ The authenticated test verifies entitlement resolution, analytical coverage, the
 5. Deploy to staging.
 6. Run the authenticated staging smoke test.
 7. Verify the Executive Brief UI for a validated therapeutic area.
-8. Verify analytical coverage for Medical Aesthetics and conversation-only labeling for Uterine Fibroids.
+8. Verify analytical coverage for Medical Aesthetics and the conversation-only safeguards for Uterine Fibroids; dropdown labels should contain therapeutic-area names only.
 9. Confirm entitlement grants and denials with non-admin test users.
 10. Promote the exact staging commit to production.

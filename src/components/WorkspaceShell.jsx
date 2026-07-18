@@ -1077,11 +1077,6 @@ export default function WorkspaceShell() {
                   therapeuticAreas.map((area) => (
                     <option key={area} value={area}>
                       {area}
-                      {analyticalCoverage.find(
-                        (item) => item.therapeuticArea === area
-                      )?.status === "conversation_only"
-                        ? " — conversation only"
-                        : ""}
                     </option>
                   ))
                 )}
