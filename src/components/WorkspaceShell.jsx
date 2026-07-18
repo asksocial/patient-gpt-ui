@@ -268,7 +268,11 @@ function RecommendedActions({ actions = [] }) {
   );
 }
 
-function AssistantAnswer({ responsePayload }) {
+function AssistantAnswer({
+  responsePayload,
+  showDirectAnswer = true,
+  showWhatThisMeans = true,
+}) {
   const answer = responsePayload?.answer || null;
   const curatedInsights = responsePayload?.relevantCuratedInsights || [];
   const curatedThemes = answer?.curatedIntelligence?.themes || [];
@@ -280,14 +284,16 @@ function AssistantAnswer({ responsePayload }) {
 
   return (
     <div className="space-y-4">
-      <Panel
-        title="Direct Answer"
-        subtitle="Report-backed, live-enhanced summary"
-      >
-        <p className="text-[15px] leading-7 text-white/80">
-          {answer.directAnswer}
-        </p>
-      </Panel>
+      {showDirectAnswer ? (
+        <Panel
+          title="Direct Answer"
+          subtitle="Report-backed, live-enhanced summary"
+        >
+          <p className="text-[15px] leading-7 text-white/80">
+            {answer.directAnswer}
+          </p>
+        </Panel>
+      ) : null}
 
       <KeyMarketDifferences insights={curatedInsights} />
 
@@ -413,14 +419,16 @@ function AssistantAnswer({ responsePayload }) {
 
       <RelevantCuratedInsights insights={curatedInsights} />
 
-      <Panel
-        title="What This Means"
-        subtitle="Strategic synthesis for decision-making"
-      >
-        <p className="text-[15px] leading-7 text-white/80">
-          {answer.whatThisMeans}
-        </p>
-      </Panel>
+      {showWhatThisMeans && answer.whatThisMeans ? (
+        <Panel
+          title="What This Means"
+          subtitle="Strategic synthesis for decision-making"
+        >
+          <p className="text-[15px] leading-7 text-white/80">
+            {answer.whatThisMeans}
+          </p>
+        </Panel>
+      ) : null}
 
       <RecommendedActions actions={recommendedActions} />
     </div>
@@ -489,12 +497,27 @@ function AssistantMessage({ responsePayload }) {
   const hasAnalyticalAnswer =
     responsePayload?.analyticalStatus === "available" &&
     responsePayload?.analyticalAnswer?.directAnswer;
+  const analyticalIncludesWhatThisMeans =
+    responsePayload?.analyticalAnswer?.sections?.some((section) => {
+      const identity = `${section?.key || ""} ${section?.title || ""}`
+        .toLowerCase()
+        .replace(/[_-]+/g, " ");
+
+      return identity.includes("what this means");
+    }) || false;
 
   return (
     <div className="flex justify-start">
       <div className="w-full max-w-6xl rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 md:p-5">
         {hasAnalyticalAnswer ? (
-          <AnalyticalAssistantAnswer responsePayload={responsePayload} />
+          <div className="space-y-4">
+            <AnalyticalAssistantAnswer responsePayload={responsePayload} />
+            <AssistantAnswer
+              responsePayload={responsePayload}
+              showDirectAnswer={false}
+              showWhatThisMeans={!analyticalIncludesWhatThisMeans}
+            />
+          </div>
         ) : (
           <AssistantAnswer responsePayload={responsePayload} />
         )}
