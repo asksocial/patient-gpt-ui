@@ -1,5 +1,7 @@
 "use client";
 
+import Tooltip from "./ui/Tooltip";
+
 const SIGNAL_STYLES = {
   momentum:
     "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
@@ -86,6 +88,33 @@ function Metric({ label, value, detail }) {
   );
 }
 
+function TableHeading({ label, tooltip }) {
+  return (
+    <th className="pb-3 font-medium">
+      <Tooltip
+        content={tooltip}
+        delay={200}
+        side="bottom"
+        align="start"
+      >
+        <button
+          type="button"
+          aria-label={`${label}: ${tooltip}`}
+          className="inline-flex cursor-help items-center gap-1.5 text-left uppercase tracking-[0.14em] text-white/35 transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+        >
+          <span>{label}</span>
+          <span
+            aria-hidden="true"
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-white/20 text-[10px] normal-case tracking-normal text-white/50"
+          >
+            ?
+          </span>
+        </button>
+      </Tooltip>
+    </th>
+  );
+}
+
 function EmptyState({ reason }) {
   return (
     <div className="flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-10 text-center">
@@ -166,12 +195,30 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="border-b border-white/10 text-xs uppercase tracking-[0.14em] text-white/35">
                 <tr>
-                  <th className="pb-3 font-medium">Theme</th>
-                  <th className="pb-3 font-medium">Prevalence</th>
-                  <th className="pb-3 font-medium">Trajectory</th>
-                  <th className="pb-3 font-medium">Recent change</th>
-                  <th className="pb-3 font-medium">Confidence</th>
-                  <th className="pb-3 font-medium">Triangulation</th>
+                  <TableHeading
+                    label="Theme"
+                    tooltip="The conversation topic or pattern being measured."
+                  />
+                  <TableHeading
+                    label="Prevalence"
+                    tooltip="The share of qualifying findings connected to this theme."
+                  />
+                  <TableHeading
+                    label="Trajectory"
+                    tooltip="Whether the theme is growing, stable, declining, or newly emerging over time."
+                  />
+                  <TableHeading
+                    label="Recent change"
+                    tooltip="How many percentage points the theme moved in the most recent comparison period."
+                  />
+                  <TableHeading
+                    label="Confidence"
+                    tooltip="How strongly the available evidence supports this theme and its direction."
+                  />
+                  <TableHeading
+                    label="Triangulation"
+                    tooltip="How consistently the theme is supported across different source types and channels."
+                  />
                 </tr>
               </thead>
               <tbody>
