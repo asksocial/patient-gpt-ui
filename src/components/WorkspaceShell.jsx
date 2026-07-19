@@ -257,7 +257,9 @@ function RecommendedActions({ actions = [] }) {
                 tone="action"
                 tooltip="A practical next step derived from the strongest curated and live signals."
               >
-                Action {idx + 1}
+                <span className="whitespace-nowrap">
+                  Action {idx + 1}
+                </span>
               </Badge>
               <p className="text-sm leading-6 text-white/75">{action}</p>
             </div>

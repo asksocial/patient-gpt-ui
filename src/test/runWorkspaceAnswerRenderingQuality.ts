@@ -22,6 +22,7 @@ const requiredContracts = [
   'title="Relevant Curated Insights"',
   'title="What This Means"',
   'title="Recommended Actions"',
+  '<span className="whitespace-nowrap">',
 ];
 
 for (const contract of requiredContracts) {
