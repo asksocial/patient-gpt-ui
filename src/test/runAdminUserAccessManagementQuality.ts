@@ -161,6 +161,13 @@ const files = {
     ),
     "utf8"
   ),
+  entitlementAdminPage: readFileSync(
+    join(
+      process.cwd(),
+      "src/app/admin/entitlements/page.tsx"
+    ),
+    "utf8"
+  ),
 };
 
 const contracts = [
@@ -200,6 +207,14 @@ const contracts = [
     files.middleware,
     "API handlers verify administrator roles",
   ],
+  [
+    files.entitlementAdminPage,
+    "Available entitlements",
+  ],
+  [
+    files.entitlementAdminPage,
+    "No assignable entitlements were returned.",
+  ],
 ] as const;
 
 for (const [file, contract] of contracts) {
@@ -224,6 +239,8 @@ console.log(
       authoritativeClerkAdminRole:
         true,
       authoritativeClerkEntitlements:
+        true,
+      visibleEntitlementCatalog:
         true,
     },
     null,

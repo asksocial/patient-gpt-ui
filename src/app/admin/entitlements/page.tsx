@@ -36,20 +36,43 @@ export default function EntitlementsAdminPage() {
     useState("");
 
   useEffect(() => {
-    fetch("/api/admin/entitlements")
-      .then((response) =>
-        response.json()
-      )
-      .then((data) =>
-        setCatalog(
-          data.catalog || []
-        )
-      )
-      .catch(() =>
+    async function loadCatalog() {
+      try {
+        const response = await fetch(
+          "/api/admin/entitlements"
+        );
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              "Failed to load entitlement catalog."
+          );
+        }
+
+        const nextCatalog =
+          Array.isArray(data.catalog)
+            ? data.catalog
+            : [];
+
+        if (!nextCatalog.length) {
+          throw new Error(
+            "No assignable entitlements were returned."
+          );
+        }
+
+        setCatalog(nextCatalog);
+      } catch (error) {
         setMessage(
-          "Failed to load entitlement catalog."
-        )
-      );
+          error instanceof Error
+            ? error.message
+            : "Failed to load entitlement catalog."
+        );
+      }
+    }
+
+    loadCatalog();
   }, []);
 
   async function loadSubject() {
@@ -242,8 +265,8 @@ export default function EntitlementsAdminPage() {
           </div>
         </section>
 
-        {displayName ? (
-          <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+        <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+          {displayName ? (
             <div className="flex flex-col gap-2 border-b border-white/10 pb-5 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.16em] text-white/35">
@@ -262,9 +285,23 @@ export default function EntitlementsAdminPage() {
                 Save entitlements
               </button>
             </div>
+          ) : (
+            <div className="border-b border-white/10 pb-5">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/35">
+                Available entitlements
+              </p>
+              <h2 className="mt-1 text-xl font-semibold">
+                Assignable capabilities
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-white/50">
+                Load a user or organization above to grant, deny, or inherit these capabilities.
+              </p>
+            </div>
+          )}
 
-            <div className="mt-5 space-y-3">
-              {catalog.map((item) => (
+          <div className="mt-5 space-y-3">
+            {catalog.length ? (
+              catalog.map((item) => (
                 <div
                   key={item.key}
                   className="grid gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 md:grid-cols-[1fr_340px] md:items-center"
@@ -288,6 +325,10 @@ export default function EntitlementsAdminPage() {
                         <button
                           key={state}
                           type="button"
+                          disabled={
+                            !displayName ||
+                            loading
+                          }
                           onClick={() =>
                             setStates(
                               (current) => ({
@@ -296,8 +337,8 @@ export default function EntitlementsAdminPage() {
                               })
                             )
                           }
-                          className={`rounded-lg px-3 py-2 text-xs font-medium capitalize transition ${
-                            states[item.key] === state
+                          className={`rounded-lg px-3 py-2 text-xs font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-45 ${
+                            (states[item.key] || "inherit") === state
                               ? state === "grant"
                                 ? "bg-emerald-400 text-black"
                                 : state === "deny"
@@ -312,10 +353,14 @@ export default function EntitlementsAdminPage() {
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
+              ))
+            ) : (
+              <p className="text-sm text-white/45">
+                Loading available entitlements...
+              </p>
+            )}
+          </div>
+        </section>
 
         {message ? (
           <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/70">
