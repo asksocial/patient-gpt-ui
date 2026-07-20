@@ -17,6 +17,13 @@ import {
 import {
   getKnowledgePersistenceMode,
 } from "../../../../lib/knowledge/mode";
+import {
+  getActiveTherapeuticAreas,
+  getUserTherapeuticAreas,
+  normalizeTherapeuticAreaAssignments,
+  replaceUserTherapeuticAreas,
+  validateTherapeuticAreaAssignments,
+} from "../../../../lib/therapeuticAccess/server";
 
 export const runtime = "nodejs";
 
@@ -116,11 +123,15 @@ export const GET = withAdmin(
       ) || ""
     ).trim();
 
+    const therapeuticAreaCatalog =
+      await getActiveTherapeuticAreas();
+
     if (!subjectId) {
       return NextResponse.json({
         ok: true,
         catalog:
           ENTITLEMENT_CATALOG,
+        therapeuticAreaCatalog,
         subject: null,
       });
     }
@@ -131,12 +142,22 @@ export const GET = withAdmin(
           subjectType,
           subjectId
         );
+      const therapeuticAreas =
+        subjectType === "user"
+          ? await getUserTherapeuticAreas(
+              subjectId
+            )
+          : null;
 
       return NextResponse.json({
         ok: true,
         catalog:
           ENTITLEMENT_CATALOG,
-        subject,
+        therapeuticAreaCatalog,
+        subject: {
+          ...subject,
+          therapeuticAreas,
+        },
         effectivePreview:
           resolveEntitlements({
             userId:
@@ -186,6 +207,16 @@ export const PATCH = withAdmin(
       const subjectId = String(
         body?.subjectId || ""
       ).trim();
+      const entitlementsProvided =
+        Object.prototype.hasOwnProperty.call(
+          body || {},
+          "entitlements"
+        );
+      const therapeuticAreasProvided =
+        Object.prototype.hasOwnProperty.call(
+          body || {},
+          "therapeuticAreas"
+        );
 
       if (!subjectId) {
         return NextResponse.json(
@@ -198,15 +229,44 @@ export const PATCH = withAdmin(
         );
       }
 
-      const normalized =
-        normalizeEntitlementMetadata(
-          body?.entitlements
+      if (
+        !entitlementsProvided &&
+        !therapeuticAreasProvided
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "entitlements or therapeuticAreas is required",
+          },
+          { status: 400 }
         );
+      }
+
+      if (
+        subjectType !== "user" &&
+        therapeuticAreasProvided
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "Therapeutic areas can only be assigned to users",
+          },
+          { status: 400 }
+        );
+      }
+
+      const normalized = entitlementsProvided
+        ? normalizeEntitlementMetadata(
+            body?.entitlements
+          )
+        : null;
       const overlap = (
-        normalized.grants || []
+        normalized?.grants || []
       ).filter((key) =>
         (
-          normalized.denials || []
+          normalized?.denials || []
         ).includes(key)
       );
 
@@ -230,47 +290,106 @@ export const PATCH = withAdmin(
           subjectType,
           subjectId
         );
-      const nextPublicMetadata = {
-        ...subject.publicMetadata,
-        [ENTITLEMENT_METADATA_KEY]:
-          normalized,
-      };
+      const previousTherapeuticAreas =
+        therapeuticAreasProvided
+          ? await getUserTherapeuticAreas(
+              subjectId
+            )
+          : [];
+      let therapeuticAreas =
+        previousTherapeuticAreas;
 
-      if (subjectType === "user") {
-        await client.users.updateUserMetadata(
-          subjectId,
-          {
-            publicMetadata:
-              nextPublicMetadata,
+      if (therapeuticAreasProvided) {
+        const requested =
+          normalizeTherapeuticAreaAssignments(
+            body?.therapeuticAreas
+          );
+        const active =
+          await getActiveTherapeuticAreas();
+
+        validateTherapeuticAreaAssignments(
+          requested,
+          active
+        );
+
+        therapeuticAreas =
+          await replaceUserTherapeuticAreas(
+            subjectId,
+            requested
+          );
+      }
+
+      const nextPublicMetadata =
+        normalized
+          ? {
+              ...subject.publicMetadata,
+              [ENTITLEMENT_METADATA_KEY]:
+                normalized,
+            }
+          : subject.publicMetadata;
+
+      try {
+        if (
+          normalized &&
+          subjectType === "user"
+        ) {
+          await client.users.updateUserMetadata(
+            subjectId,
+            {
+              publicMetadata:
+                nextPublicMetadata,
+            }
+          );
+        } else if (
+          normalized &&
+          subjectType ===
+            "organization"
+        ) {
+          await client.organizations.updateOrganizationMetadata(
+            subjectId,
+            {
+              publicMetadata:
+                nextPublicMetadata,
+            }
+          );
+        } else if (
+          subjectType !== "user" &&
+          subjectType !==
+            "organization"
+        ) {
+          throw new Error(
+            "subjectType must be user or organization"
+          );
+        }
+      } catch (error) {
+        if (therapeuticAreasProvided) {
+          try {
+            await replaceUserTherapeuticAreas(
+              subjectId,
+              previousTherapeuticAreas
+            );
+          } catch (rollbackError) {
+            console.error(
+              "Failed to roll back therapeutic-area assignments",
+              rollbackError
+            );
           }
-        );
-      } else if (
-        subjectType ===
-        "organization"
-      ) {
-        await client.organizations.updateOrganizationMetadata(
-          subjectId,
-          {
-            publicMetadata:
-              nextPublicMetadata,
-          }
-        );
-      } else {
-        return NextResponse.json(
-          {
-            ok: false,
-            error:
-              "subjectType must be user or organization",
-          },
-          { status: 400 }
-        );
+        }
+
+        throw error;
       }
 
       return NextResponse.json({
         ok: true,
         subjectType,
         subjectId,
-        entitlements: normalized,
+        entitlements:
+          normalized ||
+          subject.entitlementMetadata,
+        therapeuticAreas:
+          subjectType === "user"
+            ? therapeuticAreas
+            : null,
       });
     } catch (error) {
       const message =

@@ -14,6 +14,9 @@ import {
 import {
   getCurrentEntitlements,
 } from "../../../lib/entitlements/server";
+import {
+  hasTherapeuticAreaAccess,
+} from "../../../lib/therapeuticAccess/server";
 
 export const dynamic = "force-dynamic";
 
@@ -121,6 +124,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { ok: false, error: "therapeuticArea is required" },
         { status: 400 }
+      );
+    }
+
+    const therapeuticAreaGranted =
+      await hasTherapeuticAreaAccess(
+        entitlements.userId,
+        therapeuticArea,
+        entitlements.isAdmin
+      );
+
+    if (!therapeuticAreaGranted) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code:
+            "THERAPEUTIC_AREA_REQUIRED",
+          error:
+            `Access to ${therapeuticArea} has not been assigned.`,
+          therapeuticArea,
+        },
+        { status: 403 }
       );
     }
 

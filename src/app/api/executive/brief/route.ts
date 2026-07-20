@@ -17,6 +17,9 @@ import {
 import {
   getCurrentEntitlements,
 } from "../../../../lib/entitlements/server";
+import {
+  hasTherapeuticAreaAccess,
+} from "../../../../lib/therapeuticAccess/server";
 
 export const dynamic =
   "force-dynamic";
@@ -77,6 +80,28 @@ export async function POST(
             "A valid current theme knowledge snapshot is required",
         },
         { status: 400 }
+      );
+    }
+
+    const therapeuticAreaGranted =
+      await hasTherapeuticAreaAccess(
+        entitlements.userId,
+        snapshot.therapeuticArea,
+        entitlements.isAdmin
+      );
+
+    if (!therapeuticAreaGranted) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code:
+            "THERAPEUTIC_AREA_REQUIRED",
+          error:
+            `Access to ${snapshot.therapeuticArea} has not been assigned.`,
+          therapeuticArea:
+            snapshot.therapeuticArea,
+        },
+        { status: 403 }
       );
     }
 

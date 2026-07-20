@@ -1,54 +1,54 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import {
   getTherapeuticAreaCoverage,
 } from "../../../lib/analytics/coverage";
+import {
+  getCurrentEntitlements,
+} from "../../../lib/entitlements/server";
+import {
+  getActiveTherapeuticAreas,
+  getUserTherapeuticAreas,
+} from "../../../lib/therapeuticAccess/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const url =
-      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const entitlements =
+      await getCurrentEntitlements();
 
-    if (!url || !key) {
+    if (!entitlements) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Missing Supabase environment variables",
+          error: "Unauthorized",
           therapeuticAreas: [],
         },
-        { status: 500 }
+        { status: 401 }
       );
     }
 
-    const supabase = createClient(url, key);
-
-    const { data, error } = await supabase
-      .from("therapeutic_areas")
-      .select("name")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true });
-
-    if (error) {
-      console.error("[/api/therapeutic-areas] supabase error", error);
-
-      return NextResponse.json(
-        {
-          ok: false,
-          error: error.message || "Failed to load therapeutic areas",
-          therapeuticAreas: [],
-        },
-        { status: 500 }
+    const activeTherapeuticAreas =
+      await getActiveTherapeuticAreas();
+    const assignedTherapeuticAreas =
+      entitlements.isAdmin
+        ? activeTherapeuticAreas
+        : await getUserTherapeuticAreas(
+            entitlements.userId
+          );
+    const assignedSet = new Set(
+      assignedTherapeuticAreas.map(
+        (area) =>
+          area.toLowerCase()
+      )
+    );
+    const therapeuticAreas =
+      activeTherapeuticAreas.filter(
+        (area) =>
+          assignedSet.has(
+            area.toLowerCase()
+          )
       );
-    }
-
-    const therapeuticAreas = (data || [])
-      .map((row) => row.name)
-      .filter(Boolean);
 
     return NextResponse.json({
       ok: true,
