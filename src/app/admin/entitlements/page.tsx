@@ -260,7 +260,13 @@ export default function EntitlementsAdminPage() {
         </p>
 
         <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-          <div className="grid gap-4 md:grid-cols-[180px_1fr_auto]">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              loadSubject();
+            }}
+            className="grid gap-4 md:grid-cols-[180px_1fr_auto]"
+          >
             <select
               value={subjectType}
               onChange={(event) => {
@@ -283,6 +289,11 @@ export default function EntitlementsAdminPage() {
               </option>
             </select>
             <input
+              aria-label={
+                subjectType === "user"
+                  ? "Clerk user ID"
+                  : "Clerk organization ID"
+              }
               value={subjectId}
               onChange={(event) => {
                 setSubjectId(
@@ -302,8 +313,7 @@ export default function EntitlementsAdminPage() {
               className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm outline-none focus:border-white/30"
             />
             <button
-              type="button"
-              onClick={loadSubject}
+              type="submit"
               disabled={
                 loading ||
                 !subjectId.trim()
@@ -312,9 +322,16 @@ export default function EntitlementsAdminPage() {
             >
               {loading
                 ? "Loading..."
-                : "Load access"}
+                : subjectType === "user"
+                  ? "Load user access"
+                  : "Load organization access"}
             </button>
-          </div>
+          </form>
+          <p className="mt-3 text-sm leading-6 text-white/50">
+            {displayName
+              ? `Access controls are ready for ${displayName}.`
+              : `Enter a Clerk ${subjectType === "user" ? "user" : "organization"} ID, then choose Load access or press Enter to enable assignments.`}
+          </p>
         </section>
 
         <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
@@ -351,8 +368,7 @@ export default function EntitlementsAdminPage() {
             </div>
           )}
 
-          {displayName &&
-          subjectType === "user" ? (
+          {subjectType === "user" ? (
             <div className="mt-5 border-b border-white/10 pb-5">
               <div>
                 <p className="text-xs uppercase tracking-[0.16em] text-white/35">
@@ -362,7 +378,9 @@ export default function EntitlementsAdminPage() {
                   Assigned intelligence areas
                 </h3>
                 <p className="mt-1 text-sm leading-6 text-white/45">
-                  Select every therapeutic area this user should be able to access.
+                  {displayName
+                    ? "Select every therapeutic area this user should be able to access."
+                    : "Load a user ID to enable therapeutic-area assignments."}
                 </p>
               </div>
 
@@ -378,7 +396,11 @@ export default function EntitlementsAdminPage() {
                       return (
                         <label
                           key={area}
-                          className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition ${
+                          className={`flex items-center gap-3 rounded-2xl border p-4 transition ${
+                            displayName
+                              ? "cursor-pointer"
+                              : "cursor-not-allowed opacity-50"
+                          } ${
                             checked
                               ? "border-cyan-300/40 bg-cyan-300/10"
                               : "border-white/10 bg-black/30 hover:border-white/20"
@@ -387,7 +409,10 @@ export default function EntitlementsAdminPage() {
                           <input
                             type="checkbox"
                             checked={checked}
-                            disabled={loading}
+                            disabled={
+                              !displayName ||
+                              loading
+                            }
                             onChange={(
                               event
                             ) =>

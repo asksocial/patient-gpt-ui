@@ -223,6 +223,18 @@ const contracts = [
     files.entitlementAdminPage,
     "therapeuticAreas,",
   ],
+  [
+    files.entitlementAdminPage,
+    "Load a user ID to enable therapeutic-area assignments.",
+  ],
+  [
+    files.entitlementAdminPage,
+    "Load user access",
+  ],
+  [
+    files.entitlementAdminPage,
+    "event.preventDefault();",
+  ],
 ] as const;
 
 for (const [file, contract] of contracts) {
