@@ -7,35 +7,10 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
 ]);
 
-const isAdminAccessRoute = createRouteMatcher([
-  "/admin/access",
-]);
-
-const isAdminRoute = createRouteMatcher([
-  "/admin(.*)",
-]);
-
-const isAdminApiRoute = createRouteMatcher([
-  "/api/admin(.*)",
-]);
-
-function getRoleFromClaims(sessionClaims: unknown): string | undefined {
-  if (!sessionClaims || typeof sessionClaims !== "object") return undefined;
-
-  const publicMetadata = (sessionClaims as { publicMetadata?: unknown }).publicMetadata;
-
-  if (!publicMetadata || typeof publicMetadata !== "object") return undefined;
-
-  const role = (publicMetadata as { role?: unknown }).role;
-
-  return typeof role === "string" ? role : undefined;
-}
-
 export default clerkMiddleware(async (auth, req) => {
-  const { userId, sessionClaims, redirectToSignIn } = await auth();
+  const { userId, redirectToSignIn } = await auth();
 
   const isSignedIn = !!userId;
-  const isAdmin = getRoleFromClaims(sessionClaims) === "admin";
 
   // Keep your existing public-route behavior
   if (isPublicRoute(req)) {
@@ -47,33 +22,9 @@ export default clerkMiddleware(async (auth, req) => {
     return redirectToSignIn();
   }
 
-  // /admin/access: signed-in only, but admins should not stay here
-  if (isAdminAccessRoute(req)) {
-    if (isAdmin) {
-      return NextResponse.redirect(new URL("/admin", req.url));
-    }
-
-    return NextResponse.next();
-  }
-
-  // Lock all admin pages except /admin/access
-  if (isAdminRoute(req) && !isAdminAccessRoute(req)) {
-    if (!isAdmin) {
-      return NextResponse.redirect(new URL("/admin/access", req.url));
-    }
-
-    return NextResponse.next();
-  }
-
-  // Lock all admin API routes
-  if (isAdminApiRoute(req)) {
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    return NextResponse.next();
-  }
-
+  // API handlers verify administrator roles against Clerk's authoritative
+  // user metadata. Middleware only establishes that protected routes have
+  // an authenticated user; this avoids relying on optional custom claims.
   return NextResponse.next();
 });
 

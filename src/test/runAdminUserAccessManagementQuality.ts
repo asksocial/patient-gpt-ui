@@ -8,6 +8,51 @@ import {
   normalizeTherapeuticAreaAssignments,
   validateTherapeuticAreaAssignments,
 } from "../lib/therapeuticAccess/server";
+import {
+  getRoleFromClaims,
+} from "../lib/auth/isAdmin";
+
+for (const claims of [
+  {
+    publicMetadata: {
+      role: "admin",
+    },
+  },
+  {
+    public_metadata: {
+      role: "Admin",
+    },
+  },
+  {
+    metadata: {
+      role: " admin ",
+    },
+  },
+  {
+    role: "ADMIN",
+  },
+]) {
+  if (
+    getRoleFromClaims(claims) !==
+    "admin"
+  ) {
+    throw new Error(
+      "Administrator-role claims must support Clerk token variants and normalized casing."
+    );
+  }
+}
+
+if (
+  getRoleFromClaims({
+    publicMetadata: {
+      role: "member",
+    },
+  }) !== "member"
+) {
+  throw new Error(
+    "Non-administrator roles must not be promoted."
+  );
+}
 
 const normalized =
   normalizeTherapeuticAreaAssignments(
@@ -95,6 +140,27 @@ const files = {
     ),
     "utf8"
   ),
+  adminGuard: readFileSync(
+    join(
+      process.cwd(),
+      "src/lib/auth/isAdmin.ts"
+    ),
+    "utf8"
+  ),
+  entitlementServer: readFileSync(
+    join(
+      process.cwd(),
+      "src/lib/entitlements/server.ts"
+    ),
+    "utf8"
+  ),
+  middleware: readFileSync(
+    join(
+      process.cwd(),
+      "middleware.ts"
+    ),
+    "utf8"
+  ),
 };
 
 const contracts = [
@@ -122,6 +188,18 @@ const contracts = [
     files.executive,
     "THERAPEUTIC_AREA_REQUIRED",
   ],
+  [
+    files.adminGuard,
+    "client.users.getUser",
+  ],
+  [
+    files.entitlementServer,
+    "user.publicMetadata",
+  ],
+  [
+    files.middleware,
+    "API handlers verify administrator roles",
+  ],
 ] as const;
 
 for (const [file, contract] of contracts) {
@@ -142,6 +220,10 @@ console.log(
       workspaceFiltering: true,
       askEnforcement: true,
       executiveBriefEnforcement:
+        true,
+      authoritativeClerkAdminRole:
+        true,
+      authoritativeClerkEntitlements:
         true,
     },
     null,

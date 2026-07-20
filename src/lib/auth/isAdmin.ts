@@ -1,24 +1,116 @@
-import { auth } from "@clerk/nextjs/server";
+import {
+  auth,
+  clerkClient,
+} from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-function getRoleFromClaims(sessionClaims: unknown): string | undefined {
-  if (!sessionClaims || typeof sessionClaims !== "object") return undefined;
+function objectValue(
+  value: unknown
+): Record<string, unknown> {
+  return value &&
+    typeof value === "object"
+    ? (value as Record<
+        string,
+        unknown
+      >)
+    : {};
+}
 
-  const publicMetadata = (sessionClaims as { publicMetadata?: unknown }).publicMetadata;
+function normalizedRole(
+  value: unknown
+): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
 
-  if (!publicMetadata || typeof publicMetadata !== "object") return undefined;
+  const role = value
+    .trim()
+    .toLowerCase();
 
-  const role = (publicMetadata as { role?: unknown }).role;
+  return role || undefined;
+}
 
-  return typeof role === "string" ? role : undefined;
+export function getRoleFromClaims(
+  sessionClaims: unknown
+): string | undefined {
+  const claims = objectValue(
+    sessionClaims
+  );
+  const metadataCandidates = [
+    claims.publicMetadata,
+    claims.public_metadata,
+    claims.metadata,
+  ];
+
+  for (const metadata of
+    metadataCandidates) {
+    const role = normalizedRole(
+      objectValue(metadata).role
+    );
+
+    if (role) return role;
+  }
+
+  return normalizedRole(claims.role);
+}
+
+export async function resolveAdminStatus({
+  userId,
+  sessionClaims,
+  publicMetadata,
+}: {
+  userId: string | null | undefined;
+  sessionClaims?: unknown;
+  publicMetadata?: unknown;
+}) {
+  if (!userId) return false;
+
+  if (publicMetadata !== undefined) {
+    return (
+      normalizedRole(
+        objectValue(
+          publicMetadata
+        ).role
+      ) === "admin"
+    );
+  }
+
+  try {
+    const client =
+      await clerkClient();
+    const user =
+      await client.users.getUser(
+        userId
+      );
+
+    return (
+      normalizedRole(
+        objectValue(
+          user.publicMetadata
+        ).role
+      ) === "admin"
+    );
+  } catch (error) {
+    console.error(
+      "Unable to verify Clerk administrator role:",
+      error
+    );
+
+    return (
+      getRoleFromClaims(
+        sessionClaims
+      ) === "admin"
+    );
+  }
 }
 
 export async function isAdmin() {
   const { userId, sessionClaims } = await auth();
 
-  if (!userId) return false;
-
-  return getRoleFromClaims(sessionClaims) === "admin";
+  return resolveAdminStatus({
+    userId,
+    sessionClaims,
+  });
 }
 
 export async function requireAdmin() {

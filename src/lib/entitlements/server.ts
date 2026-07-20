@@ -6,6 +6,9 @@ import {
   getKnowledgePersistenceMode,
 } from "../knowledge/mode";
 import {
+  resolveAdminStatus,
+} from "../auth/isAdmin";
+import {
   ENTITLEMENT_METADATA_KEY,
   resolveEntitlements,
 } from "./resolveEntitlements";
@@ -36,16 +39,19 @@ export async function getCurrentEntitlements() {
     return null;
   }
 
-  const publicMetadata = objectValue(
-    objectValue(sessionClaims)
-      .publicMetadata
-  );
+  const client = await clerkClient();
+  const user =
+    await client.users.getUser(
+      userId
+    );
+  const publicMetadata =
+    objectValue(
+      user.publicMetadata
+    );
   let organizationMetadata:
     unknown = undefined;
 
   if (orgId) {
-    const client =
-      await clerkClient();
     const organization =
       await client.organizations.getOrganization(
         {
@@ -63,8 +69,11 @@ export async function getCurrentEntitlements() {
     organizationId:
       orgId || undefined,
     isAdmin:
-      publicMetadata.role ===
-      "admin",
+      await resolveAdminStatus({
+        userId,
+        sessionClaims,
+        publicMetadata,
+      }),
     userMetadata:
       publicMetadata[
         ENTITLEMENT_METADATA_KEY
