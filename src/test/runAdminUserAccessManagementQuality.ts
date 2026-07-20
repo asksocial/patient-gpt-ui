@@ -215,6 +215,14 @@ const contracts = [
     files.entitlementAdminPage,
     "No assignable entitlements were returned.",
   ],
+  [
+    files.entitlementAdminPage,
+    "Therapeutic area access",
+  ],
+  [
+    files.entitlementAdminPage,
+    "therapeuticAreas,",
+  ],
 ] as const;
 
 for (const [file, contract] of contracts) {
@@ -241,6 +249,8 @@ console.log(
       authoritativeClerkEntitlements:
         true,
       visibleEntitlementCatalog:
+        true,
+      unifiedUserAccessScreen:
         true,
     },
     null,

@@ -20,6 +20,14 @@ type AccessState =
 export default function EntitlementsAdminPage() {
   const [catalog, setCatalog] =
     useState<CatalogItem[]>([]);
+  const [
+    therapeuticAreaCatalog,
+    setTherapeuticAreaCatalog,
+  ] = useState<string[]>([]);
+  const [
+    therapeuticAreas,
+    setTherapeuticAreas,
+  ] = useState<string[]>([]);
   const [subjectType, setSubjectType] =
     useState("user");
   const [subjectId, setSubjectId] =
@@ -63,6 +71,13 @@ export default function EntitlementsAdminPage() {
         }
 
         setCatalog(nextCatalog);
+        setTherapeuticAreaCatalog(
+          Array.isArray(
+            data.therapeuticAreaCatalog
+          )
+            ? data.therapeuticAreaCatalog
+            : []
+        );
       } catch (error) {
         setMessage(
           error instanceof Error
@@ -113,6 +128,28 @@ export default function EntitlementsAdminPage() {
       setDisplayName(
         data.subject.displayName
       );
+      setCatalog(
+        Array.isArray(data.catalog)
+          ? data.catalog
+          : []
+      );
+      setTherapeuticAreaCatalog(
+        Array.isArray(
+          data.therapeuticAreaCatalog
+        )
+          ? data.therapeuticAreaCatalog
+          : []
+      );
+      setTherapeuticAreas(
+        subjectType === "user" &&
+          Array.isArray(
+            data.subject
+              .therapeuticAreas
+          )
+          ? data.subject
+              .therapeuticAreas
+          : []
+      );
       setStates(
         Object.fromEntries(
           (data.catalog || []).map(
@@ -157,6 +194,11 @@ export default function EntitlementsAdminPage() {
             subjectType,
             subjectId:
               subjectId.trim(),
+            ...(subjectType === "user"
+              ? {
+                  therapeuticAreas,
+                }
+              : {}),
             entitlements: {
               grants: Object.entries(
                 states
@@ -189,7 +231,9 @@ export default function EntitlementsAdminPage() {
       }
 
       setMessage(
-        "Entitlements saved. Active sessions may need to refresh before user-level metadata changes appear."
+        subjectType === "user"
+          ? "Therapeutic areas and entitlements saved."
+          : "Organization entitlements saved."
       );
     } catch (error) {
       setMessage(
@@ -209,10 +253,10 @@ export default function EntitlementsAdminPage() {
           AskSocial Admin
         </p>
         <h1 className="mt-3 text-3xl font-semibold">
-          Capability Entitlements
+          User Access Administration
         </h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-white/55">
-          Configure organization-level product access or user-level overrides. User settings take precedence over organization settings, which take precedence over platform defaults.
+          Assign therapeutic areas and product capabilities from one screen. User settings take precedence over organization settings, which take precedence over platform defaults.
         </p>
 
         <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
@@ -225,6 +269,9 @@ export default function EntitlementsAdminPage() {
                 );
                 setDisplayName("");
                 setStates({});
+                setTherapeuticAreas(
+                  []
+                );
               }}
               className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm"
             >
@@ -237,11 +284,16 @@ export default function EntitlementsAdminPage() {
             </select>
             <input
               value={subjectId}
-              onChange={(event) =>
+              onChange={(event) => {
                 setSubjectId(
                   event.target.value
-                )
-              }
+                );
+                setDisplayName("");
+                setStates({});
+                setTherapeuticAreas(
+                  []
+                );
+              }}
               placeholder={
                 subjectType === "user"
                   ? "user_..."
@@ -282,7 +334,7 @@ export default function EntitlementsAdminPage() {
                 disabled={loading}
                 className="rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-medium text-black disabled:opacity-50"
               >
-                Save entitlements
+                Save access
               </button>
             </div>
           ) : (
@@ -298,6 +350,81 @@ export default function EntitlementsAdminPage() {
               </p>
             </div>
           )}
+
+          {displayName &&
+          subjectType === "user" ? (
+            <div className="mt-5 border-b border-white/10 pb-5">
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/35">
+                  Therapeutic area access
+                </p>
+                <h3 className="mt-1 text-lg font-semibold">
+                  Assigned intelligence areas
+                </h3>
+                <p className="mt-1 text-sm leading-6 text-white/45">
+                  Select every therapeutic area this user should be able to access.
+                </p>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {therapeuticAreaCatalog.length ? (
+                  therapeuticAreaCatalog.map(
+                    (area) => {
+                      const checked =
+                        therapeuticAreas.includes(
+                          area
+                        );
+
+                      return (
+                        <label
+                          key={area}
+                          className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition ${
+                            checked
+                              ? "border-cyan-300/40 bg-cyan-300/10"
+                              : "border-white/10 bg-black/30 hover:border-white/20"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={loading}
+                            onChange={(
+                              event
+                            ) =>
+                              setTherapeuticAreas(
+                                (current) =>
+                                  event.target
+                                    .checked
+                                    ? [
+                                        ...current,
+                                        area,
+                                      ]
+                                    : current.filter(
+                                        (
+                                          currentArea
+                                        ) =>
+                                          currentArea !==
+                                          area
+                                      )
+                              )
+                            }
+                            className="size-4 accent-cyan-300"
+                          />
+                          <span className="text-sm font-medium">
+                            {area}
+                          </span>
+                        </label>
+                      );
+                    }
+                  )
+                ) : (
+                  <p className="text-sm text-white/45">
+                    No active therapeutic areas are available.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-5 space-y-3">
             {catalog.length ? (
