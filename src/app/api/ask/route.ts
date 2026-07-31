@@ -23,6 +23,7 @@ import {
   isIntelligenceModuleId,
   resolveCustomerIntelligenceAccess,
 } from "../../../lib/intelligence-platform";
+import { buildCitationManifest } from "../../../lib/intelligence-platform/citations";
 
 export const dynamic = "force-dynamic";
 
@@ -314,10 +315,15 @@ export async function POST(req: NextRequest) {
       hybridAnswer,
       intelligence
     );
+    const citationManifest = buildCitationManifest(
+      intelligence?.themeSummary || [],
+      curatedInsights
+    );
 
     return NextResponse.json({
       ok: true,
       answer,
+      citationManifest,
       relevantCuratedInsights: curatedInsights,
       analyticalStatus:
         !themeIntelligenceGranted

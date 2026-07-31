@@ -85,6 +85,12 @@ export type {
 export {
   UnifiedSearchService,
 } from "./unifiedSearch";
+export { buildCitationManifest } from "./citations";
+export type {
+  CitationManifestEntry,
+  CitationTraceability,
+  CitationVerification,
+} from "./citations";
 export {
   buildModuleExperience,
   MODULE_SHELL_TABS,

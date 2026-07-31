@@ -9,6 +9,7 @@ import GovernanceCenter from "./GovernanceCenter";
 import ModuleShell from "./ModuleShell";
 import AgentWorkspaceRegions from "./AgentWorkspaceRegions";
 import ExpansionCatalog from "./ExpansionCatalog";
+import CitationManifest from "./CitationManifest";
 import {
   getIntelligenceModeOptions,
   getModuleSwitcherOptions,
@@ -660,9 +661,13 @@ function AssistantMessage({ responsePayload }) {
               showDirectAnswer={false}
               showWhatThisMeans={!analyticalIncludesWhatThisMeans}
             />
+            <CitationManifest citations={responsePayload?.citationManifest || []} />
           </div>
         ) : (
-          <AssistantAnswer responsePayload={responsePayload} />
+          <div className="space-y-4">
+            <AssistantAnswer responsePayload={responsePayload} />
+            <CitationManifest citations={responsePayload?.citationManifest || []} />
+          </div>
         )}
       </div>
     </div>
