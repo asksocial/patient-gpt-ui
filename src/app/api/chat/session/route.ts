@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     const { data: session, error: sessionError } = await supabase
       .from("chat_sessions")
       .select(
-        "id, user_id, therapeutic_area, title, is_pinned, created_at, updated_at"
+        "id, user_id, workspace_id, therapeutic_area, title, is_pinned, created_at, updated_at"
       )
       .eq("id", sessionId)
       .eq("user_id", userId)

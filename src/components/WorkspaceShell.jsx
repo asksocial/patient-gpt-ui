@@ -10,6 +10,7 @@ import ModuleShell from "./ModuleShell";
 import AgentWorkspaceRegions from "./AgentWorkspaceRegions";
 import ExpansionCatalog from "./ExpansionCatalog";
 import CitationManifest from "./CitationManifest";
+import IntelligenceLibrary from "./IntelligenceLibrary";
 import {
   getIntelligenceModeOptions,
   getModuleSwitcherOptions,
@@ -753,6 +754,8 @@ export default function WorkspaceShell() {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [error, setError] = useState("");
   const [activeDestination, setActiveDestination] = useState("ask");
+  const [workspaces, setWorkspaces] = useState([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState("");
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) || null,
@@ -970,6 +973,24 @@ export default function WorkspaceShell() {
   }, []);
 
   useEffect(() => {
+    async function loadWorkspaces() {
+      try {
+        const response = await fetch("/api/workspaces", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok || !data.ok) return;
+        setWorkspaces(data.workspaces || []);
+        setActiveWorkspaceId((current) => {
+          if ((data.workspaces || []).some((workspace) => workspace.id === current)) return current;
+          return data.workspaces?.[0]?.id || "";
+        });
+      } catch (workspaceError) {
+        console.error("Failed to load persistent workspaces", workspaceError);
+      }
+    }
+    loadWorkspaces();
+  }, []);
+
+  useEffect(() => {
     async function loadEntitlements() {
       try {
         const response = await fetch("/api/entitlements/me");
@@ -1063,6 +1084,28 @@ export default function WorkspaceShell() {
     });
   }
 
+  async function createWorkspace() {
+    const name = window.prompt("Name this intelligence workspace");
+    if (!name?.trim()) return;
+    try {
+      const response = await fetch("/api/workspaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          therapeuticArea,
+          moduleIds: activeModuleId ? [activeModuleId] : [],
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || "Failed to create workspace");
+      setWorkspaces((current) => [data.workspace, ...current]);
+      setActiveWorkspaceId(data.workspace.id);
+    } catch (workspaceError) {
+      setError(workspaceError.message || "Failed to create workspace");
+    }
+  }
+
   function sortSessions(nextSessions) {
     return [...nextSessions].sort((a, b) => {
       const aPinned = a.is_pinned ? 1 : 0;
@@ -1087,6 +1130,7 @@ export default function WorkspaceShell() {
       body: JSON.stringify({
         therapeuticArea,
         firstQuestion,
+        workspaceId: activeWorkspaceId || undefined,
       }),
     });
 
@@ -1154,12 +1198,15 @@ export default function WorkspaceShell() {
                   message.content.analyticalCoverage || null,
                 analyticalAnswer:
                   message.content.analyticalAnswer || null,
+                citationManifest:
+                  message.content.citationManifest || [],
               },
             }),
       }));
 
       setMessages(restoredMessages);
       setTherapeuticArea(data.session.therapeutic_area);
+      setActiveWorkspaceId(data.session.workspace_id || "");
     } catch (err) {
       setError(err?.message || "Failed to open session");
     }
@@ -1414,6 +1461,8 @@ export default function WorkspaceShell() {
           data.analyticalAnswer || null,
         entitlements:
           data.entitlements || null,
+        citationManifest:
+          data.citationManifest || [],
       };
 
       const assistantMessage = {
@@ -1438,9 +1487,32 @@ export default function WorkspaceShell() {
               responsePayload.analyticalCoverage,
             analyticalAnswer:
               responsePayload.analyticalAnswer,
+            citationManifest:
+              responsePayload.citationManifest,
           },
         },
       ]);
+
+      if (activeWorkspaceId) {
+        fetch("/api/work-products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            workspaceId: activeWorkspaceId,
+            kind: "answer",
+            title: trimmed.slice(0, 100),
+            therapeuticArea,
+            moduleId: activeModuleId || undefined,
+            status: "ready",
+            payload: data,
+            provenance: {
+              question: trimmed,
+              citationIds: (data.citationManifest || []).map((citation) => citation.citationId),
+              generatedAt: new Date().toISOString(),
+            },
+          }),
+        }).catch((saveError) => console.error("Failed to persist answer", saveError));
+      }
 
       setSessions((prev) =>
         sortSessions(
@@ -1738,7 +1810,27 @@ export default function WorkspaceShell() {
                 </p>
               </div>
 
-              <div className="w-full shrink-0 xl:w-64">
+              <div className="grid w-full shrink-0 gap-3 sm:grid-cols-2 xl:w-[34rem]">
+                <div>
+                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                    Workspace
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      value={activeWorkspaceId}
+                      onChange={(event) => setActiveWorkspaceId(event.target.value)}
+                      className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none"
+                    >
+                      <option value="">Session only</option>
+                      {workspaces.map((workspace) => (
+                        <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={createWorkspace} title="Create workspace" className="rounded-xl border border-white/10 px-3 text-white/60 hover:text-white">+</button>
+                  </div>
+                  <p className="mt-1.5 text-[11px] leading-4 text-white/30">Saved work becomes searchable across permitted workspaces.</p>
+                </div>
+                <div>
                 <label
                   htmlFor="global-module-switcher"
                   className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40"
@@ -1782,6 +1874,7 @@ export default function WorkspaceShell() {
                 <p className="mt-1.5 text-[11px] leading-4 text-white/30">
                   Switching modules keeps your current work open.
                 </p>
+                </div>
               </div>
             </div>
 
@@ -1905,6 +1998,18 @@ export default function WorkspaceShell() {
             ) : activeDestination ===
               "governance" ? (
               <GovernanceCenter />
+            ) : activeDestination ===
+              "intelligence_search" ? (
+              <IntelligenceLibrary view="search" />
+            ) : activeDestination ===
+              "library" ? (
+              <IntelligenceLibrary
+                view="library"
+                onUsePrompt={(prompt) => {
+                  setQuestion(prompt);
+                  setActiveDestination("ask");
+                }}
+              />
             ) : (
               <DestinationPlaceholder
                 title={

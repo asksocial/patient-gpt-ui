@@ -19,7 +19,7 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from("chat_sessions")
-      .select("id, therapeutic_area, title, created_at, updated_at")
+      .select("id, workspace_id, therapeutic_area, title, created_at, updated_at")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
 
@@ -41,7 +41,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId, orgId } = await auth();
 
     if (!userId) {
       return NextResponse.json(
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { therapeuticArea, firstQuestion } = body;
+    const { therapeuticArea, firstQuestion, workspaceId } = body;
 
     if (!therapeuticArea) {
       return NextResponse.json(
@@ -62,6 +62,18 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
+    if (workspaceId) {
+      const { data: permittedWorkspace } = await supabase
+        .from("intelligence_workspaces")
+        .select("id")
+        .eq("id", workspaceId)
+        .eq("principal_id", orgId || userId)
+        .maybeSingle();
+      if (!permittedWorkspace) {
+        return NextResponse.json({ ok: false, error: "Workspace not found" }, { status: 404 });
+      }
+    }
+
     const title =
       firstQuestion?.slice(0, 80) || `New ${therapeuticArea} conversation`;
 
@@ -69,6 +81,7 @@ export async function POST(req: NextRequest) {
       .from("chat_sessions")
       .insert({
         user_id: userId,
+        workspace_id: workspaceId || null,
         therapeutic_area: therapeuticArea,
         title,
       })

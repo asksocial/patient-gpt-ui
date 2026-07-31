@@ -92,6 +92,14 @@ export type {
   CitationVerification,
 } from "./citations";
 export {
+  listSavedPrompts,
+  listSavedSearches,
+  savePrompt,
+  saveSearch,
+  scoreCrossWorkspaceRecord,
+  searchAcrossWorkspaces,
+} from "./library";
+export {
   buildModuleExperience,
   MODULE_SHELL_TABS,
 } from "./moduleExperience";
