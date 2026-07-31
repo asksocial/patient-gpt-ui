@@ -11,6 +11,7 @@ import AgentWorkspaceRegions from "./AgentWorkspaceRegions";
 import ExpansionCatalog from "./ExpansionCatalog";
 import CitationManifest from "./CitationManifest";
 import IntelligenceLibrary from "./IntelligenceLibrary";
+import PatientIntelligenceView from "./PatientIntelligenceView";
 import {
   getIntelligenceModeOptions,
   getModuleSwitcherOptions,
@@ -1979,15 +1980,15 @@ export default function WorkspaceShell() {
                 "module_"
               ) &&
               activeModule ? (
-              <ModuleShell
-                module={activeModule}
-                agents={
-                  intelligenceAccess.agents
-                }
-                workflows={
-                  intelligenceAccess.workflows
-                }
-              />
+              activeDestination === "module_patient" ? (
+                <PatientIntelligenceView therapeuticArea={therapeuticArea} workspaceId={activeWorkspaceId} />
+              ) : (
+                <ModuleShell
+                  module={activeModule}
+                  agents={intelligenceAccess.agents}
+                  workflows={intelligenceAccess.workflows}
+                />
+              )
             ) : activeDestination ===
               "modes_library" ? (
               <ExpansionCatalog
