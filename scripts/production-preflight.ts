@@ -134,6 +134,33 @@ const { error: knowledgeError } =
     .select("id")
     .limit(1);
 
+const requiredPlatformTables = [
+  "intelligence_workspaces",
+  "intelligence_work_products",
+  "intelligence_knowledge_entities",
+  "intelligence_knowledge_relationships",
+  "intelligence_audit_events",
+  "saved_intelligence_searches",
+  "saved_intelligence_prompts",
+  "intelligence_monitoring_profiles",
+  "intelligence_monitor_runs",
+  "intelligence_alerts",
+  "intelligence_delivery_outbox",
+];
+const unavailablePlatformTables: string[] = [];
+for (const table of requiredPlatformTables) {
+  const { error: tableError } = await supabase
+    .from(table)
+    .select("id")
+    .limit(1);
+  if (tableError) unavailablePlatformTables.push(table);
+}
+if (unavailablePlatformTables.length) {
+  throw new Error(
+    `Supabase platform migrations are incomplete. Missing or inaccessible tables: ${unavailablePlatformTables.join(", ")}`
+  );
+}
+
 if (
   knowledgeMode === "persistent" &&
   knowledgeError
@@ -163,6 +190,8 @@ console.log(
       knowledgeMode,
       knowledgeTableAvailable:
         !knowledgeError,
+      platformPersistenceTables:
+        requiredPlatformTables,
     },
     null,
     2
