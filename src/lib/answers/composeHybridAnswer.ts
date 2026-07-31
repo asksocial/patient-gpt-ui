@@ -1,4 +1,10 @@
-import OpenAI from "openai";
+import {
+  aiGateway,
+  createSystemAiContext,
+  HYBRID_ANSWER_JSON_SCHEMA,
+  isAiGatewayConfigured,
+  type AiGatewayContext,
+} from "../ai-gateway";
 
 type CuratedTheme = {
   name: string;
@@ -51,6 +57,8 @@ export type ComposeHybridAnswerInput = {
   liveThemes: LiveTheme[];
   matches: ThemeMatch[];
   curatedInsights?: CuratedInsight[];
+  gatewayContext?:
+    AiGatewayContext;
 };
 
 export type HybridAnswer = {
@@ -78,10 +86,6 @@ export type HybridAnswer = {
   whatThisMeans: string;
   recommendedActions: string[];
 };
-
-const client = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
 
 function compactText(value?: string | null) {
   return (value || "").replace(/\s+/g, " ").trim();
@@ -541,7 +545,10 @@ export async function composeHybridAnswer(
     curatedThemes.length === 0 &&
     liveThemes.length === 0;
 
-  if (!client || shouldUseDeterministicFallback) {
+  if (
+    !isAiGatewayConfigured() ||
+    shouldUseDeterministicFallback
+  ) {
     return buildFallbackAnswer({
       ...input,
       curatedThemes: effectiveCuratedThemes,
@@ -632,28 +639,42 @@ Rules:
 `;
 
   try {
-    const response = await client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-      temperature: 0.2,
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt.trim(),
+    const response =
+      await aiGateway.generate({
+        context:
+          input.gatewayContext ||
+          createSystemAiContext(
+            `compose_hybrid_${Date.now()}`
+          ),
+        promptId:
+          "compose_hybrid_answer",
+        input: `${systemPrompt.trim()}\n\n${userPrompt.trim()}`,
+        jsonSchema: {
+          name:
+            "hybrid_answer",
+          schema:
+            HYBRID_ANSWER_JSON_SCHEMA,
         },
-        {
-          role: "user",
-          content: userPrompt.trim(),
-        },
-      ],
-    });
+        parse: parseJsonObject,
+      });
 
-    const text = response.choices?.[0]?.message?.content || "";
-    const parsed = parseJsonObject(text);
+    if (
+      response.status !==
+      "completed"
+    ) {
+      throw new Error(
+        response.reason
+      );
+    }
 
-    return normalizeAnswerShape(parsed, {
-      ...input,
-      curatedThemes: effectiveCuratedThemes,
-    });
+    return normalizeAnswerShape(
+      response.output,
+      {
+        ...input,
+        curatedThemes:
+          effectiveCuratedThemes,
+      }
+    );
   } catch (error) {
     console.error("[composeHybridAnswer] fallback triggered", error);
     return buildFallbackAnswer({

@@ -1,4 +1,8 @@
-import OpenAI from "openai";
+import {
+  aiGateway,
+  CURATED_THEMES_JSON_SCHEMA,
+  createSystemAiContext,
+} from "../ai-gateway";
 
 export type ExtractedCuratedTheme = {
   theme_name: string;
@@ -16,10 +20,6 @@ type ExtractCuratedThemesInput = {
 type ExtractCuratedThemesResponse = {
   themes: ExtractedCuratedTheme[];
 };
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 export async function extractCuratedThemes(
   input: ExtractCuratedThemesInput
@@ -68,32 +68,64 @@ Report:
 ${reportText}
   `.trim();
 
-  const response = await openai.responses.create({
-    model: "gpt-5.4",
-    input: prompt,
-  });
+  const response =
+    await aiGateway.generate({
+      context:
+        createSystemAiContext(
+          `extract_curated_${Date.now()}`
+        ),
+      promptId:
+        "extract_curated_themes",
+      input: prompt,
+      jsonSchema: {
+        name:
+          "curated_themes",
+        schema:
+          CURATED_THEMES_JSON_SCHEMA,
+      },
+      parse: (text) =>
+        JSON.parse(
+          text
+            .replace(
+              /```json/g,
+              ""
+            )
+            .replace(/```/g, "")
+            .trim()
+        ) as ExtractCuratedThemesResponse,
+      validate: (value) => {
+        if (
+          !Array.isArray(
+            value.themes
+          )
+        ) {
+          throw new Error(
+            "Missing themes array"
+          );
+        }
+      },
+    });
 
-  const text = response.output_text?.trim();
-
-  if (!text) {
-    throw new Error("Model returned empty output");
+  if (
+    response.status !==
+    "completed"
+  ) {
+    throw new Error(
+      response.reason
+    );
   }
 
-  try {
-    const parsed = JSON.parse(text) as ExtractCuratedThemesResponse;
-
-    if (!parsed.themes || !Array.isArray(parsed.themes)) {
-      throw new Error("Missing themes array");
-    }
-
-    return parsed.themes.map((theme) => ({
-      theme_name: theme.theme_name ?? "",
-      theme_description: theme.theme_description ?? "",
-      report_excerpt: theme.report_excerpt ?? "",
-      report_section: theme.report_section ?? "",
-    }));
-  } catch (error) {
-    console.error("Failed to parse extractCuratedThemes response:", text);
-    throw new Error("Could not parse curated themes JSON");
-  }
+  return response.output.themes.map(
+    (theme) => ({
+      theme_name:
+        theme.theme_name ?? "",
+      theme_description:
+        theme.theme_description ??
+        "",
+      report_excerpt:
+        theme.report_excerpt ?? "",
+      report_section:
+        theme.report_section ?? "",
+    })
+  );
 }

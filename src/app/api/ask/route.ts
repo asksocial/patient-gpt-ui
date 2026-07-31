@@ -17,6 +17,12 @@ import {
 import {
   hasTherapeuticAreaAccess,
 } from "../../../lib/therapeuticAccess/server";
+import {
+  configurationFromEntitlements,
+  isAiAgentId,
+  isIntelligenceModuleId,
+  resolveCustomerIntelligenceAccess,
+} from "../../../lib/intelligence-platform";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +118,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const question = body?.question?.trim();
     const therapeuticArea = body?.therapeuticArea?.trim();
+    const moduleId =
+      body?.moduleId?.trim();
+    const intelligenceMode =
+      body?.intelligenceMode?.trim() ||
+      "general";
 
     if (!question) {
       return NextResponse.json(
@@ -124,6 +135,75 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { ok: false, error: "therapeuticArea is required" },
         { status: 400 }
+      );
+    }
+
+    const customerAccess =
+      resolveCustomerIntelligenceAccess(
+        configurationFromEntitlements(
+          entitlements
+        )
+      );
+    const selectedModule =
+      moduleId &&
+      isIntelligenceModuleId(
+        moduleId
+      )
+        ? customerAccess.modules.find(
+            (item) =>
+              item.id === moduleId
+          )
+        : undefined;
+
+    if (
+      moduleId &&
+      !selectedModule
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code:
+            "MODULE_ACCESS_REQUIRED",
+          error:
+            "The selected intelligence module is not licensed or permitted.",
+          moduleId,
+        },
+        { status: 403 }
+      );
+    }
+
+    const selectedAgent =
+      intelligenceMode !==
+        "general" &&
+      isAiAgentId(
+        intelligenceMode
+      )
+        ? customerAccess.agents.find(
+            (agent) =>
+              agent.id ===
+                intelligenceMode &&
+              (!selectedModule ||
+                agent.moduleIds.includes(
+                  selectedModule.id
+                ))
+          )
+        : undefined;
+
+    if (
+      intelligenceMode !==
+        "general" &&
+      !selectedAgent
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code:
+            "INTELLIGENCE_MODE_ACCESS_REQUIRED",
+          error:
+            "The selected Intelligence Mode is not licensed or permitted in this module.",
+          intelligenceMode,
+        },
+        { status: 403 }
       );
     }
 
@@ -207,6 +287,28 @@ export async function POST(req: NextRequest) {
       liveThemes,
       matches,
       curatedInsights,
+      gatewayContext: {
+        requestId:
+          req.headers.get(
+            "x-request-id"
+          ) ||
+          crypto.randomUUID(),
+        organizationId:
+          entitlements.organizationId ||
+          "unassigned",
+        userId:
+          entitlements.userId,
+        moduleIds:
+          selectedModule
+            ? [
+                selectedModule.id,
+              ]
+            : customerAccess.modules.map(
+                (item) => item.id
+              ),
+        permissionTags:
+          entitlements.granted,
+      },
     });
     const answer = enrichHybridAnswerWithAnalytical(
       hybridAnswer,
@@ -279,6 +381,10 @@ export async function POST(req: NextRequest) {
         liveThemesCount: liveThemes.length,
         matchesCount: matches.length,
         curatedInsightsCount: curatedInsights.length,
+        intelligenceMode,
+        moduleId:
+          selectedModule?.id ||
+          null,
         analyticalStatus:
           !themeIntelligenceGranted
             ? "forbidden"

@@ -1,4 +1,8 @@
-import OpenAI from "openai";
+import {
+  aiGateway,
+  createSystemAiContext,
+  NOISE_THEMES_JSON_SCHEMA,
+} from "../ai-gateway";
 
 export type NoiseMention = {
   text: string;
@@ -14,10 +18,6 @@ export type ExtractedNoiseTheme = {
   confidence: number;
   example_mentions: string[];
 };
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 function chunkMentions<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -64,32 +64,56 @@ Mentions:
 ${mentions.map((m, i) => `${i + 1}. ${m.text}`).join("\n")}
   `.trim();
 
-  const response = await openai.responses.create({
-    model: "gpt-4.1-mini",
-    input: prompt,
-  });
+  const response =
+    await aiGateway.generate({
+      context:
+        createSystemAiContext(
+          `extract_noise_${Date.now()}`
+        ),
+      promptId:
+        "extract_noise_themes",
+      input: prompt,
+      jsonSchema: {
+        name: "noise_themes",
+        schema:
+          NOISE_THEMES_JSON_SCHEMA,
+      },
+      parse: (text) =>
+        JSON.parse(
+          text
+            .replace(
+              /```json/g,
+              ""
+            )
+            .replace(/```/g, "")
+            .trim()
+        ) as {
+          themes:
+            ExtractedNoiseTheme[];
+        },
+      validate: (value) => {
+        if (
+          !Array.isArray(
+            value.themes
+          )
+        ) {
+          throw new Error(
+            "Missing themes array"
+          );
+        }
+      },
+    });
 
-  const text = response.output_text?.trim();
-
-  if (!text) {
-    throw new Error("Model returned empty output");
+  if (
+    response.status !==
+    "completed"
+  ) {
+    throw new Error(
+      response.reason
+    );
   }
 
-  const cleaned = text
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
-
-  try {
-    const parsed = JSON.parse(cleaned) as {
-      themes: ExtractedNoiseTheme[];
-    };
-
-    return parsed.themes ?? [];
-  } catch {
-    console.error("RAW NOISE THEME OUTPUT:", text);
-    throw new Error("Failed to parse noise theme JSON");
-  }
+  return response.output.themes;
 }
 
 export async function extractNoiseThemes(

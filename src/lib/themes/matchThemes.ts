@@ -1,4 +1,8 @@
-import OpenAI from "openai";
+import {
+  aiGateway,
+  createSystemAiContext,
+  THEME_MATCH_JSON_SCHEMA,
+} from "../ai-gateway";
 
 export type CuratedThemeInput = {
   theme_name: string;
@@ -28,10 +32,6 @@ type MatchThemesInput = {
   liveThemes: LiveThemeInput[];
 };
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 function cosineSimilarity(a: number[], b: number[]) {
   let dot = 0;
   let normA = 0;
@@ -47,12 +47,25 @@ function cosineSimilarity(a: number[], b: number[]) {
 }
 
 async function getEmbedding(text: string): Promise<number[]> {
-  const response = await openai.embeddings.create({
-    model: "text-embedding-3-small",
-    input: text,
-  });
+  const response =
+    await aiGateway.embed({
+      context:
+        createSystemAiContext(
+          `theme_embedding_${Date.now()}`
+        ),
+      input: [text],
+    });
 
-  return response.data[0].embedding;
+  if (
+    response.status !==
+    "completed"
+  ) {
+    throw new Error(
+      response.reason
+    );
+  }
+
+  return response.output[0];
 }
 
 async function adjudicateMatch(
@@ -98,34 +111,50 @@ Rules:
 - Return valid JSON only.
   `.trim();
 
-  const response = await openai.responses.create({
-    model: "gpt-4.1-mini",
-    input: prompt,
-  });
+  const response =
+    await aiGateway.generate({
+      context:
+        createSystemAiContext(
+          `adjudicate_theme_${Date.now()}`
+        ),
+      promptId:
+        "adjudicate_theme_match",
+      input: prompt,
+      jsonSchema: {
+        name:
+          "theme_match",
+        schema:
+          THEME_MATCH_JSON_SCHEMA,
+      },
+      parse: (text) =>
+        JSON.parse(
+          text
+            .replace(
+              /```json/g,
+              ""
+            )
+            .replace(/```/g, "")
+            .trim()
+        ) as {
+          relationship:
+            | "covered"
+            | "partial"
+            | "emerging";
+          rationale: string;
+          confidence: number;
+        },
+    });
 
-  const text = response.output_text?.trim();
-
-  if (!text) {
-    throw new Error("Empty adjudication response");
+  if (
+    response.status !==
+    "completed"
+  ) {
+    throw new Error(
+      response.reason
+    );
   }
 
-  const cleaned = text
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
-
-  try {
-    const parsed = JSON.parse(cleaned) as {
-      relationship: "covered" | "partial" | "emerging";
-      rationale: string;
-      confidence: number;
-    };
-
-    return parsed;
-  } catch {
-    console.error("RAW MODEL OUTPUT:", text);
-    throw new Error("Failed to parse adjudication JSON");
-  }
+  return response.output;
 }
 
 export async function matchThemes(

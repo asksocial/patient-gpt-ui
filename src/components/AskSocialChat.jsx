@@ -11,12 +11,12 @@ const STARTER_QUESTIONS = [
 
 function Badge({ children, tone = "default" }) {
   const styles = {
-    default: "bg-slate-100 text-slate-700 border-slate-200",
-    emerging: "bg-amber-50 text-amber-800 border-amber-200",
-    partial: "bg-blue-50 text-blue-800 border-blue-200",
-    covered: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    cluster: "bg-violet-50 text-violet-800 border-violet-200",
-    noise: "bg-rose-50 text-rose-800 border-rose-200",
+    default: "border-white/10 bg-white/5 text-white/70",
+    emerging: "border-amber-500/20 bg-amber-500/10 text-amber-300",
+    partial: "border-blue-500/20 bg-blue-500/10 text-blue-300",
+    covered: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+    cluster: "border-violet-500/20 bg-violet-500/10 text-violet-300",
+    noise: "border-rose-500/20 bg-rose-500/10 text-rose-300",
   };
 
   return (
@@ -30,13 +30,13 @@ function Badge({ children, tone = "default" }) {
 
 function Card({ title, subtitle, children }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
       <div className="mb-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-900">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
           {title}
         </h3>
         {subtitle ? (
-          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+          <p className="mt-1 text-sm text-white/45">{subtitle}</p>
         ) : null}
       </div>
       {children}
@@ -55,7 +55,7 @@ function AssistantAnswer({ answer }) {
         title="Direct Answer"
         subtitle="Report-backed, live-enhanced summary"
       >
-        <p className="text-[15px] leading-7 text-slate-700">
+        <p className="text-[15px] leading-7 text-white/80">
           {answer?.directAnswer}
         </p>
       </Card>
@@ -69,12 +69,12 @@ function AssistantAnswer({ answer }) {
             {curatedThemes.map((theme, idx) => (
               <div
                 key={`${theme.name}-${idx}`}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                className="rounded-xl border border-white/10 bg-black/30 p-4"
               >
-                <h4 className="text-sm font-semibold text-slate-900">
+                <h4 className="text-sm font-semibold text-white">
                   {theme.name}
                 </h4>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-white/60">
                   {theme.description}
                 </p>
               </div>
@@ -94,10 +94,10 @@ function AssistantAnswer({ answer }) {
             {liveThemes.map((theme, idx) => (
               <div
                 key={`${theme.name}-${idx}`}
-                className="rounded-xl border border-slate-200 bg-white p-4"
+                className="rounded-xl border border-white/10 bg-black/30 p-4"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-sm font-semibold text-slate-900">
+                  <h4 className="text-sm font-semibold text-white">
                     {theme.name}
                   </h4>
 
@@ -124,7 +124,7 @@ function AssistantAnswer({ answer }) {
                   </Badge>
                 </div>
 
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-white/60">
                   {theme.description}
                 </p>
               </div>
@@ -132,8 +132,8 @@ function AssistantAnswer({ answer }) {
           </div>
 
           {emergingNarratives.length ? (
-            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+            <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
                 Emerging narratives
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -152,7 +152,7 @@ function AssistantAnswer({ answer }) {
         title="What This Means"
         subtitle="Strategic synthesis for decision-making"
       >
-        <p className="text-[15px] leading-7 text-slate-700">
+        <p className="text-[15px] leading-7 text-white/80">
           {answer?.whatThisMeans}
         </p>
       </Card>
@@ -163,7 +163,7 @@ function AssistantAnswer({ answer }) {
 function UserMessage({ text }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-3xl rounded-2xl rounded-br-md bg-slate-900 px-4 py-3 text-sm leading-6 text-white shadow-sm">
+      <div className="max-w-3xl rounded-2xl rounded-br-md bg-white px-4 py-3 text-sm leading-6 text-black shadow-sm">
         {text}
       </div>
     </div>
@@ -173,7 +173,7 @@ function UserMessage({ text }) {
 function AssistantMessage({ answer }) {
   return (
     <div className="flex justify-start">
-      <div className="w-full max-w-5xl rounded-3xl rounded-bl-md border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+      <div className="w-full max-w-5xl rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 shadow-2xl shadow-black/20 md:p-5">
         <AssistantAnswer answer={answer} />
       </div>
     </div>
@@ -183,7 +183,7 @@ function AssistantMessage({ answer }) {
 function LoadingMessage() {
   return (
     <div className="flex justify-start">
-      <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+      <div className="rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/50 shadow-sm">
         Thinking…
       </div>
     </div>
@@ -254,18 +254,18 @@ export default function AskSocialChat() {
   }
 
   return (
-    <div className="bg-slate-50">
+    <div className="bg-black text-white">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
-        <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <header className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl shadow-black/20">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                 AskSocial
               </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
                 Social intelligence, made conversational
               </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-white/60">
                 Ask natural-language questions and get a baseline report view
                 enriched with live emerging narratives, trust signals, and
                 strategic synthesis.
@@ -273,13 +273,13 @@ export default function AskSocialChat() {
             </div>
 
             <div className="w-full max-w-sm">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                 Therapeutic area
               </label>
               <select
                 value={therapeuticArea}
                 onChange={(e) => setTherapeuticArea(e.target.value)}
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-slate-500"
+                className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition focus:border-white/30"
               >
                 <option>Hepatitis B</option>
               </select>
@@ -287,7 +287,7 @@ export default function AskSocialChat() {
           </div>
         </header>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-2xl shadow-black/20">
           <div className="flex flex-wrap gap-2">
             {STARTER_QUESTIONS.map((item) => (
               <button
@@ -295,7 +295,7 @@ export default function AskSocialChat() {
                 type="button"
                 onClick={() => submitQuestion(item)}
                 disabled={loading}
-                className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {item}
               </button>
@@ -303,14 +303,14 @@ export default function AskSocialChat() {
           </div>
         </section>
 
-        <section className="flex min-h-[420px] flex-col gap-4 rounded-3xl border border-slate-200 bg-slate-100/60 p-4 md:p-5">
+        <section className="flex min-h-[420px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
           {messages.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/80 p-10 text-center">
+            <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-white">
                   Start with a question
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">
                   Ask about the report baseline, emerging narratives, changing
                   concerns, trust signals, or what’s shifted since the last
                   report.
@@ -330,7 +330,7 @@ export default function AskSocialChat() {
           {loading ? <LoadingMessage /> : null}
 
           {error ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
               {error}
             </div>
           ) : null}
@@ -338,10 +338,10 @@ export default function AskSocialChat() {
 
         <form
           onSubmit={handleSubmit}
-          className="sticky bottom-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-lg shadow-slate-200/60"
+          className="sticky bottom-4 rounded-3xl border border-white/10 bg-black/95 p-4 shadow-2xl shadow-black/30 backdrop-blur"
         >
           <div className="flex flex-col gap-3">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
               Ask AskSocial
             </label>
 
@@ -350,17 +350,17 @@ export default function AskSocialChat() {
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask about baseline themes, emerging narratives, trust dynamics, or what changed since the last report..."
               rows={3}
-              className="w-full resize-none rounded-2xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-slate-500"
+              className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
             />
 
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-white/40">
                 Report-backed insights + live narrative discovery
               </p>
               <button
                 type="submit"
                 disabled={!question.trim() || loading}
-                className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Analyzing..." : "Ask"}
               </button>

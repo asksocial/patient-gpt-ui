@@ -7,6 +7,11 @@ import {
 import {
   getCurrentEntitlements,
 } from "../../../../lib/entitlements/server";
+import {
+  configurationFromEntitlements,
+  buildCommercialPackaging,
+  resolveCustomerIntelligenceAccess,
+} from "../../../../lib/intelligence-platform";
 
 export const dynamic =
   "force-dynamic";
@@ -26,11 +31,31 @@ export async function GET() {
       );
     }
 
+    const intelligenceAccess =
+      resolveCustomerIntelligenceAccess(
+        configurationFromEntitlements(
+          entitlements
+        )
+      );
+    const commercialPackaging =
+      buildCommercialPackaging(
+        entitlements
+      );
+
     return NextResponse.json({
       ok: true,
       entitlements,
+      intelligenceAccess: {
+        modules:
+          intelligenceAccess.modules,
+        agents:
+          intelligenceAccess.agents,
+        workflows:
+          intelligenceAccess.workflows,
+      },
       catalog:
         ENTITLEMENT_CATALOG,
+      commercialPackaging,
     });
   } catch (error) {
     const message =

@@ -4,6 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Tooltip from "./ui/Tooltip";
 import ExecutiveIntelligenceView from "./ExecutiveIntelligenceView";
+import EcosystemNavigation from "./EcosystemNavigation";
+import GovernanceCenter from "./GovernanceCenter";
+import ModuleShell from "./ModuleShell";
+import AgentWorkspaceRegions from "./AgentWorkspaceRegions";
+import ExpansionCatalog from "./ExpansionCatalog";
+import {
+  getIntelligenceModeOptions,
+  getModuleSwitcherOptions,
+} from "../lib/intelligence-platform/navigation";
+import {
+  getAvailableAgentActions,
+} from "../lib/intelligence-platform/agentActions";
 
 const QUICK_ACTIONS = [
   "What are people saying right now?",
@@ -11,6 +23,87 @@ const QUICK_ACTIONS = [
   "What themes are driving confusion or concern?",
   "What’s changed since the last report?",
 ];
+
+const DESTINATION_COPY = {
+  home: {
+    eyebrow: "Intelligence ecosystem",
+    title: "Home",
+    description:
+      "Your starting point for intelligence, active work, and recent activity.",
+  },
+  ask: {
+    eyebrow: "Ask AskSocial",
+    title: "Conversational social intelligence",
+    description:
+      "Ask questions across report themes and live narrative signals to understand what is changing and what it means.",
+  },
+  intelligence_search: {
+    eyebrow: "Intelligence",
+    title: "Search",
+    description:
+      "Search permitted evidence and intelligence across your licensed modules.",
+  },
+  intelligence_graph: {
+    eyebrow: "Intelligence",
+    title: "Knowledge Graph",
+    description:
+      "Explore connected entities, relationships, provenance, and evidence.",
+  },
+  intelligence_reports: {
+    eyebrow: "Intelligence",
+    title: "Reports",
+    description:
+      "Review evidence-qualified intelligence and decision-ready briefs.",
+  },
+  modes_mine: {
+    eyebrow: "Intelligence Modes",
+    title: "My Modes",
+    description:
+      "Return to specialized capabilities available inside AskSocial.",
+  },
+  modes_library: {
+    eyebrow: "Intelligence Modes",
+    title: "Mode Library",
+    description:
+      "Discover licensed capabilities without leaving the AskSocial experience.",
+  },
+  workflows_active: {
+    eyebrow: "Workflows",
+    title: "Active workflows",
+    description:
+      "Monitor currently running and in-progress intelligence work.",
+  },
+  workflows_scheduled: {
+    eyebrow: "Workflows",
+    title: "Scheduled workflows",
+    description:
+      "Manage recurring intelligence work without leaving this application.",
+  },
+  workflows_approvals: {
+    eyebrow: "Workflows",
+    title: "Approvals",
+    description:
+      "Review work that requires a human decision before it can continue.",
+  },
+  library: {
+    eyebrow: "Shared resources",
+    title: "Library",
+    description:
+      "Find saved evidence, reports, searches, and reusable intelligence assets.",
+  },
+  governance: {
+    eyebrow: "Trust and control",
+    title: "Governance",
+    description:
+      "Review the policies and controls that govern your intelligence environment.",
+  },
+  administration: {
+    eyebrow: "Administration",
+    title: "Administration",
+    description:
+      "Manage users, entitlements, and organization-level access.",
+  },
+};
 
 function formatDate(value) {
   if (!value) return "";
@@ -586,10 +679,61 @@ function LoadingMessage() {
   );
 }
 
+function DestinationPlaceholder({
+  title,
+  description,
+  contextLabel,
+}) {
+  return (
+    <section className="flex min-h-[420px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center">
+      <div className="max-w-xl">
+        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-lg text-white/65">
+          ◇
+        </div>
+        <h2 className="mt-5 text-xl font-semibold text-white">
+          {title}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-white/50">
+          {description}
+        </p>
+        {contextLabel ? (
+          <p className="mt-4 text-xs font-medium uppercase tracking-[0.16em] text-emerald-300/70">
+            Current module · {contextLabel}
+          </p>
+        ) : null}
+        <p className="mt-6 text-xs leading-5 text-white/30">
+          This destination is included in the shared navigation foundation and
+          will be activated as its platform capability is implemented.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 export default function WorkspaceShell() {
   const [therapeuticAreas, setTherapeuticAreas] = useState([]);
   const [analyticalCoverage, setAnalyticalCoverage] = useState([]);
   const [entitlements, setEntitlements] = useState(null);
+  const [
+    commercialPackaging,
+    setCommercialPackaging,
+  ] = useState(null);
+  const [intelligenceAccess, setIntelligenceAccess] = useState({
+    modules: [],
+    agents: [],
+    workflows: [],
+  });
+  const [activeModuleId, setActiveModuleId] = useState("");
+  const [intelligenceModeId, setIntelligenceModeId] = useState("general");
+  const [
+    agentWorkspaceContext,
+    setAgentWorkspaceContext,
+  ] = useState({
+    product: "",
+    disease: "",
+    geography: "",
+    timePeriod: "",
+  });
   const [therapeuticArea, setTherapeuticArea] = useState("");
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
@@ -603,7 +747,7 @@ export default function WorkspaceShell() {
   const [loadingAreas, setLoadingAreas] = useState(true);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [error, setError] = useState("");
-  const [activeView, setActiveView] = useState("conversation");
+  const [activeDestination, setActiveDestination] = useState("ask");
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) || null,
@@ -649,6 +793,146 @@ export default function WorkspaceShell() {
   const canUseExecutiveIntelligence =
     entitlements?.capabilities?.executive_intelligence?.granted !== false;
 
+  const moduleOptions = useMemo(
+    () =>
+      getModuleSwitcherOptions(
+        intelligenceAccess
+      ),
+    [intelligenceAccess]
+  );
+
+  const activeModule = useMemo(
+    () =>
+      intelligenceAccess.modules.find(
+        (module) =>
+          module.id ===
+          activeModuleId
+      ) || null,
+    [
+      activeModuleId,
+      intelligenceAccess.modules,
+    ]
+  );
+
+  const intelligenceModeOptions =
+    useMemo(
+      () =>
+        getIntelligenceModeOptions(
+          intelligenceAccess,
+          activeModuleId
+        ),
+      [
+        activeModuleId,
+        intelligenceAccess,
+      ]
+    );
+
+  const activeIntelligenceMode =
+    intelligenceModeOptions.some(
+      (mode) =>
+        mode.value ===
+        intelligenceModeId
+    )
+      ? intelligenceModeId
+      : "general";
+
+  const activeModeDefinition =
+    intelligenceModeOptions.find(
+      (mode) =>
+        mode.value ===
+        activeIntelligenceMode
+    );
+
+  const suggestedModeActions =
+    useMemo(
+      () =>
+        getAvailableAgentActions({
+          permittedAgentIds:
+            intelligenceAccess.agents.map(
+              (agent) =>
+                agent.id
+            ),
+          moduleId:
+            activeModuleId ||
+            undefined,
+          agentId:
+            activeIntelligenceMode ===
+            "general"
+              ? undefined
+              : activeIntelligenceMode,
+        }).slice(0, 4),
+      [
+        activeIntelligenceMode,
+        activeModuleId,
+        intelligenceAccess.agents,
+      ]
+    );
+
+  const latestEvidenceCount =
+    useMemo(() => {
+      for (
+        let index =
+          messages.length - 1;
+        index >= 0;
+        index -= 1
+      ) {
+        const count =
+          messages[index]
+            ?.responsePayload
+            ?.relevantCuratedInsights
+            ?.length;
+        if (
+          typeof count ===
+          "number"
+        ) {
+          return count;
+        }
+      }
+      return 0;
+    }, [messages]);
+
+  const destinationCopy = useMemo(() => {
+    const staticCopy =
+      DESTINATION_COPY[
+        activeDestination
+      ];
+    if (staticCopy) {
+      return staticCopy;
+    }
+
+    if (
+      activeDestination.startsWith(
+        "module_"
+      )
+    ) {
+      const moduleDefinition =
+        intelligenceAccess.modules.find(
+          (item) =>
+            `module_${item.id}` ===
+            activeDestination
+        );
+      return {
+        eyebrow: "Module",
+        title:
+          moduleDefinition?.name ||
+          "Intelligence module",
+        description:
+          moduleDefinition?.description ||
+          "Licensed module workspace.",
+      };
+    }
+
+    return {
+      eyebrow: "AskSocial",
+      title: "Intelligence workspace",
+      description:
+        "Continue your work through the shared AskSocial experience.",
+    };
+  }, [
+    activeDestination,
+    intelligenceAccess,
+  ]);
+
   useEffect(() => {
     async function loadTherapeuticAreas() {
       try {
@@ -687,6 +971,51 @@ export default function WorkspaceShell() {
         const data = await response.json();
         if (response.ok && data.ok) {
           setEntitlements(data.entitlements);
+          setCommercialPackaging(
+            data.commercialPackaging ||
+              null
+          );
+          const nextAccess =
+            data.intelligenceAccess || {
+              modules: [],
+              agents: [],
+              workflows: [],
+            };
+          setIntelligenceAccess(
+            nextAccess
+          );
+          setActiveModuleId(
+            (current) => {
+              if (
+                nextAccess.modules.some(
+                  (module) =>
+                    module.id ===
+                    current
+                )
+              ) {
+                return current;
+              }
+
+              const savedModule =
+                window.localStorage.getItem(
+                  "asksocial.activeModule"
+                );
+              if (
+                nextAccess.modules.some(
+                  (module) =>
+                    module.id ===
+                    savedModule
+                )
+              ) {
+                return savedModule;
+              }
+
+              return (
+                nextAccess.modules[0]
+                  ?.id || ""
+              );
+            }
+          );
         }
       } catch (loadError) {
         console.error("Failed to load entitlements", loadError);
@@ -838,7 +1167,7 @@ export default function WorkspaceShell() {
     setError("");
     setEditingSessionId(null);
     setEditingTitle("");
-    setActiveView("conversation");
+    setActiveDestination("ask");
   }
 
   function handleTherapeuticAreaChange(event) {
@@ -853,7 +1182,58 @@ export default function WorkspaceShell() {
     setError("");
     setEditingSessionId(null);
     setEditingTitle("");
-    setActiveView("conversation");
+    setActiveDestination("ask");
+  }
+
+  function handleNavigation(
+    destinationId
+  ) {
+    if (
+      destinationId ===
+      "administration"
+    ) {
+      window.location.assign(
+        "/admin/entitlements"
+      );
+      return;
+    }
+
+    setActiveDestination(
+      destinationId
+    );
+
+    if (
+      destinationId.startsWith(
+        "module_"
+      )
+    ) {
+      const moduleId =
+        destinationId.slice(
+          "module_".length
+        );
+      if (
+        intelligenceAccess.modules.some(
+          (module) =>
+            module.id === moduleId
+        )
+      ) {
+        setActiveModuleId(moduleId);
+        window.localStorage.setItem(
+          "asksocial.activeModule",
+          moduleId
+        );
+      }
+    }
+  }
+
+  function handleModuleChange(event) {
+    const moduleId =
+      event.target.value;
+    setActiveModuleId(moduleId);
+    window.localStorage.setItem(
+      "asksocial.activeModule",
+      moduleId
+    );
   }
 
   function beginRename(session) {
@@ -999,6 +1379,11 @@ export default function WorkspaceShell() {
         body: JSON.stringify({
           question: trimmed,
           therapeuticArea,
+          moduleId:
+            activeModuleId ||
+            undefined,
+          intelligenceMode:
+            activeIntelligenceMode,
         }),
       });
 
@@ -1079,55 +1464,37 @@ export default function WorkspaceShell() {
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="grid min-h-screen lg:grid-cols-[320px_1fr]">
-        <aside className="border-r border-white/10 bg-black/80">
-          <div className="flex h-full flex-col p-5">
+        <aside className="border-r border-white/10 bg-black/80 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
+          <div className="flex min-h-full flex-col p-5">
             <div>
               <div className="text-2xl font-semibold tracking-tight">
                 AskSocial
               </div>
               <div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/40">
-                Workspace
+                Intelligence Platform
               </div>
             </div>
 
-            <div className="mt-6">
+            <EcosystemNavigation
+              access={intelligenceAccess}
+              isAdmin={
+                entitlements?.isAdmin
+              }
+              activeItem={
+                activeDestination
+              }
+              onNavigate={
+                handleNavigation
+              }
+            />
+
+            <div className="mt-7 border-t border-white/10 pt-6">
               <button
                 type="button"
                 onClick={startNewConversation}
                 className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90"
               >
                 New conversation
-              </button>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1">
-              <button
-                type="button"
-                onClick={() => setActiveView("conversation")}
-                className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
-                  activeView === "conversation"
-                    ? "bg-white text-black"
-                    : "text-white/55 hover:text-white"
-                }`}
-              >
-                Conversation
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveView("executive")}
-                disabled={!canUseExecutiveIntelligence}
-                title={
-                  canUseExecutiveIntelligence
-                    ? "Open the latest executive brief"
-                    : "Executive Intelligence is not included in your entitlements"
-                }
-                className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
-                  activeView === "executive"
-                    ? "bg-white text-black"
-                    : "text-white/55 hover:text-white"
-                } disabled:cursor-not-allowed disabled:opacity-35`}
-              >
-                Executive brief
               </button>
             </div>
 
@@ -1341,37 +1708,91 @@ export default function WorkspaceShell() {
         </aside>
 
         <main className="flex min-h-screen flex-col">
-          <header className="border-b border-white/10 bg-black/70 px-6 py-5 backdrop-blur">
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                {activeView === "executive"
-                  ? "Leadership Intelligence"
-                  : "AskSocial Workspace"}
-              </p>
-              <h1 className="text-2xl font-semibold tracking-tight text-white">
-                {activeView === "executive"
-                  ? "Executive decision brief"
-                  : activeSession?.title || "Conversational social intelligence"}
-              </h1>
-              <p className="max-w-3xl text-sm leading-6 text-white/60">
-                {activeView === "executive"
-                  ? "A concise, evidence-qualified view of theme momentum, decision signals, recommended actions, and items requiring validation."
-                  : activeSession
+          <header className="sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
+            <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+                  {destinationCopy.eyebrow}
+                </p>
+                <h1 className="text-2xl font-semibold tracking-tight text-white">
+                  {activeDestination ===
+                    "ask" &&
+                  activeSession
+                    ? activeSession.title ||
+                      destinationCopy.title
+                    : destinationCopy.title}
+                </h1>
+                <p className="max-w-3xl text-sm leading-6 text-white/60">
+                  {activeDestination ===
+                    "ask" &&
+                  activeSession
                     ? `Working across ${activeSession.therapeutic_area}. Last updated ${formatDate(
                         activeSession.updated_at
                       )}.`
-                    : "Ask questions across your baseline report themes and live narrative signals to understand what people are saying, what is changing, and what it means."}
-              </p>
-              {selectedCoverage?.status === "conversation_only" ? (
+                    : destinationCopy.description}
+                </p>
+              </div>
+
+              <div className="w-full shrink-0 xl:w-64">
+                <label
+                  htmlFor="global-module-switcher"
+                  className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40"
+                >
+                  Current module
+                </label>
+                <select
+                  id="global-module-switcher"
+                  value={activeModuleId}
+                  onChange={
+                    handleModuleChange
+                  }
+                  disabled={
+                    moduleOptions.length ===
+                    0
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none transition focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {moduleOptions.length ===
+                  0 ? (
+                    <option value="">
+                      No licensed modules
+                    </option>
+                  ) : (
+                    moduleOptions.map(
+                      (module) => (
+                        <option
+                          key={
+                            module.value
+                          }
+                          value={
+                            module.value
+                          }
+                        >
+                          {module.label}
+                        </option>
+                      )
+                    )
+                  )}
+                </select>
+                <p className="mt-1.5 text-[11px] leading-4 text-white/30">
+                  Switching modules keeps your current work open.
+                </p>
+              </div>
+            </div>
+
+            {activeDestination ===
+              "ask" &&
+            selectedCoverage?.status ===
+              "conversation_only" ? (
                 <div className="mt-2 max-w-3xl rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-200/75">
                   Conversation-only coverage: {selectedCoverage.reason}
                 </div>
-              ) : null}
-            </div>
+            ) : null}
           </header>
 
           <div className="flex-1 px-6 py-6">
-            {activeView === "executive" ? (
+            {activeDestination ===
+            "intelligence_reports" ? (
               <ExecutiveIntelligenceView
                 brief={latestExecutiveIntelligence}
                 unavailableReason={
@@ -1383,46 +1804,118 @@ export default function WorkspaceShell() {
                         selectedCoverage?.reason
                 }
               />
-            ) : (
-            <section className="flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
-              {messages.length === 0 ? (
-                <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">
-                      Start with a question
-                    </h2>
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">
-                      Ask about baseline themes, emerging narratives, changing
-                      concerns, trust signals, country differences, platform
-                      behavior, or what has shifted since the last report.
-                    </p>
+            ) : activeDestination ===
+              "ask" ? (
+              <div className="space-y-4">
+                {activeIntelligenceMode !==
+                "general" ? (
+                  <AgentWorkspaceRegions
+                    modeLabel={
+                      activeModeDefinition?.label
+                    }
+                    context={
+                      agentWorkspaceContext
+                    }
+                    onContextChange={
+                      setAgentWorkspaceContext
+                    }
+                    messageCount={
+                      messages.length
+                    }
+                    evidenceCount={
+                      latestEvidenceCount
+                    }
+                    suggestedActions={
+                      suggestedModeActions
+                    }
+                  />
+                ) : null}
+              <section className="flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
+                {messages.length === 0 ? (
+                  <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
+                    <div>
+                      <h2 className="text-lg font-semibold text-white">
+                        Start with a question
+                      </h2>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">
+                        Ask about baseline themes, emerging narratives, changing
+                        concerns, trust signals, country differences, platform
+                        behavior, or what has shifted since the last report.
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                messages.map((message) =>
-                  message.role === "user" ? (
-                    <UserMessage key={message.id} text={message.text} />
-                  ) : (
-                    <AssistantMessage
-                      key={message.id}
-                      responsePayload={message.responsePayload}
-                    />
+                ) : (
+                  messages.map(
+                    (message) =>
+                      message.role ===
+                      "user" ? (
+                        <UserMessage
+                          key={message.id}
+                          text={
+                            message.text
+                          }
+                        />
+                      ) : (
+                        <AssistantMessage
+                          key={message.id}
+                          responsePayload={
+                            message.responsePayload
+                          }
+                        />
+                      )
                   )
-                )
-              )}
+                )}
 
-              {loading ? <LoadingMessage /> : null}
+                {loading ? (
+                  <LoadingMessage />
+                ) : null}
 
-              {error ? (
-                <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
-                  {error}
-                </div>
-              ) : null}
-            </section>
+                {error ? (
+                  <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+                    {error}
+                  </div>
+                ) : null}
+              </section>
+              </div>
+            ) : activeDestination.startsWith(
+                "module_"
+              ) &&
+              activeModule ? (
+              <ModuleShell
+                module={activeModule}
+                agents={
+                  intelligenceAccess.agents
+                }
+                workflows={
+                  intelligenceAccess.workflows
+                }
+              />
+            ) : activeDestination ===
+              "modes_library" ? (
+              <ExpansionCatalog
+                packaging={
+                  commercialPackaging
+                }
+              />
+            ) : activeDestination ===
+              "governance" ? (
+              <GovernanceCenter />
+            ) : (
+              <DestinationPlaceholder
+                title={
+                  destinationCopy.title
+                }
+                description={
+                  destinationCopy.description
+                }
+                contextLabel={
+                  activeModule?.name
+                }
+              />
             )}
           </div>
 
-          {activeView === "conversation" ? (
+          {activeDestination === "ask" ? (
           <div className="sticky bottom-0 border-t border-white/10 bg-black/95 px-6 py-4 backdrop-blur">
             <form onSubmit={handleSubmit}>
               <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
@@ -1430,6 +1923,71 @@ export default function WorkspaceShell() {
                   <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                     Ask AskSocial
                   </label>
+
+                  <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-white/70">
+                        Intelligence Mode
+                      </p>
+                      <p className="mt-0.5 text-[11px] leading-4 text-white/35">
+                        {activeModeDefinition?.description}
+                      </p>
+                    </div>
+                    <select
+                      value={
+                        activeIntelligenceMode
+                      }
+                      onChange={(event) =>
+                        setIntelligenceModeId(
+                          event.target
+                            .value
+                        )
+                      }
+                      aria-label="Intelligence Mode"
+                      className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none focus:border-white/30 sm:w-64"
+                    >
+                      {intelligenceModeOptions.map(
+                        (mode) => (
+                          <option
+                            key={
+                              mode.value
+                            }
+                            value={
+                              mode.value
+                            }
+                          >
+                            {mode.label}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </div>
+
+                  {suggestedModeActions.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {suggestedModeActions.map(
+                        (action) => (
+                          <button
+                            key={
+                              action.id
+                            }
+                            type="button"
+                            title={
+                              action.description
+                            }
+                            onClick={() =>
+                              setQuestion(
+                                `${action.slashCommand} `
+                              )
+                            }
+                            className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/60 transition hover:border-white/20 hover:text-white"
+                          >
+                            {action.label}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  ) : null}
 
                   <textarea
                     value={question}

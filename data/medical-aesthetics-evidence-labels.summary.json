@@ -1,0 +1,60 @@
+{
+  "sourceFile": "data/regen-aesthetics.csv",
+  "sourceSha256": "794946f4a7fb7963ef8e6411638389a566735141bb1e02f6dc6859f96e727b1e",
+  "outputFile": "data/medical-aesthetics-evidence-labels.csv",
+  "labelVersion": "medical_aesthetics_silver_v1",
+  "rowCount": 592,
+  "sourceGroups": {
+    "media": 326,
+    "company": 96,
+    "other": 75,
+    "provider_hcp": 79,
+    "patient": 16
+  },
+  "promotionalCount": 101,
+  "authorIdentities": {
+    "journalist": 326,
+    "brand": 54,
+    "community_member": 1,
+    "provider": 79,
+    "clinic": 39,
+    "event_organizer": 1,
+    "unknown": 69,
+    "patient": 16,
+    "retailer": 3,
+    "influencer": 2,
+    "researcher": 1,
+    "government": 1
+  },
+  "evidenceClasses": {
+    "consumer_news": 326,
+    "corporate_pr": 54,
+    "unknown": 68,
+    "provider_conversation": 78,
+    "clinic_marketing": 39,
+    "event_or_conference": 1,
+    "personal_blog": 5,
+    "patient_conversation": 4,
+    "retail_or_product": 5,
+    "influencer_content": 2,
+    "youtube_review": 7,
+    "forum": 1,
+    "research_journal": 1,
+    "government_or_regulator": 1
+  },
+  "reviewPriorities": {
+    "medium": 421,
+    "high": 124,
+    "low": 47
+  },
+  "relevance": {
+    "profile_supported_needs_review": 257,
+    "theme_supported": 335
+  },
+  "humanGoldLabelsPopulated": false,
+  "reviewGuidance": {
+    "high": "Review first: an ontology dimension is unknown or confidence is below 0.55.",
+    "medium": "Review next: confidence is below 0.75, the record contains a secondary voice, or the source group is other.",
+    "low": "Still requires human review before use as a gold label."
+  }
+}

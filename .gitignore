@@ -65,3 +65,7 @@ next-env.d.ts
 /data/*
 !/data/regen-aesthetics.csv
 !/data/HepB_-_Patients__Caregivers - Mar 11, 2026 - 11 47 15 AM.csv
+!/data/medical-aesthetics-evidence-labels.csv
+!/data/medical-aesthetics-evidence-labels.summary.json
+!/data/medical-aesthetics-high-priority-review.csv
+!/data/medical-aesthetics-high-priority-review.summary.json

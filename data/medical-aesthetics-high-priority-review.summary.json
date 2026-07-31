@@ -1,0 +1,30 @@
+{
+  "sourceFile": "data/medical-aesthetics-evidence-labels.csv",
+  "outputFile": "data/medical-aesthetics-high-priority-review.csv",
+  "reviewVersion": "medical_aesthetics_ai_review_v1",
+  "rowCount": 124,
+  "dispositions": {
+    "proposed_correction": 56,
+    "unresolved": 68
+  },
+  "confidences": {
+    "medium": 37,
+    "high": 19,
+    "low": 68
+  },
+  "proposedSourceGroups": {
+    "other": 75,
+    "company": 12,
+    "media": 2,
+    "provider_hcp": 31,
+    "patient": 4
+  },
+  "proposedPromotionalCount": 13,
+  "proposedNotRelevantCount": 2,
+  "humanGoldLabelsPopulated": false,
+  "limitations": [
+    "AI review proposals are not human gold labels.",
+    "Unresolved rows require manual review before evaluation use.",
+    "Proposed corrections require human confirmation or adjudication."
+  ]
+}
