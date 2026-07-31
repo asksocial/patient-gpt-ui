@@ -12,6 +12,7 @@ import ExpansionCatalog from "./ExpansionCatalog";
 import CitationManifest from "./CitationManifest";
 import IntelligenceLibrary from "./IntelligenceLibrary";
 import PatientIntelligenceView from "./PatientIntelligenceView";
+import MonitoringCenter from "./MonitoringCenter";
 import {
   getIntelligenceModeOptions,
   getModuleSwitcherOptions,
@@ -2011,6 +2012,8 @@ export default function WorkspaceShell() {
                   setActiveDestination("ask");
                 }}
               />
+            ) : activeDestination === "workflows_scheduled" || activeDestination === "workflows_active" ? (
+              <MonitoringCenter workspaceId={activeWorkspaceId} therapeuticArea={therapeuticArea} />
             ) : (
               <DestinationPlaceholder
                 title={

@@ -10,6 +10,7 @@
     "test:citations": "tsx src/test/runCitationManifestQuality.ts",
     "test:intelligence-library": "tsx src/test/runIntelligenceLibraryQuality.ts",
     "test:patient-intelligence": "tsx src/test/runPatientIntelligenceProductQuality.ts",
+    "test:continuous-intelligence": "tsx src/test/runContinuousIntelligenceQuality.ts",
     "lint": "eslint",
     "labels:medical-aesthetics": "tsx scripts/build-medical-aesthetics-evidence-labels.ts",
     "review:medical-aesthetics": "tsx scripts/build-medical-aesthetics-review-queue.ts",
@@ -17,7 +18,7 @@
     "preflight": "tsx scripts/production-preflight.ts",
     "smoke:staging": "tsx scripts/staging-smoke.ts",
     "audit:production": "npm audit --omit=dev --audit-level=moderate --cache /tmp/asksocial-npm-cache",
-    "release:check": "npm run lint && npm run test:platform-persistence && npm run test:citations && npm run test:intelligence-library && npm run test:patient-intelligence && npm run test:production && npm run build && npm run preflight && npm run audit:production"
+    "release:check": "npm run lint && npm run test:platform-persistence && npm run test:citations && npm run test:intelligence-library && npm run test:patient-intelligence && npm run test:continuous-intelligence && npm run test:production && npm run build && npm run preflight && npm run audit:production"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
