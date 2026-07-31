@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
+    "test:platform-persistence": "tsx src/test/runPlatformPersistenceQuality.ts",
     "lint": "eslint",
     "labels:medical-aesthetics": "tsx scripts/build-medical-aesthetics-evidence-labels.ts",
     "review:medical-aesthetics": "tsx scripts/build-medical-aesthetics-review-queue.ts",
@@ -13,7 +14,7 @@
     "preflight": "tsx scripts/production-preflight.ts",
     "smoke:staging": "tsx scripts/staging-smoke.ts",
     "audit:production": "npm audit --omit=dev --audit-level=moderate --cache /tmp/asksocial-npm-cache",
-    "release:check": "npm run lint && npm run test:production && npm run build && npm run preflight && npm run audit:production"
+    "release:check": "npm run lint && npm run test:platform-persistence && npm run test:production && npm run build && npm run preflight && npm run audit:production"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

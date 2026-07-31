@@ -125,6 +125,20 @@ export {
   METRIC_CATALOG,
   runEvaluationSuite,
 } from "./measurement";
+export {
+  appendPlatformAuditEvent,
+  assertWorkspaceAccess,
+  createIntelligenceWorkspace,
+  listIntelligenceWorkProducts,
+  listIntelligenceWorkspaces,
+  platformPrincipalFromEntitlements,
+  saveIntelligenceWorkProduct,
+} from "./persistence";
+export type {
+  IntelligenceWorkspace,
+  PlatformPrincipal,
+  WorkProductKind,
+} from "./persistence";
 export type {
   EvaluationChangeTrigger,
   EvaluationRun,
