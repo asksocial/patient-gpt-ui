@@ -111,6 +111,9 @@ if (
   ) ||
   !navigationComponent.includes(
     'className="relative"'
+  ) ||
+  !navigationComponent.includes(
+    'label: "More"'
   )
 ) {
   throw new Error(

@@ -70,6 +70,25 @@ export default function EcosystemNavigation({
       },
       { isAdmin }
     );
+  const navigationGroups = [
+    ...groups.filter((group) =>
+      DROPDOWN_GROUPS.has(group.id)
+    ),
+    {
+      id: "more",
+      label: "More",
+      items: groups
+        .filter(
+          (group) =>
+            !DROPDOWN_GROUPS.has(
+              group.id
+            )
+        )
+        .flatMap(
+          (group) => group.items
+        ),
+    },
+  ];
 
   function navigate(itemId) {
     setOpenGroup(null);
@@ -81,31 +100,12 @@ export default function EcosystemNavigation({
       aria-label="Platform navigation"
       className="flex flex-wrap items-center gap-1"
     >
-      {groups.map((group) => {
-        const isDropdown =
-          DROPDOWN_GROUPS.has(
-            group.id
-          );
+      {navigationGroups.map((group) => {
         const groupIsActive =
           group.items.some(
             (item) =>
               item.id === activeItem
           );
-
-        if (!isDropdown) {
-          return group.items.map(
-            (item) => (
-              <NavigationItem
-                key={item.id}
-                item={item}
-                active={
-                  activeItem === item.id
-                }
-                onNavigate={navigate}
-              />
-            )
-          );
-        }
 
         const expanded =
           openGroup === group.id;
