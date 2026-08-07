@@ -48,6 +48,14 @@ assert(
   "Legacy staging schemas must be detected from the PostgREST error."
 );
 assert(
+  isMissingSessionWorkspaceColumn({
+    code: "42703",
+    message:
+      "column chat_sessions.workspace_id does not exist",
+  }),
+  "Legacy staging schemas must be detected from the PostgreSQL undefined-column error."
+);
+assert(
   !isMissingSessionWorkspaceColumn({
     code: "PGRST204",
     message:

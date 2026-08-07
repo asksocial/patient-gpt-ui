@@ -19,7 +19,9 @@ export function isMissingSessionWorkspaceColumn(
 
   return (
     candidate.code === "PGRST204" ||
-    message.includes("schema cache")
+    candidate.code === "42703" ||
+    message.includes("schema cache") ||
+    message.includes("does not exist")
   ) &&
     message.includes("workspace_id") &&
     message.includes("chat_sessions");
