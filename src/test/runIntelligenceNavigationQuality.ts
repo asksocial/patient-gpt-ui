@@ -144,10 +144,13 @@ if (
   ) ||
   !workspaceShell.includes(
     '"intelligence_reports"'
+  ) ||
+  !workspaceShell.includes(
+    ">\n                Workspace\n              </div>"
   )
 ) {
   throw new Error(
-    "The restored left rail must provide Conversation and Executive Brief views."
+    "The restored Workspace left rail must provide Conversation and Executive Brief views."
   );
 }
 

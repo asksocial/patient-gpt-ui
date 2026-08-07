@@ -1586,7 +1586,7 @@ export default function WorkspaceShell() {
                 AskSocial
               </div>
               <div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/40">
-                Intelligence Platform
+                Workspace
               </div>
             </div>
 
