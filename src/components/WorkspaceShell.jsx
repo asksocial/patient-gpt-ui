@@ -56,7 +56,7 @@ const DESTINATION_COPY = {
   },
   intelligence_reports: {
     eyebrow: "Intelligence",
-    title: "Reports",
+    title: "Executive Brief",
     description:
       "Review evidence-qualified intelligence and decision-ready briefs.",
   },
@@ -1590,26 +1590,54 @@ export default function WorkspaceShell() {
               </div>
             </div>
 
-            <EcosystemNavigation
-              access={intelligenceAccess}
-              isAdmin={
-                entitlements?.isAdmin
-              }
-              activeItem={
-                activeDestination
-              }
-              onNavigate={
-                handleNavigation
-              }
-            />
-
-            <div className="mt-7 border-t border-white/10 pt-6">
+            <div className="mt-7">
               <button
                 type="button"
                 onClick={startNewConversation}
                 className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90"
               >
                 New conversation
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1">
+              <button
+                type="button"
+                onClick={() =>
+                  handleNavigation("ask")
+                }
+                className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
+                  activeDestination ===
+                  "ask"
+                    ? "bg-white text-black"
+                    : "text-white/55 hover:text-white"
+                }`}
+              >
+                Conversation
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleNavigation(
+                    "intelligence_reports"
+                  )
+                }
+                disabled={
+                  !canUseExecutiveIntelligence
+                }
+                title={
+                  canUseExecutiveIntelligence
+                    ? "Open the latest executive brief"
+                    : "Executive Intelligence is not included in your entitlements"
+                }
+                className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
+                  activeDestination ===
+                  "intelligence_reports"
+                    ? "bg-white text-black"
+                    : "text-white/55 hover:text-white"
+                } disabled:cursor-not-allowed disabled:opacity-35`}
+              >
+                Executive brief
               </button>
             </div>
 
@@ -1824,6 +1852,22 @@ export default function WorkspaceShell() {
 
         <main className="flex min-h-screen flex-col">
           <header className="sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
+            <div className="mb-5 border-b border-white/10 pb-4">
+              <EcosystemNavigation
+                access={
+                  intelligenceAccess
+                }
+                isAdmin={
+                  entitlements?.isAdmin
+                }
+                activeItem={
+                  activeDestination
+                }
+                onNavigate={
+                  handleNavigation
+                }
+              />
+            </div>
             <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
               <div className="flex flex-col gap-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">

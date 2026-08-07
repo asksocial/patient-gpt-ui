@@ -5,7 +5,7 @@ import {
   buildEcosystemNavigation,
 } from "../lib/intelligence-platform/navigation";
 
-const COLLAPSIBLE_GROUPS = new Set([
+const DROPDOWN_GROUPS = new Set([
   "intelligence",
   "modules",
   "modes",
@@ -17,18 +17,21 @@ function NavigationItem({
   item,
   active,
   onNavigate,
+  compact = false,
 }) {
   return (
     <button
       type="button"
-      onClick={() =>
-        onNavigate(item.id)
-      }
+      onClick={() => onNavigate(item.id)}
       aria-current={
         active ? "page" : undefined
       }
       title={item.description}
-      className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition ${
+      className={`flex items-center justify-between rounded-xl text-left text-sm transition ${
+        compact
+          ? "w-full px-3 py-2"
+          : "shrink-0 px-3 py-2"
+      } ${
         active
           ? "bg-white text-black"
           : "text-white/65 hover:bg-white/[0.06] hover:text-white"
@@ -57,8 +60,8 @@ export default function EcosystemNavigation({
   activeItem,
   onNavigate,
 }) {
-  const [expandedGroups, setExpandedGroups] =
-    useState(() => new Set());
+  const [openGroup, setOpenGroup] =
+    useState(null);
   const groups =
     buildEcosystemNavigation(
       access || {
@@ -68,47 +71,66 @@ export default function EcosystemNavigation({
       { isAdmin }
     );
 
+  function navigate(itemId) {
+    setOpenGroup(null);
+    onNavigate(itemId);
+  }
+
   return (
     <nav
-      aria-label="Application"
-      className="mt-6 space-y-5"
+      aria-label="Platform navigation"
+      className="flex flex-wrap items-center gap-1"
     >
-      {groups.map((group) => (
-        <section key={group.id}>
-          {group.label &&
-          COLLAPSIBLE_GROUPS.has(
+      {groups.map((group) => {
+        const isDropdown =
+          DROPDOWN_GROUPS.has(
             group.id
-          ) ? (
+          );
+        const groupIsActive =
+          group.items.some(
+            (item) =>
+              item.id === activeItem
+          );
+
+        if (!isDropdown) {
+          return group.items.map(
+            (item) => (
+              <NavigationItem
+                key={item.id}
+                item={item}
+                active={
+                  activeItem === item.id
+                }
+                onNavigate={navigate}
+              />
+            )
+          );
+        }
+
+        const expanded =
+          openGroup === group.id;
+
+        return (
+          <div
+            key={group.id}
+            className="relative"
+          >
             <button
               type="button"
-              aria-expanded={
-                expandedGroups.has(
-                  group.id
+              aria-expanded={expanded}
+              aria-controls={`navigation-group-${group.id}`}
+              onClick={() =>
+                setOpenGroup(
+                  expanded
+                    ? null
+                    : group.id
                 )
               }
-              aria-controls={`navigation-group-${group.id}`}
-              onClick={() => {
-                setExpandedGroups(
-                  (current) => {
-                    const next = new Set(
-                      current
-                    );
-
-                    if (
-                      next.has(group.id)
-                    ) {
-                      next.delete(
-                        group.id
-                      );
-                    } else {
-                      next.add(group.id);
-                    }
-
-                    return next;
-                  }
-                );
-              }}
-              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45 transition hover:bg-white/[0.06] hover:text-white"
+              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
+                groupIsActive
+                  ? "bg-white text-black"
+                  : "text-white/65 hover:bg-white/[0.06] hover:text-white"
+              }`}
             >
               <span>{group.label}</span>
               <svg
@@ -116,9 +138,7 @@ export default function EcosystemNavigation({
                 viewBox="0 0 20 20"
                 fill="none"
                 className={`h-4 w-4 shrink-0 transition-transform ${
-                  expandedGroups.has(
-                    group.id
-                  )
+                  expanded
                     ? "rotate-180"
                     : ""
                 }`}
@@ -132,47 +152,39 @@ export default function EcosystemNavigation({
                 />
               </svg>
             </button>
-          ) : group.label ? (
-            <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">
-              {group.label}
-            </p>
-          ) : null}
-          <div
-            id={`navigation-group-${group.id}`}
-            className={`space-y-0.5 ${
-              COLLAPSIBLE_GROUPS.has(
-                group.id
-              ) &&
-              !expandedGroups.has(
-                group.id
-              )
-                ? "hidden"
-                : ""
-            }`}
-          >
-            {group.items.map(
-              (item) => (
-                <NavigationItem
-                  key={item.id}
-                  item={item}
-                  active={
-                    activeItem ===
-                    item.id
-                  }
-                  onNavigate={
-                    onNavigate
-                  }
-                />
-              )
-            )}
-            {group.items.length === 0 ? (
-              <p className="px-3 py-2 text-xs leading-5 text-white/30">
-                No licensed access
-              </p>
+
+            {expanded ? (
+              <div
+                id={`navigation-group-${group.id}`}
+                className="absolute left-0 top-full z-50 mt-2 min-w-56 space-y-0.5 rounded-2xl border border-white/10 bg-zinc-950 p-2 shadow-2xl shadow-black/60"
+              >
+                {group.items.map(
+                  (item) => (
+                    <NavigationItem
+                      key={item.id}
+                      item={item}
+                      active={
+                        activeItem ===
+                        item.id
+                      }
+                      onNavigate={
+                        navigate
+                      }
+                      compact
+                    />
+                  )
+                )}
+                {group.items.length ===
+                0 ? (
+                  <p className="px-3 py-2 text-xs leading-5 text-white/30">
+                    No licensed access
+                  </p>
+                ) : null}
+              </div>
             ) : null}
           </div>
-        </section>
-      ))}
+        );
+      })}
     </nav>
   );
 }

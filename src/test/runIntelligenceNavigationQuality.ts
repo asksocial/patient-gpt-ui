@@ -53,7 +53,9 @@ if (
   !labels.includes(
     "Knowledge Graph"
   ) ||
-  !labels.includes("Reports") ||
+  !labels.includes(
+    "Executive Brief"
+  ) ||
   !labels.includes("Patient") ||
   !labels.includes("My Modes") ||
   !labels.includes("Mode Library") ||
@@ -99,17 +101,44 @@ for (const groupId of [
 
 if (
   !navigationComponent.includes(
+    'aria-label="Platform navigation"'
+  ) ||
+  !navigationComponent.includes(
     "aria-expanded"
   ) ||
   !navigationComponent.includes(
-    "expandedGroups"
+    "openGroup"
   ) ||
   !navigationComponent.includes(
-    '? "hidden"'
+    'className="relative"'
   )
 ) {
   throw new Error(
-    "Left-rail categories must be collapsed disclosures that reveal their items on demand."
+    "Platform categories must render as collapsed top-navigation dropdowns that reveal their items on demand."
+  );
+}
+
+const workspaceShell = readFileSync(
+  join(
+    process.cwd(),
+    "src/components/WorkspaceShell.jsx"
+  ),
+  "utf8"
+);
+
+if (
+  !workspaceShell.includes(
+    "Executive brief"
+  ) ||
+  !workspaceShell.includes(
+    'handleNavigation("ask")'
+  ) ||
+  !workspaceShell.includes(
+    '"intelligence_reports"'
+  )
+) {
+  throw new Error(
+    "The restored left rail must provide Conversation and Executive Brief views."
   );
 }
 
@@ -196,7 +225,8 @@ console.log(
         modeOptions.map(
           (mode) => mode.value
         ),
-      collapsibleNavigation: true,
+      topDropdownNavigation: true,
+      restoredExecutiveBrief: true,
     },
     null,
     2

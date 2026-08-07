@@ -119,7 +119,7 @@ export function buildEcosystemNavigation(
         },
         {
           id: "intelligence_reports",
-          label: "Reports",
+          label: "Executive Brief",
           kind: "destination",
         },
       ],
