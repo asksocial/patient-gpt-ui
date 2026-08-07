@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
+import {
+  addLegacyWorkspaceField,
+  isMissingSessionWorkspaceColumn,
+} from "../../../../lib/chat/sessionCompatibility";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +30,10 @@ export async function GET(req: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    const { data: session, error: sessionError } = await supabase
+    let {
+      data: session,
+      error: sessionError,
+    } = await supabase
       .from("chat_sessions")
       .select(
         "id, user_id, workspace_id, therapeutic_area, title, is_pinned, created_at, updated_at"
@@ -34,6 +41,30 @@ export async function GET(req: NextRequest) {
       .eq("id", sessionId)
       .eq("user_id", userId)
       .single();
+
+    if (
+      isMissingSessionWorkspaceColumn(
+        sessionError
+      )
+    ) {
+      const legacyResult =
+        await supabase
+          .from("chat_sessions")
+          .select(
+            "id, user_id, therapeutic_area, title, is_pinned, created_at, updated_at"
+          )
+          .eq("id", sessionId)
+          .eq("user_id", userId)
+          .single();
+
+      session = legacyResult.data
+        ? (addLegacyWorkspaceField(
+            legacyResult.data
+          ) as typeof session)
+        : null;
+      sessionError =
+        legacyResult.error;
+    }
 
     if (sessionError) {
       throw new Error(sessionError.message);

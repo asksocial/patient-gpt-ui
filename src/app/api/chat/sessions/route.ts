@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
+import {
+  addLegacyWorkspaceField,
+  isMissingSessionWorkspaceColumn,
+} from "../../../../lib/chat/sessionCompatibility";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +21,33 @@ export async function GET() {
 
     const supabase = getSupabaseServerClient();
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("chat_sessions")
       .select("id, workspace_id, therapeutic_area, title, created_at, updated_at")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
+
+    if (
+      isMissingSessionWorkspaceColumn(
+        error
+      )
+    ) {
+      const legacyResult =
+        await supabase
+          .from("chat_sessions")
+          .select(
+            "id, therapeutic_area, title, created_at, updated_at"
+          )
+          .eq("user_id", userId)
+          .order("updated_at", {
+            ascending: false,
+          });
+
+      data = legacyResult.data?.map(
+        addLegacyWorkspaceField
+      ) as typeof data;
+      error = legacyResult.error;
+    }
 
     if (error) {
       throw new Error(error.message);
@@ -77,24 +103,55 @@ export async function POST(req: NextRequest) {
     const title =
       firstQuestion?.slice(0, 80) || `New ${therapeuticArea} conversation`;
 
+    const sessionInput: Record<
+      string,
+      unknown
+    > = {
+      user_id: userId,
+      therapeutic_area: therapeuticArea,
+      title,
+    };
+
+    if (workspaceId) {
+      sessionInput.workspace_id =
+        workspaceId;
+    }
+
     const { data, error } = await supabase
       .from("chat_sessions")
-      .insert({
-        user_id: userId,
-        workspace_id: workspaceId || null,
-        therapeutic_area: therapeuticArea,
-        title,
-      })
+      .insert(sessionInput)
       .select()
       .single();
 
     if (error) {
+      if (
+        workspaceId &&
+        isMissingSessionWorkspaceColumn(
+          error
+        )
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "Workspace-linked conversations require the pending staging database migration.",
+          },
+          { status: 503 }
+        );
+      }
+
       throw new Error(error.message);
     }
 
     return NextResponse.json({
       ok: true,
-      session: data,
+      session:
+        data.workspace_id ===
+        undefined
+          ? addLegacyWorkspaceField(
+              data
+            )
+          : data,
     });
   } catch (error: any) {
     return NextResponse.json(

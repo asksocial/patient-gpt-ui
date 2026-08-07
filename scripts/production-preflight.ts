@@ -172,6 +172,19 @@ if (unavailablePlatformTables.length) {
   );
 }
 
+const {
+  error: sessionWorkspaceError,
+} = await supabase
+  .from("chat_sessions")
+  .select("workspace_id")
+  .limit(1);
+
+if (sessionWorkspaceError) {
+  throw new Error(
+    `Supabase platform migrations are incomplete. chat_sessions.workspace_id is unavailable: ${sessionWorkspaceError.message}`
+  );
+}
+
 if (
   knowledgeMode === "persistent" &&
   knowledgeError
@@ -203,6 +216,8 @@ console.log(
         !knowledgeError,
       platformPersistenceTables:
         requiredPlatformTables,
+      sessionWorkspaceColumn:
+        "available",
     },
     null,
     2
