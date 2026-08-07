@@ -114,6 +114,12 @@ if (
   ) ||
   !navigationComponent.includes(
     'label: "More"'
+  ) ||
+  !navigationComponent.includes(
+    'event.key === "Escape"'
+  ) ||
+  !navigationComponent.includes(
+    '"mousedown"'
   )
 ) {
   throw new Error(

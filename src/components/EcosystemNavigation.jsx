@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   buildEcosystemNavigation,
 } from "../lib/intelligence-platform/navigation";
@@ -62,6 +66,7 @@ export default function EcosystemNavigation({
 }) {
   const [openGroup, setOpenGroup] =
     useState(null);
+  const navigationRef = useRef(null);
   const groups =
     buildEcosystemNavigation(
       access || {
@@ -95,8 +100,50 @@ export default function EcosystemNavigation({
     onNavigate(itemId);
   }
 
+  useEffect(() => {
+    function closeOutsideNavigation(
+      event
+    ) {
+      if (
+        navigationRef.current &&
+        !navigationRef.current.contains(
+          event.target
+        )
+      ) {
+        setOpenGroup(null);
+      }
+    }
+
+    function closeWithEscape(event) {
+      if (event.key === "Escape") {
+        setOpenGroup(null);
+      }
+    }
+
+    document.addEventListener(
+      "mousedown",
+      closeOutsideNavigation
+    );
+    document.addEventListener(
+      "keydown",
+      closeWithEscape
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        closeOutsideNavigation
+      );
+      document.removeEventListener(
+        "keydown",
+        closeWithEscape
+      );
+    };
+  }, []);
+
   return (
     <nav
+      ref={navigationRef}
       aria-label="Platform navigation"
       className="flex flex-wrap items-center gap-1"
     >
