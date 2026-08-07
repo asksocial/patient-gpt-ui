@@ -1,8 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import {
   buildEcosystemNavigation,
 } from "../lib/intelligence-platform/navigation";
+
+const COLLAPSIBLE_GROUPS = new Set([
+  "intelligence",
+  "modules",
+  "modes",
+  "workflows",
+  "pv_compliance",
+]);
 
 function NavigationItem({
   item,
@@ -48,6 +57,8 @@ export default function EcosystemNavigation({
   activeItem,
   onNavigate,
 }) {
+  const [expandedGroups, setExpandedGroups] =
+    useState(() => new Set());
   const groups =
     buildEcosystemNavigation(
       access || {
@@ -64,12 +75,81 @@ export default function EcosystemNavigation({
     >
       {groups.map((group) => (
         <section key={group.id}>
-          {group.label ? (
+          {group.label &&
+          COLLAPSIBLE_GROUPS.has(
+            group.id
+          ) ? (
+            <button
+              type="button"
+              aria-expanded={
+                expandedGroups.has(
+                  group.id
+                )
+              }
+              aria-controls={`navigation-group-${group.id}`}
+              onClick={() => {
+                setExpandedGroups(
+                  (current) => {
+                    const next = new Set(
+                      current
+                    );
+
+                    if (
+                      next.has(group.id)
+                    ) {
+                      next.delete(
+                        group.id
+                      );
+                    } else {
+                      next.add(group.id);
+                    }
+
+                    return next;
+                  }
+                );
+              }}
+              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45 transition hover:bg-white/[0.06] hover:text-white"
+            >
+              <span>{group.label}</span>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="none"
+                className={`h-4 w-4 shrink-0 transition-transform ${
+                  expandedGroups.has(
+                    group.id
+                  )
+                    ? "rotate-180"
+                    : ""
+                }`}
+              >
+                <path
+                  d="m6 8 4 4 4-4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ) : group.label ? (
             <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/35">
               {group.label}
             </p>
           ) : null}
-          <div className="space-y-0.5">
+          <div
+            id={`navigation-group-${group.id}`}
+            className={`space-y-0.5 ${
+              COLLAPSIBLE_GROUPS.has(
+                group.id
+              ) &&
+              !expandedGroups.has(
+                group.id
+              )
+                ? "hidden"
+                : ""
+            }`}
+          >
             {group.items.map(
               (item) => (
                 <NavigationItem

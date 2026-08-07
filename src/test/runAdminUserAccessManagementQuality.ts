@@ -168,6 +168,13 @@ const files = {
     ),
     "utf8"
   ),
+  adminLayout: readFileSync(
+    join(
+      process.cwd(),
+      "src/app/admin/layout.tsx"
+    ),
+    "utf8"
+  ),
 };
 
 const contracts = [
@@ -235,6 +242,14 @@ const contracts = [
     files.entitlementAdminPage,
     "event.preventDefault();",
   ],
+  [
+    files.adminLayout,
+    "entitlements.isAdmin",
+  ],
+  [
+    files.adminLayout,
+    'redirect("/workspace")',
+  ],
 ] as const;
 
 for (const [file, contract] of contracts) {
@@ -264,6 +279,7 @@ console.log(
         true,
       unifiedUserAccessScreen:
         true,
+      protectedAdminRoutes: true,
     },
     null,
     2

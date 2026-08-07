@@ -8,6 +8,12 @@ import {
 import {
   resolveEntitlements,
 } from "../lib/entitlements";
+import {
+  readFileSync,
+} from "node:fs";
+import {
+  join,
+} from "node:path";
 
 const entitlements =
   resolveEntitlements({
@@ -61,6 +67,49 @@ if (
 ) {
   throw new Error(
     "Navigation must expose the ecosystem hierarchy while hiding unlicensed modules and blocked agents."
+  );
+}
+
+const navigationComponent =
+  readFileSync(
+    join(
+      process.cwd(),
+      "src/components/EcosystemNavigation.jsx"
+    ),
+    "utf8"
+  );
+
+for (const groupId of [
+  "intelligence",
+  "modules",
+  "modes",
+  "workflows",
+  "pv_compliance",
+]) {
+  if (
+    !navigationComponent.includes(
+      `"${groupId}"`
+    )
+  ) {
+    throw new Error(
+      `Left-rail disclosure navigation is missing ${groupId}.`
+    );
+  }
+}
+
+if (
+  !navigationComponent.includes(
+    "aria-expanded"
+  ) ||
+  !navigationComponent.includes(
+    "expandedGroups"
+  ) ||
+  !navigationComponent.includes(
+    '? "hidden"'
+  )
+) {
+  throw new Error(
+    "Left-rail categories must be collapsed disclosures that reveal their items on demand."
   );
 }
 
@@ -147,6 +196,7 @@ console.log(
         modeOptions.map(
           (mode) => mode.value
         ),
+      collapsibleNavigation: true,
     },
     null,
     2
