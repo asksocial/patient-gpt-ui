@@ -146,6 +146,17 @@ const requiredPlatformTables = [
   "intelligence_monitor_runs",
   "intelligence_alerts",
   "intelligence_delivery_outbox",
+  "pv_detection_libraries",
+  "pv_detection_concepts",
+  "pv_sources",
+  "pv_screening_runs",
+  "pv_sla_policies",
+  "pv_records",
+  "pv_reviews",
+  "pv_transfers",
+  "pv_audit_events",
+  "pv_reconciliation_runs",
+  "pv_reconciliation_issues",
 ];
 const unavailablePlatformTables: string[] = [];
 for (const table of requiredPlatformTables) {

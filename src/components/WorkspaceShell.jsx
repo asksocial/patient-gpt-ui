@@ -13,6 +13,7 @@ import CitationManifest from "./CitationManifest";
 import IntelligenceLibrary from "./IntelligenceLibrary";
 import PatientIntelligenceView from "./PatientIntelligenceView";
 import MonitoringCenter from "./MonitoringCenter";
+import PvComplianceCenter from "./PvComplianceCenter";
 import {
   getIntelligenceModeOptions,
   getModuleSwitcherOptions,
@@ -100,6 +101,41 @@ const DESTINATION_COPY = {
     title: "Governance",
     description:
       "Review the policies and controls that govern your intelligence environment.",
+  },
+  pv_overview: {
+    eyebrow: "PV Compliance",
+    title: "Compliance Overview",
+    description: "Monitor screening, review, transfer, timing, and reconciliation health.",
+  },
+  pv_queue: {
+    eyebrow: "PV Compliance",
+    title: "Review Queue",
+    description: "Review potential PV-relevant records through a structured human workflow.",
+  },
+  pv_screening: {
+    eyebrow: "PV Compliance",
+    title: "Screening Status",
+    description: "Track governed source cadence, screening completion, and nil returns.",
+  },
+  pv_transfers: {
+    eyebrow: "PV Compliance",
+    title: "Transfers",
+    description: "Manage sponsor handoff packages, delivery status, and acknowledgment.",
+  },
+  pv_reconciliation: {
+    eyebrow: "PV Compliance",
+    title: "Reconciliation",
+    description: "Resolve differences across reviewed, transferred, and acknowledged records.",
+  },
+  pv_sources: {
+    eyebrow: "PV Compliance",
+    title: "Source Registry",
+    description: "Define the authoritative monitoring scope, ownership, products, markets, and cadence.",
+  },
+  pv_configuration: {
+    eyebrow: "PV Compliance",
+    title: "PV Configuration",
+    description: "Configure sponsor-specific detection concepts, exclusions, thresholds, and versions.",
   },
   administration: {
     eyebrow: "Administration",
@@ -2014,6 +2050,11 @@ export default function WorkspaceShell() {
               />
             ) : activeDestination === "workflows_scheduled" || activeDestination === "workflows_active" ? (
               <MonitoringCenter workspaceId={activeWorkspaceId} therapeuticArea={therapeuticArea} />
+            ) : activeDestination.startsWith("pv_") ? (
+              <PvComplianceCenter
+                key={activeDestination}
+                initialTab={activeDestination.slice("pv_".length)}
+              />
             ) : (
               <DestinationPlaceholder
                 title={

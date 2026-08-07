@@ -81,6 +81,11 @@ export function buildEcosystemNavigation(
     isAdmin?: boolean;
   } = {}
 ): EcosystemNavigationGroup[] {
+  const pvEnabled = access.agents.some(
+    (agent) =>
+      agent.id ===
+      "pharmacovigilance_assistant"
+  );
   const groups:
     EcosystemNavigationGroup[] = [
     {
@@ -169,6 +174,51 @@ export function buildEcosystemNavigation(
         },
       ],
     },
+    ...(pvEnabled
+      ? [
+          {
+            id: "pv_compliance",
+            label: "PV Compliance",
+            items: [
+              {
+                id: "pv_overview",
+                label: "Compliance Overview",
+                kind: "destination" as const,
+              },
+              {
+                id: "pv_queue",
+                label: "Review Queue",
+                kind: "destination" as const,
+              },
+              {
+                id: "pv_screening",
+                label: "Screening Status",
+                kind: "destination" as const,
+              },
+              {
+                id: "pv_transfers",
+                label: "Transfers",
+                kind: "destination" as const,
+              },
+              {
+                id: "pv_reconciliation",
+                label: "Reconciliation",
+                kind: "destination" as const,
+              },
+              {
+                id: "pv_sources",
+                label: "Source Registry",
+                kind: "destination" as const,
+              },
+              {
+                id: "pv_configuration",
+                label: "PV Configuration",
+                kind: "destination" as const,
+              },
+            ],
+          },
+        ]
+      : []),
     {
       id: "resources",
       items: [
