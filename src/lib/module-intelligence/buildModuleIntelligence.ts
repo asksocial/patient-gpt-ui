@@ -1,6 +1,10 @@
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
 import { analyzeEvidence } from "../../answering/evidence/analyzeEvidence";
-import type { EvidenceClass, EvidenceVoice } from "../../answering/evidence/types";
+import type {
+  EvidenceClass,
+  EvidenceIntelligence,
+  EvidenceVoice,
+} from "../../answering/evidence/types";
 import type { IntelligenceModuleId } from "../intelligence-platform/ids";
 
 export type GeneratableModuleId = Exclude<IntelligenceModuleId, "patient">;
@@ -260,6 +264,66 @@ function fallbackExcerpt(finding: CanonicalFinding) {
   ).trim();
 }
 
+const EVIDENCE_CLASS_AUDIENCE: Record<EvidenceClass, string> = {
+  patient_conversation: "patient",
+  caregiver_conversation: "caregiver",
+  provider_conversation: "provider",
+  community_conversation: "community",
+  advocacy_organization: "advocacy",
+  research_journal: "researcher",
+  clinical_study: "researcher",
+  medical_society: "medical_society",
+  government_or_regulator: "government_or_regulator",
+  healthcare_trade_publication: "journalist",
+  healthcare_news: "journalist",
+  consumer_news: "journalist",
+  corporate_pr: "corporate",
+  clinic_marketing: "clinic",
+  retail_or_product: "retail",
+  sponsored_content: "sponsored_publisher",
+  influencer_content: "influencer",
+  youtube_review: "community",
+  podcast: "community",
+  forum: "community",
+  personal_blog: "community",
+  event_or_conference: "professional_event",
+  unknown: "unspecified_audience",
+};
+
+function resolvedAudienceLabel(intelligence: EvidenceIntelligence) {
+  if (intelligence.voice !== "unknown") return intelligence.voice;
+  const classAudience = EVIDENCE_CLASS_AUDIENCE[intelligence.evidenceClass];
+  if (classAudience !== "unspecified_audience") return classAudience;
+  if (intelligence.platform === "research") return "researcher";
+  if (intelligence.platform === "news") return "journalist";
+  if (intelligence.platform === "government") return "government_or_regulator";
+  if (intelligence.platform === "retail") return "retail";
+  if (intelligence.platform === "event") return "professional_event";
+  if (["social", "forum", "review", "video", "blog", "podcast"].includes(intelligence.platform)) {
+    return "community";
+  }
+  return "unspecified_audience";
+}
+
+function normalizeMention(value: string) {
+  return value
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function mentionKey(
+  finding: CanonicalFinding,
+  matchedSections: SectionDefinition[]
+) {
+  const source = bestEvidence(finding, matchedSections);
+  const normalized = normalizeMention(source?.excerpt || fallbackExcerpt(finding));
+  return normalized || `finding:${findingId(finding)}`;
+}
+
 function countLabels(values: string[]) {
   const counts = new Map<string, number>();
   for (const value of values.filter(Boolean)) counts.set(value, (counts.get(value) || 0) + 1);
@@ -294,7 +358,7 @@ export function buildModuleIntelligence(
     profile.allowPromotionalContext || !PROMOTIONAL_CLASSES.has(intelligence.evidenceClass)
   );
   const preferred = eligible.filter(({ intelligence }) =>
-    profile.preferredVoices.includes(intelligence.voice) ||
+    profile.preferredVoices.includes(resolvedAudienceLabel(intelligence) as EvidenceVoice) ||
     profile.preferredClasses.includes(intelligence.evidenceClass)
   );
   const selected = preferred.length >= 8 ? preferred : eligible;
@@ -316,7 +380,7 @@ export function buildModuleIntelligence(
         matchedSections.length * 100 +
         sectionPriorityScore * 10 +
         (profile.preferredClasses.includes(item.intelligence.evidenceClass) ? 20 : 0) +
-        (profile.preferredVoices.includes(item.intelligence.voice) ? 10 : 0) +
+        (profile.preferredVoices.includes(resolvedAudienceLabel(item.intelligence) as EvidenceVoice) ? 10 : 0) +
         item.intelligence.qualityScore,
     };
   });
@@ -337,7 +401,17 @@ export function buildModuleIntelligence(
     };
   }).sort((left, right) => right.findingCount - left.findingCount);
 
-  const evidenceByFindingId = new Map<string, (typeof contextualEvidence)[number]>();
+  const evidenceItems: (typeof contextualEvidence)[number][] = [];
+  const usedFindingIds = new Set<string>();
+  const usedMentionKeys = new Set<string>();
+  function appendEvidenceCandidate(item: (typeof contextualEvidence)[number]) {
+    const id = findingId(item.finding);
+    const normalizedMention = mentionKey(item.finding, item.matchedSections);
+    if (usedFindingIds.has(id) || usedMentionKeys.has(normalizedMention)) return;
+    usedFindingIds.add(id);
+    usedMentionKeys.add(normalizedMention);
+    evidenceItems.push(item);
+  }
   for (const section of profile.sections) {
     const sectionCandidates = contextualEvidence
       .filter((item) => item.matchedSections.some((matched) => matched.id === section.id))
@@ -346,17 +420,17 @@ export function buildModuleIntelligence(
         right.intelligence.qualityScore - left.intelligence.qualityScore
       )
       .slice(0, 4);
-    for (const item of sectionCandidates) evidenceByFindingId.set(findingId(item.finding), item);
+    for (const item of sectionCandidates) appendEvidenceCandidate(item);
   }
   for (const item of [...contextualEvidence].sort((left, right) =>
     right.contextualRelevanceScore - left.contextualRelevanceScore ||
     right.intelligence.qualityScore - left.intelligence.qualityScore
   )) {
-    if (evidenceByFindingId.size >= 16) break;
-    evidenceByFindingId.set(findingId(item.finding), item);
+    if (evidenceItems.length >= 16) break;
+    appendEvidenceCandidate(item);
   }
 
-  const evidence = [...evidenceByFindingId.values()]
+  const evidence = evidenceItems
     .slice(0, 16)
     .map(({ finding, intelligence, matchedSections, contextualRelevanceScore }) => {
       const source = bestEvidence(finding, matchedSections);
@@ -368,7 +442,7 @@ export function buildModuleIntelligence(
         url: source?.url,
         country: source?.country,
         platform: source?.platform,
-        voice: intelligence.voice,
+        voice: resolvedAudienceLabel(intelligence),
         evidenceClass: intelligence.evidenceClass,
         qualityScore: intelligence.qualityScore,
         promotionalContext: intelligence.isPromotional || intelligence.evidenceClass === "corporate_pr",
@@ -408,7 +482,7 @@ export function buildModuleIntelligence(
       limitations,
     },
     sections,
-    audienceSignals: countLabels(selected.map(({ intelligence }) => intelligence.voice)),
+    audienceSignals: countLabels(selected.map(({ intelligence }) => resolvedAudienceLabel(intelligence))),
     sourceSignals: countLabels(selected.map(({ intelligence }) => intelligence.evidenceClass)),
     recommendations: profile.recommendations,
     evidence,

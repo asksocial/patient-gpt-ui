@@ -27,7 +27,18 @@ const results = expectedModules.map((moduleId) =>
   buildModuleIntelligence(moduleId, "Medical Aesthetics", corpus.findings, "2026-08-08T17:00:00.000Z")
 );
 
+function normalizeMention(value: string) {
+  return value
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 for (const result of results) {
+  const normalizedMentions = result.evidence.map((item) => normalizeMention(item.quote));
   if (
     result.schemaVersion !== "module_intelligence_v1" ||
     result.therapeuticArea !== "Medical Aesthetics" ||
@@ -44,6 +55,9 @@ for (const result of results) {
         item.contextualRelevanceScore <= item.qualityScore
     ) ||
     new Set(result.evidence.map((item) => item.findingId)).size !== result.evidence.length ||
+    new Set(normalizedMentions).size !== normalizedMentions.length ||
+    result.audienceSignals.some((item) => item.label === "unknown") ||
+    result.evidence.some((item) => item.voice === "unknown") ||
     result.recommendations.length < 3 ||
     !result.dataQuality.limitations.length
   ) {
