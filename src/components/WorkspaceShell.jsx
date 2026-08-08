@@ -1958,7 +1958,7 @@ export default function WorkspaceShell() {
         </aside>
 
         <main className="flex min-h-screen flex-col">
-          <header className="sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
+          <header className="order-1 sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
             <div className="mb-5 border-b border-white/10 pb-4">
               <EcosystemNavigation
                 access={
@@ -2077,7 +2077,7 @@ export default function WorkspaceShell() {
             ) : null}
           </header>
 
-          <div className="flex-1 px-6 py-6">
+          <div className="order-3 flex-1 px-6 py-6">
             {activeDestination ===
             "intelligence_reports" ? (
               <ExecutiveIntelligenceView
@@ -2234,7 +2234,10 @@ export default function WorkspaceShell() {
           </div>
 
           {activeDestination === "ask" ? (
-          <div className="sticky bottom-0 border-t border-white/10 bg-black/95 px-6 py-4 backdrop-blur">
+          <div
+            data-testid="primary-search-composer"
+            className="order-2 px-6 pt-6"
+          >
             <form onSubmit={handleSubmit}>
               <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
                 <div className="flex flex-col gap-3">
