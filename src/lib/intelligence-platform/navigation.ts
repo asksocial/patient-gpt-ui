@@ -137,22 +137,6 @@ export function buildEcosystemNavigation(
       ),
     },
     {
-      id: "modes",
-      label: "Intelligence Modes",
-      items: [
-        {
-          id: "modes_mine",
-          label: "My Modes",
-          kind: "destination",
-        },
-        {
-          id: "modes_library",
-          label: "Mode Library",
-          kind: "destination",
-        },
-      ],
-    },
-    {
       id: "workflows",
       label: "Workflows",
       items: [

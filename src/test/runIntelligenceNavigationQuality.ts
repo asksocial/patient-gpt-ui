@@ -61,8 +61,8 @@ if (
     "Executive Brief"
   ) ||
   !labels.includes("Patient") ||
-  !labels.includes("My Modes") ||
-  !labels.includes("Mode Library") ||
+  labels.includes("My Modes") ||
+  labels.includes("Mode Library") ||
   labels.includes("Medical Affairs") ||
   labels.includes(
     "Referral Navigator"
@@ -88,7 +88,6 @@ const navigationComponent =
 for (const groupId of [
   "intelligence",
   "modules",
-  "modes",
   "workflows",
   "pv_compliance",
   "power_user",
@@ -172,7 +171,7 @@ if (
     "Referral Intelligence"
 ) {
   throw new Error(
-    "Licensed agents must be presented as Intelligence Modes within AskSocial."
+    "Licensed agent analysis contracts must remain available to governed workflows without top-level mode navigation."
   );
 }
 

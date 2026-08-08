@@ -40,5 +40,17 @@ assert(
     ),
   "The Search evidence-basis footer must remain below the primary content."
 );
+assert(
+  !workspaceShell.includes(
+    'aria-label="Intelligence Mode"'
+  ) &&
+    !workspaceShell.includes(
+      "suggestedModeActions"
+    ) &&
+    workspaceShell.includes(
+      'intelligenceMode:\n            "general"'
+    ),
+  "Primary Search must hide mode controls and use automatic general routing."
+);
 
 console.log("Primary Search layout quality checks passed.");

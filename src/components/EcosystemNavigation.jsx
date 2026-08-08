@@ -12,7 +12,6 @@ import {
 const DROPDOWN_GROUPS = new Set([
   "intelligence",
   "modules",
-  "modes",
   "workflows",
   "pv_compliance",
   "power_user",

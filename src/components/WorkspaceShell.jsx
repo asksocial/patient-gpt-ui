@@ -6,8 +6,6 @@ import Tooltip from "./ui/Tooltip";
 import ExecutiveIntelligenceView from "./ExecutiveIntelligenceView";
 import EcosystemNavigation from "./EcosystemNavigation";
 import GovernanceCenter from "./GovernanceCenter";
-import AgentWorkspaceRegions from "./AgentWorkspaceRegions";
-import ExpansionCatalog from "./ExpansionCatalog";
 import CitationManifest from "./CitationManifest";
 import IntelligenceLibrary from "./IntelligenceLibrary";
 import PatientIntelligenceView from "./PatientIntelligenceView";
@@ -16,13 +14,9 @@ import MonitoringCenter from "./MonitoringCenter";
 import PvComplianceCenter from "./PvComplianceCenter";
 import KnowledgeGraphView from "./KnowledgeGraphView";
 import {
-  getIntelligenceModeOptions,
   getModuleSwitcherOptions,
   resolveWorkspaceNavigationDestination,
 } from "../lib/intelligence-platform/navigation";
-import {
-  getAvailableAgentActions,
-} from "../lib/intelligence-platform/agentActions";
 
 const QUICK_ACTIONS = [
   "What are people saying right now?",
@@ -55,18 +49,6 @@ const DESTINATION_COPY = {
     title: "Executive Brief",
     description:
       "Review evidence-qualified intelligence and decision-ready briefs.",
-  },
-  modes_mine: {
-    eyebrow: "Intelligence Modes",
-    title: "My Modes",
-    description:
-      "Return to specialized capabilities available inside AskSocial.",
-  },
-  modes_library: {
-    eyebrow: "Intelligence Modes",
-    title: "Mode Library",
-    description:
-      "Discover licensed capabilities without leaving the AskSocial experience.",
   },
   workflows_active: {
     eyebrow: "Workflows",
@@ -830,26 +812,12 @@ export default function WorkspaceShell() {
   const [therapeuticAreas, setTherapeuticAreas] = useState([]);
   const [analyticalCoverage, setAnalyticalCoverage] = useState([]);
   const [entitlements, setEntitlements] = useState(null);
-  const [
-    commercialPackaging,
-    setCommercialPackaging,
-  ] = useState(null);
   const [intelligenceAccess, setIntelligenceAccess] = useState({
     modules: [],
     agents: [],
     workflows: [],
   });
   const [activeModuleId, setActiveModuleId] = useState("");
-  const [intelligenceModeId, setIntelligenceModeId] = useState("general");
-  const [
-    agentWorkspaceContext,
-    setAgentWorkspaceContext,
-  ] = useState({
-    product: "",
-    disease: "",
-    geography: "",
-    timePeriod: "",
-  });
   const [therapeuticArea, setTherapeuticArea] = useState("");
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
@@ -954,83 +922,6 @@ export default function WorkspaceShell() {
     ]
   );
 
-  const intelligenceModeOptions =
-    useMemo(
-      () =>
-        getIntelligenceModeOptions(
-          intelligenceAccess,
-          activeModuleId
-        ),
-      [
-        activeModuleId,
-        intelligenceAccess,
-      ]
-    );
-
-  const activeIntelligenceMode =
-    intelligenceModeOptions.some(
-      (mode) =>
-        mode.value ===
-        intelligenceModeId
-    )
-      ? intelligenceModeId
-      : "general";
-
-  const activeModeDefinition =
-    intelligenceModeOptions.find(
-      (mode) =>
-        mode.value ===
-        activeIntelligenceMode
-    );
-
-  const suggestedModeActions =
-    useMemo(
-      () =>
-        getAvailableAgentActions({
-          permittedAgentIds:
-            intelligenceAccess.agents.map(
-              (agent) =>
-                agent.id
-            ),
-          moduleId:
-            activeModuleId ||
-            undefined,
-          agentId:
-            activeIntelligenceMode ===
-            "general"
-              ? undefined
-              : activeIntelligenceMode,
-        }).slice(0, 4),
-      [
-        activeIntelligenceMode,
-        activeModuleId,
-        intelligenceAccess.agents,
-      ]
-    );
-
-  const latestEvidenceCount =
-    useMemo(() => {
-      for (
-        let index =
-          messages.length - 1;
-        index >= 0;
-        index -= 1
-      ) {
-        const count =
-          messages[index]
-            ?.responsePayload
-            ?.relevantCuratedInsights
-            ?.length;
-        if (
-          typeof count ===
-          "number"
-        ) {
-          return count;
-        }
-      }
-      return 0;
-    }, [messages]);
-
   const destinationCopy = useMemo(() => {
     const staticCopy =
       DESTINATION_COPY[
@@ -1129,10 +1020,6 @@ export default function WorkspaceShell() {
         const data = await response.json();
         if (response.ok && data.ok) {
           setEntitlements(data.entitlements);
-          setCommercialPackaging(
-            data.commercialPackaging ||
-              null
-          );
           const nextAccess =
             data.intelligenceAccess || {
               modules: [],
@@ -1597,7 +1484,7 @@ export default function WorkspaceShell() {
             activeModuleId ||
             undefined,
           intelligenceMode:
-            activeIntelligenceMode,
+            "general",
         }),
       });
 
@@ -2094,29 +1981,6 @@ export default function WorkspaceShell() {
             ) : activeDestination ===
               "ask" ? (
               <div className="space-y-4">
-                {activeIntelligenceMode !==
-                "general" ? (
-                  <AgentWorkspaceRegions
-                    modeLabel={
-                      activeModeDefinition?.label
-                    }
-                    context={
-                      agentWorkspaceContext
-                    }
-                    onContextChange={
-                      setAgentWorkspaceContext
-                    }
-                    messageCount={
-                      messages.length
-                    }
-                    evidenceCount={
-                      latestEvidenceCount
-                    }
-                    suggestedActions={
-                      suggestedModeActions
-                    }
-                  />
-                ) : null}
               <section className="flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
                 {messages.length === 0 ? (
                   <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
@@ -2180,13 +2044,6 @@ export default function WorkspaceShell() {
                 />
               )
             ) : activeDestination ===
-              "modes_library" ? (
-              <ExpansionCatalog
-                packaging={
-                  commercialPackaging
-                }
-              />
-            ) : activeDestination ===
               "governance" ? (
               <GovernanceCenter />
             ) : activeDestination ===
@@ -2244,71 +2101,6 @@ export default function WorkspaceShell() {
                   <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                     Ask AskSocial
                   </label>
-
-                  <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-white/70">
-                        Intelligence Mode
-                      </p>
-                      <p className="mt-0.5 text-[11px] leading-4 text-white/35">
-                        {activeModeDefinition?.description}
-                      </p>
-                    </div>
-                    <select
-                      value={
-                        activeIntelligenceMode
-                      }
-                      onChange={(event) =>
-                        setIntelligenceModeId(
-                          event.target
-                            .value
-                        )
-                      }
-                      aria-label="Intelligence Mode"
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white outline-none focus:border-white/30 sm:w-64"
-                    >
-                      {intelligenceModeOptions.map(
-                        (mode) => (
-                          <option
-                            key={
-                              mode.value
-                            }
-                            value={
-                              mode.value
-                            }
-                          >
-                            {mode.label}
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </div>
-
-                  {suggestedModeActions.length ? (
-                    <div className="flex flex-wrap gap-2">
-                      {suggestedModeActions.map(
-                        (action) => (
-                          <button
-                            key={
-                              action.id
-                            }
-                            type="button"
-                            title={
-                              action.description
-                            }
-                            onClick={() =>
-                              setQuestion(
-                                `${action.slashCommand} `
-                              )
-                            }
-                            className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/60 transition hover:border-white/20 hover:text-white"
-                          >
-                            {action.label}
-                          </button>
-                        )
-                      )}
-                    </div>
-                  ) : null}
 
                   <textarea
                     value={question}
