@@ -2318,11 +2318,7 @@ export default function WorkspaceShell() {
                     className="w-full resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
                   />
 
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs text-white/40">
-                      Report-backed insights + structured curated intelligence +
-                      live narrative discovery
-                    </p>
+                  <div className="flex justify-end">
                     <button
                       type="submit"
                       disabled={!canSubmit}
@@ -2335,6 +2331,18 @@ export default function WorkspaceShell() {
               </div>
             </form>
           </div>
+          ) : null}
+
+          {activeDestination === "ask" ? (
+            <footer
+              data-testid="primary-search-footer"
+              className="order-4 border-t border-white/10 px-6 py-4"
+            >
+              <p className="text-xs text-white/40">
+                Report-backed insights + structured curated intelligence + live
+                narrative discovery
+              </p>
+            </footer>
           ) : null}
         </main>
       </div>

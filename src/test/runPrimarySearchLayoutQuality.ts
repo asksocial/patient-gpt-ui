@@ -28,5 +28,17 @@ assert(
   ),
   "The composer must not remain a separate sticky bottom section."
 );
+assert(
+  workspaceShell.includes(
+    'data-testid="primary-search-footer"'
+  ) &&
+    workspaceShell.includes(
+      'className="order-4 border-t border-white/10 px-6 py-4"'
+    ) &&
+    workspaceShell.includes(
+      "Report-backed insights + structured curated intelligence + live"
+    ),
+  "The Search evidence-basis footer must remain below the primary content."
+);
 
 console.log("Primary Search layout quality checks passed.");
