@@ -14,6 +14,7 @@ import IntelligenceLibrary from "./IntelligenceLibrary";
 import PatientIntelligenceView from "./PatientIntelligenceView";
 import MonitoringCenter from "./MonitoringCenter";
 import PvComplianceCenter from "./PvComplianceCenter";
+import KnowledgeGraphView from "./KnowledgeGraphView";
 import {
   getIntelligenceModeOptions,
   getModuleSwitcherOptions,
@@ -820,6 +821,28 @@ export default function WorkspaceShell() {
     return null;
   }, [messages]);
 
+  const latestKnowledgeGraph = useMemo(() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const payload = messages[index]?.responsePayload;
+
+      if (
+        payload?.knowledgeSnapshot ||
+        payload?.themeSummary?.length ||
+        payload?.executiveIntelligence?.topThemes?.length
+      ) {
+        return {
+          snapshot: payload.knowledgeSnapshot || null,
+          themes: payload.themeSummary || [],
+          relationships: payload.themeRelationships || [],
+          brief: payload.executiveIntelligence || null,
+          longitudinalTracking: payload.themeLongitudinalTracking || null,
+        };
+      }
+    }
+
+    return null;
+  }, [messages]);
+
   const latestAnalyticalStatus = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const payload = messages[index]?.responsePayload;
@@ -1238,6 +1261,16 @@ export default function WorkspaceShell() {
                   message.content.analyticalAnswer || null,
                 citationManifest:
                   message.content.citationManifest || [],
+                themeSummary:
+                  message.content.themeSummary || [],
+                themeRelationships:
+                  message.content.themeRelationships || [],
+                themeStrategicImplications:
+                  message.content.themeStrategicImplications || [],
+                themeLongitudinalTracking:
+                  message.content.themeLongitudinalTracking || null,
+                knowledgeSnapshot:
+                  message.content.knowledgeSnapshot || null,
               },
             }),
       }));
@@ -1501,6 +1534,16 @@ export default function WorkspaceShell() {
           data.entitlements || null,
         citationManifest:
           data.citationManifest || [],
+        themeSummary:
+          data.themeSummary || [],
+        themeRelationships:
+          data.themeRelationships || [],
+        themeStrategicImplications:
+          data.themeStrategicImplications || [],
+        themeLongitudinalTracking:
+          data.themeLongitudinalTracking || null,
+        knowledgeSnapshot:
+          data.knowledgeSnapshot || null,
       };
 
       const assistantMessage = {
@@ -1527,6 +1570,16 @@ export default function WorkspaceShell() {
               responsePayload.analyticalAnswer,
             citationManifest:
               responsePayload.citationManifest,
+            themeSummary:
+              responsePayload.themeSummary,
+            themeRelationships:
+              responsePayload.themeRelationships,
+            themeStrategicImplications:
+              responsePayload.themeStrategicImplications,
+            themeLongitudinalTracking:
+              responsePayload.themeLongitudinalTracking,
+            knowledgeSnapshot:
+              responsePayload.knowledgeSnapshot,
           },
         },
       ]);
@@ -2080,6 +2133,16 @@ export default function WorkspaceShell() {
             ) : activeDestination ===
               "governance" ? (
               <GovernanceCenter />
+            ) : activeDestination ===
+              "intelligence_graph" ? (
+              <KnowledgeGraphView
+                snapshot={latestKnowledgeGraph?.snapshot}
+                themes={latestKnowledgeGraph?.themes}
+                relationships={latestKnowledgeGraph?.relationships}
+                brief={latestKnowledgeGraph?.brief}
+                longitudinalTracking={latestKnowledgeGraph?.longitudinalTracking}
+                therapeuticArea={therapeuticArea}
+              />
             ) : activeDestination ===
               "intelligence_search" ? (
               <IntelligenceLibrary view="search" />

@@ -5,6 +5,7 @@ import {
   getModuleSwitcherOptions,
   resolveCustomerIntelligenceAccess,
 } from "../lib/intelligence-platform";
+import "./runKnowledgeGraphWorkspaceQuality";
 import {
   resolveEntitlements,
 } from "../lib/entitlements";
