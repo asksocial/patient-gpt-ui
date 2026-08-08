@@ -60,6 +60,52 @@ export type PvContentInput = {
   parentContext?: string;
   threadContext?: string[];
   immutableCaptureUrl?: string;
+  dataOrigin?: "live" | "curated" | "unknown";
+};
+
+export type PvOntologyEvidence = {
+  value: string;
+  evidence: string;
+  confidence: number;
+};
+
+export type PvAdverseEventOntology = {
+  productProcedures: PvOntologyEvidence[];
+  adverseEvents: PvOntologyEvidence[];
+  seriousness: {
+    value: "serious" | "non_serious" | "unclear";
+    criteria: string[];
+    evidence: string[];
+    confidence: number;
+  };
+  outcomes: Array<PvOntologyEvidence & {
+    category: "recovered" | "ongoing" | "hospitalization" | "permanent_injury" | "fatal" | "unknown";
+  }>;
+  timeToOnset: {
+    category: "immediate" | "hours" | "days" | "weeks" | "months" | "unknown";
+    value?: string;
+    evidence?: string;
+    confidence: number;
+  };
+  severity: {
+    value: "mild" | "moderate" | "severe" | "unclear";
+    evidence?: string;
+    confidence: number;
+  };
+  unexpectedness: {
+    value: "expected_label_event" | "emerging_signal" | "unclear";
+    evidence?: string;
+    basis: "configured_label_reference" | "explicit_reporter_language" | "insufficient_reference";
+    confidence: number;
+  };
+  causality: Array<{
+    value: "temporal_association" | "possible_attribution" | "reported_attribution" | "denied";
+    phrase: string;
+    evidence: string;
+    confidence: number;
+  }>;
+  limitations: string[];
+  ontologyVersion: string;
 };
 
 export type PvConceptMatch = {
@@ -82,6 +128,7 @@ export type PvDetectionResult = {
   rationale: string[];
   classifierVersion: string;
   detectionLibraryVersion: number;
+  ontologyExtraction: PvAdverseEventOntology;
 };
 
 export type PvSlaPolicy = {
@@ -108,6 +155,7 @@ export type PvReviewDecision = {
   classifications: PvClassification[];
   rationale: string;
   action: "escalate" | "close_not_relevant";
+  ontologyReview?: PvAdverseEventOntology;
 };
 
 export type PvReconciliationIssueType =

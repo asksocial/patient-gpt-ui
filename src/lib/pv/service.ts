@@ -75,7 +75,7 @@ export async function listPvDetectionLibrary(principal: PlatformPrincipal) {
 
 export async function createPvDetectionLibrary(
   principal: PlatformPrincipal,
-  input: { name: string; sponsorName?: string; productId?: string; market?: string; language?: string; detectionThreshold?: number }
+  input: { name: string; sponsorName?: string; productId?: string; market?: string; language?: string; detectionThreshold?: number; expectedEventTerms?: string[] }
 ) {
   assertPrincipal(principal);
   if (!input.name.trim()) throw new Error("Library name is required.");
@@ -83,7 +83,8 @@ export async function createPvDetectionLibrary(
     principal_id: principal.principalId,
     name: input.name.trim(), sponsor_name: input.sponsorName?.trim() || null, product_id: input.productId?.trim() || null,
     market: input.market?.trim() || null, language: input.language?.trim() || "en",
-    detection_threshold: Math.max(1, Math.min(100, input.detectionThreshold ?? 55)), created_by: principal.actorId,
+    detection_threshold: Math.max(1, Math.min(100, input.detectionThreshold ?? 55)),
+    expected_event_terms: (input.expectedEventTerms || []).map((term) => term.trim()).filter(Boolean), created_by: principal.actorId,
   }).select("*").single();
   if (error || !data) throw new Error(`Failed to create PV Detection Library: ${error?.message || "missing row"}`);
   await appendPvAuditEvent(principal, { action: "detection_library.create", resourceType: "detection_library", resourceId: String(data.id), outcome: "completed", metadata: { version: 1 } });
@@ -201,12 +202,30 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
   const { data: conceptRows, error: conceptError } = await supabase.from("pv_detection_concepts").select("*")
     .eq("library_id", input.libraryId).eq("principal_id", principal.principalId).eq("active", true);
   if (conceptError) throw new Error(`Failed to load PV concepts: ${conceptError.message}`);
-  const result = classifyPvContent(input, (conceptRows || []).map(mapConcept), { threshold: Number(library.detection_threshold), libraryVersion: Number(library.version) });
+  const result = classifyPvContent(input, (conceptRows || []).map(mapConcept), {
+    threshold: Number(library.detection_threshold),
+    libraryVersion: Number(library.version),
+    expectedEvents: library.expected_event_terms || [],
+  });
   const evidenceHash = hashPayload({ verbatim: input.verbatim, url: input.sourceUrl, postedAt: input.postedAt, parentContext: input.parentContext, threadContext: input.threadContext });
 
   if (!result.shouldCreateRecord) {
     await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, evidenceHash, classifierVersion: result.classifierVersion } });
     return { result, record: null };
+  }
+
+  const { data: existingRecord, error: duplicateLookupError } = await supabase.from("pv_records").select("*")
+    .eq("principal_id", principal.principalId).eq("external_id", input.externalId).maybeSingle();
+  if (duplicateLookupError) throw new Error(`Failed to check for an existing PV record: ${duplicateLookupError.message}`);
+  if (existingRecord) {
+    await appendPvAuditEvent(principal, {
+      action: "detection.duplicate",
+      resourceType: "pv_record",
+      resourceId: String(existingRecord.id),
+      outcome: "completed",
+      metadata: { externalId: input.externalId, evidenceHash, retainedExistingRecord: true },
+    });
+    return { result, record: existingRecord, duplicate: true };
   }
 
   const productMatch = result.matches.find((match) => match.category === "product");
@@ -223,10 +242,12 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
     product_confidence: result.productConfidence, health_experience_confidence: result.healthExperienceConfidence,
     context_confidence: result.contextConfidence, matched_concepts: result.matches, proposed_classifications: result.classifications,
     classifier_version: result.classifierVersion, library_version: result.detectionLibraryVersion, detection_rationale: result.rationale,
+    data_origin: input.dataOrigin || "unknown", ae_ontology: result.ontologyExtraction,
+    ontology_version: result.ontologyExtraction.ontologyVersion,
   }).select("*").single();
   if (recordError || !record) throw new Error(`Failed to create potential PV record: ${recordError?.message || "missing row"}`);
   await appendPvAuditEvent(principal, { action: "record.create_from_detection", resourceType: "pv_record", resourceId: String(record.id), outcome: "completed", metadata: { score: result.score, evidenceHash, humanReviewRequired: true } });
-  return { result, record };
+  return { result, record, duplicate: false };
 }
 
 export async function listPvRecords(principal: PlatformPrincipal, input: { status?: string; limit?: number } = {}) {
@@ -278,13 +299,14 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     principal_id: principal.principalId, record_id: recordId, reviewer_id: principal.actorId,
     product_mention: decision.productMention, health_experience: decision.healthExperience, classifications: decision.classifications,
     rationale: decision.rationale.trim(), decision: decision.action, reviewed_at: reviewedAt,
+    validated_ae_ontology: decision.ontologyReview || {},
   }).select("*").single();
   if (reviewError || !review) throw new Error(`Failed to save PV review: ${reviewError?.message || "missing row"}`);
   const nextStatus = decision.action === "escalate" ? "ready_for_transfer" : "not_relevant";
   const { error: updateError } = await supabase.from("pv_records").update({ status: nextStatus, assigned_reviewer_id: principal.actorId, updated_at: reviewedAt })
     .eq("id", recordId).eq("principal_id", principal.principalId);
   if (updateError) throw new Error(`Failed to update PV record status: ${updateError.message}`);
-  await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, retained: true } });
+  await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, ontologyReviewed: Boolean(decision.ontologyReview), retained: true } });
   return { review, status: nextStatus };
 }
 
@@ -301,6 +323,7 @@ export async function transferPvRecord(principal: PlatformPrincipal, recordId: s
     recordId: record.id, product: record.product_name, originalVerbatim: record.original_verbatim, source: record.source_type,
     sourceUrl: record.source_url, originalPostTimestamp: record.posted_at, identificationTimestamp: record.identified_at,
     reviewer: review.reviewer_id, classifications: review.classifications, reviewerRationale: review.rationale,
+    proposedAdverseEventOntology: record.ae_ontology, validatedAdverseEventOntology: review.validated_ae_ontology,
     evidenceHash: record.evidence_hash, classifierVersion: record.classifier_version, libraryVersion: record.library_version,
   };
   const payloadHash = hashPayload(payload);

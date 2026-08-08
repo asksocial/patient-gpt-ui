@@ -5,8 +5,9 @@ import type {
   PvDetectionConcept,
   PvDetectionResult,
 } from "./types";
+import { extractPvAdverseEventOntology } from "./ontology";
 
-export const PV_CLASSIFIER_VERSION = "pv-context-rules-1.0.0";
+export const PV_CLASSIFIER_VERSION = "pv-context-rules-1.1.0";
 
 function normalize(value: string) {
   return value.toLocaleLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, " ").trim();
@@ -64,7 +65,7 @@ function findMatches(content: PvContentInput, concepts: PvDetectionConcept[]) {
 export function classifyPvContent(
   content: PvContentInput,
   concepts: PvDetectionConcept[],
-  options: { threshold?: number; libraryVersion?: number } = {}
+  options: { threshold?: number; libraryVersion?: number; expectedEvents?: string[] } = {}
 ): PvDetectionResult {
   if (!content.externalId.trim() || !content.verbatim.trim() || !content.sourceUrl.trim()) {
     throw new Error("External ID, original verbatim, and source URL are required.");
@@ -72,12 +73,19 @@ export function classifyPvContent(
   if (Number.isNaN(new Date(content.postedAt).getTime())) throw new Error("A valid post timestamp is required.");
 
   const { matches, exclusions } = findMatches(content, concepts);
+  const ontologyExtraction = extractPvAdverseEventOntology(content, matches, {
+    expectedEvents: options.expectedEvents,
+  });
   const productMatches = matches.filter((match) => match.category === "product");
   const healthMatches = matches.filter((match) => !["product", "severity", "treatment_change"].includes(match.category));
   const contextMatches = matches.filter((match) => ["severity", "treatment_change"].includes(match.category));
   const productConfidence = Math.min(100, productMatches.reduce((sum, match) => sum + match.weight, 0));
   const healthExperienceConfidence = Math.min(100, healthMatches.reduce((sum, match) => sum + match.weight, 0));
-  const contextConfidence = Math.min(100, contextMatches.reduce((sum, match) => sum + match.weight, 0));
+  const conceptContextConfidence = Math.min(100, contextMatches.reduce((sum, match) => sum + match.weight, 0));
+  const ontologyContextConfidence = ontologyExtraction.seriousness.value === "serious" ? 100
+    : ontologyExtraction.severity.value === "severe" ? 80
+      : ontologyExtraction.outcomes.some((outcome) => outcome.category === "hospitalization" || outcome.category === "permanent_injury" || outcome.category === "fatal") ? 100 : 0;
+  const contextConfidence = Math.max(conceptContextConfidence, ontologyContextConfidence);
   const score = Math.round(
     productConfidence * 0.4 + healthExperienceConfidence * 0.45 + contextConfidence * 0.15
   );
@@ -87,7 +95,7 @@ export function classifyPvContent(
   const rationale = [
     productConfidence > 0 ? `Product reference supported by ${productMatches.length} configured concept match(es).` : "No configured product reference was detected.",
     healthExperienceConfidence > 0 ? `Potential health experience or special situation supported by ${healthMatches.length} match(es).` : "No health experience or special situation was detected.",
-    contextConfidence > 0 ? `Severity or treatment-change context increased priority by ${contextConfidence} confidence points.` : "No additional severity or treatment-change context was detected.",
+    contextConfidence > 0 ? `Seriousness, severity, outcome, or treatment-change context increased priority by ${contextConfidence} confidence points.` : "No additional seriousness, severity, outcome, or treatment-change context was detected.",
     shouldCreateRecord ? "Content requires human PV review; this is not an adverse-event determination." : "Content remains retained as a detection audit result and is not routed to the review queue.",
   ];
 
@@ -103,5 +111,6 @@ export function classifyPvContent(
     rationale,
     classifierVersion: PV_CLASSIFIER_VERSION,
     detectionLibraryVersion: options.libraryVersion ?? Math.max(0, ...concepts.map((concept) => concept.version)),
+    ontologyExtraction,
   };
 }

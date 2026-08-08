@@ -20,6 +20,35 @@ assert(patientResult.shouldCreateRecord, "A product-linked health experience mus
 assert(patientResult.classifications.includes("adverse_event"), "Potential adverse-event classification should be proposed.");
 assert(patientResult.rationale.some((item) => item.includes("not an adverse-event determination")), "Detection must explicitly preserve human determination.");
 
+const ontologyResult = classifyPvContent({
+  externalId: "post-ontology", sourceType: "curated", sourceUrl: "https://example.test/post-ontology", dataOrigin: "curated",
+  verbatim: "Following Product A, a severe rash began two days later. I think it was from Product A. I was hospitalized and it is still ongoing. This reaction was not listed.",
+  language: "en", postedAt: "2026-08-06T09:00:00.000Z",
+}, concepts);
+assert(ontologyResult.ontologyExtraction.productProcedures[0]?.value === "Product A", "PV ontology must extract the product or procedure.");
+assert(ontologyResult.ontologyExtraction.adverseEvents[0]?.value === "rash", "PV ontology must extract the adverse event.");
+assert(ontologyResult.ontologyExtraction.seriousness.value === "serious" && ontologyResult.ontologyExtraction.seriousness.criteria.includes("hospitalization"), "Hospitalization must propose serious status with a criterion.");
+assert(ontologyResult.ontologyExtraction.outcomes.some((outcome) => outcome.category === "ongoing") && ontologyResult.ontologyExtraction.outcomes.some((outcome) => outcome.category === "hospitalization"), "PV ontology must retain all supported outcomes.");
+assert(ontologyResult.ontologyExtraction.timeToOnset.category === "days", "PV ontology must normalize time to onset.");
+assert(ontologyResult.ontologyExtraction.severity.value === "severe", "PV ontology must extract explicit severity.");
+assert(ontologyResult.ontologyExtraction.unexpectedness.value === "emerging_signal", "Explicit not-listed language must propose emerging-signal review.");
+assert(ontologyResult.ontologyExtraction.causality.some((item) => item.value === "possible_attribution"), "Reporter causality language must be retained without claiming clinical causality.");
+assert(ontologyResult.contextConfidence === 100, "Explicit seriousness criteria must elevate PV triage context.");
+
+const negatedSeriousnessResult = classifyPvContent({
+  externalId: "post-negation", sourceType: "live", sourceUrl: "https://example.test/post-negation",
+  verbatim: "Product A caused a mild rash, but I was not hospitalized and it was not serious.",
+  language: "en", postedAt: "2026-08-06T09:00:00.000Z",
+}, concepts);
+assert(negatedSeriousnessResult.ontologyExtraction.seriousness.value === "non_serious", "Explicit non-serious language must not be inverted by a negated hospitalization mention.");
+assert(!negatedSeriousnessResult.ontologyExtraction.outcomes.some((outcome) => outcome.category === "hospitalization"), "Negated hospitalization must not be extracted as an outcome.");
+
+const expectedResult = classifyPvContent({
+  externalId: "post-expected", sourceType: "live", sourceUrl: "https://example.test/post-expected", dataOrigin: "live",
+  verbatim: "Product A gave me a rash.", language: "en", postedAt: "2026-08-06T09:00:00.000Z",
+}, concepts, { expectedEvents: ["rash"] });
+assert(expectedResult.ontologyExtraction.unexpectedness.value === "expected_label_event", "Configured label references must support expected-event proposals.");
+
 const commercialResult = classifyPvContent({
   externalId: "post-2", sourceType: "instagram", sourceUrl: "https://example.test/post-2",
   verbatim: "The commercial says Product A may cause rash.", language: "en", postedAt: "2026-08-06T09:00:00.000Z",
@@ -49,13 +78,20 @@ const noPvNavigation = buildEcosystemNavigation({ modules: [], agents: [] });
 assert(!noPvNavigation.some((group) => group.id === "pv_compliance"), "PV Compliance navigation must remain entitlement-gated.");
 
 const migration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608060001_create_pv_compliance_services.sql"), "utf8");
+const ontologyMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608080002_expand_pv_adverse_event_ontology.sql"), "utf8");
 for (const table of ["pv_detection_libraries", "pv_detection_concepts", "pv_sources", "pv_screening_runs", "pv_sla_policies", "pv_records", "pv_reviews", "pv_transfers", "pv_audit_events", "pv_reconciliation_runs", "pv_reconciliation_issues"]) {
   assert(migration.includes(`public.${table}`), `PV migration is missing ${table}.`);
 }
 assert(migration.includes("evidence_hash") && migration.includes("payload_hash") && migration.includes("previous_hash"), "Evidence, transfer, and provenance hashes are required.");
+for (const field of ["data_origin", "ae_ontology", "ontology_version", "validated_ae_ontology", "expected_event_terms"]) {
+  assert(ontologyMigration.includes(field), `PV adverse-event ontology migration is missing ${field}.`);
+}
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {
   assert(workbench.toLowerCase().includes(phrase.toLowerCase()), `PV workbench is missing required UX: ${phrase}`);
+}
+for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Outcome", "Time to onset", "Severity", "Unexpectedness", "Causality language", "Adverse-event ontology review"]) {
+  assert(workbench.includes(phrase), `PV workbench is missing ontology UX: ${phrase}`);
 }
 
 console.log("PV Compliance eight-service quality checks passed.");

@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     const library = await createPvDetectionLibrary(principal, {
       name: String(body?.name || ""), sponsorName: body?.sponsorName, productId: body?.productId,
       market: body?.market, language: body?.language, detectionThreshold: Number(body?.detectionThreshold ?? 55),
+      expectedEventTerms: Array.isArray(body?.expectedEventTerms) ? body.expectedEventTerms : [],
     });
     return NextResponse.json({ ok: true, library }, { status: 201 });
   } catch (error) { const failure = pvErrorResponse(error); return NextResponse.json({ ok: false, error: failure.message }, { status: failure.status }); }

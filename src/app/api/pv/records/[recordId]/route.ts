@@ -19,7 +19,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ r
       return NextResponse.json({ ok: true, ...(await reviewPvRecord(principal, recordId, {
         productMention: body.productMention, healthExperience: body.healthExperience,
         classifications: Array.isArray(body.classifications) ? body.classifications : [], rationale: String(body.rationale || ""),
-        action: body.decision,
+        action: body.decision, ontologyReview: body.ontologyReview,
       })) });
     }
     return NextResponse.json({ ok: false, error: "Unsupported PV record action" }, { status: 400 });
