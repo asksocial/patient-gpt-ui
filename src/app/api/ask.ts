@@ -40,6 +40,14 @@ import {
 import {
   buildExecutiveIntelligenceBrief,
 } from "../../answering/executive";
+import {
+  applyModeEvidencePolicy,
+  buildModeAnalysisResult,
+  getModeAnalysisProfile,
+} from "../../lib/intelligence-platform/modeAnalysis";
+import type {
+  AiAgentId,
+} from "../../lib/intelligence-platform/ids";
 
 const MAX_FINDINGS_FOR_RENDERING =
   50;
@@ -881,7 +889,10 @@ function determineLiveDataStatus(
 
 export function askSocial(
   question: string,
-  rawCards: CanonicalFinding[]
+  rawCards: CanonicalFinding[],
+  options: {
+    modeId?: AiAgentId;
+  } = {}
 ) {
   const intent =
     classifyIntent(
@@ -911,9 +922,38 @@ export function askSocial(
       templateFilteredCards
     );
 
+  const modeProfile =
+    getModeAnalysisProfile(
+      options.modeId
+    );
+  const modeEvidenceSelection =
+    modeProfile
+      ? applyModeEvidencePolicy(
+          evidenceEnrichedCards,
+          modeProfile
+        )
+      : {
+          findings:
+            evidenceEnrichedCards,
+          diagnostics: {
+            inputFindingCount:
+              evidenceEnrichedCards.length,
+            selectedFindingCount:
+              evidenceEnrichedCards.length,
+            strictMatchCount:
+              evidenceEnrichedCards.length,
+            fallbackApplied: false,
+            promotionalExcludedCount: 0,
+            qualityExcludedCount: 0,
+            excludedClassCount: 0,
+            evidenceClassCounts: {},
+            voiceCounts: {},
+          },
+        };
+
   const themedCards =
     assignThemesToFindings(
-      evidenceEnrichedCards,
+      modeEvidenceSelection.findings,
       therapeuticArea
     );
 
@@ -962,6 +1002,19 @@ export function askSocial(
       snapshot:
         knowledgeSnapshot,
     });
+
+  const modeAnalysis =
+    modeProfile
+      ? buildModeAnalysisResult({
+          profile: modeProfile,
+          therapeuticArea:
+            therapeuticArea ||
+            "unknown",
+          selection:
+            modeEvidenceSelection,
+          themeSummary,
+        })
+      : null;
 
   const rankingProfile =
     getRankingProfile(
@@ -1018,6 +1071,13 @@ export function askSocial(
 
     evidenceEnrichedCount:
       evidenceEnrichedCards.length,
+
+    intelligenceMode:
+      modeProfile?.modeId ||
+      "general",
+
+    modeEvidenceSelection:
+      modeEvidenceSelection.diagnostics,
 
     themedCount:
       themedCards.length,
@@ -1345,6 +1405,8 @@ export function askSocial(
     knowledgeSnapshot,
 
     executiveIntelligence,
+
+    modeAnalysis,
 
     answer,
   };

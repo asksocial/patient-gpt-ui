@@ -661,6 +661,80 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
   );
 }
 
+function ModeAnalysisView({ analysis }) {
+  if (!analysis) return null;
+
+  const evidence = analysis.evidenceSelection || {};
+  const taxonomySignals = analysis.taxonomySignals || [];
+  const sections = analysis.sections || [];
+
+  return (
+    <Panel
+      title={`${analysis.modeLabel || "Specialized"} Analysis`}
+      subtitle={`Mode profile ${analysis.profileVersion || "unknown"} · ${analysis.outputContract?.id || "structured output"}`}
+    >
+      <div className="flex flex-wrap gap-2">
+        <Badge tooltip="Findings retained after applying this Intelligence Mode’s evidence policy.">
+          {`${evidence.selectedFindingCount || 0} of ${evidence.inputFindingCount || 0} findings selected`}
+        </Badge>
+        <Badge tooltip="Whether limited strict evidence required the mode to add its highest-priority admissible evidence.">
+          {evidence.fallbackApplied ? "Evidence fallback disclosed" : "Strict evidence policy"}
+        </Badge>
+        <Badge tooltip="The versioned evaluation suite assigned to this Intelligence Mode.">
+          {analysis.evaluationSuiteId || "Evaluation suite unavailable"}
+        </Badge>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        {sections.map((section) => (
+          <article
+            key={section.id}
+            className="rounded-xl border border-white/10 bg-black/30 p-4"
+          >
+            <h4 className="text-sm font-semibold text-white">
+              {section.title}
+            </h4>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              {section.summary}
+            </p>
+            <p className="mt-3 text-xs text-white/35">
+              {`${section.evidenceFindingIds?.length || 0} linked evidence finding${section.evidenceFindingIds?.length === 1 ? "" : "s"}`}
+            </p>
+          </article>
+        ))}
+      </div>
+
+      {taxonomySignals.length ? (
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">
+            Domain taxonomy signals
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {taxonomySignals.map((signal) => (
+              <Badge
+                key={signal.conceptId}
+                tone="insight"
+                tooltip={`${signal.findingCount} selected finding${signal.findingCount === 1 ? "" : "s"} matched this mode-specific taxonomy concept.`}
+              >
+                {`${signal.label} · ${signal.findingCount}`}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-200/70">
+          Analysis boundary
+        </p>
+        <p className="mt-2 text-xs leading-5 text-amber-100/65">
+          {analysis.safetyBoundary}
+        </p>
+      </div>
+    </Panel>
+  );
+}
+
 function UserMessage({ text }) {
   return (
     <div className="flex justify-end">
@@ -690,6 +764,7 @@ function AssistantMessage({ responsePayload }) {
         {hasAnalyticalAnswer ? (
           <div className="space-y-4">
             <AnalyticalAssistantAnswer responsePayload={responsePayload} />
+            <ModeAnalysisView analysis={responsePayload?.modeAnalysis} />
             <AssistantAnswer
               responsePayload={responsePayload}
               showDirectAnswer={false}
@@ -699,6 +774,7 @@ function AssistantMessage({ responsePayload }) {
           </div>
         ) : (
           <div className="space-y-4">
+            <ModeAnalysisView analysis={responsePayload?.modeAnalysis} />
             <AssistantAnswer responsePayload={responsePayload} />
             <CitationManifest citations={responsePayload?.citationManifest || []} />
           </div>
@@ -1265,6 +1341,8 @@ export default function WorkspaceShell() {
                   message.content.themeLongitudinalTracking || null,
                 knowledgeSnapshot:
                   message.content.knowledgeSnapshot || null,
+                modeAnalysis:
+                  message.content.modeAnalysis || null,
               },
             }),
       }));
@@ -1538,6 +1616,8 @@ export default function WorkspaceShell() {
           data.themeLongitudinalTracking || null,
         knowledgeSnapshot:
           data.knowledgeSnapshot || null,
+        modeAnalysis:
+          data.modeAnalysis || null,
       };
 
       const assistantMessage = {
@@ -1574,6 +1654,8 @@ export default function WorkspaceShell() {
               responsePayload.themeLongitudinalTracking,
             knowledgeSnapshot:
               responsePayload.knowledgeSnapshot,
+            modeAnalysis:
+              responsePayload.modeAnalysis,
           },
         },
       ]);

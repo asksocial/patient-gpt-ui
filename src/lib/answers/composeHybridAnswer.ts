@@ -5,6 +5,11 @@ import {
   isAiGatewayConfigured,
   type AiGatewayContext,
 } from "../ai-gateway";
+import {
+  formatModeAnalysisInstructions,
+  getModeAnalysisProfile,
+  type ModeAnalysisResult,
+} from "../intelligence-platform/modeAnalysis";
 
 type CuratedTheme = {
   name: string;
@@ -59,6 +64,8 @@ export type ComposeHybridAnswerInput = {
   curatedInsights?: CuratedInsight[];
   gatewayContext?:
     AiGatewayContext;
+  modeAnalysis?:
+    ModeAnalysisResult | null;
 };
 
 export type HybridAnswer = {
@@ -560,6 +567,17 @@ export async function composeHybridAnswer(
   const liveThemesBlock = formatLiveThemesForPrompt(liveThemes);
   const matchesBlock = formatMatchesForPrompt(matches);
   const curatedInsightsBlock = formatCuratedInsightsForPrompt(curatedInsights);
+  const modeProfile =
+    getModeAnalysisProfile(
+      input.modeAnalysis?.modeId
+    );
+  const modeInstructions =
+    modeProfile
+      ? formatModeAnalysisInstructions(
+          modeProfile,
+          input.modeAnalysis
+        )
+      : "INTELLIGENCE MODE: General Intelligence. Apply the standard AskSocial evidence-qualified synthesis without a specialized mode override.";
 
   const systemPrompt = `
 You are AskSocial, an AI social intelligence product for pharma and biotech teams.
@@ -570,6 +588,7 @@ Your writing style:
 - Product-like, not academic
 - Synthesized, not just listed
 - Grounded in the supplied baseline themes, curated insights, and live themes
+- Faithful to the supplied Intelligence Mode instructions, evidence boundaries, taxonomy, and output contract
 
 You must return valid JSON only.
 `;
@@ -580,6 +599,8 @@ ${question}
 
 THERAPEUTIC AREA:
 ${therapeuticArea}
+
+${modeInstructions}
 
 CURATED BASELINE THEMES:
 ${curatedThemesBlock}
@@ -632,6 +653,8 @@ Rules:
 - If relevant curated insights are geography- or persona-specific, reflect that explicitly in directAnswer or whatThisMeans.
 - recommendedActions should be 2 to 4 concise, practical next steps.
 - recommendedActions should sound operational and commercially useful.
+- For specialized modes, ensure the direct answer, whatThisMeans, and recommendedActions collectively address every required mode output section.
+- Respect the mode safety boundary and distinguish observation, evidence, inference, and required human review.
 - Favor synthesis over repetition.
 - Do not invent facts not present in the provided inputs.
 - emergingNarratives should include live themes that are clearly emerging.
@@ -649,6 +672,9 @@ Rules:
         promptId:
           "compose_hybrid_answer",
         input: `${systemPrompt.trim()}\n\n${userPrompt.trim()}`,
+        toolIds:
+          input.modeAnalysis?.routedTools ||
+          [],
         jsonSchema: {
           name:
             "hybrid_answer",

@@ -123,6 +123,16 @@ export {
   createAgentWorkspaceState,
 } from "./agentWorkspace";
 export {
+  MODE_ANALYSIS_PROFILES,
+  applyModeEvidencePolicy,
+  buildModeAnalysisResult,
+  formatModeAnalysisInstructions,
+  getModeAnalysisProfile,
+} from "./modeAnalysis";
+export {
+  runModeTherapeuticAreaEvaluation,
+} from "./modeEvaluation";
+export {
   authorizeCrossModuleContext,
   formatCrossModuleDisclosure,
 } from "./crossModule";
@@ -200,6 +210,17 @@ export type {
   AgentWorkspaceRegion,
   AgentWorkspaceState,
 } from "./agentWorkspace";
+export type {
+  ModeAnalysisProfile,
+  ModeAnalysisResult,
+  ModeEvidencePolicy,
+  ModeEvidenceSelection,
+  ModeOutputSection,
+  ModeTaxonomyConcept,
+} from "./modeAnalysis";
+export type {
+  ModeEvaluationResult,
+} from "./modeEvaluation";
 export type {
   AgentActionDefinition,
 } from "./agentActions";

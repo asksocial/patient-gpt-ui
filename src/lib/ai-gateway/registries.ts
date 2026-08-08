@@ -61,6 +61,12 @@ export const AI_PROMPT_REGISTRY:
     allowedToolIds: [
       "unified_search",
       "knowledge_graph",
+      "evidence_reasoning",
+      "trial_registry",
+      "congress_content",
+      "signal_monitoring",
+      "provider_directory",
+      "medical_information",
     ],
   },
   {

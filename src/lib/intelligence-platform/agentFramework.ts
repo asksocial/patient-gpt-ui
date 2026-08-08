@@ -14,6 +14,12 @@ import type {
   AiAgentId,
   IntelligenceModuleId,
 } from "./ids";
+import {
+  getModeAnalysisProfile,
+  type ModeEvidencePolicy,
+  type ModeOutputSection,
+  type ModeTaxonomyConcept,
+} from "./modeAnalysis";
 
 export const AGENT_LIFECYCLE = [
   "understand_request",
@@ -44,6 +50,15 @@ export type AgentExecutionProfile = {
     "tenant_module_permission_scoped";
   approvalRules: string[];
   domainGlossary: string[];
+  analysisInstructions: string[];
+  evidencePolicy: ModeEvidencePolicy;
+  domainTaxonomy: ModeTaxonomyConcept[];
+  outputContract: {
+    id: string;
+    version: string;
+    requiredSections: ModeOutputSection[];
+    requiredFields: string[];
+  };
   citationRequired: true;
   evaluationSuiteId: string;
   escalationBehavior: string;
@@ -61,9 +76,21 @@ const TOOL_ALIASES: Record<
 export const AGENT_EXECUTION_PROFILES:
   AgentExecutionProfile[] =
   AI_AGENT_CATALOG.map(
-    (agent) => ({
+    (agent) => {
+      const modeProfile =
+        getModeAnalysisProfile(
+          agent.id
+        );
+      if (!modeProfile) {
+        throw new Error(
+          `Missing executable mode analysis profile for ${agent.id}`
+        );
+      }
+
+      return ({
       agentId: agent.id,
-      version: "1.0.0",
+      version:
+        modeProfile.version,
       jobDescription:
         agent.description,
       inputDescription:
@@ -83,15 +110,26 @@ export const AGENT_EXECUTION_PROFILES:
         "persistent_monitoring",
       ],
       domainGlossary:
-        agent.moduleIds,
+        modeProfile.taxonomy.map(
+          (item) => item.label
+        ),
+      analysisInstructions:
+        modeProfile.analysisInstructions,
+      evidencePolicy:
+        modeProfile.evidencePolicy,
+      domainTaxonomy:
+        modeProfile.taxonomy,
+      outputContract:
+        modeProfile.outputContract,
       citationRequired: true,
       evaluationSuiteId:
-        `${agent.id}_v1`,
+        modeProfile.evaluationSuiteId,
       escalationBehavior:
         "Escalate regulated, safety, and unsupported decisions to an authorized human.",
       refusalBehavior:
         "Refuse requests outside licensed modules, permitted sources, allowed tools, or supported evidence.",
-    })
+    });
+    }
   );
 
 export type AgentExecutionRequest = {
@@ -241,6 +279,11 @@ export class AgentExecutionEngine {
         input: [
           `Capability: ${profile.jobDescription}`,
           `Request: ${request.request}`,
+          `Analysis instructions:\n${profile.analysisInstructions.map((instruction) => `- ${instruction}`).join("\n")}`,
+          `Domain taxonomy: ${profile.domainTaxonomy.map((item) => `${item.label} [${item.dimension}]`).join(", ")}`,
+          `Evidence policy: minimum quality ${profile.evidencePolicy.minimumQualityScore}; promotional handling ${profile.evidencePolicy.promotionalHandling}; preferred voices ${profile.evidencePolicy.preferredVoices.join(", ")}.`,
+          `Output contract ${profile.outputContract.id}: ${profile.outputContract.requiredSections.map((section) => section.title).join(", ")}`,
+          `Safety and escalation boundary: ${profile.escalationBehavior}`,
           `Visible plan: ${plan
             .map(
               (item) =>

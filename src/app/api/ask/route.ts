@@ -19,6 +19,8 @@ import {
 } from "../../../lib/therapeuticAccess/server";
 import {
   configurationFromEntitlements,
+  buildModeAnalysisResult,
+  getModeAnalysisProfile,
   isAiAgentId,
   isIntelligenceModuleId,
   resolveCustomerIntelligenceAccess,
@@ -277,9 +279,41 @@ export async function POST(req: NextRequest) {
         "available"
         ? askSocial(
             question,
-            canonicalData.findings
+            canonicalData.findings,
+            {
+              modeId:
+                selectedAgent?.id,
+            }
           )
         : null;
+    const selectedModeProfile =
+      getModeAnalysisProfile(
+        selectedAgent?.id
+      );
+    const modeAnalysis =
+      intelligence?.modeAnalysis ||
+      (selectedModeProfile
+        ? buildModeAnalysisResult({
+            profile:
+              selectedModeProfile,
+            therapeuticArea,
+            selection: {
+              findings: [],
+              diagnostics: {
+                inputFindingCount: 0,
+                selectedFindingCount: 0,
+                strictMatchCount: 0,
+                fallbackApplied: false,
+                promotionalExcludedCount: 0,
+                qualityExcludedCount: 0,
+                excludedClassCount: 0,
+                evidenceClassCounts: {},
+                voiceCounts: {},
+              },
+            },
+            themeSummary: [],
+          })
+        : null);
 
     const hybridAnswer = await composeHybridAnswer({
       question,
@@ -288,6 +322,8 @@ export async function POST(req: NextRequest) {
       liveThemes,
       matches,
       curatedInsights,
+      modeAnalysis:
+        modeAnalysis,
       gatewayContext: {
         requestId:
           req.headers.get(
@@ -381,6 +417,8 @@ export async function POST(req: NextRequest) {
         compactAnalyticalAnswer(
           intelligence
         ),
+      modeAnalysis:
+        modeAnalysis,
       entitlements,
       debug: {
         curatedThemesCount: curatedThemes.length,
