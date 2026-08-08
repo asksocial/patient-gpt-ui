@@ -6,12 +6,12 @@ import Tooltip from "./ui/Tooltip";
 import ExecutiveIntelligenceView from "./ExecutiveIntelligenceView";
 import EcosystemNavigation from "./EcosystemNavigation";
 import GovernanceCenter from "./GovernanceCenter";
-import ModuleShell from "./ModuleShell";
 import AgentWorkspaceRegions from "./AgentWorkspaceRegions";
 import ExpansionCatalog from "./ExpansionCatalog";
 import CitationManifest from "./CitationManifest";
 import IntelligenceLibrary from "./IntelligenceLibrary";
 import PatientIntelligenceView from "./PatientIntelligenceView";
+import ModuleIntelligenceView from "./ModuleIntelligenceView";
 import MonitoringCenter from "./MonitoringCenter";
 import PvComplianceCenter from "./PvComplianceCenter";
 import KnowledgeGraphView from "./KnowledgeGraphView";
@@ -2152,10 +2152,12 @@ export default function WorkspaceShell() {
               activeDestination === "module_patient" ? (
                 <PatientIntelligenceView therapeuticArea={therapeuticArea} workspaceId={activeWorkspaceId} />
               ) : (
-                <ModuleShell
+                <ModuleIntelligenceView
                   module={activeModule}
                   agents={intelligenceAccess.agents}
                   workflows={intelligenceAccess.workflows}
+                  therapeuticArea={therapeuticArea}
+                  workspaceId={activeWorkspaceId}
                 />
               )
             ) : activeDestination ===
