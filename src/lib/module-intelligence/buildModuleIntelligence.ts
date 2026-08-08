@@ -36,6 +36,7 @@ export type ModuleIntelligenceResult = {
     corpusFindingCount: number;
     eligibleFindingCount: number;
     selectedFindingCount: number;
+    contextualEvidenceFindingCount: number;
     promotionalContextCount: number;
     assessment: "adequate" | "limited" | "insufficient";
     limitations: string[];
@@ -64,6 +65,9 @@ export type ModuleIntelligenceResult = {
     evidenceClass: string;
     qualityScore: number;
     promotionalContext: boolean;
+    matchedSectionIds: string[];
+    matchedSectionLabels: string[];
+    contextualRelevanceScore: number;
   }>;
 };
 
@@ -214,11 +218,46 @@ function findingText(finding: CanonicalFinding) {
 }
 
 function findingId(finding: CanonicalFinding) {
-  return String(finding.findingId || finding.semanticFingerprint || "unknown").replace(/^"+|"+$/g, "");
+  const raw = finding as CanonicalFinding & {
+    id?: string;
+    sourceId?: string;
+  };
+  return String(
+    finding.findingId ||
+      raw.id ||
+      raw.sourceId ||
+      finding.semanticFingerprint ||
+      "unknown"
+  ).replace(/^"+|"+$/g, "");
 }
 
-function bestEvidence(finding: CanonicalFinding): EvidenceRef | undefined {
-  return [...(finding.evidence || [])].sort((left, right) => (right.score || 0) - (left.score || 0))[0];
+function bestEvidence(
+  finding: CanonicalFinding,
+  matchedSections: SectionDefinition[]
+): EvidenceRef | undefined {
+  return [...(finding.evidence || [])].sort((left, right) => {
+    const leftMatches = matchedSections.filter((section) => section.pattern.test(left.excerpt || "")).length;
+    const rightMatches = matchedSections.filter((section) => section.pattern.test(right.excerpt || "")).length;
+    return rightMatches - leftMatches || (right.score || 0) - (left.score || 0);
+  })[0];
+}
+
+function fallbackExcerpt(finding: CanonicalFinding) {
+  const raw = finding as CanonicalFinding & {
+    excerpt?: string;
+    text?: string;
+    description?: string;
+    title?: string;
+  };
+  return String(
+    raw.excerpt ||
+      raw.text ||
+      raw.description ||
+      finding.summary ||
+      finding.canonicalClaim ||
+      raw.title ||
+      "Evidence excerpt unavailable"
+  ).trim();
 }
 
 function countLabels(values: string[]) {
@@ -263,8 +302,30 @@ export function buildModuleIntelligence(
     intelligence.isPromotional || intelligence.evidenceClass === "corporate_pr"
   ).length;
 
+  const contextualized = selected.map((item) => {
+    const text = findingText(item.finding);
+    const matchedSections = profile.sections.filter((section) => section.pattern.test(text));
+    const sectionPriorityScore = matchedSections.reduce((total, section) => {
+      const index = profile.sections.findIndex((candidate) => candidate.id === section.id);
+      return total + Math.max(1, profile.sections.length - index);
+    }, 0);
+    return {
+      ...item,
+      matchedSections,
+      contextualRelevanceScore:
+        matchedSections.length * 100 +
+        sectionPriorityScore * 10 +
+        (profile.preferredClasses.includes(item.intelligence.evidenceClass) ? 20 : 0) +
+        (profile.preferredVoices.includes(item.intelligence.voice) ? 10 : 0) +
+        item.intelligence.qualityScore,
+    };
+  });
+  const contextualEvidence = contextualized.filter((item) => item.matchedSections.length > 0);
+
   const sections = profile.sections.map((section) => {
-    const matching = selected.filter(({ finding }) => section.pattern.test(findingText(finding)));
+    const matching = contextualized.filter(({ matchedSections }) =>
+      matchedSections.some((matched) => matched.id === section.id)
+    );
     return {
       id: section.id,
       label: section.label,
@@ -276,15 +337,33 @@ export function buildModuleIntelligence(
     };
   }).sort((left, right) => right.findingCount - left.findingCount);
 
-  const evidence = [...selected]
-    .sort((left, right) => right.intelligence.qualityScore - left.intelligence.qualityScore)
+  const evidenceByFindingId = new Map<string, (typeof contextualEvidence)[number]>();
+  for (const section of profile.sections) {
+    const sectionCandidates = contextualEvidence
+      .filter((item) => item.matchedSections.some((matched) => matched.id === section.id))
+      .sort((left, right) =>
+        right.contextualRelevanceScore - left.contextualRelevanceScore ||
+        right.intelligence.qualityScore - left.intelligence.qualityScore
+      )
+      .slice(0, 4);
+    for (const item of sectionCandidates) evidenceByFindingId.set(findingId(item.finding), item);
+  }
+  for (const item of [...contextualEvidence].sort((left, right) =>
+    right.contextualRelevanceScore - left.contextualRelevanceScore ||
+    right.intelligence.qualityScore - left.intelligence.qualityScore
+  )) {
+    if (evidenceByFindingId.size >= 16) break;
+    evidenceByFindingId.set(findingId(item.finding), item);
+  }
+
+  const evidence = [...evidenceByFindingId.values()]
     .slice(0, 16)
-    .map(({ finding, intelligence }) => {
-      const source = bestEvidence(finding);
+    .map(({ finding, intelligence, matchedSections, contextualRelevanceScore }) => {
+      const source = bestEvidence(finding, matchedSections);
       return {
         id: `${moduleId}:${findingId(finding)}`,
         findingId: findingId(finding),
-        quote: source?.excerpt || finding.summary || finding.canonicalClaim,
+        quote: source?.excerpt || fallbackExcerpt(finding),
         sourceLabel: source?.platform || intelligence.domain || intelligence.platform || "Source metadata unavailable",
         url: source?.url,
         country: source?.country,
@@ -293,6 +372,9 @@ export function buildModuleIntelligence(
         evidenceClass: intelligence.evidenceClass,
         qualityScore: intelligence.qualityScore,
         promotionalContext: intelligence.isPromotional || intelligence.evidenceClass === "corporate_pr",
+        matchedSectionIds: matchedSections.map((section) => section.id),
+        matchedSectionLabels: matchedSections.map((section) => section.label),
+        contextualRelevanceScore,
       };
     });
 
@@ -320,6 +402,7 @@ export function buildModuleIntelligence(
       corpusFindingCount: findings.length,
       eligibleFindingCount: eligible.length,
       selectedFindingCount: selected.length,
+      contextualEvidenceFindingCount: contextualEvidence.length,
       promotionalContextCount,
       assessment,
       limitations,

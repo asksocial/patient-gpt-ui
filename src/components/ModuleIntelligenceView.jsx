@@ -105,6 +105,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
         <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-200/70">
           <span className="rounded-full border border-cyan-300/20 px-2 py-1">{result.dataQuality.assessment} coverage</span>
           <span>{result.dataQuality.selectedFindingCount} selected findings</span>
+          <span>{result.dataQuality.contextualEvidenceFindingCount} context-matched findings</span>
           <span>{result.dataQuality.corpusFindingCount} corpus findings</span>
           {result.dataQuality.promotionalContextCount ? <span>{result.dataQuality.promotionalContextCount} promotional context records</span> : null}
         </div>
@@ -144,6 +145,13 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
           {result.evidence.slice(0, 12).map((item) => (
             <article key={item.id} className="rounded-xl border border-white/10 bg-black/30 p-4">
               <blockquote className="text-sm leading-6 text-white/65">“{item.quote}”</blockquote>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {item.matchedSectionLabels.map((label) => (
+                  <span key={label} className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-2 py-1 text-[10px] text-cyan-200/65">
+                    {label}
+                  </span>
+                ))}
+              </div>
               <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-white/35">
                 {item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="text-cyan-300 underline">{item.sourceLabel}</a> : <span>{item.sourceLabel}</span>}
                 <span>{item.voice} voice</span>
