@@ -25,6 +25,20 @@ type NavigationAccess = Pick<
   "modules" | "agents"
 >;
 
+export function resolveWorkspaceNavigationDestination(
+  destinationId: string,
+  hasActiveConversation: boolean
+): string {
+  if (
+    destinationId === "intelligence_search" &&
+    hasActiveConversation
+  ) {
+    return "ask";
+  }
+
+  return destinationId;
+}
+
 const INTELLIGENCE_MODE_PRESENTATION:
   Record<
     string,

@@ -18,6 +18,7 @@ import KnowledgeGraphView from "./KnowledgeGraphView";
 import {
   getIntelligenceModeOptions,
   getModuleSwitcherOptions,
+  resolveWorkspaceNavigationDestination,
 } from "../lib/intelligence-platform/navigation";
 import {
   getAvailableAgentActions,
@@ -1393,8 +1394,17 @@ export default function WorkspaceShell() {
       return;
     }
 
+    const resolvedDestination =
+      resolveWorkspaceNavigationDestination(
+        destinationId,
+        Boolean(
+          activeSessionId ||
+            messages.length > 0
+        )
+      );
+
     setActiveDestination(
-      destinationId
+      resolvedDestination
     );
 
     if (
