@@ -31,12 +31,6 @@ const QUICK_ACTIONS = [
 ];
 
 const DESTINATION_COPY = {
-  home: {
-    eyebrow: "Intelligence ecosystem",
-    title: "Home",
-    description:
-      "Your starting point for intelligence, active work, and recent activity.",
-  },
   ask: {
     eyebrow: "Ask AskSocial",
     title: "Conversational social intelligence",
@@ -1650,47 +1644,6 @@ export default function WorkspaceShell() {
                 className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90"
               >
                 New conversation
-              </button>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1">
-              <button
-                type="button"
-                onClick={() =>
-                  handleNavigation("ask")
-                }
-                className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
-                  activeDestination ===
-                  "ask"
-                    ? "bg-white text-black"
-                    : "text-white/55 hover:text-white"
-                }`}
-              >
-                Conversation
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleNavigation(
-                    "intelligence_reports"
-                  )
-                }
-                disabled={
-                  !canUseExecutiveIntelligence
-                }
-                title={
-                  canUseExecutiveIntelligence
-                    ? "Open the latest executive brief"
-                    : "Executive Intelligence is not included in your entitlements"
-                }
-                className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
-                  activeDestination ===
-                  "intelligence_reports"
-                    ? "bg-white text-black"
-                    : "text-white/55 hover:text-white"
-                } disabled:cursor-not-allowed disabled:opacity-35`}
-              >
-                Executive brief
               </button>
             </div>
 

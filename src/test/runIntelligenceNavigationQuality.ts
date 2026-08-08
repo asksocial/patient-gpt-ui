@@ -48,8 +48,11 @@ const labels = navigation.flatMap(
 );
 
 if (
-  !labels.includes("Home") ||
-  !labels.includes("Ask AskSocial") ||
+  labels.includes("Home") ||
+  labels.includes("Ask AskSocial") ||
+  labels.includes("Library") ||
+  labels.includes("Governance") ||
+  labels.includes("Administration") ||
   !labels.includes("Search") ||
   !labels.includes(
     "Knowledge Graph"
@@ -88,6 +91,7 @@ for (const groupId of [
   "modes",
   "workflows",
   "pv_compliance",
+  "power_user",
 ]) {
   if (
     !navigationComponent.includes(
@@ -95,7 +99,7 @@ for (const groupId of [
     )
   ) {
     throw new Error(
-      `Left-rail disclosure navigation is missing ${groupId}.`
+      `Top navigation disclosure groups are missing ${groupId}.`
     );
   }
 }
@@ -113,7 +117,7 @@ if (
   !navigationComponent.includes(
     'className="relative"'
   ) ||
-  !navigationComponent.includes(
+  navigationComponent.includes(
     'label: "More"'
   ) ||
   !navigationComponent.includes(
@@ -137,21 +141,18 @@ const workspaceShell = readFileSync(
 );
 
 if (
-  !workspaceShell.includes(
-    "Executive brief"
+  workspaceShell.includes(
+    ">\n                Conversation\n"
   ) ||
-  !workspaceShell.includes(
-    'handleNavigation("ask")'
-  ) ||
-  !workspaceShell.includes(
-    '"intelligence_reports"'
+  workspaceShell.includes(
+    ">\n                Executive brief\n"
   ) ||
   !workspaceShell.includes(
     ">\n                Workspace\n              </div>"
   )
 ) {
   throw new Error(
-    "The restored Workspace left rail must provide Conversation and Executive Brief views."
+    "The Workspace left rail must retain its identity while omitting redundant Conversation and Executive Brief buttons."
   );
 }
 
@@ -205,17 +206,45 @@ const adminLabels =
       (item) => item.label
     )
   );
+const nonAdminGroups =
+  buildEcosystemNavigation(access);
+const adminGroups =
+  buildEcosystemNavigation(
+    access,
+    { isAdmin: true }
+  );
 
 if (
+  nonAdminLabels.includes(
+    "Library"
+  ) ||
+  nonAdminLabels.includes(
+    "Governance"
+  ) ||
   nonAdminLabels.includes(
     "Administration"
   ) ||
   !adminLabels.includes(
+    "Library"
+  ) ||
+  !adminLabels.includes(
+    "Governance"
+  ) ||
+  !adminLabels.includes(
     "Administration"
+  ) ||
+  nonAdminGroups.some(
+    (group) =>
+      group.id === "power_user"
+  ) ||
+  !adminGroups.some(
+    (group) =>
+      group.id === "power_user" &&
+      group.label === "Power user"
   )
 ) {
   throw new Error(
-    "Administration navigation must be restricted to administrators."
+    "Power-user navigation and its Library, Governance, and Administration destinations must be restricted to administrators."
   );
 }
 
@@ -239,7 +268,8 @@ console.log(
           (mode) => mode.value
         ),
       topDropdownNavigation: true,
-      restoredExecutiveBrief: true,
+      powerUserAdminGate: true,
+      simplifiedLeftRail: true,
     },
     null,
     2

@@ -89,21 +89,6 @@ export function buildEcosystemNavigation(
   const groups:
     EcosystemNavigationGroup[] = [
     {
-      id: "primary",
-      items: [
-        {
-          id: "home",
-          label: "Home",
-          kind: "destination",
-        },
-        {
-          id: "ask",
-          label: "Ask AskSocial",
-          kind: "destination",
-        },
-      ],
-    },
-    {
       id: "intelligence",
       label: "Intelligence",
       items: [
@@ -219,32 +204,32 @@ export function buildEcosystemNavigation(
           },
         ]
       : []),
-    {
-      id: "resources",
-      items: [
-        {
-          id: "library",
-          label: "Library",
-          kind: "destination",
-        },
-        {
-          id: "governance",
-          label: "Governance",
-          kind: "destination",
-        },
-      ],
-    },
+    ...(options.isAdmin
+      ? [
+          {
+            id: "power_user",
+            label: "Power user",
+            items: [
+              {
+                id: "library",
+                label: "Library",
+                kind: "destination" as const,
+              },
+              {
+                id: "governance",
+                label: "Governance",
+                kind: "destination" as const,
+              },
+              {
+                id: "administration",
+                label: "Administration",
+                kind: "destination" as const,
+              },
+            ],
+          },
+        ]
+      : []),
   ];
-
-  if (options.isAdmin) {
-    groups[groups.length - 1].items.push(
-      {
-        id: "administration",
-        label: "Administration",
-        kind: "destination",
-      }
-    );
-  }
 
   return groups;
 }

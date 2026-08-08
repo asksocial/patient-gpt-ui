@@ -15,6 +15,7 @@ const DROPDOWN_GROUPS = new Set([
   "modes",
   "workflows",
   "pv_compliance",
+  "power_user",
 ]);
 
 function NavigationItem({
@@ -75,25 +76,10 @@ export default function EcosystemNavigation({
       },
       { isAdmin }
     );
-  const navigationGroups = [
-    ...groups.filter((group) =>
+  const navigationGroups =
+    groups.filter((group) =>
       DROPDOWN_GROUPS.has(group.id)
-    ),
-    {
-      id: "more",
-      label: "More",
-      items: groups
-        .filter(
-          (group) =>
-            !DROPDOWN_GROUPS.has(
-              group.id
-            )
-        )
-        .flatMap(
-          (group) => group.items
-        ),
-    },
-  ];
+    );
 
   function navigate(itemId) {
     setOpenGroup(null);
