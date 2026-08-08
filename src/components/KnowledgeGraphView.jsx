@@ -1,5 +1,7 @@
 "use client";
 
+import Tooltip from "./ui/Tooltip";
+
 const NODE_TONES = {
   high: { fill: "#0f766e", stroke: "#5eead4" },
   moderate: { fill: "#155e75", stroke: "#67e8f9" },
@@ -83,6 +85,26 @@ function EmptyState({ therapeuticArea }) {
   );
 }
 
+function MetricLabel({ label, tooltip }) {
+  return (
+    <Tooltip content={tooltip} delay={200} side="bottom" align="start">
+      <button
+        type="button"
+        aria-label={`${label}: ${tooltip}`}
+        className="inline-flex cursor-help items-center gap-1.5 text-left text-xs font-semibold uppercase tracking-[0.16em] text-white/40 transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+      >
+        <span>{label}</span>
+        <span
+          aria-hidden="true"
+          className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-white/20 text-[10px] normal-case tracking-normal text-white/50"
+        >
+          ?
+        </span>
+      </button>
+    </Tooltip>
+  );
+}
+
 export default function KnowledgeGraphView({
   snapshot,
   themes = [],
@@ -137,17 +159,30 @@ export default function KnowledgeGraphView({
     <div className="space-y-5">
       <section className="grid gap-3 sm:grid-cols-3">
         {[
-          ["Themes", nodes.length],
-          ["Supported links", edges.length],
-          ["Corroborated themes", corroboratedCount],
-        ].map(([label, value]) => (
+          {
+            label: "Themes",
+            value: nodes.length,
+            tooltip:
+              "The number of evidence-qualified conversation topics displayed in this graph for the current analysis.",
+          },
+          {
+            label: "Supported links",
+            value: edges.length,
+            tooltip:
+              "The number of evidence-backed relationships between displayed themes. This does not count mentions, citations, posts, or sources.",
+          },
+          {
+            label: "Corroborated themes",
+            value: corroboratedCount,
+            tooltip:
+              "The number of displayed themes supported across more than one independent source category or channel, rather than a single source alone.",
+          },
+        ].map(({ label, value, tooltip }) => (
           <div
             key={label}
             className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">
-              {label}
-            </p>
+            <MetricLabel label={label} tooltip={tooltip} />
             <p className="mt-2 text-3xl font-semibold text-white">{value}</p>
           </div>
         ))}

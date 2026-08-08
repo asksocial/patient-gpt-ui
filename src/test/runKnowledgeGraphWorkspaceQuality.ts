@@ -38,6 +38,9 @@ for (const contract of [
   "Audiences",
   "Markets",
   "Platforms",
+  "MetricLabel",
+  "This does not count mentions, citations, posts, or sources.",
+  "supported across more than one independent source category or channel",
 ]) {
   assert(
     graph.includes(contract),
