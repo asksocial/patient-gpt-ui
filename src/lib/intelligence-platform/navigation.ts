@@ -121,6 +121,11 @@ export function buildEcosystemNavigation(
           label: "Executive Brief",
           kind: "destination",
         },
+        {
+          id: "intelligence_workspaces",
+          label: "Workspaces",
+          kind: "destination",
+        },
       ],
     },
     {

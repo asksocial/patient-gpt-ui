@@ -5,6 +5,7 @@ import {
   addLegacyWorkspaceField,
   isMissingSessionWorkspaceColumn,
 } from "../../../../lib/chat/sessionCompatibility";
+import { assertWorkspaceAccess } from "../../../../lib/intelligence-platform";
 
 export const dynamic = "force-dynamic";
 
@@ -89,14 +90,14 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseServerClient();
 
     if (workspaceId) {
-      const { data: permittedWorkspace } = await supabase
-        .from("intelligence_workspaces")
-        .select("id")
-        .eq("id", workspaceId)
-        .eq("principal_id", orgId || userId)
-        .maybeSingle();
-      if (!permittedWorkspace) {
-        return NextResponse.json({ ok: false, error: "Workspace not found" }, { status: 404 });
+      try {
+        await assertWorkspaceAccess({
+          principalId: orgId || userId,
+          principalType: orgId ? "organization" : "user",
+          actorId: userId,
+        }, workspaceId, "editor");
+      } catch (workspaceError: any) {
+        return NextResponse.json({ ok: false, error: workspaceError.message || "Workspace access denied" }, { status: 403 });
       }
     }
 

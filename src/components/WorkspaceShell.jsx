@@ -13,6 +13,7 @@ import ModuleIntelligenceView from "./ModuleIntelligenceView";
 import MonitoringCenter from "./MonitoringCenter";
 import PvComplianceCenter from "./PvComplianceCenter";
 import KnowledgeGraphView from "./KnowledgeGraphView";
+import WorkspaceManager from "./WorkspaceManager";
 import {
   getModuleSwitcherOptions,
   resolveWorkspaceNavigationDestination,
@@ -49,6 +50,12 @@ const DESTINATION_COPY = {
     title: "Executive Brief",
     description:
       "Review evidence-qualified intelligence and decision-ready briefs.",
+  },
+  intelligence_workspaces: {
+    eyebrow: "Intelligence",
+    title: "Workspaces",
+    description:
+      "Create, organize, govern, and reopen persistent intelligence work.",
   },
   workflows_active: {
     eyebrow: "Workflows",
@@ -834,6 +841,7 @@ export default function WorkspaceShell() {
   const [activeDestination, setActiveDestination] = useState("ask");
   const [workspaces, setWorkspaces] = useState([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState("");
+  const [workspaceSaveStatus, setWorkspaceSaveStatus] = useState("idle");
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) || null,
@@ -1119,9 +1127,62 @@ export default function WorkspaceShell() {
       const data = await response.json();
       if (!response.ok || !data.ok) throw new Error(data.error || "Failed to create workspace");
       setWorkspaces((current) => [data.workspace, ...current]);
-      setActiveWorkspaceId(data.workspace.id);
+      await selectWorkspace(data.workspace.id);
     } catch (workspaceError) {
       setError(workspaceError.message || "Failed to create workspace");
+    }
+  }
+
+  async function selectWorkspace(workspaceId) {
+    const nextWorkspaceId = workspaceId || "";
+    if (nextWorkspaceId === activeWorkspaceId) return;
+    setWorkspaceSaveStatus("saving");
+    if (activeSessionId) {
+      try {
+        const response = await fetch("/api/chat/session", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: activeSessionId,
+            workspaceId: nextWorkspaceId || null,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Failed to move conversation");
+        setSessions((current) => current.map((session) =>
+          session.id === activeSessionId
+            ? { ...session, workspace_id: nextWorkspaceId || null }
+            : session
+        ));
+      } catch (workspaceError) {
+        setError(workspaceError.message || "Failed to move conversation");
+        setWorkspaceSaveStatus("error");
+        return;
+      }
+    }
+    setActiveWorkspaceId(nextWorkspaceId);
+    setWorkspaceSaveStatus("saved");
+  }
+
+  function addWorkspace(workspace) {
+    setWorkspaces((current) => [workspace, ...current.filter((item) => item.id !== workspace.id)]);
+  }
+
+  function updateWorkspaceInList(workspace) {
+    setWorkspaces((current) => current.map((item) => item.id === workspace.id ? workspace : item));
+    if (workspace.archivedAt && activeWorkspaceId === workspace.id) {
+      void selectWorkspace("");
+    }
+  }
+
+  function deleteWorkspaceFromList(workspaceId) {
+    setWorkspaces((current) => current.filter((item) => item.id !== workspaceId));
+    setSessions((current) => current.map((session) =>
+      session.workspace_id === workspaceId ? { ...session, workspace_id: null } : session
+    ));
+    if (activeWorkspaceId === workspaceId) {
+      setActiveWorkspaceId("");
+      setWorkspaceSaveStatus("idle");
     }
   }
 
@@ -1567,24 +1628,33 @@ export default function WorkspaceShell() {
       ]);
 
       if (activeWorkspaceId) {
-        fetch("/api/work-products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            workspaceId: activeWorkspaceId,
-            kind: "answer",
-            title: trimmed.slice(0, 100),
-            therapeuticArea,
-            moduleId: activeModuleId || undefined,
-            status: "ready",
-            payload: data,
-            provenance: {
-              question: trimmed,
-              citationIds: (data.citationManifest || []).map((citation) => citation.citationId),
-              generatedAt: new Date().toISOString(),
-            },
-          }),
-        }).catch((saveError) => console.error("Failed to persist answer", saveError));
+        setWorkspaceSaveStatus("saving");
+        try {
+          const saveResponse = await fetch("/api/work-products", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              workspaceId: activeWorkspaceId,
+              kind: "answer",
+              title: trimmed.slice(0, 100),
+              therapeuticArea,
+              moduleId: activeModuleId || undefined,
+              status: "ready",
+              payload: data,
+              provenance: {
+                question: trimmed,
+                citationIds: (data.citationManifest || []).map((citation) => citation.citationId),
+                generatedAt: new Date().toISOString(),
+              },
+            }),
+          });
+          const saveData = await saveResponse.json();
+          if (!saveResponse.ok || !saveData.ok) throw new Error(saveData.error || "Failed to save workspace result");
+          setWorkspaceSaveStatus("saved");
+        } catch (saveError) {
+          console.error("Failed to persist answer", saveError);
+          setWorkspaceSaveStatus("error");
+        }
       }
 
       setSessions((prev) =>
@@ -1894,17 +1964,24 @@ export default function WorkspaceShell() {
                   <div className="flex gap-2">
                     <select
                       value={activeWorkspaceId}
-                      onChange={(event) => setActiveWorkspaceId(event.target.value)}
+                      onChange={(event) => selectWorkspace(event.target.value)}
                       className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none"
                     >
                       <option value="">Session only</option>
-                      {workspaces.map((workspace) => (
-                        <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
+                      {workspaces.filter((workspace) => !workspace.archivedAt).map((workspace) => (
+                        <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>
+                          {workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}
+                        </option>
                       ))}
                     </select>
                     <button type="button" onClick={createWorkspace} title="Create workspace" className="rounded-xl border border-white/10 px-3 text-white/60 hover:text-white">+</button>
                   </div>
                   <p className="mt-1.5 text-[11px] leading-4 text-white/30">Saved work becomes searchable across permitted workspaces.</p>
+                  {activeWorkspaceId ? (
+                    <p className={`mt-1 text-[11px] ${workspaceSaveStatus === "error" ? "text-rose-300/70" : "text-emerald-300/60"}`}>
+                      {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
+                    </p>
+                  ) : null}
                 </div>
                 <div>
                 <label
@@ -2055,6 +2132,17 @@ export default function WorkspaceShell() {
                 brief={latestKnowledgeGraph?.brief}
                 longitudinalTracking={latestKnowledgeGraph?.longitudinalTracking}
                 therapeuticArea={therapeuticArea}
+              />
+            ) : activeDestination ===
+              "intelligence_workspaces" ? (
+              <WorkspaceManager
+                workspaces={workspaces}
+                activeWorkspaceId={activeWorkspaceId}
+                therapeuticAreas={therapeuticAreas}
+                onSelectWorkspace={selectWorkspace}
+                onWorkspaceCreated={addWorkspace}
+                onWorkspaceUpdated={updateWorkspaceInList}
+                onWorkspaceDeleted={deleteWorkspaceFromList}
               />
             ) : activeDestination ===
               "intelligence_search" ? (

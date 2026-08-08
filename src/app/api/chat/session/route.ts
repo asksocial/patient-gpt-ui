@@ -5,6 +5,7 @@ import {
   addLegacyWorkspaceField,
   isMissingSessionWorkspaceColumn,
 } from "../../../../lib/chat/sessionCompatibility";
+import { assertWorkspaceAccess } from "../../../../lib/intelligence-platform";
 
 export const dynamic = "force-dynamic";
 
@@ -95,7 +96,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId, orgId } = await auth();
 
     if (!userId) {
       return NextResponse.json(
@@ -105,7 +106,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { sessionId, title, isPinned } = body;
+    const { sessionId, title, isPinned, workspaceId } = body;
 
     if (!sessionId) {
       return NextResponse.json(
@@ -133,6 +134,21 @@ export async function PATCH(req: NextRequest) {
       updates.is_pinned = isPinned;
     }
 
+    if (workspaceId === null || typeof workspaceId === "string") {
+      if (workspaceId) {
+        try {
+          await assertWorkspaceAccess({
+            principalId: orgId || userId,
+            principalType: orgId ? "organization" : "user",
+            actorId: userId,
+          }, workspaceId, "editor");
+        } catch (workspaceError: any) {
+          return NextResponse.json({ ok: false, error: workspaceError.message || "Workspace access denied" }, { status: 403 });
+        }
+      }
+      updates.workspace_id = workspaceId || null;
+    }
+
     if (Object.keys(updates).length === 1) {
       return NextResponse.json(
         { ok: false, error: "No valid fields to update" },
@@ -149,6 +165,16 @@ export async function PATCH(req: NextRequest) {
       .eq("user_id", userId)
       .select()
       .single();
+
+    if (error && workspaceId !== undefined && isMissingSessionWorkspaceColumn(error)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Moving conversations between workspaces requires the pending staging database migration.",
+        },
+        { status: 503 }
+      );
+    }
 
     if (error) {
       throw new Error(error.message);

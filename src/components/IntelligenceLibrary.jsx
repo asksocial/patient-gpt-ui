@@ -15,6 +15,7 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
   const [promptText, setPromptText] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [selectedResult, setSelectedResult] = useState(null);
 
   async function loadLibrary() {
     try {
@@ -116,9 +117,24 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
               <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/50">
                 {result.payload?.summary || result.payload?.directAnswer || result.payload?.answer?.directAnswer || "Open the persisted work product to inspect its complete evidence-backed output."}
               </p>
+              <button type="button" onClick={() => setSelectedResult(result)} className="mt-4 rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-white/65 hover:border-white/25 hover:text-white">
+                Open complete saved work
+              </button>
             </Card>
           ))}
         </div>
+        {selectedResult ? (
+          <Card>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.14em] text-white/40">{selectedResult.kind} · {selectedResult.intelligence_workspaces?.name || "Workspace"}</p>
+                <h3 className="mt-2 text-lg font-semibold text-white">{selectedResult.title}</h3>
+              </div>
+              <button type="button" onClick={() => setSelectedResult(null)} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</button>
+            </div>
+            <pre className="mt-5 max-h-[36rem] overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/30 p-4 text-xs leading-5 text-white/60">{JSON.stringify(selectedResult.payload, null, 2)}</pre>
+          </Card>
+        ) : null}
       </div>
     );
   }

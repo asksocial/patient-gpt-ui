@@ -60,6 +60,7 @@ if (
   !labels.includes(
     "Executive Brief"
   ) ||
+  !labels.includes("Workspaces") ||
   !labels.includes("Patient") ||
   labels.includes("My Modes") ||
   labels.includes("Mode Library") ||

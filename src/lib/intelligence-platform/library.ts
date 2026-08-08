@@ -1,6 +1,6 @@
 import { getSupabaseServerClient } from "../supabase/server";
 import type { IntelligenceModuleId } from "./ids";
-import type { PlatformPrincipal } from "./persistence";
+import { listIntelligenceWorkspaces, type PlatformPrincipal } from "./persistence";
 
 function terms(value: string) {
   return Array.from(new Set(value.toLowerCase().split(/[^a-z0-9]+/).filter((term) => term.length > 1)));
@@ -20,6 +20,9 @@ export async function searchAcrossWorkspaces(
 ) {
   const query = input.query.trim();
   if (!query) return [];
+  const permittedWorkspaceIds = new Set(
+    (await listIntelligenceWorkspaces(principal)).map((workspace) => workspace.id)
+  );
   const { data, error } = await getSupabaseServerClient()
     .from("intelligence_work_products")
     .select("id, workspace_id, kind, title, therapeutic_area, module_id, status, payload, provenance, created_at, intelligence_workspaces(name)")
@@ -29,6 +32,7 @@ export async function searchAcrossWorkspaces(
   if (error) throw new Error(`Failed to search intelligence: ${error.message}`);
 
   return (data || [])
+    .filter((record: any) => permittedWorkspaceIds.has(record.workspace_id))
     .filter((record: any) => !record.module_id || (input.moduleIds || []).includes(record.module_id))
     .map((record: any) => ({ ...record, score: scoreCrossWorkspaceRecord(query, record) }))
     .filter((record: any) => record.score > 0)

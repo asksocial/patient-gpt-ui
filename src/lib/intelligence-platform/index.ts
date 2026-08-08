@@ -153,14 +153,21 @@ export {
   appendPlatformAuditEvent,
   assertWorkspaceAccess,
   createIntelligenceWorkspace,
+  deleteIntelligenceWorkspace,
   listIntelligenceWorkProducts,
   listIntelligenceWorkspaces,
+  listWorkspaceMembers,
   platformPrincipalFromEntitlements,
+  removeWorkspaceMember,
   saveIntelligenceWorkProduct,
+  updateIntelligenceWorkspace,
+  upsertWorkspaceMember,
 } from "./persistence";
 export type {
   IntelligenceWorkspace,
   PlatformPrincipal,
+  WorkspaceMember,
+  WorkspaceRole,
   WorkProductKind,
 } from "./persistence";
 export type {
