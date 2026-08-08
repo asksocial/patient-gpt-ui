@@ -85,6 +85,8 @@ export default function WorkspaceManager({
       else setMessage(productData.error || "Unable to load workspace content.");
       if (memberData.ok) setMembers(memberData.members || []);
       else setMessage((current) => current || memberData.error || "Unable to load workspace members.");
+    }).catch(() => {
+      setMessage("Unable to load workspace content. Reload to try again.");
     }).finally(() => setLoading(false));
   }, [selected]);
 
@@ -93,7 +95,8 @@ export default function WorkspaceManager({
       .then((response) => response.json())
       .then((data) => {
         if (data.ok) setCandidateUsers(data.users || []);
-      });
+      })
+      .catch(() => setCandidateUsers([]));
   }, []);
 
   function memberLabel(userId) {
