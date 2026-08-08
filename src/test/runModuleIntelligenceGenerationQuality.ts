@@ -64,6 +64,7 @@ const viewSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/M
 const routeSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/route.ts"), "utf8");
 if (
   !workspaceSource.includes("<ModuleIntelligenceView") ||
+  !workspaceSource.includes("`module_${moduleId}`") ||
   !viewSource.includes("Generate ${module.name} Intelligence") ||
   !routeSource.includes("MODULE_ENTITLEMENTS[moduleId]") ||
   !routeSource.includes('kind: "report"')

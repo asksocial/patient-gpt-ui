@@ -1425,6 +1425,15 @@ export default function WorkspaceShell() {
     const moduleId =
       event.target.value;
     setActiveModuleId(moduleId);
+    if (
+      activeDestination.startsWith(
+        "module_"
+      )
+    ) {
+      setActiveDestination(
+        `module_${moduleId}`
+      );
+    }
     window.localStorage.setItem(
       "asksocial.activeModule",
       moduleId
