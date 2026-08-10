@@ -61,6 +61,13 @@ export type PvContentInput = {
   threadContext?: string[];
   immutableCaptureUrl?: string;
   dataOrigin?: "live" | "curated" | "unknown";
+  identifiedAt?: string;
+  importBatchId?: string;
+  sourceRowNumber?: number;
+  postedAtSourceColumn?: string;
+  postedAtRawValue?: string;
+  dayZeroBasis?: "posted_at" | "identified_at";
+  dayZeroReason?: string;
 };
 
 export type PvOntologyEvidence = {
@@ -147,6 +154,8 @@ export type PvClockStatus = {
   remainingMinutes?: number;
   percentConsumed: number;
   state: "healthy" | "approaching" | "breached" | "complete";
+  governingClock: "posted_at" | "ingested_at" | "identified_at";
+  governingTimestamp: string;
 };
 
 export type PvReviewDecision = {

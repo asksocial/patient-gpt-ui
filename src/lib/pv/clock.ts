@@ -71,5 +71,7 @@ export function calculatePvClock(
     remainingMinutes,
     percentConsumed,
     state,
+    governingClock: policy.clockStart,
+    governingTimestamp: new Date(initialStart).toISOString(),
   };
 }

@@ -10,6 +10,7 @@ import type {
   PvReviewDecision,
   PvSlaPolicy,
 } from "./types";
+import type { PvCsvImportError, PvCsvImportRow } from "./csvImport";
 
 const DEFAULT_SLA: PvSlaPolicy = {
   reviewMinutes: 24 * 60,
@@ -208,9 +209,10 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
     expectedEvents: library.expected_event_terms || [],
   });
   const evidenceHash = hashPayload({ verbatim: input.verbatim, url: input.sourceUrl, postedAt: input.postedAt, parentContext: input.parentContext, threadContext: input.threadContext });
+  const identificationTimestamp = input.identifiedAt || new Date().toISOString();
 
   if (!result.shouldCreateRecord) {
-    await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, evidenceHash, classifierVersion: result.classifierVersion } });
+    await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, evidenceHash, classifierVersion: result.classifierVersion, postDate: input.postedAt, reviewerIdentificationDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber, postedAtSourceColumn: input.postedAtSourceColumn, postedAtRawValue: input.postedAtRawValue } });
     return { result, record: null };
   }
 
@@ -223,7 +225,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
       resourceType: "pv_record",
       resourceId: String(existingRecord.id),
       outcome: "completed",
-      metadata: { externalId: input.externalId, evidenceHash, retainedExistingRecord: true },
+      metadata: { externalId: input.externalId, evidenceHash, retainedExistingRecord: true, postDate: input.postedAt, reviewerIdentificationDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber },
     });
     return { result, record: existingRecord, duplicate: true };
   }
@@ -238,16 +240,105 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
     source_url: input.sourceUrl, author_identifier: input.authorIdentifier || null, original_verbatim: input.verbatim,
     original_language: input.language || "en", parent_context: input.parentContext || null, thread_context: input.threadContext || [],
     immutable_capture_url: input.immutableCaptureUrl || null, evidence_hash: evidenceHash, posted_at: input.postedAt,
-    ingested_at: input.ingestedAt || now, identified_at: now, detection_score: result.score,
+    ingested_at: input.ingestedAt || now, identified_at: identificationTimestamp, detection_score: result.score,
     product_confidence: result.productConfidence, health_experience_confidence: result.healthExperienceConfidence,
     context_confidence: result.contextConfidence, matched_concepts: result.matches, proposed_classifications: result.classifications,
     classifier_version: result.classifierVersion, library_version: result.detectionLibraryVersion, detection_rationale: result.rationale,
     data_origin: input.dataOrigin || "unknown", ae_ontology: result.ontologyExtraction,
     ontology_version: result.ontologyExtraction.ontologyVersion,
+    import_batch_id: input.importBatchId || null, source_row_number: input.sourceRowNumber || null,
+    posted_at_source_column: input.postedAtSourceColumn || null, posted_at_raw_value: input.postedAtRawValue || null,
+    day_zero_basis: input.dayZeroBasis || "posted_at", day_zero_reason: input.dayZeroReason || null,
   }).select("*").single();
   if (recordError || !record) throw new Error(`Failed to create potential PV record: ${recordError?.message || "missing row"}`);
-  await appendPvAuditEvent(principal, { action: "record.create_from_detection", resourceType: "pv_record", resourceId: String(record.id), outcome: "completed", metadata: { score: result.score, evidenceHash, humanReviewRequired: true } });
+  await appendPvAuditEvent(principal, { action: "record.create_from_detection", resourceType: "pv_record", resourceId: String(record.id), outcome: "completed", metadata: { score: result.score, evidenceHash, humanReviewRequired: true, postDate: input.postedAt, reviewerIdentificationDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber } });
   return { result, record, duplicate: false };
+}
+
+export async function listPvImportBatches(principal: PlatformPrincipal, limit = 50) {
+  assertPrincipal(principal);
+  const { data, error } = await getSupabaseServerClient().from("pv_import_batches").select("*")
+    .eq("principal_id", principal.principalId).order("available_at", { ascending: false }).limit(Math.max(1, Math.min(100, limit)));
+  if (error) throw new Error(`Failed to load PV CSV imports: ${error.message}`);
+  return data || [];
+}
+
+export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
+  libraryId: string;
+  sourceId?: string;
+  fileName: string;
+  fileHash: string;
+  dataOrigin: "live" | "curated";
+  dateColumn: string;
+  contentColumns: string[];
+  sourceUrlColumn?: string;
+  externalIdColumn?: string;
+  rowCount: number;
+  rows: PvCsvImportRow[];
+  parseErrors?: PvCsvImportError[];
+}) {
+  assertPrincipal(principal);
+  if (!input.libraryId || !input.fileName || !input.rows.length) throw new Error("Library, CSV file, and at least one row are required.");
+  const supabase = getSupabaseServerClient();
+  const { data: library, error: libraryError } = await supabase.from("pv_detection_libraries").select("id")
+    .eq("id", input.libraryId).eq("principal_id", principal.principalId).eq("status", "active").maybeSingle();
+  if (libraryError || !library) throw new Error("Select an active PV Detection Library owned by this tenant.");
+  if (input.sourceId) {
+    const { data: source, error: sourceError } = await supabase.from("pv_sources").select("id")
+      .eq("id", input.sourceId).eq("principal_id", principal.principalId).maybeSingle();
+    if (sourceError || !source) throw new Error("Select a governed PV source owned by this tenant.");
+  }
+  const { data: existing } = await supabase.from("pv_import_batches").select("id,status,available_at")
+    .eq("principal_id", principal.principalId).eq("file_hash", input.fileHash).maybeSingle();
+  if (existing) throw new Error(`This CSV was already made available on ${new Date(existing.available_at).toLocaleString()}.`);
+  const availableAt = new Date().toISOString();
+  const { data: batch, error: batchError } = await supabase.from("pv_import_batches").insert({
+    principal_id: principal.principalId, library_id: input.libraryId, source_id: input.sourceId || null,
+    file_name: input.fileName, file_hash: input.fileHash, data_origin: input.dataOrigin,
+    date_column: input.dateColumn, content_columns: input.contentColumns,
+    source_url_column: input.sourceUrlColumn || null, external_id_column: input.externalIdColumn || null,
+    uploaded_by: principal.actorId, uploaded_at: availableAt, available_at: availableAt,
+    day_zero_basis: "identified_at", row_count: input.rowCount, status: "processing",
+  }).select("*").single();
+  if (batchError || !batch) throw new Error(`Failed to register PV CSV import: ${batchError?.message || "missing batch"}`);
+  await appendPvAuditEvent(principal, {
+    action: "csv_import.available", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed",
+    metadata: { fileName: input.fileName, fileHash: input.fileHash, availableAt, reviewerIdentificationDate: availableAt, dayZeroBasis: "identified_at", dateColumn: input.dateColumn, rowCount: input.rowCount, parseFailureCount: input.parseErrors?.length || 0 },
+  });
+
+  let screenedCount = 0;
+  let routedCount = 0;
+  let duplicateCount = 0;
+  const errors: Array<{ rowNumber: number; error: string }> = [...(input.parseErrors || [])];
+  for (const row of input.rows) {
+    try {
+      const detection = await detectAndStorePvContent(principal, {
+        libraryId: input.libraryId, sourceId: input.sourceId, sourceType: "csv", sourceUrl: row.sourceUrl,
+        externalId: row.externalId, verbatim: row.verbatim, postedAt: row.postedAt,
+        ingestedAt: availableAt, identifiedAt: availableAt, dataOrigin: input.dataOrigin,
+        importBatchId: String(batch.id), sourceRowNumber: row.rowNumber,
+        postedAtSourceColumn: input.dateColumn, postedAtRawValue: row.postedAtRawValue,
+        dayZeroBasis: "identified_at",
+        dayZeroReason: "Reviewer identification began when the uploaded CSV became available to the AskSocial tenant.",
+      });
+      screenedCount += 1;
+      if (detection.record && !detection.duplicate) routedCount += 1;
+      if (detection.duplicate) duplicateCount += 1;
+    } catch (rowError) {
+      errors.push({ rowNumber: row.rowNumber, error: rowError instanceof Error ? rowError.message : "PV row screening failed" });
+    }
+  }
+  const status = errors.length ? (screenedCount ? "completed_with_errors" : "failed") : "completed";
+  const { data: completed, error: updateError } = await supabase.from("pv_import_batches").update({
+    screened_count: screenedCount, routed_count: routedCount, duplicate_count: duplicateCount,
+    failed_count: errors.length, status, error_summary: errors.slice(0, 100), updated_at: new Date().toISOString(),
+  }).eq("id", batch.id).eq("principal_id", principal.principalId).select("*").single();
+  if (updateError || !completed) throw new Error(`Failed to finalize PV CSV import: ${updateError?.message || "missing batch"}`);
+  await appendPvAuditEvent(principal, {
+    action: "csv_import.complete", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: status === "failed" ? "failed" : "completed",
+    metadata: { screenedCount, routedCount, duplicateCount, failedCount: errors.length, availableAt, dayZeroBasis: "identified_at" },
+  });
+  return completed;
 }
 
 export async function listPvRecords(principal: PlatformPrincipal, input: { status?: string; limit?: number } = {}) {
@@ -277,11 +368,15 @@ export async function getPvRecord(principal: PlatformPrincipal, recordId: string
     reviewMinutes: Number(policy.review_minutes), transferMinutes: Number(policy.transfer_minutes), acknowledgmentMinutes: Number(policy.acknowledgment_minutes),
     clockStart: policy.clock_start, timezone: policy.timezone,
   } : DEFAULT_SLA;
+  const effectiveSla: PvSlaPolicy = {
+    ...sla,
+    clockStart: record.day_zero_basis === "identified_at" ? "identified_at" : sla.clockStart,
+  };
   const clock = calculatePvClock({
     status: record.status, postedAt: record.posted_at, ingestedAt: record.ingested_at, identifiedAt: record.identified_at,
     reviewedAt: latestReview?.reviewed_at, transferredAt: latestTransfer?.transferred_at, acknowledgedAt: latestTransfer?.acknowledged_at,
-  }, sla);
-  return { record, reviews: reviews || [], transfers: transfers || [], audit: audit || [], clock, sla };
+  }, effectiveSla);
+  return { record, reviews: reviews || [], transfers: transfers || [], audit: audit || [], clock, sla: effectiveSla };
 }
 
 export async function reviewPvRecord(principal: PlatformPrincipal, recordId: string, decision: PvReviewDecision) {
@@ -322,6 +417,8 @@ export async function transferPvRecord(principal: PlatformPrincipal, recordId: s
   const payload = {
     recordId: record.id, product: record.product_name, originalVerbatim: record.original_verbatim, source: record.source_type,
     sourceUrl: record.source_url, originalPostTimestamp: record.posted_at, identificationTimestamp: record.identified_at,
+    dayZeroBasis: record.day_zero_basis, dayZeroReason: record.day_zero_reason,
+    importBatchId: record.import_batch_id, sourceRowNumber: record.source_row_number,
     reviewer: review.reviewer_id, classifications: review.classifications, reviewerRationale: review.rationale,
     proposedAdverseEventOntology: record.ae_ontology, validatedAdverseEventOntology: review.validated_ae_ontology,
     evidenceHash: record.evidence_hash, classifierVersion: record.classifier_version, libraryVersion: record.library_version,
@@ -383,7 +480,8 @@ export async function getPvOperationsOverview(principal: PlatformPrincipal) {
   }, {});
   const approaching = records.filter((record: any) => {
     if (["not_relevant", "acknowledged", "reconciled"].includes(record.status)) return false;
-    const elapsed = now - new Date(record.posted_at).getTime();
+    const clockStart = record.day_zero_basis === "identified_at" ? record.identified_at : record.posted_at;
+    const elapsed = now - new Date(clockStart).getTime();
     return elapsed >= DEFAULT_SLA.reviewMinutes * 60_000 * 0.8;
   }).length;
   return {
