@@ -17,17 +17,6 @@ const CLASSIFICATIONS = [
   "lack_of_efficacy", "overdose", "misuse_abuse", "other",
 ];
 
-const SERVICE_CARDS = [
-  ["Detection Library", "Versioned product, event, context, exclusion, language, and market concepts."],
-  ["Detection Engine", "Layered product + health-experience classification that routes content for review."],
-  ["PV Record Store", "Immutable original evidence with detection rationale and retained decisions."],
-  ["Reviewer Workbench", "Structured human review, classification, rationale, and escalation controls."],
-  ["Clock / SLA Engine", "Posting, ingestion, identification, review, transfer, and acknowledgment timing."],
-  ["Transfer Service", "Versioned sponsor handoff packages with hashes and acknowledgment tracking."],
-  ["Audit / Provenance", "Append-only hash-chained events for every governed workflow decision."],
-  ["Reconciliation", "Detected vs reviewed vs transferred vs acknowledged exception analysis."],
-];
-
 function formatDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -172,9 +161,6 @@ function Overview({ metrics, statusCounts }) {
       <Metric label="Nil returns" value={metrics.nilReturns ?? 0} detail="Screened with zero potential records" />
       <Metric label="Reconciliation" value={`${metrics.reconciliationCompletion ?? 100}%`} detail="Objective: zero unexplained records" />
     </div>
-    <Card title="Eight connected PV services" subtitle="One operational foundation; controlled channels, ODCS, and enterprise add scope without replacing the workflow.">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">{SERVICE_CARDS.map(([title, description], index) => <div key={title} className="rounded-xl border border-white/10 bg-black/30 p-4"><p className="text-[11px] font-semibold text-cyan-300/70">{String(index + 1).padStart(2, "0")}</p><h3 className="mt-2 text-sm font-medium text-white/80">{title}</h3><p className="mt-2 text-xs leading-5 text-white/35">{description}</p></div>)}</div>
-    </Card>
     <Card title="PV record lifecycle" subtitle="Content never disappears when it is closed as not relevant.">
       <div className="grid gap-2 sm:grid-cols-4 lg:grid-cols-7">{["new", "in_review", "not_relevant", "ready_for_transfer", "transferred", "acknowledged", "reconciled"].map((status, index) => <div key={status} className="rounded-xl border border-white/10 bg-black/30 p-3"><p className="text-xs text-white/65">{label(status)}</p><p className="mt-2 text-xl font-semibold text-white">{statusCounts[status] || 0}</p>{index < 6 ? <p className="mt-1 text-[10px] text-white/20">Next governed state →</p> : null}</div>)}</div>
     </Card>

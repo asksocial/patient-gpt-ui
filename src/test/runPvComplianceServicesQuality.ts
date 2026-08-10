@@ -87,6 +87,7 @@ for (const field of ["data_origin", "ae_ontology", "ontology_version", "validate
   assert(ontologyMigration.includes(field), `PV adverse-event ontology migration is missing ${field}.`);
 }
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
+assert(!workbench.includes("Eight connected PV services"), "The removed PV services marketing overview must not return to Compliance Overview.");
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {
   assert(workbench.toLowerCase().includes(phrase.toLowerCase()), `PV workbench is missing required UX: ${phrase}`);
 }
