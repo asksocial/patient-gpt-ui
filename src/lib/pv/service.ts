@@ -465,7 +465,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
 export async function listPvRecords(principal: PlatformPrincipal, input: { status?: string; limit?: number; therapeuticArea?: string } = {}) {
   assertPrincipal(principal);
   let query = getSupabaseServerClient().from("pv_records").select("*").eq("principal_id", principal.principalId)
-    .order("identified_at", { ascending: false }).limit(Math.max(1, Math.min(200, input.limit || 100)));
+    .order("identified_at", { ascending: false }).limit(Math.max(1, Math.min(1000, input.limit || 500)));
   if (input.status) query = query.eq("status", input.status);
   if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
   const { data, error } = await query;

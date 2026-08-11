@@ -124,5 +124,7 @@ for (const phrase of ["CSV social-data intake", "Original post date", "Reviewer-
 const importRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/imports/route.ts"), "utf8");
 assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a file-upload route.");
 assert(!importRoute.includes('form.get("identifiedAt")'), "The client must not control the reviewer-identification timestamp.");
+const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
+assert(pvService.includes("Math.min(1000, input.limit || 500)"), "The PV review queue must expose the complete 271-record Botulinum candidate set instead of silently capping it at 100.");
 
 console.log("PV Compliance operational quality checks passed.");
