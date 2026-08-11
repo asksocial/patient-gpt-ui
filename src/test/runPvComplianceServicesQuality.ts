@@ -120,8 +120,12 @@ for (const phrase of ["Potential records, not AE determinations", "Original evid
 for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Outcome", "Time to onset", "Severity", "Unexpectedness", "Causality language", "Adverse-event ontology review"]) {
   assert(workbench.includes(phrase), `PV workbench is missing ontology UX: ${phrase}`);
 }
-for (const phrase of ["CSV social-data intake", "Original post date", "Reviewer-identification date", "Governing day-zero clock", "CSV date column", "Day zero: reviewer identification"]) {
+assert(!workbench.includes("CSV social-data intake"), "The browser-facing CSV social-data intake section must remain removed from Screening Status.");
+for (const phrase of ["Original post date", "Reviewer-identification date", "Governing day-zero clock", "CSV date column", "Day zero:"]) {
   assert(workbench.includes(phrase), `PV workbench is missing two-clock timestamp UX: ${phrase}`);
+}
+for (const phrase of ["Screening Status · Structured review", "Continue to structured review", "Return to Review Queue", "pv-screening-structured-review"]) {
+  assert(workbench.includes(phrase), `PV structured-review navigation is missing ${phrase}.`);
 }
 for (const phrase of ["Full mention", "Save review list", "Saved aggregate review lists", "Download CSV", "Share by email", "Assign to email or user ID"]) {
   assert(workbench.includes(phrase), `PV workbench is missing aggregate-review UX: ${phrase}`);
