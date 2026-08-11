@@ -10,6 +10,7 @@ const nextConfig = {
     "/api/patient-intelligence": ["./data/*.csv"],
     "/api/monitoring/run": ["./data/*.csv"],
     "/api/cron/monitoring": ["./data/*.csv"],
+    "/api/pv/corpora/botulinum-toxin": ["./data/botulinum-toxin-pv-relevance.csv"],
   },
 };
 

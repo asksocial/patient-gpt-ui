@@ -16,7 +16,8 @@ function detectionInput(body: any, defaultLibraryId?: string) {
 export async function GET(request: NextRequest) {
   try {
     const status = request.nextUrl.searchParams.get("status") || undefined;
-    return NextResponse.json({ ok: true, records: await listPvRecords(await requirePvPrincipal(), { status }) });
+    const therapeuticArea = request.nextUrl.searchParams.get("therapeuticArea") || undefined;
+    return NextResponse.json({ ok: true, records: await listPvRecords(await requirePvPrincipal(), { status, therapeuticArea }) });
   } catch (error) { const failure = pvErrorResponse(error); return NextResponse.json({ ok: false, error: failure.message }, { status: failure.status }); }
 }
 export async function POST(request: NextRequest) {

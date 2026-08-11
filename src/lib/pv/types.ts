@@ -47,6 +47,7 @@ export type PvDetectionConcept = {
   active: boolean;
 };
 export type PvContentInput = {
+  therapeuticArea?: string;
   externalId: string;
   sourceId?: string;
   sourceType: string;

@@ -2162,6 +2162,7 @@ export default function WorkspaceShell() {
               <PvComplianceCenter
                 key={activeDestination}
                 initialTab={activeDestination.slice("pv_".length)}
+                therapeuticArea={therapeuticArea}
               />
             ) : (
               <DestinationPlaceholder

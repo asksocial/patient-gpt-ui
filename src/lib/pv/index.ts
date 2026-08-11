@@ -5,3 +5,4 @@ export * from "./reconciliation";
 export * from "./service";
 export * from "./ontology";
 export * from "./csvImport";
+export * from "./botulinumCorpus";

@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 
 const MAX_CSV_BYTES = 4 * 1024 * 1024;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    return NextResponse.json({ ok: true, imports: await listPvImportBatches(await requirePvPrincipal()) });
+    return NextResponse.json({ ok: true, imports: await listPvImportBatches(await requirePvPrincipal(), 50, request.nextUrl.searchParams.get("therapeuticArea") || undefined) });
   } catch (error) {
     const failure = pvErrorResponse(error);
     return NextResponse.json({ ok: false, error: failure.message }, { status: failure.status });

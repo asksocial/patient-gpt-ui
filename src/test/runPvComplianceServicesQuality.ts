@@ -98,6 +98,7 @@ assert(!noPvNavigation.some((group) => group.id === "pv_compliance"), "PV Compli
 const migration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608060001_create_pv_compliance_services.sql"), "utf8");
 const ontologyMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608080002_expand_pv_adverse_event_ontology.sql"), "utf8");
 const csvImportMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608100001_create_pv_csv_imports.sql"), "utf8");
+const corpusMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608110002_scope_pv_corpora.sql"), "utf8");
 for (const table of ["pv_detection_libraries", "pv_detection_concepts", "pv_sources", "pv_screening_runs", "pv_sla_policies", "pv_records", "pv_reviews", "pv_transfers", "pv_audit_events", "pv_reconciliation_runs", "pv_reconciliation_issues"]) {
   assert(migration.includes(`public.${table}`), `PV migration is missing ${table}.`);
 }
@@ -108,6 +109,7 @@ for (const field of ["data_origin", "ae_ontology", "ontology_version", "validate
 for (const field of ["pv_import_batches", "available_at", "posted_at_source_column", "posted_at_raw_value", "day_zero_basis", "source_row_number"]) {
   assert(csvImportMigration.includes(field), `PV CSV timestamp migration is missing ${field}.`);
 }
+for (const field of ["corpus_id", "therapeutic_area", "pv_records_therapeutic_area_queue_idx"]) assert(corpusMigration.includes(field), `PV corpus scoping migration is missing ${field}.`);
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
 assert(!workbench.includes("Eight connected PV services"), "The removed PV services marketing overview must not return to Compliance Overview.");
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {

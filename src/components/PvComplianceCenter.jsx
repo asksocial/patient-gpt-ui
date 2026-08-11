@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const TABS = [
   ["overview", "Compliance Overview"],
@@ -58,13 +58,14 @@ function Empty({ children }) {
   return <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-5 py-8 text-center text-sm text-white/35">{children}</div>;
 }
 
-export default function PvComplianceCenter({ initialTab = "overview" }) {
+export default function PvComplianceCenter({ initialTab = "overview", therapeuticArea = "" }) {
   const [tab, setTab] = useState(initialTab);
   const [overview, setOverview] = useState(null);
   const [records, setRecords] = useState([]);
   const [sources, setSources] = useState([]);
   const [screenings, setScreenings] = useState([]);
   const [imports, setImports] = useState([]);
+  const [bundledCorpus, setBundledCorpus] = useState(null);
   const [transfers, setTransfers] = useState([]);
   const [reconciliations, setReconciliations] = useState([]);
   const [libraries, setLibraries] = useState([]);
@@ -74,11 +75,13 @@ export default function PvComplianceCenter({ initialTab = "overview" }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function loadAll() {
+  const loadAll = useCallback(async () => {
     setError("");
     try {
       const endpoints = ["overview", "records", "sources", "screenings", "transfers", "reconciliation", "library", "imports"];
-      const responses = await Promise.all(endpoints.map((endpoint) => fetch(`/api/pv/${endpoint}`, { cache: "no-store" })));
+      const scopedEndpoints = new Set(["overview", "records", "imports"]);
+      const scope = therapeuticArea ? `?therapeuticArea=${encodeURIComponent(therapeuticArea)}` : "";
+      const responses = await Promise.all(endpoints.map((endpoint) => fetch(`/api/pv/${endpoint}${scopedEndpoints.has(endpoint) ? scope : ""}`, { cache: "no-store" })));
       const payloads = await Promise.all(responses.map((response) => response.json()));
       const failed = payloads.find((payload) => !payload.ok);
       if (failed) throw new Error(failed.error || "PV Compliance could not be loaded.");
@@ -91,12 +94,20 @@ export default function PvComplianceCenter({ initialTab = "overview" }) {
       setLibraries(payloads[6].libraries || []);
       setConcepts(payloads[6].concepts || []);
       setImports(payloads[7].imports || []);
+      if (therapeuticArea === "Botulinum toxin") {
+        const corpusResponse = await fetch("/api/pv/corpora/botulinum-toxin", { cache: "no-store" });
+        const corpusPayload = await corpusResponse.json();
+        if (!corpusResponse.ok || !corpusPayload.ok) throw new Error(corpusPayload.error || "Botulinum toxin PV corpus could not be loaded.");
+        setBundledCorpus(corpusPayload.corpus);
+      } else {
+        setBundledCorpus(null);
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "PV Compliance could not be loaded.");
     }
-  }
+  }, [therapeuticArea]);
 
-  useEffect(() => { const timer = window.setTimeout(loadAll, 0); return () => window.clearTimeout(timer); }, []);
+  useEffect(() => { const timer = window.setTimeout(loadAll, 0); return () => window.clearTimeout(timer); }, [loadAll]);
 
   async function openRecord(recordId) {
     setBusy(`record:${recordId}`);
@@ -142,7 +153,7 @@ export default function PvComplianceCenter({ initialTab = "overview" }) {
 
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} /> : null}
       {tab === "queue" ? <ReviewQueue records={records} selected={selectedRecord} busy={busy} onOpen={openRecord} onMutate={mutate} onRefreshRecord={openRecord} /> : null}
-      {tab === "screening" ? <ScreeningStatus sources={sources} screenings={screenings} imports={imports} libraries={libraries} busy={busy} setBusy={setBusy} setMessage={setMessage} onReload={loadAll} onMutate={mutate} /> : null}
+      {tab === "screening" ? <ScreeningStatus therapeuticArea={therapeuticArea} bundledCorpus={bundledCorpus} sources={sources} screenings={screenings} imports={imports} libraries={libraries} busy={busy} setBusy={setBusy} setMessage={setMessage} onReload={loadAll} onMutate={mutate} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
       {tab === "reconciliation" ? <Reconciliation runs={reconciliations} busy={busy} onMutate={mutate} /> : null}
       {tab === "sources" ? <SourceRegistry sources={sources} busy={busy} onMutate={mutate} /> : null}
@@ -262,7 +273,7 @@ function PvOntologyReview({ value, onChange }) {
 function OntologyText({ labelText, value, onChange }) { return <label className="text-xs text-white/40">{labelText}<input value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
 function OntologySelect({ labelText, options, value, onChange }) { return <label className="text-xs text-white/40">{labelText}<select value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white">{options.map((option) => <option key={option} value={option}>{label(option)}</option>)}</select></label>; }
 
-function ScreeningStatus({ sources, screenings, imports, libraries, busy, setBusy, setMessage, onReload, onMutate }) {
+function ScreeningStatus({ therapeuticArea, bundledCorpus, sources, screenings, imports, libraries, busy, setBusy, setMessage, onReload, onMutate }) {
   const [sourceId, setSourceId] = useState("");
   const [items, setItems] = useState(0);
   const [potential, setPotential] = useState(0);
@@ -292,7 +303,27 @@ function ScreeningStatus({ sources, screenings, imports, libraries, busy, setBus
       setBusy("");
     }
   }
+  async function activateBundledCorpus() {
+    setBusy("botulinum-corpus"); setMessage("");
+    try {
+      const response = await fetch("/api/pv/corpora/botulinum-toxin", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok || !data.ok) { setMessage(data.error || "Botulinum toxin PV corpus activation failed."); return; }
+      setMessage(data.import.alreadyImported
+        ? "The Botulinum toxin PV corpus is already active for this tenant."
+        : `Botulinum toxin PV corpus activated. ${data.import.screened_count} records screened; ${data.import.routed_count} potential records routed for human review.`);
+      await onReload();
+    } catch (activationError) {
+      setMessage(activationError instanceof Error ? activationError.message : "Botulinum toxin PV corpus activation failed.");
+    } finally {
+      setBusy("");
+    }
+  }
   return <div className="space-y-5">
+    {therapeuticArea === "Botulinum toxin" && bundledCorpus ? <Card title="Botulinum toxin PV corpus" subtitle="A governed, therapeutic-area-specific safety corpus with fixed source mapping, contextual signal filters, deduplication, and reviewer-identification provenance.">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Source rows" value={bundledCorpus.rowCount} detail={bundledCorpus.fileName} /><Metric label="Screenable verbatims" value={bundledCorpus.screenableCount} detail="Headline, opening text, and hit sentence only" /><Metric label="Potential safety candidates" value={bundledCorpus.candidateCount} detail="Require qualified human review" tone="warning" /><Metric label="Rows without verbatim" value={bundledCorpus.parseFailureCount} detail="Retained in batch quality reporting" /></div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><div><p className="text-xs font-medium text-cyan-100/70">Ready for governed activation</p><p className="mt-1 text-[11px] leading-5 text-white/35">Post date maps from “{bundledCorpus.dateColumn}”; reviewer-identification day zero is stamped by AskSocial when activated. Keywords are not used as original verbatim.</p></div><button type="button" onClick={activateBundledCorpus} disabled={busy === "botulinum-corpus"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{busy === "botulinum-corpus" ? "Activating corpus…" : "Activate Botulinum toxin PV corpus"}</button></div>
+    </Card> : null}
     <Card title="CSV social-data intake" subtitle="Two timestamps are retained: the original post date from the mapped CSV date column and the server-recorded reviewer-identification date when the dataset becomes available to authorized AskSocial users in this tenant.">
       <form onSubmit={uploadCsv} className="space-y-4">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"><label className="text-xs text-white/40">CSV file<input key={uploadKey} type="file" accept=".csv,text/csv" required onChange={(event) => setCsvFile(event.target.files?.[0] || null)} className="mt-1.5 block w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-xs file:text-black" /></label><label className="text-xs text-white/40">Active detection library<select {...csvField("libraryId")} required className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white"><option value="">Select library</option>{libraries.filter((library) => library.status === "active").map((library) => <option key={library.id} value={library.id}>{library.name} v{library.version}</option>)}</select></label><label className="text-xs text-white/40">Governed source (optional)<select {...csvField("sourceId")} className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white"><option value="">Uploaded social dataset</option>{sources.map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}</select></label><label className="text-xs text-white/40">Evidence origin<select {...csvField("dataOrigin")} className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white"><option value="curated">Curated</option><option value="live">Live export</option></select></label></div>

@@ -11,6 +11,13 @@ import type {
   PvSlaPolicy,
 } from "./types";
 import type { PvCsvImportError, PvCsvImportRow } from "./csvImport";
+import {
+  BOTULINUM_PV_CONCEPTS,
+  BOTULINUM_PV_CORPUS_ID,
+  BOTULINUM_PV_LIBRARY_NAME,
+  BOTULINUM_PV_THERAPEUTIC_AREA,
+  loadBotulinumPvCorpus,
+} from "./botulinumCorpus";
 
 const DEFAULT_SLA: PvSlaPolicy = {
   reviewMinutes: 24 * 60,
@@ -234,7 +241,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
   const eventMatch = result.matches.find((match) => !["product", "severity", "treatment_change"].includes(match.category));
   const now = new Date().toISOString();
   const { data: record, error: recordError } = await supabase.from("pv_records").insert({
-    principal_id: principal.principalId, external_id: input.externalId, source_id: input.sourceId || null, library_id: input.libraryId,
+    principal_id: principal.principalId, external_id: input.externalId, therapeutic_area: input.therapeuticArea || null, source_id: input.sourceId || null, library_id: input.libraryId,
     sla_policy_id: input.slaPolicyId || null, status: "new", priority: result.contextConfidence >= 70 ? "critical" : result.score >= 80 ? "high" : "standard",
     product_name: productMatch?.canonicalTerm || null, potential_event: eventMatch?.canonicalTerm || null, source_type: input.sourceType,
     source_url: input.sourceUrl, author_identifier: input.authorIdentifier || null, original_verbatim: input.verbatim,
@@ -255,10 +262,12 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
   return { result, record, duplicate: false };
 }
 
-export async function listPvImportBatches(principal: PlatformPrincipal, limit = 50) {
+export async function listPvImportBatches(principal: PlatformPrincipal, limit = 50, therapeuticArea?: string) {
   assertPrincipal(principal);
-  const { data, error } = await getSupabaseServerClient().from("pv_import_batches").select("*")
+  let query = getSupabaseServerClient().from("pv_import_batches").select("*")
     .eq("principal_id", principal.principalId).order("available_at", { ascending: false }).limit(Math.max(1, Math.min(100, limit)));
+  if (therapeuticArea) query = query.eq("therapeutic_area", therapeuticArea);
+  const { data, error } = await query;
   if (error) throw new Error(`Failed to load PV CSV imports: ${error.message}`);
   return data || [];
 }
@@ -341,11 +350,124 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
   return completed;
 }
 
-export async function listPvRecords(principal: PlatformPrincipal, input: { status?: string; limit?: number } = {}) {
+async function ensureBotulinumPvLibrary(principal: PlatformPrincipal) {
+  const supabase = getSupabaseServerClient();
+  const { data: existing, error: existingError } = await supabase.from("pv_detection_libraries").select("*")
+    .eq("principal_id", principal.principalId).eq("name", BOTULINUM_PV_LIBRARY_NAME).maybeSingle();
+  if (existingError) throw new Error(`Failed to load the Botulinum toxin PV library: ${existingError.message}`);
+  let library = existing;
+  if (!library) {
+    const { data, error } = await supabase.from("pv_detection_libraries").insert({
+      principal_id: principal.principalId, name: BOTULINUM_PV_LIBRARY_NAME, product_id: "botulinum_toxin",
+      therapeutic_area: BOTULINUM_PV_THERAPEUTIC_AREA, language: "en", detection_threshold: 55,
+      expected_event_terms: ["headache", "eyelid ptosis", "injection-site pain", "bruising", "swelling"],
+      status: "draft", created_by: principal.actorId,
+    }).select("*").single();
+    if (error || !data) throw new Error(`Failed to create the Botulinum toxin PV library: ${error?.message || "missing row"}`);
+    library = data;
+  }
+  const { data: existingConcepts, error: conceptsError } = await supabase.from("pv_detection_concepts").select("canonical_term")
+    .eq("principal_id", principal.principalId).eq("library_id", library.id);
+  if (conceptsError) throw new Error(`Failed to inspect Botulinum toxin concepts: ${conceptsError.message}`);
+  const configured = new Set((existingConcepts || []).map((item: any) => item.canonical_term));
+  const missing = BOTULINUM_PV_CONCEPTS.filter((item) => !configured.has(item.canonicalTerm));
+  if (missing.length) {
+    const { error } = await supabase.from("pv_detection_concepts").insert(missing.map((item) => ({
+      library_id: library.id, principal_id: principal.principalId, category: item.category,
+      canonical_term: item.canonicalTerm, terms: item.terms, exclusions: item.exclusions || [],
+      product_id: item.productId || null, language: item.language, market: item.market || null,
+      weight: item.weight, version: Number(library.version), active: true, created_by: principal.actorId,
+    })));
+    if (error) throw new Error(`Failed to configure Botulinum toxin concepts: ${error.message}`);
+  }
+  if (library.status !== "active") {
+    const approvedAt = new Date().toISOString();
+    const { data, error } = await supabase.from("pv_detection_libraries").update({
+      status: "active", approved_by: principal.actorId, approved_at: approvedAt, updated_at: approvedAt,
+    }).eq("id", library.id).eq("principal_id", principal.principalId).select("*").single();
+    if (error || !data) throw new Error(`Failed to activate the Botulinum toxin PV library: ${error?.message || "missing row"}`);
+    library = data;
+    await appendPvAuditEvent(principal, { action: "detection_library.bootstrap", resourceType: "detection_library", resourceId: String(library.id), outcome: "completed", metadata: { corpusId: BOTULINUM_PV_CORPUS_ID, therapeuticArea: BOTULINUM_PV_THERAPEUTIC_AREA, conceptCount: BOTULINUM_PV_CONCEPTS.length } });
+  }
+  return library;
+}
+
+export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipal) {
+  assertPrincipal(principal);
+  const corpus = loadBotulinumPvCorpus();
+  const supabase = getSupabaseServerClient();
+  const library = await ensureBotulinumPvLibrary(principal);
+  const { data: existingBatch, error: existingBatchError } = await supabase.from("pv_import_batches").select("*")
+    .eq("principal_id", principal.principalId).eq("file_hash", corpus.fileHash).maybeSingle();
+  if (existingBatchError) throw new Error(`Failed to check the bundled PV corpus: ${existingBatchError.message}`);
+  if (existingBatch) return { ...existingBatch, alreadyImported: true };
+
+  const availableAt = new Date().toISOString();
+  const { data: batch, error: batchError } = await supabase.from("pv_import_batches").insert({
+    principal_id: principal.principalId, library_id: library.id, file_name: corpus.fileName,
+    file_hash: corpus.fileHash, corpus_id: corpus.corpusId, therapeutic_area: corpus.therapeuticArea,
+    data_origin: "curated", date_column: corpus.dateColumn, content_columns: corpus.contentColumns,
+    source_url_column: corpus.sourceUrlColumn || null, external_id_column: corpus.externalIdColumn || null,
+    uploaded_by: principal.actorId, uploaded_at: availableAt, available_at: availableAt,
+    day_zero_basis: "identified_at", row_count: corpus.rowCount, status: "processing",
+  }).select("*").single();
+  if (batchError || !batch) throw new Error(`Failed to register the bundled PV corpus: ${batchError?.message || "missing batch"}`);
+  await appendPvAuditEvent(principal, { action: "csv_import.available", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, fileHash: corpus.fileHash, availableAt, reviewerIdentificationDate: availableAt, dayZeroBasis: "identified_at", rowCount: corpus.rowCount } });
+
+  const candidateIds = corpus.candidates.map((row) => row.externalId);
+  const existingIds = new Set<string>();
+  for (let index = 0; index < candidateIds.length; index += 200) {
+    const { data, error } = await supabase.from("pv_records").select("external_id")
+      .eq("principal_id", principal.principalId).in("external_id", candidateIds.slice(index, index + 200));
+    if (error) throw new Error(`Failed to deduplicate the bundled PV corpus: ${error.message}`);
+    for (const item of data || []) existingIds.add(String(item.external_id));
+  }
+  const records = corpus.candidates.filter((row) => !existingIds.has(row.externalId)).map((row) => {
+    const result = classifyPvContent({ externalId: row.externalId, sourceType: "curated_csv", sourceUrl: row.sourceUrl, verbatim: row.verbatim, postedAt: row.postedAt, dataOrigin: "curated" }, BOTULINUM_PV_CONCEPTS, { threshold: 55, libraryVersion: Number(library.version), expectedEvents: library.expected_event_terms || [] });
+    const productMatch = result.matches.find((match) => match.category === "product");
+    const eventMatch = result.matches.find((match) => !["product", "severity", "treatment_change"].includes(match.category));
+    return {
+      principal_id: principal.principalId, external_id: row.externalId, therapeutic_area: corpus.therapeuticArea,
+      library_id: library.id, status: "new", priority: result.contextConfidence >= 70 ? "critical" : result.score >= 80 ? "high" : "standard",
+      product_name: productMatch?.canonicalTerm || null, potential_event: eventMatch?.canonicalTerm || null,
+      source_type: "curated_csv", source_url: row.sourceUrl, original_verbatim: row.verbatim, original_language: "en",
+      thread_context: [], evidence_hash: hashPayload({ verbatim: row.verbatim, url: row.sourceUrl, postedAt: row.postedAt }),
+      posted_at: row.postedAt, ingested_at: availableAt, identified_at: availableAt,
+      detection_score: result.score, product_confidence: result.productConfidence,
+      health_experience_confidence: result.healthExperienceConfidence, context_confidence: result.contextConfidence,
+      matched_concepts: result.matches, proposed_classifications: result.classifications,
+      classifier_version: result.classifierVersion, library_version: result.detectionLibraryVersion,
+      detection_rationale: result.rationale, data_origin: "curated", ae_ontology: result.ontologyExtraction,
+      ontology_version: result.ontologyExtraction.ontologyVersion, import_batch_id: batch.id,
+      source_row_number: row.rowNumber, posted_at_source_column: corpus.dateColumn,
+      posted_at_raw_value: row.postedAtRawValue, day_zero_basis: "identified_at",
+      day_zero_reason: "Reviewer identification began when the bundled Botulinum toxin corpus became available to the AskSocial tenant.",
+    };
+  });
+  let routedCount = 0;
+  for (let index = 0; index < records.length; index += 100) {
+    const chunk = records.slice(index, index + 100);
+    const { error } = await supabase.from("pv_records").insert(chunk);
+    if (error) throw new Error(`Failed to populate the Botulinum toxin PV review queue: ${error.message}`);
+    routedCount += chunk.length;
+  }
+  const failedCount = corpus.errors.length;
+  const status = failedCount ? "completed_with_errors" : "completed";
+  const { data: completed, error: updateError } = await supabase.from("pv_import_batches").update({
+    screened_count: corpus.rows.length, routed_count: routedCount, duplicate_count: existingIds.size,
+    failed_count: failedCount, status, error_summary: corpus.errors.slice(0, 100), updated_at: new Date().toISOString(),
+  }).eq("id", batch.id).eq("principal_id", principal.principalId).select("*").single();
+  if (updateError || !completed) throw new Error(`Failed to finalize the bundled PV corpus: ${updateError?.message || "missing batch"}`);
+  await appendPvAuditEvent(principal, { action: "csv_import.complete", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, screenedCount: corpus.rows.length, candidateCount: corpus.candidates.length, routedCount, duplicateCount: existingIds.size, failedCount, availableAt, dayZeroBasis: "identified_at", screeningMethod: "botulinum-pv-context-rules" } });
+  return completed;
+}
+
+export async function listPvRecords(principal: PlatformPrincipal, input: { status?: string; limit?: number; therapeuticArea?: string } = {}) {
   assertPrincipal(principal);
   let query = getSupabaseServerClient().from("pv_records").select("*").eq("principal_id", principal.principalId)
     .order("identified_at", { ascending: false }).limit(Math.max(1, Math.min(200, input.limit || 100)));
   if (input.status) query = query.eq("status", input.status);
+  if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load PV records: ${error.message}`);
   return data || [];
@@ -461,10 +583,10 @@ export async function listPvTransfers(principal: PlatformPrincipal, limit = 100)
   return data || [];
 }
 
-export async function getPvOperationsOverview(principal: PlatformPrincipal) {
+export async function getPvOperationsOverview(principal: PlatformPrincipal, therapeuticArea?: string) {
   assertPrincipal(principal);
   const [records, sources, screeningRuns] = await Promise.all([
-    listPvRecords(principal), listPvSources(principal), listPvScreeningRuns(principal, 500),
+    listPvRecords(principal, { therapeuticArea }), listPvSources(principal), listPvScreeningRuns(principal, 500),
   ]);
   const now = Date.now();
   const latestScreeningBySource = new Map<string, any>();

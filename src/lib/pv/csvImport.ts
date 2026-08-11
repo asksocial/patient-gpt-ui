@@ -93,6 +93,15 @@ export function parseCsvPostDate(value: string) {
     const excelDate = new Date(milliseconds);
     if (!Number.isNaN(excelDate.getTime())) return excelDate.toISOString();
   }
+  const meltwaterDate = raw.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})\s+(\d{1,2}):(\d{2})(AM|PM)$/i);
+  if (meltwaterDate) {
+    const month = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+      .indexOf(meltwaterDate[2].toLowerCase());
+    let hour = Number(meltwaterDate[4]) % 12;
+    if (meltwaterDate[6].toLowerCase() === "pm") hour += 12;
+    const parsed = new Date(Date.UTC(Number(meltwaterDate[3]), month, Number(meltwaterDate[1]), hour, Number(meltwaterDate[5])));
+    if (month >= 0 && !Number.isNaN(parsed.getTime())) return parsed.toISOString();
+  }
   const unzonedIso = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)$/);
   const parsed = new Date(unzonedIso ? `${unzonedIso[1]}T${unzonedIso[2]}Z` : raw);
   if (Number.isNaN(parsed.getTime())) throw new Error(`Post date “${raw}” is not a valid timestamp.`);
@@ -123,7 +132,7 @@ export function parsePvCsv(bytes: Uint8Array, fileName: string, mapping: PvCsvCo
       const postedAtRawValue = cell(dateColumn);
       const verbatim = Array.from(new Set(contentColumns.map((column) => cell(column)).filter(Boolean))).join(" ");
       if (!verbatim) throw new Error("Social content is empty.");
-      const externalId = cell(externalIdColumn) || createHash("sha256").update(`${fileHash}:${rowNumber}`).digest("hex");
+      const externalId = cell(externalIdColumn).replace(/^"+|"+$/g, "") || createHash("sha256").update(`${fileHash}:${rowNumber}`).digest("hex");
       const sourceUrl = cell(sourceUrlColumn) || `urn:asksocial:pv-import:${fileHash}:${rowNumber}`;
       rows.push({ rowNumber, externalId, verbatim, sourceUrl, postedAt: parseCsvPostDate(postedAtRawValue), postedAtRawValue });
     } catch (error) {
