@@ -120,6 +120,14 @@ for (const phrase of ["Potential records, not AE determinations", "Original evid
 for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Outcome", "Time to onset", "Severity", "Unexpectedness", "Causality language", "Adverse-event ontology review"]) {
   assert(workbench.includes(phrase), `PV workbench is missing ontology UX: ${phrase}`);
 }
+for (const option of ["non_serious", "permanent_injury", "immediate", "moderate", "expected_label_event", "possibly due to", "think it was from"]) {
+  assert(workbench.includes(`"${option}"`), `PV ontology dropdowns are missing the controlled value ${option}.`);
+}
+assert(workbench.includes('OntologySelect labelText="Causality language"'), "Causality Language must use a controlled dropdown instead of free text.");
+const reviewQueueSource = workbench.slice(workbench.indexOf("function ReviewQueue"), workbench.indexOf("function RecordWorkbench"));
+assert(!reviewQueueSource.includes("PvOntologyReview") && !reviewQueueSource.includes("Adverse-event ontology review"), "Adverse-event ontology review must not render inside Review Queue.");
+const screeningStatusSource = workbench.slice(workbench.indexOf("function ScreeningStatus"), workbench.indexOf("function Transfers"));
+assert(screeningStatusSource.includes("<RecordWorkbench"), "The ontology workbench must render within Screening Status.");
 assert(!workbench.includes("CSV social-data intake"), "The browser-facing CSV social-data intake section must remain removed from Screening Status.");
 for (const phrase of ["Original post date", "Reviewer-identification date", "Governing day-zero clock", "CSV date column", "Day zero:"]) {
   assert(workbench.includes(phrase), `PV workbench is missing two-clock timestamp UX: ${phrase}`);

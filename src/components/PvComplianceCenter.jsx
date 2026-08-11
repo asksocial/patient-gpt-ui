@@ -17,6 +17,15 @@ const CLASSIFICATIONS = [
   "lack_of_efficacy", "overdose", "misuse_abuse", "other",
 ];
 
+const AE_ONTOLOGY_OPTIONS = {
+  seriousness: ["unclear", "serious", "non_serious"],
+  outcome: ["unknown", "recovered", "ongoing", "hospitalization", "permanent_injury", "fatal"],
+  timeToOnset: ["unknown", "immediate", "hours", "days", "weeks", "months"],
+  severity: ["unclear", "mild", "moderate", "severe"],
+  unexpectedness: ["unclear", "expected_label_event", "emerging_signal"],
+  causalityLanguage: ["", "after", "following", "possibly due to", "think it was from", "caused by", "related to", "worsened after", "no relationship reported"],
+};
+
 function formatDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -330,11 +339,14 @@ function ProposedOntology({ ontology }) {
 
 function PvOntologyReview({ value, onChange }) {
   function field(key) { return { value: value[key], onChange: (event) => onChange((current) => ({ ...current, [key]: event.target.value })) }; }
-  return <Card title="Adverse-event ontology review" subtitle="Confirm or correct every extracted field against the verbatim and applicable reference label before escalation."><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"><OntologyText labelText="Product / procedure" {...field("productProcedure")} /><OntologyText labelText="Adverse event" {...field("adverseEvent")} /><OntologySelect labelText="Seriousness" options={["unclear", "serious", "non_serious"]} {...field("seriousness")} /><OntologySelect labelText="Outcome" options={["unknown", "recovered", "ongoing", "hospitalization", "permanent_injury", "fatal"]} {...field("outcome")} /><OntologySelect labelText="Time to onset" options={["unknown", "immediate", "hours", "days", "weeks", "months"]} {...field("timeToOnset")} /><OntologyText labelText="Onset detail" {...field("timeToOnsetDetail")} /><OntologySelect labelText="Severity" options={["unclear", "mild", "moderate", "severe"]} {...field("severity")} /><OntologySelect labelText="Unexpectedness" options={["unclear", "expected_label_event", "emerging_signal"]} {...field("unexpectedness")} /><OntologySelect labelText="Causality type" options={["temporal_association", "possible_attribution", "reported_attribution", "denied"]} {...field("causalityType")} /><OntologyText labelText="Causality language" {...field("causalityLanguage")} /></div></Card>;
+  const causalityLanguageOptions = AE_ONTOLOGY_OPTIONS.causalityLanguage.includes(value.causalityLanguage)
+    ? AE_ONTOLOGY_OPTIONS.causalityLanguage
+    : [...AE_ONTOLOGY_OPTIONS.causalityLanguage, value.causalityLanguage];
+  return <Card title="Adverse-event ontology review" subtitle="Confirm or correct every extracted field against the verbatim and applicable reference label before escalation."><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"><OntologyText labelText="Product / procedure" {...field("productProcedure")} /><OntologyText labelText="Adverse event" {...field("adverseEvent")} /><OntologySelect labelText="Seriousness" options={AE_ONTOLOGY_OPTIONS.seriousness} {...field("seriousness")} /><OntologySelect labelText="Outcome" options={AE_ONTOLOGY_OPTIONS.outcome} {...field("outcome")} /><OntologySelect labelText="Time to onset" options={AE_ONTOLOGY_OPTIONS.timeToOnset} {...field("timeToOnset")} /><OntologyText labelText="Onset detail" {...field("timeToOnsetDetail")} /><OntologySelect labelText="Severity" options={AE_ONTOLOGY_OPTIONS.severity} {...field("severity")} /><OntologySelect labelText="Unexpectedness" options={AE_ONTOLOGY_OPTIONS.unexpectedness} {...field("unexpectedness")} /><OntologySelect labelText="Causality type" options={["temporal_association", "possible_attribution", "reported_attribution", "denied"]} {...field("causalityType")} /><OntologySelect labelText="Causality language" options={causalityLanguageOptions} emptyLabel="Not stated / unclear" {...field("causalityLanguage")} /></div></Card>;
 }
 
 function OntologyText({ labelText, value, onChange }) { return <label className="text-xs text-white/40">{labelText}<input value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
-function OntologySelect({ labelText, options, value, onChange }) { return <label className="text-xs text-white/40">{labelText}<select value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white">{options.map((option) => <option key={option} value={option}>{label(option)}</option>)}</select></label>; }
+function OntologySelect({ labelText, options, value, onChange, emptyLabel = "Unclear" }) { return <label className="text-xs text-white/40">{labelText}<select value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white">{options.map((option) => <option key={option || "empty"} value={option}>{option ? label(option) : emptyLabel}</option>)}</select></label>; }
 
 function ScreeningStatus({ therapeuticArea, bundledCorpus, sources, screenings, selected, busy, setBusy, setMessage, onReload, onMutate, onRefreshRecord, onReturnToQueue }) {
   const [sourceId, setSourceId] = useState("");
