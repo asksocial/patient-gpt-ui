@@ -473,6 +473,86 @@ export async function listPvRecords(principal: PlatformPrincipal, input: { statu
   return data || [];
 }
 
+export async function listPvReviewLists(principal: PlatformPrincipal, therapeuticArea?: string) {
+  assertPrincipal(principal);
+  const supabase = getSupabaseServerClient();
+  let listQuery = supabase.from("pv_review_lists").select("*").eq("principal_id", principal.principalId)
+    .order("updated_at", { ascending: false });
+  if (therapeuticArea) listQuery = listQuery.eq("therapeutic_area", therapeuticArea);
+  const { data: lists, error: listError } = await listQuery;
+  if (listError) throw new Error(`Failed to load PV review lists: ${listError.message}`);
+  const listIds = (lists || []).map((list: any) => list.id);
+  if (!listIds.length) return [];
+  const { data: items, error: itemError } = await supabase.from("pv_review_list_items")
+    .select("id,list_id,record_id,note,added_by,added_at,pv_records(id,product_name,potential_event,source_type,source_url,original_verbatim,posted_at,identified_at,detection_score,status)")
+    .eq("principal_id", principal.principalId).in("list_id", listIds).order("added_at", { ascending: true });
+  if (itemError) throw new Error(`Failed to load PV review-list mentions: ${itemError.message}`);
+  return (lists || []).map((list: any) => ({ ...list, items: (items || []).filter((item: any) => item.list_id === list.id) }));
+}
+
+export async function createPvReviewList(principal: PlatformPrincipal, input: {
+  name: string; therapeuticArea: string; recordIds: string[]; assignedTo?: string; description?: string;
+}) {
+  assertPrincipal(principal);
+  const name = input.name.trim();
+  const therapeuticArea = input.therapeuticArea.trim();
+  const recordIds = [...new Set(input.recordIds.map((id) => id.trim()).filter(Boolean))];
+  if (!name || !therapeuticArea || !recordIds.length) throw new Error("List name, therapeutic area, and at least one PV mention are required.");
+  if (recordIds.length > 1000) throw new Error("A PV review list can contain at most 1,000 mentions.");
+  const supabase = getSupabaseServerClient();
+  const { data: records, error: recordError } = await supabase.from("pv_records").select("id")
+    .eq("principal_id", principal.principalId).eq("therapeutic_area", therapeuticArea).in("id", recordIds);
+  if (recordError) throw new Error(`Failed to validate selected PV mentions: ${recordError.message}`);
+  if ((records || []).length !== recordIds.length) throw new Error("One or more selected PV mentions are outside the permitted tenant or therapeutic area.");
+  const now = new Date().toISOString();
+  const { data: list, error: listError } = await supabase.from("pv_review_lists").insert({
+    principal_id: principal.principalId, therapeutic_area: therapeuticArea, name,
+    description: input.description?.trim() || null, assigned_to: input.assignedTo?.trim() || null,
+    created_by: principal.actorId, updated_by: principal.actorId, created_at: now, updated_at: now,
+  }).select("*").single();
+  if (listError || !list) throw new Error(`Failed to create PV review list: ${listError?.message || "missing list"}`);
+  const { error: itemError } = await supabase.from("pv_review_list_items").insert(recordIds.map((recordId) => ({
+    principal_id: principal.principalId, list_id: list.id, record_id: recordId, added_by: principal.actorId,
+  })));
+  if (itemError) {
+    await supabase.from("pv_review_lists").delete().eq("id", list.id).eq("principal_id", principal.principalId);
+    throw new Error(`Failed to add mentions to the PV review list: ${itemError.message}`);
+  }
+  await appendPvAuditEvent(principal, { action: "review_list.create", resourceType: "pv_review_list", resourceId: String(list.id), outcome: "completed", metadata: { therapeuticArea, recordCount: recordIds.length, assignedTo: input.assignedTo?.trim() || null } });
+  return { ...list, item_count: recordIds.length };
+}
+
+export async function updatePvReviewList(principal: PlatformPrincipal, listId: string, input: {
+  assignedTo?: string; sharedEmail?: string; status?: "active" | "exported" | "archived";
+}) {
+  assertPrincipal(principal);
+  const supabase = getSupabaseServerClient();
+  const { data: existing, error: existingError } = await supabase.from("pv_review_lists").select("*")
+    .eq("id", listId).eq("principal_id", principal.principalId).maybeSingle();
+  if (existingError || !existing) throw new Error("PV review list not found.");
+  const sharedEmail = input.sharedEmail?.trim().toLowerCase();
+  if (sharedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sharedEmail)) throw new Error("Enter a valid email address.");
+  const sharedEmails = sharedEmail ? [...new Set([...(existing.shared_emails || []), sharedEmail])] : existing.shared_emails || [];
+  const updates: Record<string, unknown> = {
+    assigned_to: input.assignedTo !== undefined ? input.assignedTo.trim() || null : existing.assigned_to,
+    shared_emails: sharedEmails, status: input.status || existing.status,
+    updated_by: principal.actorId, updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await supabase.from("pv_review_lists").update(updates)
+    .eq("id", listId).eq("principal_id", principal.principalId).select("*").single();
+  if (error || !data) throw new Error(`Failed to update PV review list: ${error?.message || "missing list"}`);
+  const action = sharedEmail ? "review_list.share_email" : input.status === "exported" ? "review_list.export" : "review_list.assign";
+  await appendPvAuditEvent(principal, { action, resourceType: "pv_review_list", resourceId: listId, outcome: "completed", metadata: { assignedTo: data.assigned_to, sharedEmail: sharedEmail || null, status: data.status } });
+  return data;
+}
+
+export async function getPvReviewList(principal: PlatformPrincipal, listId: string) {
+  const lists = await listPvReviewLists(principal);
+  const list = lists.find((item: any) => item.id === listId);
+  if (!list) throw new Error("PV review list not found.");
+  return list;
+}
+
 export async function getPvRecord(principal: PlatformPrincipal, recordId: string) {
   assertPrincipal(principal);
   const supabase = getSupabaseServerClient();

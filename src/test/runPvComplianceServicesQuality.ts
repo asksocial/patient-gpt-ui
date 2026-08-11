@@ -99,6 +99,7 @@ const migration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migratio
 const ontologyMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608080002_expand_pv_adverse_event_ontology.sql"), "utf8");
 const csvImportMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608100001_create_pv_csv_imports.sql"), "utf8");
 const corpusMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608110002_scope_pv_corpora.sql"), "utf8");
+const reviewListMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608110003_create_pv_review_lists.sql"), "utf8");
 for (const table of ["pv_detection_libraries", "pv_detection_concepts", "pv_sources", "pv_screening_runs", "pv_sla_policies", "pv_records", "pv_reviews", "pv_transfers", "pv_audit_events", "pv_reconciliation_runs", "pv_reconciliation_issues"]) {
   assert(migration.includes(`public.${table}`), `PV migration is missing ${table}.`);
 }
@@ -110,6 +111,7 @@ for (const field of ["pv_import_batches", "available_at", "posted_at_source_colu
   assert(csvImportMigration.includes(field), `PV CSV timestamp migration is missing ${field}.`);
 }
 for (const field of ["corpus_id", "therapeutic_area", "pv_records_therapeutic_area_queue_idx"]) assert(corpusMigration.includes(field), `PV corpus scoping migration is missing ${field}.`);
+for (const field of ["pv_review_lists", "pv_review_list_items", "assigned_to", "shared_emails", "record_id"]) assert(reviewListMigration.includes(field), `PV review-list migration is missing ${field}.`);
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
 assert(!workbench.includes("Eight connected PV services"), "The removed PV services marketing overview must not return to Compliance Overview.");
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {
@@ -121,10 +123,18 @@ for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Ou
 for (const phrase of ["CSV social-data intake", "Original post date", "Reviewer-identification date", "Governing day-zero clock", "CSV date column", "Day zero: reviewer identification"]) {
   assert(workbench.includes(phrase), `PV workbench is missing two-clock timestamp UX: ${phrase}`);
 }
+for (const phrase of ["Full mention", "Save review list", "Saved aggregate review lists", "Download CSV", "Share by email", "Assign to email or user ID"]) {
+  assert(workbench.includes(phrase), `PV workbench is missing aggregate-review UX: ${phrase}`);
+}
 const importRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/imports/route.ts"), "utf8");
 assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a file-upload route.");
 assert(!importRoute.includes('form.get("identifiedAt")'), "The client must not control the reviewer-identification timestamp.");
 const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
 assert(pvService.includes("Math.min(1000, input.limit || 500)"), "The PV review queue must expose the complete 271-record Botulinum candidate set instead of silently capping it at 100.");
+for (const contract of ["createPvReviewList", "listPvReviewLists", "updatePvReviewList", "review_list.share_email", "review_list.export"]) assert(pvService.includes(contract), `PV aggregate-review service is missing ${contract}.`);
+const reviewListRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/route.ts"), "utf8");
+const reviewListExportRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/[listId]/export/route.ts"), "utf8");
+assert(reviewListRoute.includes("requirePvPrincipal") && reviewListRoute.includes("therapeuticArea"), "PV review lists must be entitlement- and therapeutic-area-scoped.");
+assert(reviewListExportRoute.includes("Content-Disposition") && reviewListExportRoute.includes("Full mention"), "PV aggregate-list exports must download the complete source evidence.");
 
 console.log("PV Compliance operational quality checks passed.");
