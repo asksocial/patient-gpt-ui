@@ -87,8 +87,29 @@ function hasBurdenLanguage(text: string, profile: DiseaseProfile): boolean {
 function isAestheticsProfile(profile: DiseaseProfile): boolean {
   return (
     profile.profileId === "regenerative_aesthetics" ||
-    profile.profileId === "medical_aesthetics"
+    profile.profileId === "medical_aesthetics" ||
+    profile.profileId === "botulinum_toxin"
   );
+}
+
+function isBotulinumToxinProfile(profile: DiseaseProfile): boolean {
+  return profile.profileId === "botulinum_toxin";
+}
+
+function hasBotulinumToxinAnchor(text: string): boolean {
+  return includesAny(text, [
+    "botulinum toxin", "botulinum neurotoxin", "bont-a", "bonta", "botox", "dysport", "xeomin",
+    "jeuveau", "nuceiva", "daxxify", "letybo", "onabotulinum", "abobotulinum", "incobotulinum",
+    "prabotulinum", "daxibotulinum", "letibotulinum", "neuromodulator", "neurotoxin injection",
+  ]);
+}
+
+function shouldExcludeBotulinumToxinRow(text: string): boolean {
+  if (!hasBotulinumToxinAnchor(text)) return true;
+  return includesAny(text, [
+    "liquid botox tea", "botox tea recipe", "hair botox", "botox for hair", "botox shampoo",
+    "botox conditioner", "botox hair mask", "botulism outbreak", "foodborne botulism",
+  ]);
 }
 
 function isEducationalContent(text: string, profile: DiseaseProfile): boolean {
@@ -501,7 +522,7 @@ function shouldExcludeAestheticsRow(text: string): boolean {
 function chooseSummary(row: MeltwaterRow): string {
   const hit = normalizeText(row["Hit Sentence"] || "");
   const open = normalizeText(row["Opening Text"] || "");
-  const title = normalizeText(row["Title"] || "");
+  const title = normalizeText(row["Title"] || row["Headline"] || "");
 
   if (hit) return hit;
   if (open) return open.slice(0, 220);
@@ -688,7 +709,7 @@ export function adaptMeltwaterRows(
           }
         );
 
-      const title = normalizeText(row["Title"] || "");
+      const title = normalizeText(row["Title"] || row["Headline"] || "");
       const opening = normalizeText(row["Opening Text"] || "");
       const hit = normalizeText(row["Hit Sentence"] || "");
       const tags = normalizeText(row["Document Tags"] || "");
@@ -698,10 +719,9 @@ export function adaptMeltwaterRows(
       if (!combinedText || combinedText.length < 20) return null;
 
       if (
-        combinedText.includes("vaccine") ||
-        combinedText.includes("shot") ||
-        combinedText.includes("jab") ||
-        combinedText.includes("vitamin k")
+        isBotulinumToxinProfile(profile)
+          ? combinedText.includes("vaccine") || combinedText.includes("vitamin k")
+          : combinedText.includes("vaccine") || combinedText.includes("shot") || combinedText.includes("jab") || combinedText.includes("vitamin k")
       ) {
         return null;
       }
@@ -710,8 +730,13 @@ export function adaptMeltwaterRows(
       if (isExtraExcluded(combinedText, profile)) return null;
       if (isLowQualityNoise(combinedText, profile)) return null;
 
+      if (isBotulinumToxinProfile(profile) && shouldExcludeBotulinumToxinRow(combinedText)) {
+        return null;
+      }
+
       if (
         isAestheticsProfile(profile) &&
+        !isBotulinumToxinProfile(profile) &&
         shouldExcludeAestheticsRow(combinedText)
       ) {
         return null;
@@ -848,7 +873,7 @@ export function adaptMeltwaterRows(
         treatments,
         knowledgeDomains,
         country: normalizeText(row["Country"] || ""),
-        platform: normalizeText(row["Source Type"] || ""),
+        platform: normalizeText(row["Source Type"] || row["Source"] || ""),
         persona,
         url: normalizeText(row["URL"] || ""),
         sourceType: "live",

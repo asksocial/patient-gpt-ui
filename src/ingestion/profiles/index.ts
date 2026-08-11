@@ -5,6 +5,7 @@ import { uterineFibroidsProfile } from "./uterineFibroidsProfile";
 import { geneTherapyProfile } from "./geneTherapyProfile";
 import { regenerativeAestheticsProfile } from "./regenerativeAestheticsProfile";
 import { medicalAestheticsProfile } from "./medicalAestheticsProfile";
+import { botulinumToxinProfile } from "./botulinumToxinProfile";
 
 export const DISEASE_PROFILES: Record<string, DiseaseProfile> = {
   hepatitis_b: hepatitisBProfile,
@@ -12,6 +13,7 @@ export const DISEASE_PROFILES: Record<string, DiseaseProfile> = {
   gene_therapy: geneTherapyProfile,
   regenerative_aesthetics: regenerativeAestheticsProfile,
   medical_aesthetics: medicalAestheticsProfile,
+  botulinum_toxin: botulinumToxinProfile,
 };
 
 export function getDiseaseProfile(profileId: string): DiseaseProfile {

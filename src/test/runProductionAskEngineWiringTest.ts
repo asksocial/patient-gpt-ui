@@ -10,6 +10,7 @@ const supportedAreas = [
   "Medical Aesthetics",
   "Hepatitis B",
   "Gene Therapy",
+  "Botulinum toxin",
 ];
 
 for (const therapeuticArea of

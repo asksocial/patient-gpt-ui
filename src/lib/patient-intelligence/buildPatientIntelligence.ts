@@ -220,7 +220,7 @@ export function buildPatientIntelligence(
       assessment,
       limitations: [
         "Audience labels are machine-derived silver labels pending human adjudication.",
-        "The current Medical Aesthetics corpus is not a statistically representative patient panel.",
+        `The current ${therapeuticArea} corpus is not a statistically representative patient panel.`,
         caregiverCount ? "Caregiver findings are reported separately where present." : "No confidently classified caregiver evidence was available.",
       ],
     },

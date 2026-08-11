@@ -16,9 +16,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const therapeuticArea = String(body?.therapeuticArea || "").trim();
     if (!therapeuticArea) return NextResponse.json({ ok: false, error: "therapeuticArea is required" }, { status: 400 });
-    if (!/medical[ _-]?aesthetics/i.test(therapeuticArea)) {
-      return NextResponse.json({ ok: false, error: "Patient Intelligence is currently validated for Medical Aesthetics." }, { status: 400 });
-    }
     const corpus = loadCanonicalFindingsForAsk(therapeuticArea);
     if (corpus.status !== "available") return NextResponse.json({ ok: false, error: corpus.reason }, { status: 422 });
     const intelligence = buildPatientIntelligence(therapeuticArea, corpus.findings);

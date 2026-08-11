@@ -240,7 +240,29 @@ function combineDateAndTime(
     );
   }
 
+  if (/\b\d{1,2}:\d{2}\s*(?:am|pm)?\b/i.test(normalizedDate)) {
+    return normalizedDate;
+  }
+
   return `${normalizedDate}T${normalizedTime}`;
+}
+
+function normalizePublishedDate(value?: string): string | undefined {
+  if (!value) return undefined;
+  const normalized = value.trim();
+  const meltwater = normalized.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM))?$/i);
+  if (!meltwater) return normalized;
+  const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const month = months.indexOf(meltwater[2].toLowerCase());
+  if (month < 0) return normalized;
+  const rawYear = Number(meltwater[3]);
+  const year = rawYear < 100 ? 2000 + rawYear : rawYear;
+  let hour = Number(meltwater[4] || 0);
+  const minute = Number(meltwater[5] || 0);
+  const meridiem = String(meltwater[6] || "").toUpperCase();
+  if (meridiem === "PM" && hour < 12) hour += 12;
+  if (meridiem === "AM" && hour === 12) hour = 0;
+  return new Date(Date.UTC(year, month, Number(meltwater[1]), hour, minute)).toISOString();
 }
 
 function buildEnrichedFullText(
@@ -446,7 +468,7 @@ export function normalizeEvidenceMetadata(
       "Publication Time"
     );
 
-  const publishedAt =
+  const publishedAt = normalizePublishedDate(
     stringValue(
       f.publishedAt
     ) ||
@@ -457,7 +479,8 @@ export function normalizeEvidenceMetadata(
     combineDateAndTime(
       rawDate,
       rawTime
-    );
+    )
+  );
 
   const engagement =
     numberValue(f.score) ||

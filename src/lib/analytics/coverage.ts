@@ -64,6 +64,14 @@ const COVERAGE: TherapeuticAreaCoverage[] = [
       "Medical Aesthetics approved shared Meltwater canonical corpus",
   },
   {
+    therapeuticArea: "Botulinum toxin",
+    therapeuticAreaId: "botulinum_toxin",
+    status: "validated",
+    executiveIntelligenceAvailable: true,
+    longitudinalIntelligenceAvailable: true,
+    sourceLabel: "Botulinum toxin Meltwater canonical corpus",
+  },
+  {
     therapeuticArea:
       "Uterine Fibroids",
     therapeuticAreaId:
@@ -94,6 +102,8 @@ export function normalizeTherapeuticAreaId(
     regenerative_aesthetic:
       "regenerative_aesthetics",
     gene_therapies: "gene_therapy",
+    botulinum_toxin_a: "botulinum_toxin",
+    botox: "botulinum_toxin",
   };
 
   return aliases[normalized] || normalized;

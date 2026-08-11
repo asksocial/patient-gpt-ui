@@ -1,5 +1,6 @@
 import { ThemeTaxonomy } from "../themeModels";
 import { regenerativeAestheticsThemeTaxonomy } from "./regenerativeAesthetics";
+import { botulinumToxinThemeTaxonomy } from "./botulinumToxin";
 
 const medicalAestheticsThemeTaxonomy: ThemeTaxonomy = {
   ...regenerativeAestheticsThemeTaxonomy,
@@ -9,6 +10,7 @@ const medicalAestheticsThemeTaxonomy: ThemeTaxonomy = {
 export const THEME_TAXONOMIES: Record<string, ThemeTaxonomy> = {
   regenerative_aesthetics: regenerativeAestheticsThemeTaxonomy,
   medical_aesthetics: medicalAestheticsThemeTaxonomy,
+  botulinum_toxin: botulinumToxinThemeTaxonomy,
 };
 
 export function getThemeTaxonomy(therapeuticArea?: string): ThemeTaxonomy | null {

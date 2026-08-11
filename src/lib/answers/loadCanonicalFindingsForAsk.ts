@@ -116,6 +116,19 @@ const CORPORA: Record<
         }
       ) as CanonicalFinding[],
   },
+  botulinum_toxin: {
+    source: "meltwater_csv",
+    sourceLabel: "Botulinum toxin Meltwater canonical corpus",
+    load: () =>
+      ingestMeltwaterCsv(
+        requireFile("data/botulinum-toxin.csv"),
+        {
+          sourceType: "meltwater",
+          therapeuticArea: "botulinum_toxin",
+          profileId: "botulinum_toxin",
+        }
+      ) as CanonicalFinding[],
+  },
   gene_therapy: {
     source: "curated_findings",
     sourceLabel:

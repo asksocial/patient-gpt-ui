@@ -45,12 +45,12 @@ const conversationOnly =
   );
 
 if (
-  coverage.length !== 5 ||
-  validated.length !== 4 ||
+  coverage.length !== 6 ||
+  validated.length !== 5 ||
   conversationOnly.length !== 1
 ) {
   throw new Error(
-    "The production coverage registry must explicitly classify all five active therapeutic areas."
+    "The production coverage registry must explicitly classify all six active therapeutic areas."
   );
 }
 
