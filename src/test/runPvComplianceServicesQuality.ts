@@ -126,6 +126,8 @@ for (const phrase of ["CSV social-data intake", "Original post date", "Reviewer-
 for (const phrase of ["Full mention", "Save review list", "Saved aggregate review lists", "Download CSV", "Share by email", "Assign to email or user ID"]) {
   assert(workbench.includes(phrase), `PV workbench is missing aggregate-review UX: ${phrase}`);
 }
+assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
+assert(!workbench.includes('disabled={busy.startsWith("review:") || !rationale.trim()}'), "PV decision buttons must not be silently disabled while the rationale is empty.");
 const importRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/imports/route.ts"), "utf8");
 assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a file-upload route.");
 assert(!importRoute.includes('form.get("identifiedAt")'), "The client must not control the reviewer-identification timestamp.");
