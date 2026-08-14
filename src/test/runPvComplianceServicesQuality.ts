@@ -117,6 +117,11 @@ assert(!workbench.includes("Eight connected PV services"), "The removed PV servi
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {
   assert(workbench.toLowerCase().includes(phrase.toLowerCase()), `PV workbench is missing required UX: ${phrase}`);
 }
+for (const phrase of ["Sources overdue for screening", "Potential records awaiting human review", "source-level operational queue", "candidates for qualified human assessment", "PV_LIFECYCLE_TOOLTIPS"]) {
+  assert(workbench.includes(phrase), `PV Compliance Overview is missing clarified stage guidance: ${phrase}`);
+}
+assert(!workbench.includes('label="Sources due"') && !workbench.includes('label="Awaiting review"'), "Ambiguous PV overview stage labels must not return.");
+assert(workbench.includes('import Tooltip from "./ui/Tooltip"'), "PV Compliance Overview must use the shared accessible tooltip behavior.");
 for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Outcome", "Time to onset", "Severity", "Unexpectedness", "Causality language", "Adverse-event ontology review"]) {
   assert(workbench.includes(phrase), `PV workbench is missing ontology UX: ${phrase}`);
 }

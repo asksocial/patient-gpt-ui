@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Tooltip from "./ui/Tooltip";
 
 const TABS = [
   ["overview", "Compliance Overview"],
@@ -24,6 +25,16 @@ const AE_ONTOLOGY_OPTIONS = {
   severity: ["unclear", "mild", "moderate", "severe"],
   unexpectedness: ["unclear", "expected_label_event", "emerging_signal"],
   causalityLanguage: ["", "after", "following", "possibly due to", "think it was from", "caused by", "related to", "worsened after", "no relationship reported"],
+};
+
+const PV_LIFECYCLE_TOOLTIPS = {
+  new: "Potential PV content detected by AskSocial and waiting for a qualified reviewer to begin assessment.",
+  in_review: "A qualified reviewer has started assessing the evidence, classifications, and adverse-event ontology.",
+  not_relevant: "The reviewer determined that the content does not require PV escalation. The record and rationale remain retained.",
+  ready_for_transfer: "The reviewer confirmed that the record should be prepared for governed sponsor handoff.",
+  transferred: "A versioned handoff package has been sent to the sponsor and is awaiting acknowledgment.",
+  acknowledged: "The sponsor confirmed receipt and the acknowledgment reference is retained with the transfer.",
+  reconciled: "The record has been accounted for in reconciliation with no unresolved workflow discrepancy.",
 };
 
 function formatDate(value) {
@@ -58,9 +69,9 @@ function Card({ title, subtitle, children, actions }) {
   );
 }
 
-function Metric({ label: metricLabel, value, detail, tone = "neutral" }) {
+function Metric({ label: metricLabel, value, detail, tooltip, tone = "neutral" }) {
   const border = tone === "warning" ? "border-amber-400/20 bg-amber-400/[0.05]" : tone === "danger" ? "border-rose-400/20 bg-rose-400/[0.05]" : "border-white/10 bg-black/30";
-  return <div className={`rounded-2xl border p-4 ${border}`}><p className="text-xs text-white/40">{metricLabel}</p><p className="mt-2 text-2xl font-semibold text-white">{value}</p>{detail ? <p className="mt-1 text-xs text-white/30">{detail}</p> : null}</div>;
+  return <div className={`rounded-2xl border p-4 ${border}`}><div className="text-xs text-white/40">{tooltip ? <Tooltip content={tooltip} delay={200} side="bottom" align="start"><button type="button" aria-label={`${metricLabel}: ${tooltip}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{metricLabel}</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip> : metricLabel}</div><p className="mt-2 text-2xl font-semibold text-white">{value}</p>{detail ? <p className="mt-1 text-xs text-white/30">{detail}</p> : null}</div>;
 }
 
 function Empty({ children }) {
@@ -179,17 +190,17 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
 function Overview({ metrics, statusCounts }) {
   return <div className="space-y-5">
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <Metric label="Screening compliance" value={`${metrics.screeningCompliance ?? 100}%`} detail="Sources screened within cadence" />
-      <Metric label="Sources due" value={metrics.sourcesDue ?? 0} detail="Requires screening action" tone={metrics.sourcesDue ? "warning" : "neutral"} />
-      <Metric label="Awaiting review" value={metrics.awaitingReview ?? 0} detail="New or in review" tone={metrics.awaitingReview ? "warning" : "neutral"} />
-      <Metric label="Approaching SLA" value={metrics.approachingSla ?? 0} detail="80% or more of clock consumed" tone={metrics.approachingSla ? "danger" : "neutral"} />
-      <Metric label="Transferred" value={metrics.transferred ?? 0} detail="Current operational period" />
-      <Metric label="Unacknowledged" value={metrics.unacknowledged ?? 0} detail="Sponsor response pending" tone={metrics.unacknowledged ? "warning" : "neutral"} />
-      <Metric label="Nil returns" value={metrics.nilReturns ?? 0} detail="Screened with zero potential records" />
-      <Metric label="Reconciliation" value={`${metrics.reconciliationCompletion ?? 100}%`} detail="Objective: zero unexplained records" />
+      <Metric label="Screening compliance" value={`${metrics.screeningCompliance ?? 100}%`} detail="Sources screened within cadence" tooltip="The percentage of active governed sources whose most recent screening was completed within the configured cadence." />
+      <Metric label="Sources overdue for screening" value={metrics.sourcesDue ?? 0} detail="Active sources past cadence" tooltip="Active governed sources that have never completed screening or whose latest completed screening is older than their configured cadence. This is a source-level operational queue, not a record-review count." tone={metrics.sourcesDue ? "warning" : "neutral"} />
+      <Metric label="Potential records awaiting human review" value={metrics.awaitingReview ?? 0} detail="New or in review" tooltip="Potential PV records currently in New or In Review status. These are candidates for qualified human assessment, not confirmed adverse events." tone={metrics.awaitingReview ? "warning" : "neutral"} />
+      <Metric label="Approaching SLA" value={metrics.approachingSla ?? 0} detail="80% or more of clock consumed" tooltip="Open PV records that have consumed at least 80% of the configured review clock and may require prompt action." tone={metrics.approachingSla ? "danger" : "neutral"} />
+      <Metric label="Transferred" value={metrics.transferred ?? 0} detail="Sponsor handoff completed" tooltip="PV records currently in Transferred status after AskSocial created and sent a governed sponsor handoff package." />
+      <Metric label="Unacknowledged" value={metrics.unacknowledged ?? 0} detail="Sponsor response pending" tooltip="Transferred PV records for which AskSocial has not yet recorded the sponsor's receipt acknowledgment." tone={metrics.unacknowledged ? "warning" : "neutral"} />
+      <Metric label="Nil returns" value={metrics.nilReturns ?? 0} detail="Screened with zero potential records" tooltip="Completed screening runs that found no content requiring PV review. Nil returns document that the scheduled screening still occurred." />
+      <Metric label="Reconciliation" value={`${metrics.reconciliationCompletion ?? 100}%`} detail="Objective: zero unexplained records" tooltip="The percentage of PV records accounted for through reconciliation. The operational objective is no unexplained difference between detected, reviewed, transferred, and acknowledged records." />
     </div>
     <Card title="PV record lifecycle" subtitle="Content never disappears when it is closed as not relevant.">
-      <div className="grid gap-2 sm:grid-cols-4 lg:grid-cols-7">{["new", "in_review", "not_relevant", "ready_for_transfer", "transferred", "acknowledged", "reconciled"].map((status, index) => <div key={status} className="rounded-xl border border-white/10 bg-black/30 p-3"><p className="text-xs text-white/65">{label(status)}</p><p className="mt-2 text-xl font-semibold text-white">{statusCounts[status] || 0}</p>{index < 6 ? <p className="mt-1 text-[10px] text-white/20">Next governed state →</p> : null}</div>)}</div>
+      <div className="grid gap-2 sm:grid-cols-4 lg:grid-cols-7">{["new", "in_review", "not_relevant", "ready_for_transfer", "transferred", "acknowledged", "reconciled"].map((status, index) => <div key={status} className="rounded-xl border border-white/10 bg-black/30 p-3"><Tooltip content={PV_LIFECYCLE_TOOLTIPS[status]} delay={200} side="bottom" align="start"><button type="button" aria-label={`${label(status)}: ${PV_LIFECYCLE_TOOLTIPS[status]}`} className="inline-flex cursor-help items-center gap-1.5 text-left text-xs text-white/65 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{label(status)}</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip><p className="mt-2 text-xl font-semibold text-white">{statusCounts[status] || 0}</p>{index < 6 ? <p className="mt-1 text-[10px] text-white/20">Next governed state →</p> : null}</div>)}</div>
     </Card>
   </div>;
 }
