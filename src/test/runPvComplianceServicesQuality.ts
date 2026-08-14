@@ -120,6 +120,9 @@ for (const phrase of ["Potential records, not AE determinations", "Original evid
 for (const phrase of ["Sources overdue for screening", "Potential records awaiting human review", "source-level operational queue", "candidates for qualified human assessment", "PV_LIFECYCLE_TOOLTIPS"]) {
   assert(workbench.includes(phrase), `PV Compliance Overview is missing clarified stage guidance: ${phrase}`);
 }
+for (const phrase of ["combined screening score", "confidence that the mention refers", "potential safety-relevant situation", "Origin provides provenance"]) {
+  assert(workbench.includes(phrase), `PV Screening Status is missing metric tooltip guidance: ${phrase}`);
+}
 assert(!workbench.includes('label="Sources due"') && !workbench.includes('label="Awaiting review"'), "Ambiguous PV overview stage labels must not return.");
 assert(workbench.includes('import Tooltip from "./ui/Tooltip"'), "PV Compliance Overview must use the shared accessible tooltip behavior.");
 for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Outcome", "Time to onset", "Severity", "Unexpectedness", "Causality language", "Adverse-event ontology review"]) {
