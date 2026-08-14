@@ -622,7 +622,7 @@ export async function transferPvRecord(principal: PlatformPrincipal, recordId: s
     dayZeroBasis: record.day_zero_basis, dayZeroReason: record.day_zero_reason,
     importBatchId: record.import_batch_id, sourceRowNumber: record.source_row_number,
     reviewer: review.reviewer_id, classifications: review.classifications, reviewerRationale: review.rationale,
-    proposedAdverseEventOntology: record.ae_ontology, validatedAdverseEventOntology: review.validated_ae_ontology,
+    adverseEventOntology: review.validated_ae_ontology, ontologyStatus: "reviewer_validated",
     evidenceHash: record.evidence_hash, classifierVersion: record.classifier_version, libraryVersion: record.library_version,
   };
   const payloadHash = hashPayload(payload);

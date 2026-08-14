@@ -34,6 +34,6 @@ for (const field of ["therapeutic_area", "corpus_id", "pv_records_therapeutic_ar
 const route = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/corpora/botulinum-toxin/route.ts"), "utf8");
 assert(route.includes("importBundledBotulinumPvCorpus") && route.includes("maxDuration = 60"), "Bundled corpus route must use the governed bulk activation path.");
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
-for (const phrase of ["Botulinum toxin PV corpus", "Activate Botulinum toxin PV corpus", "Keywords are not used as original verbatim"]) assert(workbench.includes(phrase), `PV UX is missing ${phrase}.`);
+assert(!workbench.includes("Botulinum toxin PV corpus"), "The corpus activation section must remain removed from Screening Status after ingestion.");
 
 console.log(JSON.stringify({ therapeuticArea: corpus.therapeuticArea, sourceRows: corpus.rowCount, screenableVerbatims: corpus.rows.length, candidateRecords: corpus.candidates.length, rowsWithoutVerbatim: corpus.errors.length }, null, 2));

@@ -132,10 +132,17 @@ for (const option of ["non_serious", "permanent_injury", "immediate", "moderate"
   assert(workbench.includes(`"${option}"`), `PV ontology dropdowns are missing the controlled value ${option}.`);
 }
 assert(workbench.includes('OntologySelect labelText="Causality language"'), "Causality Language must use a controlled dropdown instead of free text.");
+assert(!workbench.includes("Proposed adverse-event ontology"), "The machine-proposed ontology panel must not render in Screening Status.");
+assert(workbench.includes('record.import_batch_id ? "Social"'), "CSV-ingested mentions must display Social as their evidence origin.");
 const reviewQueueSource = workbench.slice(workbench.indexOf("function ReviewQueue"), workbench.indexOf("function RecordWorkbench"));
 assert(!reviewQueueSource.includes("PvOntologyReview") && !reviewQueueSource.includes("Adverse-event ontology review"), "Adverse-event ontology review must not render inside Review Queue.");
 const screeningStatusSource = workbench.slice(workbench.indexOf("function ScreeningStatus"), workbench.indexOf("function Transfers"));
 assert(screeningStatusSource.includes("<RecordWorkbench"), "The ontology workbench must render within Screening Status.");
+assert(!screeningStatusSource.includes("Botulinum toxin PV corpus"), "The Botulinum toxin corpus activation section must not render in Screening Status.");
+const workbenchMetricsIndex = workbench.indexOf('label="PV detection score"');
+const workbenchOntologyIndex = workbench.indexOf("<PvOntologyReview", workbenchMetricsIndex);
+const workbenchRationaleIndex = workbench.indexOf("Why AskSocial surfaced this", workbenchMetricsIndex);
+assert(workbenchMetricsIndex >= 0 && workbenchOntologyIndex > workbenchMetricsIndex && workbenchOntologyIndex < workbenchRationaleIndex, "The interactive ontology review must appear directly below the four screening metrics.");
 assert(!workbench.includes("CSV social-data intake"), "The browser-facing CSV social-data intake section must remain removed from Screening Status.");
 for (const phrase of ["Original post date", "Reviewer-identification date", "Governing day-zero clock", "CSV date column", "Day zero:"]) {
   assert(workbench.includes(phrase), `PV workbench is missing two-clock timestamp UX: ${phrase}`);
@@ -153,6 +160,8 @@ assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a 
 assert(!importRoute.includes('form.get("identifiedAt")'), "The client must not control the reviewer-identification timestamp.");
 const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
 assert(pvService.includes("Math.min(1000, input.limit || 500)"), "The PV review queue must expose the complete 271-record Botulinum candidate set instead of silently capping it at 100.");
+assert(pvService.includes('adverseEventOntology: review.validated_ae_ontology') && pvService.includes('ontologyStatus: "reviewer_validated"'), "Sponsor transfers must include the final reviewer-approved adverse-event ontology.");
+assert(!pvService.includes("proposedAdverseEventOntology") && !pvService.includes("validatedAdverseEventOntology"), "Sponsor transfers must not expose parallel proposed and validated ontology fields.");
 for (const contract of ["createPvReviewList", "listPvReviewLists", "updatePvReviewList", "review_list.share_email", "review_list.export"]) assert(pvService.includes(contract), `PV aggregate-review service is missing ${contract}.`);
 const reviewListRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/route.ts"), "utf8");
 const reviewListExportRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/[listId]/export/route.ts"), "utf8");
