@@ -312,6 +312,25 @@ function fullMention(finding: CanonicalFinding, source?: EvidenceRef) {
   return candidates.sort((left, right) => right.length - left.length)[0] || "Evidence mention unavailable";
 }
 
+function originalSourceUrl(finding: CanonicalFinding, source?: EvidenceRef) {
+  const raw = finding as CanonicalFinding & { url?: string };
+  const candidate = String(
+    source?.url ||
+      raw.url ||
+      metadataString(finding, "url", "source_url", "source_link", "permalink", "link") ||
+      ""
+  ).trim();
+
+  if (!candidate) return undefined;
+
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 const EVIDENCE_CLASS_AUDIENCE: Record<EvidenceClass, string> = {
   patient_conversation: "patient",
   caregiver_conversation: "caregiver",
@@ -482,6 +501,7 @@ export function buildModuleIntelligence(
     .slice(0, 16)
     .map(({ finding, intelligence, matchedSections, contextualRelevanceScore }) => {
       const source = bestEvidence(finding, matchedSections);
+      const url = originalSourceUrl(finding, source);
       return {
         id: `${moduleId}:${findingId(finding)}`,
         findingId: findingId(finding),
@@ -491,7 +511,7 @@ export function buildModuleIntelligence(
         author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,
         publishedAt: metadataString(finding, "date", "published_at", "published_date", "alternate_date_format") || undefined,
         sourceLabel: source?.platform || intelligence.domain || intelligence.platform || "Source metadata unavailable",
-        url: source?.url,
+        url,
         country: source?.country,
         platform: source?.platform,
         voice: resolvedAudienceLabel(intelligence),

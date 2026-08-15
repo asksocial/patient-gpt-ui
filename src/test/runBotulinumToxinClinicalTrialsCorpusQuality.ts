@@ -31,6 +31,7 @@ assert(intelligence.dataQuality.assessment === "adequate" && intelligence.dataQu
 assert(intelligence.sections.every((section) => section.findingCount > 0), "Recruitment, retention, protocol, and site-experience analyses must all receive evidence.");
 assert(intelligence.evidence.length === 16, "The Clinical Trials output must retain a full, deduplicated evidence set.");
 assert(intelligence.evidence.filter((item) => item.evidenceClass === "clinical_study").length >= 5, "Direct clinical-study evidence must materially support the output.");
+assert(intelligence.evidence.every((item) => item.url?.startsWith("http")), "Every Clinical Trials evidence card must retain an actionable original-source URL.");
 assert(new Set(intelligence.evidence.map((item) => item.findingId)).size === intelligence.evidence.length, "A mention must not appear more than once in Clinical Trials module evidence.");
 
 const route = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/route.ts"), "utf8");
@@ -44,5 +45,6 @@ console.log(JSON.stringify({
   eligibleFindings: intelligence.dataQuality.eligibleFindingCount,
   contextualFindings: intelligence.dataQuality.contextualEvidenceFindingCount,
   directStudyEvidence: intelligence.evidence.filter((item) => item.evidenceClass === "clinical_study").length,
+  actionableSourceUrls: intelligence.evidence.filter((item) => item.url?.startsWith("http")).length,
   sections: intelligence.sections.map((section) => ({ id: section.id, findings: section.findingCount, confidence: section.confidence })),
 }, null, 2));
