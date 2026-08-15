@@ -61,6 +61,10 @@ assert(evidenceRoute.includes("buildModuleEvidenceCatalog") && evidenceRoute.inc
 for (const phrase of ["Representative module evidence", "View all evidence", "Search mention text, source, author, or taxonomy", "Pre-qualified relevance · quality-ranked", 'module.id === "clinical_trials"', "evidenceDisplayTitle(item, module.name)"]) {
   assert(view.includes(phrase), `The Clinical Trials evidence browser is missing: ${phrase}`);
 }
+assert(view.includes("Suggested next moves based on the strongest current signals"), "Module Recommended Actions must match the Search-screen presentation.");
+assert(view.includes("Action {idx + 1}"), "Module recommendations must use the same numbered action badges as Search.");
+assert(view.includes('className="line-clamp-2 text-sm font-semibold leading-6 text-white/80"'), "Representative Clinical Trials evidence titles must never exceed two lines.");
+assert(view.lastIndexOf("Data-quality limitations") > view.lastIndexOf("View all evidence"), "Data-quality limitations must appear at the bottom of the module page.");
 
 console.log(JSON.stringify({
   therapeuticArea: "Botulinum toxin",

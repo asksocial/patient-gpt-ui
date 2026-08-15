@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ModuleShell from "./ModuleShell";
+import Tooltip from "./ui/Tooltip";
 
 function SignalCard({ section }) {
   return (
@@ -44,6 +45,33 @@ function CountList({ title, items }) {
 
 function evidenceDisplayTitle(item, moduleName) {
   return item.mentionTitle || `${moduleName} evidence`;
+}
+
+function RecommendedActions({ actions = [] }) {
+  if (!actions.length) return null;
+
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Recommended Actions</h3>
+        <p className="mt-1 text-sm text-white/45">Suggested next moves based on the strongest current signals</p>
+      </div>
+      <div className="space-y-3">
+        {actions.map((action, idx) => (
+          <div key={`${action}-${idx}`} className="rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <Tooltip content="A practical next step derived from the strongest current signals." delay={250} side="top" align="center">
+                <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-300">
+                  <span className="whitespace-nowrap">Action {idx + 1}</span>
+                </span>
+              </Tooltip>
+              <p className="text-sm leading-6 text-white/75">{action}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export default function ModuleIntelligenceView({ module, agents, workflows, therapeuticArea, workspaceId }) {
@@ -235,19 +263,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
         <CountList title="Evidence classes" items={result.sourceSignals} />
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">Recommended actions</h3>
-        <ul className="mt-4 space-y-3 text-sm leading-6 text-white/65">
-          {result.recommendations.map((item) => <li key={item} className="flex gap-3"><span className="text-cyan-300">→</span><span>{item}</span></li>)}
-        </ul>
-      </section>
-
-      <section className="rounded-2xl border border-amber-500/15 bg-amber-500/[0.05] p-5">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">Data-quality limitations</h3>
-        <ul className="mt-3 space-y-2 text-xs leading-5 text-white/45">
-          {result.dataQuality.limitations.map((item) => <li key={item}>• {item}</li>)}
-        </ul>
-      </section>
+      <RecommendedActions actions={result.recommendations} />
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -269,7 +285,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
                 className="block w-full rounded-lg text-left hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
               >
                 {module.id === "clinical_trials" ? (
-                  <p className="text-sm font-semibold leading-6 text-white/80">
+                  <p className="line-clamp-2 text-sm font-semibold leading-6 text-white/80" title={evidenceDisplayTitle(item, module.name)}>
                     {evidenceDisplayTitle(item, module.name)}
                   </p>
                 ) : (
@@ -363,6 +379,13 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
           ) : null}
         </section>
       ) : null}
+
+      <section className="rounded-2xl border border-amber-500/15 bg-amber-500/[0.05] p-5">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">Data-quality limitations</h3>
+        <ul className="mt-3 space-y-2 text-xs leading-5 text-white/45">
+          {result.dataQuality.limitations.map((item) => <li key={item}>• {item}</li>)}
+        </ul>
+      </section>
     </div>
   );
 }
