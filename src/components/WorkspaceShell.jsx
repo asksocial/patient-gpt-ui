@@ -445,7 +445,7 @@ function AssistantAnswer({
         </Panel>
 
         <Panel
-          title="What’s Emerging In Live Data"
+          title="What’s Emerging In Social Data"
           subtitle={
             emergingNarratives.length
               ? `${emergingNarratives.length} emerging narrative${emergingNarratives.length > 1 ? "s" : ""} detected`
@@ -619,7 +619,7 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
         </p>
       </Panel>
 
-      {sections.map((section, index) => (
+      {sections.filter((section) => section.key !== "live_data_check").map((section, index) => (
         <Panel
           key={`${section.key || section.title}-${index}`}
           title={section.title || "Supporting Intelligence"}

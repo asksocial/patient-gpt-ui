@@ -18,7 +18,7 @@ const requiredContracts = [
   "showDirectAnswer={false}",
   "showWhatThisMeans={!analyticalIncludesWhatThisMeans}",
   'title="From Curated Intelligence"',
-  'title="What’s Emerging In Live Data"',
+  'title="What’s Emerging In Social Data"',
   'title="Relevant Curated Insights"',
   'title="What This Means"',
   'title="Recommended Actions"',
@@ -31,6 +31,15 @@ for (const contract of requiredContracts) {
       `Workspace answer rendering is missing the required contract: ${contract}`
     );
   }
+}
+
+if (
+  !workspaceShell.includes('sections.filter((section) => section.key !== "live_data_check")') ||
+  workspaceShell.includes('title="What’s Emerging In Live Data"')
+) {
+  throw new Error(
+    "Search must hide the Live Data Check panel and label emerging intelligence as social data."
+  );
 }
 
 const analyticalComposition =
