@@ -29,6 +29,26 @@ assert(
   "The composer must not remain a separate sticky bottom section."
 );
 assert(
+  workspaceShell.includes("setQuestion(trimmed);") &&
+    workspaceShell.includes("const latestUserQuestion = [...restoredMessages]") &&
+    workspaceShell.includes("setQuestion(latestUserQuestion);") &&
+    workspaceShell.includes('message.role ===\n                      "assistant"') &&
+    !workspaceShell.includes("function UserMessage({ text })"),
+  "The submitted or restored question must remain in the Search composer instead of rendering below it."
+);
+assert(
+  workspaceShell.includes(
+    'className="w-full rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 md:p-5"'
+  ) &&
+    !workspaceShell.includes("w-full max-w-6xl rounded-3xl rounded-bl-md"),
+  "Search answer sections must use the full composer width."
+);
+assert(
+  !workspaceShell.includes('import CitationManifest from "./CitationManifest"') &&
+    !workspaceShell.includes("<CitationManifest"),
+  "Sources & Verification must not render on the Search screen."
+);
+assert(
   workspaceShell.includes(
     'data-testid="primary-search-footer"'
   ) &&

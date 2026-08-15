@@ -6,7 +6,6 @@ import Tooltip from "./ui/Tooltip";
 import ExecutiveIntelligenceView from "./ExecutiveIntelligenceView";
 import EcosystemNavigation from "./EcosystemNavigation";
 import GovernanceCenter from "./GovernanceCenter";
-import CitationManifest from "./CitationManifest";
 import IntelligenceLibrary from "./IntelligenceLibrary";
 import PatientIntelligenceView from "./PatientIntelligenceView";
 import ModuleIntelligenceView from "./ModuleIntelligenceView";
@@ -725,16 +724,6 @@ function ModeAnalysisView({ analysis }) {
   );
 }
 
-function UserMessage({ text }) {
-  return (
-    <div className="flex justify-end">
-      <div className="max-w-3xl rounded-2xl rounded-br-md bg-white px-4 py-3 text-sm leading-6 text-black shadow-sm">
-        {text}
-      </div>
-    </div>
-  );
-}
-
 function AssistantMessage({ responsePayload }) {
   const hasAnalyticalAnswer =
     responsePayload?.analyticalStatus === "available" &&
@@ -750,7 +739,7 @@ function AssistantMessage({ responsePayload }) {
 
   return (
     <div className="flex justify-start">
-      <div className="w-full max-w-6xl rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 md:p-5">
+      <div className="w-full rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 md:p-5">
         {hasAnalyticalAnswer ? (
           <div className="space-y-4">
             <AnalyticalAssistantAnswer responsePayload={responsePayload} />
@@ -760,13 +749,11 @@ function AssistantMessage({ responsePayload }) {
               showDirectAnswer={false}
               showWhatThisMeans={!analyticalIncludesWhatThisMeans}
             />
-            <CitationManifest citations={responsePayload?.citationManifest || []} />
           </div>
         ) : (
           <div className="space-y-4">
             <ModeAnalysisView analysis={responsePayload?.modeAnalysis} />
             <AssistantAnswer responsePayload={responsePayload} />
-            <CitationManifest citations={responsePayload?.citationManifest || []} />
           </div>
         )}
       </div>
@@ -1297,6 +1284,10 @@ export default function WorkspaceShell() {
       }));
 
       setMessages(restoredMessages);
+      const latestUserQuestion = [...restoredMessages]
+        .reverse()
+        .find((message) => message.role === "user")?.text || "";
+      setQuestion(latestUserQuestion);
       setTherapeuticArea(data.session.therapeutic_area);
       setActiveWorkspaceId(data.session.workspace_id || "");
     } catch (err) {
@@ -1517,7 +1508,7 @@ export default function WorkspaceShell() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setQuestion("");
+    setQuestion(trimmed);
 
     try {
       let sessionId = activeSessionId;
@@ -2076,21 +2067,14 @@ export default function WorkspaceShell() {
                   messages.map(
                     (message) =>
                       message.role ===
-                      "user" ? (
-                        <UserMessage
-                          key={message.id}
-                          text={
-                            message.text
-                          }
-                        />
-                      ) : (
+                      "assistant" ? (
                         <AssistantMessage
                           key={message.id}
                           responsePayload={
                             message.responsePayload
                           }
                         />
-                      )
+                      ) : null
                   )
                 )}
 
