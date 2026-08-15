@@ -37,6 +37,9 @@ const PV_LIFECYCLE_TOOLTIPS = {
   reconciled: "The record has been accounted for in reconciliation with no unresolved workflow discrepancy.",
 };
 
+const PV_REVIEW_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
+const PV_SCORE_TOOLTIP = "AskSocial’s 0–100 screening score combines product-reference and health-experience signals to prioritize qualified human review. It is not an adverse-event determination or a measure of clinical seriousness.";
+
 function formatDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -48,6 +51,31 @@ function label(value) {
 
 function evidenceOriginLabel(record) {
   return record.import_batch_id ? "Social" : label(record.data_origin || "unknown");
+}
+
+function sourceLabel(record) {
+  const sourceType = String(record.source_type || "").toLowerCase();
+  return record.import_batch_id || sourceType === "csv" || sourceType.endsWith("_csv")
+    ? "Social"
+    : label(record.source_type || "unknown");
+}
+
+function reviewCountdown(record, nowMs) {
+  if (typeof nowMs !== "number") return { label: "Calculating…", tone: "neutral" };
+  const identifiedAt = new Date(record.identified_at || "").getTime();
+  if (Number.isNaN(identifiedAt)) return { label: "Unavailable", tone: "neutral" };
+  if (["not_relevant", "ready_for_transfer", "transferred", "acknowledged", "reconciled"].includes(record.status)) {
+    return { label: "Triaged", tone: "complete" };
+  }
+  const millisecondsRemaining = identifiedAt + PV_REVIEW_WINDOW_MS - nowMs;
+  const totalMinutes = Math.max(0, Math.ceil(Math.abs(millisecondsRemaining) / 60_000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (millisecondsRemaining <= 0) return { label: `Overdue · ${hours}h ${minutes}m`, tone: "breached" };
+  return {
+    label: `${hours}h ${minutes}m left`,
+    tone: millisecondsRemaining <= 24 * 60 * 60 * 1000 ? "approaching" : "healthy",
+  };
 }
 
 function ToneBadge({ children, tone = "neutral" }) {
@@ -217,6 +245,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
   const [listAssignments, setListAssignments] = useState({});
   const [shareEmails, setShareEmails] = useState({});
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [nowMs, setNowMs] = useState(null);
   const pageCount = Math.max(1, Math.ceil(records.length / pageSize));
   const currentPage = Math.min(page, pageCount);
   const availableRecordIds = useMemo(() => new Set(records.map((record) => record.id)), [records]);
@@ -224,6 +253,15 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
   const pageRecords = records.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const pageIds = pageRecords.map((record) => record.id);
   const allPageSelected = pageIds.length > 0 && pageIds.every((id) => validSelectedIds.includes(id));
+
+  useEffect(() => {
+    const initialTimer = window.setTimeout(() => setNowMs(Date.now()), 0);
+    const timer = window.setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(timer);
+    };
+  }, []);
 
   function openMention(recordId) { setPreviewOpen(true); onOpen(recordId); }
   function toggleRecord(recordId) { setSelectedIds((current) => current.includes(recordId) ? current.filter((id) => id !== recordId) : [...current, recordId]); }
@@ -299,7 +337,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
 
     <Card title="Potential PV Review Queue" subtitle="Click any mention to view the full source text. Select multiple mentions across pages to save a governed aggregate review list.">
       {records.length ? <>
-        <div className="overflow-x-auto"><table className="w-full min-w-[1420px] text-left text-xs"><thead className="border-b border-white/10 text-white/35"><tr><th className="px-3 py-3"><input type="checkbox" aria-label="Select all PV mentions on this page" checked={allPageSelected} onChange={togglePage} /></th>{["Status", "Product", "Potential event", "Full mention", "Source", "Original post date", "Reviewer identified", "Day-zero clock", "Score", "Reviewer"].map((head) => <th key={head} className="px-3 py-3 font-medium">{head}</th>)}</tr></thead><tbody>{pageRecords.map((record) => <tr key={record.id} className={`border-b border-white/[0.06] text-white/60 ${selectedIds.includes(record.id) ? "bg-cyan-400/[0.05]" : ""}`}><td className="px-3 py-3"><input type="checkbox" aria-label={`Select mention ${record.id}`} checked={selectedIds.includes(record.id)} onChange={() => toggleRecord(record.id)} /></td><td className="px-3 py-3"><ToneBadge tone={record.status === "not_relevant" ? "neutral" : record.status === "acknowledged" || record.status === "reconciled" ? "complete" : "approaching"}>{label(record.status)}</ToneBadge></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="max-w-[360px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 text-left leading-5 text-cyan-100/65 hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{record.source_type}</td><td className="px-3 py-3">{formatDate(record.posted_at)}</td><td className="px-3 py-3">{formatDate(record.identified_at)}</td><td className="px-3 py-3"><ToneBadge tone={record.day_zero_basis === "identified_at" ? "complete" : "neutral"}>{record.day_zero_basis === "identified_at" ? "Reviewer identification" : "Post date"}</ToneBadge></td><td className="px-3 py-3">{record.detection_score}</td><td className="px-3 py-3">{record.assigned_reviewer_id || "Unassigned"}</td></tr>)}</tbody></table></div>
+        <div className="overflow-x-auto"><table className="w-full min-w-[1420px] text-left text-xs"><thead className="border-b border-white/10 text-white/35"><tr><th className="px-3 py-3"><input type="checkbox" aria-label="Select all PV mentions on this page" checked={allPageSelected} onChange={togglePage} /></th>{["Status", "Product", "Potential event", "Full mention", "Source", "Original post date", "Reviewer identified", "Day-zero clock", "Score", "Reviewer"].map((head) => <th key={head} className="px-3 py-3 font-medium">{head === "Score" ? <Tooltip content={PV_SCORE_TOOLTIP} delay={200} side="bottom" align="start"><button type="button" aria-label={`Score: ${PV_SCORE_TOOLTIP}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>Score</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip> : head}</th>)}</tr></thead><tbody>{pageRecords.map((record) => { const countdown = reviewCountdown(record, nowMs); return <tr key={record.id} className={`border-b border-white/[0.06] text-white/60 ${selectedIds.includes(record.id) ? "bg-cyan-400/[0.05]" : ""}`}><td className="px-3 py-3"><input type="checkbox" aria-label={`Select mention ${record.id}`} checked={selectedIds.includes(record.id)} onChange={() => toggleRecord(record.id)} /></td><td className="px-3 py-3"><ToneBadge tone={record.status === "not_relevant" ? "neutral" : record.status === "acknowledged" || record.status === "reconciled" ? "complete" : "approaching"}>{label(record.status)}</ToneBadge></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="max-w-[360px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 text-left leading-5 text-cyan-100/65 hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.posted_at)}</td><td className="px-3 py-3">{formatDate(record.identified_at)}</td><td className="px-3 py-3"><ToneBadge tone={countdown.tone}>{countdown.label}</ToneBadge></td><td className="px-3 py-3">{record.detection_score}</td><td className="px-3 py-3">{record.assigned_reviewer_id || "Unassigned"}</td></tr>; })}</tbody></table></div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/40"><span>Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, records.length)} of {records.length} mentions</span><div className="flex items-center gap-2"><button type="button" onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:opacity-30">← Previous</button><span>Page {currentPage} of {pageCount}</span><button type="button" onClick={() => setPage(Math.min(pageCount, currentPage + 1))} disabled={currentPage >= pageCount} className="rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:opacity-30">Next →</button></div></div>
       </> : <Empty>No potential PV records are awaiting review.</Empty>}
       <div className="mt-5 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-medium text-white/60">Save selected mentions</p><p className="mt-1 text-[11px] text-white/30">{validSelectedIds.length} selected across the review queue</p></div><button type="button" onClick={openNamingDialog} disabled={!validSelectedIds.length || busy === "review-list:create"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">Save review list</button></div></div>
