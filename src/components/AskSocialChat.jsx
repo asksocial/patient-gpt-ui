@@ -4,7 +4,7 @@ import { useState } from "react";
 
 const STARTER_QUESTIONS = [
   "What are people saying right now?",
-  "What’s emerging in live conversation beyond the report baseline?",
+  "What’s emerging in online conversations?",
   "What themes are driving confusion or concern?",
   "What’s changed since the last report?",
 ];
