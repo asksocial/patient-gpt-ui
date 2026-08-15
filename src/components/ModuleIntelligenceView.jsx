@@ -42,6 +42,10 @@ function CountList({ title, items }) {
   );
 }
 
+function evidenceDisplayTitle(item, moduleName) {
+  return item.mentionTitle || `${moduleName} evidence`;
+}
+
 export default function ModuleIntelligenceView({ module, agents, workflows, therapeuticArea, workspaceId }) {
   const [result, setResult] = useState(null);
   const [selectedEvidence, setSelectedEvidence] = useState(null);
@@ -179,7 +183,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
               <div>
                 <p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p>
                 <h2 className="mt-2 text-xl font-semibold text-white">
-                  {selectedEvidence.mentionTitle || `${module.name} evidence`}
+                  {evidenceDisplayTitle(selectedEvidence, module.name)}
                 </h2>
               </div>
               <button type="button" onClick={() => setSelectedEvidence(null)} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.06]">
@@ -264,7 +268,13 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
                 aria-label={`View full mention from ${item.sourceLabel}`}
                 className="block w-full rounded-lg text-left hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
               >
-                <blockquote className="text-sm leading-6 text-cyan-100/65">“{item.quote}”</blockquote>
+                {module.id === "clinical_trials" ? (
+                  <p className="text-sm font-semibold leading-6 text-white/80">
+                    {evidenceDisplayTitle(item, module.name)}
+                  </p>
+                ) : (
+                  <blockquote className="text-sm leading-6 text-cyan-100/65">“{item.quote}”</blockquote>
+                )}
                 <span className="mt-2 inline-block text-[11px] font-medium text-cyan-300/70">View full mention</span>
               </button>
               <div className="mt-3 flex flex-wrap gap-1.5">

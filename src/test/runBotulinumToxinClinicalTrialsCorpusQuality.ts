@@ -54,7 +54,7 @@ const evidenceRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/m
 const view = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
 assert(route.includes("loadCanonicalFindingsForModule(therapeuticArea, moduleId)"), "The module API must route through module-specific corpus resolution.");
 assert(evidenceRoute.includes("buildModuleEvidenceCatalog") && evidenceRoute.includes("pageSize"), "The evidence API must provide governed server-side search and pagination.");
-for (const phrase of ["Representative module evidence", "View all evidence", "Search mention text, source, author, or taxonomy", "Pre-qualified relevance · quality-ranked"]) {
+for (const phrase of ["Representative module evidence", "View all evidence", "Search mention text, source, author, or taxonomy", "Pre-qualified relevance · quality-ranked", 'module.id === "clinical_trials"', "evidenceDisplayTitle(item, module.name)"]) {
   assert(view.includes(phrase), `The Clinical Trials evidence browser is missing: ${phrase}`);
 }
 
