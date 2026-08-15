@@ -16,7 +16,7 @@ export function ingestMeltwaterCsv(
   const rows: MeltwaterRow[] = parseMeltwaterCsv(filePath);
   const profile = getDiseaseProfile(context.profileId);
 
-  const curatedCards = ingestCurated(context.profileId);
+  const curatedCards = context.includeCurated === false ? [] : ingestCurated(context.profileId);
 
   const liveCards = adaptMeltwaterRows(rows, {
     ...context,

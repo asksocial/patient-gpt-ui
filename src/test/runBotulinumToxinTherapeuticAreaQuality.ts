@@ -45,15 +45,18 @@ const moduleResults = modules.map((moduleId) => buildModuleIntelligence(
   moduleId,
   "Botulinum toxin",
   moduleId === "clinical_trials" ? clinicalTrialsCorpus.findings : corpus.findings,
-  "2026-08-15T16:00:00.000Z"
+  "2026-08-15T16:00:00.000Z",
+  moduleId === "clinical_trials" ? { relevancePolicy: clinicalTrialsCorpus.relevancePolicy } : {}
 ));
 for (const result of moduleResults) {
   const moduleId = result.moduleId;
-  assert(result.sections.length === 4 && result.evidence.length > 0, `${moduleId} must generate contextual Botulinum toxin intelligence.`);
+  const expectedSectionCount = moduleId === "clinical_trials" ? 9 : 4;
+  assert(result.sections.length === expectedSectionCount && result.evidence.length > 0, `${moduleId} must generate contextual Botulinum toxin intelligence.`);
 }
 assert(new Set(moduleResults.map((result) => result.evidence.map((item) => item.findingId).join("|"))).size === modules.length, "Each Botulinum toxin module must use a distinct contextual evidence set.");
 const clinicalTrials = moduleResults.find((result) => result.moduleId === "clinical_trials");
 assert(clinicalTrials?.dataQuality.corpusFindingCount === clinicalTrialsCorpus.findings.length, "Clinical Trials generation must analyze the dedicated corpus.");
+assert(clinicalTrials?.dataQuality.selectedFindingCount === clinicalTrialsCorpus.findings.length, "Clinical Trials must retain every pre-qualified mention for analysis.");
 assert(clinicalTrials.evidence.some((item) => item.evidenceClass === "clinical_study"), "Clinical Trials evidence must include directly classified study records.");
 const patient = buildPatientIntelligence("Botulinum toxin", corpus.findings, "2026-08-11T16:00:00.000Z");
 assert(patient.therapeuticArea === "Botulinum toxin" && patient.dataQuality.corpusFindingCount === corpus.findings.length && patient.dataQuality.patientVoiceFindingCount > 0, "Patient Intelligence must run against patient voice in the Botulinum toxin corpus.");

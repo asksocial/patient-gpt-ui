@@ -686,6 +686,7 @@ export function adaptMeltwaterRows(
   context: IngestionContext & { profile: DiseaseProfile }
 ): any[] {
   const profile = context.profile;
+  const relevancePrequalified = context.relevancePolicy === "prequalified";
 
   return rows
     .map((row) => {
@@ -718,28 +719,30 @@ export function adaptMeltwaterRows(
 
       if (!combinedText || combinedText.length < 20) return null;
 
-      if (
-        isBotulinumToxinProfile(profile)
-          ? combinedText.includes("vaccine") || combinedText.includes("vitamin k")
-          : combinedText.includes("vaccine") || combinedText.includes("shot") || combinedText.includes("jab") || combinedText.includes("vitamin k")
-      ) {
-        return null;
-      }
+      if (!relevancePrequalified) {
+        if (
+          isBotulinumToxinProfile(profile)
+            ? combinedText.includes("vaccine") || combinedText.includes("vitamin k")
+            : combinedText.includes("vaccine") || combinedText.includes("shot") || combinedText.includes("jab") || combinedText.includes("vitamin k")
+        ) {
+          return null;
+        }
 
-      if (isHardExcluded(combinedText, profile)) return null;
-      if (isExtraExcluded(combinedText, profile)) return null;
-      if (isLowQualityNoise(combinedText, profile)) return null;
+        if (isHardExcluded(combinedText, profile)) return null;
+        if (isExtraExcluded(combinedText, profile)) return null;
+        if (isLowQualityNoise(combinedText, profile)) return null;
 
-      if (isBotulinumToxinProfile(profile) && shouldExcludeBotulinumToxinRow(combinedText)) {
-        return null;
-      }
+        if (isBotulinumToxinProfile(profile) && shouldExcludeBotulinumToxinRow(combinedText)) {
+          return null;
+        }
 
-      if (
-        isAestheticsProfile(profile) &&
-        !isBotulinumToxinProfile(profile) &&
-        shouldExcludeAestheticsRow(combinedText)
-      ) {
-        return null;
+        if (
+          isAestheticsProfile(profile) &&
+          !isBotulinumToxinProfile(profile) &&
+          shouldExcludeAestheticsRow(combinedText)
+        ) {
+          return null;
+        }
       }
 
       const rawSymptoms = extractByPatternMap(
@@ -767,7 +770,7 @@ export function adaptMeltwaterRows(
             return true;
           });
 
-      if (
+      if (!relevancePrequalified &&
         isEducationalContent(combinedText, profile) &&
         symptoms.length === 0 &&
         treatments.length === 0 &&
@@ -780,7 +783,7 @@ export function adaptMeltwaterRows(
         return null;
       }
 
-      if (
+      if (!relevancePrequalified &&
         isStatHeavy(combinedText) &&
         symptoms.length === 0 &&
         treatments.length === 0 &&
@@ -791,14 +794,14 @@ export function adaptMeltwaterRows(
         return null;
       }
 
-      if (
+      if (!relevancePrequalified &&
         profile.requireDiseaseContextForSymptoms &&
         !hasDiseaseContext(combinedText, profile)
       ) {
         return null;
       }
 
-      if (isAestheticsProfile(profile)) {
+      if (!relevancePrequalified && isAestheticsProfile(profile)) {
         if (
           symptoms.length === 0 &&
           treatments.length === 0 &&
@@ -810,7 +813,7 @@ export function adaptMeltwaterRows(
         ) {
           return null;
         }
-      } else {
+      } else if (!relevancePrequalified) {
         if (
           symptoms.length === 0 &&
           treatments.length === 0 &&
@@ -823,7 +826,7 @@ export function adaptMeltwaterRows(
         }
       }
 
-      if (
+      if (!relevancePrequalified &&
         !isAestheticsProfile(profile) &&
         symptoms.length > 0 &&
         !patientVoice &&
@@ -834,7 +837,7 @@ export function adaptMeltwaterRows(
 
       const persona = detectPersona(combinedText, tags, profile);
 
-      if (!isAestheticsProfile(profile)) {
+      if (!relevancePrequalified && !isAestheticsProfile(profile)) {
         if (persona === "caregiver" && symptoms.length === 0) {
           return null;
         }

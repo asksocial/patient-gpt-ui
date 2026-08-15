@@ -56,7 +56,9 @@ export async function POST(request: NextRequest) {
     const intelligence = buildModuleIntelligence(
       moduleId,
       therapeuticArea,
-      corpus.findings
+      corpus.findings,
+      new Date().toISOString(),
+      { relevancePolicy: corpus.relevancePolicy }
     );
 
     let workProductId: string | null = null;
@@ -74,6 +76,7 @@ export async function POST(request: NextRequest) {
           provenance: {
             schemaVersion: intelligence.schemaVersion,
             corpus: corpus.sourceLabel,
+            relevancePolicy: corpus.relevancePolicy,
             generatedAt: intelligence.generatedAt,
           },
         }

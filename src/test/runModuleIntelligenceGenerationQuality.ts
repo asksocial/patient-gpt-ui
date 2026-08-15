@@ -39,10 +39,11 @@ function normalizeMention(value: string) {
 
 for (const result of results) {
   const normalizedMentions = result.evidence.map((item) => normalizeMention(item.quote));
+  const expectedSectionCount = result.moduleId === "clinical_trials" ? 9 : 4;
   if (
     result.schemaVersion !== "module_intelligence_v1" ||
     result.therapeuticArea !== "Medical Aesthetics" ||
-    result.sections.length !== 4 ||
+    result.sections.length !== expectedSectionCount ||
     result.sections.some((section) => !section.label || !section.description) ||
     !result.dataQuality.selectedFindingCount ||
     result.dataQuality.contextualEvidenceFindingCount < result.evidence.length ||
@@ -52,6 +53,7 @@ for (const result of results) {
         item.findingId === "unknown" ||
         !item.fullMention.trim() ||
         item.fullMention.length < item.quote.length ||
+        !item.qualityBand ||
         !item.matchedSectionIds.length ||
         !item.matchedSectionLabels.length ||
         item.contextualRelevanceScore <= item.qualityScore
@@ -107,6 +109,7 @@ const workspaceSource = fs.readFileSync(path.resolve(process.cwd(), "src/compone
 const viewSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
 const globalStyles = fs.readFileSync(path.resolve(process.cwd(), "src/app/globals.css"), "utf8");
 const routeSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/route.ts"), "utf8");
+const evidenceRouteSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/evidence/route.ts"), "utf8");
 if (
   !workspaceSource.includes("<ModuleIntelligenceView") ||
   !workspaceSource.includes("`module_${moduleId}`") ||
@@ -116,6 +119,8 @@ if (
   !viewSource.includes("selectedEvidence.fullMention || selectedEvidence.quote") ||
   !viewSource.includes("Open original source ↗") ||
   !viewSource.includes("border-cyan-300/35 bg-cyan-300/[0.10]") ||
+  !viewSource.includes("View all evidence") ||
+  !evidenceRouteSource.includes("buildModuleEvidenceCatalog") ||
   !routeSource.includes("MODULE_ENTITLEMENTS[moduleId]") ||
   !routeSource.includes('kind: "report"')
 ) {

@@ -22,6 +22,7 @@ export type CanonicalFindingsLoadResult =
       therapeuticAreaId: string;
       source: AskAnalyticsSource;
       sourceLabel: string;
+      relevancePolicy: "standard" | "prequalified";
       findings: CanonicalFinding[];
     }
   | {
@@ -34,6 +35,7 @@ export type CanonicalFindingsLoadResult =
 type CorpusDefinition = {
   source: AskAnalyticsSource;
   sourceLabel: string;
+  relevancePolicy?: "standard" | "prequalified";
   load: () => CanonicalFinding[];
 };
 
@@ -148,6 +150,7 @@ const MODULE_CORPORA: Record<
     clinical_trials: {
       source: "meltwater_csv",
       sourceLabel: "Botulinum toxin Clinical Trials Meltwater corpus",
+      relevancePolicy: "prequalified",
       load: () =>
         ingestMeltwaterCsv(
           requireFile("data/botulinum-toxin-clinical-trials.csv"),
@@ -155,6 +158,8 @@ const MODULE_CORPORA: Record<
             sourceType: "meltwater",
             therapeuticArea: "botulinum_toxin",
             profileId: "botulinum_toxin",
+            relevancePolicy: "prequalified",
+            includeCurated: false,
           }
         ) as CanonicalFinding[],
     },
@@ -251,6 +256,7 @@ export function loadCanonicalFindingsForAsk(
     source: corpus.source,
     sourceLabel:
       corpus.sourceLabel,
+    relevancePolicy: corpus.relevancePolicy || "standard",
     findings:
       cloneFindings(findings),
   };
@@ -314,6 +320,7 @@ export function loadCanonicalFindingsForModule(
     therapeuticAreaId,
     source: moduleCorpus.source,
     sourceLabel: moduleCorpus.sourceLabel,
+    relevancePolicy: moduleCorpus.relevancePolicy || "standard",
     findings: cloneFindings(findings),
   };
 }
