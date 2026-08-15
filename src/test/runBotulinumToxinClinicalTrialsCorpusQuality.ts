@@ -31,6 +31,10 @@ const intelligence = buildModuleIntelligence("clinical_trials", "Botulinum toxin
 assert(intelligence.dataQuality.corpusFindingCount === corpus.findings.length, "Clinical Trials must analyze the complete dedicated canonical corpus.");
 assert(intelligence.dataQuality.relevancePolicy === "prequalified", "The module output must disclose its pre-qualified relevance policy.");
 assert(intelligence.dataQuality.eligibleFindingCount === corpus.findings.length && intelligence.dataQuality.selectedFindingCount === corpus.findings.length, "Evidence quality must label and rank—not discard—pre-qualified mentions.");
+assert(intelligence.dataQuality.unclassifiedFindingCount <= 1, "Clinical Trials metadata fallbacks must resolve nearly every unknown evidence class without discarding records.");
+assert(intelligence.dataQuality.unspecifiedAudienceFindingCount <= 1, "Clinical Trials metadata fallbacks must resolve nearly every unspecified audience without discarding records.");
+assert(!intelligence.sourceSignals.some((item) => item.label === "unknown"), "Evidence Classes must not present unknown when source metadata supports a specific class.");
+assert(!intelligence.audienceSignals.some((item) => item.label === "unspecified_audience"), "Audience Coverage must not present unspecified audience when evidence metadata supports a specific audience.");
 assert(intelligence.dataQuality.assessment === "adequate" && intelligence.dataQuality.contextualEvidenceFindingCount >= 4_000, "The expanded taxonomy must contextually classify the substantive majority of the corpus.");
 assert(intelligence.sections.length === 9, "The Clinical Trials taxonomy must cover nine decision-relevant dimensions.");
 assert(intelligence.sections.every((section) => section.findingCount > 0), "Recruitment, retention, protocol, and site-experience analyses must all receive evidence.");
@@ -68,6 +72,8 @@ console.log(JSON.stringify({
   directStudyEvidence: intelligence.evidence.filter((item) => item.evidenceClass === "clinical_study").length,
   actionableSourceUrls: intelligence.evidence.filter((item) => item.url?.startsWith("http")).length,
   retainedPrequalifiedMentions: firstPage.total,
+  unresolvedEvidenceClasses: intelligence.dataQuality.unclassifiedFindingCount,
+  unresolvedAudiences: intelligence.dataQuality.unspecifiedAudienceFindingCount,
   evidencePages: firstPage.pageCount,
   placeboSearchMatches: placeboSearch.total,
   sections: intelligence.sections.map((section) => ({ id: section.id, findings: section.findingCount, confidence: section.confidence })),

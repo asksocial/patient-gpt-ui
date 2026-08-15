@@ -70,6 +70,7 @@ export type ModuleIntelligenceResult = {
     promotionalContextCount: number;
     lowQualityFindingCount: number;
     unclassifiedFindingCount: number;
+    unspecifiedAudienceFindingCount: number;
     relevancePolicy: "standard" | "prequalified";
     assessment: "adequate" | "limited" | "insufficient";
     limitations: string[];
@@ -405,6 +406,81 @@ function resolvedAudienceLabel(intelligence: EvidenceIntelligence) {
   return "unspecified_audience";
 }
 
+function clinicalTrialsEvidenceClass(
+  finding: CanonicalFinding,
+  intelligence: EvidenceIntelligence
+): EvidenceClass {
+  if (intelligence.evidenceClass !== "unknown") return intelligence.evidenceClass;
+
+  const url = originalSourceUrl(finding) || "";
+  const hostname = (() => {
+    try {
+      return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+    } catch {
+      return "";
+    }
+  })();
+  const source = metadataString(finding, "source", "publication", "source_name", "platform").toLowerCase();
+  const title = metadataString(finding, "headline", "title").toLowerCase();
+  const text = `${title} ${source} ${findingText(finding).toLowerCase()}`;
+
+  if (hostname === "clinicaltrials.gov" || /\bclinicaltrials\.gov\b/.test(text)) return "clinical_study";
+  if (
+    intelligence.platform === "research" ||
+    /(?:pubmed|ncbi\.nlm\.nih\.gov|sciencedirect|springer|wiley|jamanetwork|bmj\.com|nejm\.org|nature\.com|frontiersin|mdpi\.com)/.test(hostname)
+  ) return "research_journal";
+  if (intelligence.platform === "government" || /\.gov$/.test(hostname)) return "government_or_regulator";
+  if (intelligence.platform === "forum") return "forum";
+  if (intelligence.platform === "review") {
+    if (intelligence.voice === "patient") return "patient_conversation";
+    if (intelligence.voice === "caregiver") return "caregiver_conversation";
+    if (intelligence.voice === "provider") return "provider_conversation";
+    return "community_conversation";
+  }
+  if (intelligence.platform === "social" || /\b(twitter|linkedin|bluesky|facebook|instagram|tiktok|pinterest)\b/.test(source)) {
+    if (intelligence.voice === "patient") return "patient_conversation";
+    if (intelligence.voice === "caregiver") return "caregiver_conversation";
+    if (intelligence.voice === "provider") return "provider_conversation";
+    if (intelligence.voice === "corporate") return "corporate_pr";
+    if (intelligence.voice === "clinic") return "clinic_marketing";
+    if (intelligence.voice === "influencer") return "influencer_content";
+    return "community_conversation";
+  }
+  if (intelligence.platform === "video" || /\b(?:youtube|vimeo)\b/.test(source)) return "youtube_review";
+  if (intelligence.platform === "podcast") return "podcast";
+  if (intelligence.platform === "blog" || /(?:wordpress\.com|blogspot\.com|substack\.com|medium\.com)$/.test(hostname)) return "personal_blog";
+  if (intelligence.platform === "retail") return "retail_or_product";
+  if (intelligence.platform === "event") return "event_or_conference";
+  if (intelligence.platform === "news") return "consumer_news";
+  if (
+    /(?:prnewswire|businesswire|globenewswire|accesswire|einpresswire|newsfilecorp)/.test(hostname) ||
+    /\b(?:press release|news release)\b/.test(text) ||
+    /\b(?:announces?|receives? approval|submits? (?:an )?application|positive topline|new data reinforces)\b/.test(title)
+  ) return "corporate_pr";
+  if (url && (title || source)) return "consumer_news";
+  if (title && !/content is not available/.test(title)) return "consumer_news";
+
+  return "unknown";
+}
+
+function applyModuleEvidenceClassification(
+  moduleId: GeneratableModuleId,
+  finding: CanonicalFinding,
+  intelligence: EvidenceIntelligence
+): EvidenceIntelligence {
+  if (moduleId !== "clinical_trials" || intelligence.evidenceClass !== "unknown") return intelligence;
+  const evidenceClass = clinicalTrialsEvidenceClass(finding, intelligence);
+  if (evidenceClass === "unknown") return intelligence;
+  const isPromotional = ["corporate_pr", "clinic_marketing", "retail_or_product", "sponsored_content", "influencer_content", "event_or_conference"].includes(evidenceClass);
+  return {
+    ...intelligence,
+    evidenceClass,
+    isFirstParty: ["corporate_pr", "clinic_marketing", "retail_or_product"].includes(evidenceClass),
+    isPromotional,
+    reasons: [...intelligence.reasons, `Clinical Trials metadata fallback: ${evidenceClass}`],
+  };
+}
+
 function contextualizeFinding(
   profile: ModuleIntelligenceProfile,
   item: { finding: CanonicalFinding; intelligence: EvidenceIntelligence }
@@ -516,7 +592,10 @@ export function buildModuleIntelligence(
   const profile = MODULE_INTELLIGENCE_PROFILES[moduleId];
   const relevancePolicy = options.relevancePolicy || "standard";
   const relevancePrequalified = relevancePolicy === "prequalified";
-  const analyzed = findings.map((finding) => ({ finding, intelligence: analyzeEvidence(finding) }));
+  const analyzed = findings.map((finding) => ({
+    finding,
+    intelligence: applyModuleEvidenceClassification(moduleId, finding, analyzeEvidence(finding)),
+  }));
   const qualityEligible = analyzed.filter(({ intelligence }) => intelligence.qualityScore >= profile.minimumQualityScore);
   const eligible = relevancePrequalified
     ? analyzed
@@ -618,6 +697,7 @@ export function buildModuleIntelligence(
       promotionalContextCount,
       lowQualityFindingCount: selected.filter(({ intelligence }) => intelligence.qualityScore < profile.minimumQualityScore).length,
       unclassifiedFindingCount: selected.filter(({ intelligence }) => intelligence.evidenceClass === "unknown").length,
+      unspecifiedAudienceFindingCount: selected.filter(({ intelligence }) => resolvedAudienceLabel(intelligence) === "unspecified_audience").length,
       relevancePolicy,
       assessment,
       limitations,
@@ -653,7 +733,10 @@ export function buildModuleEvidenceCatalog(
   const pageSize = Math.min(50, Math.max(6, Math.floor(requestedPageSize)));
 
   const contextualized = findings
-    .map((finding) => ({ finding, intelligence: analyzeEvidence(finding) }))
+    .map((finding) => ({
+      finding,
+      intelligence: applyModuleEvidenceClassification(moduleId, finding, analyzeEvidence(finding)),
+    }))
     .map((item) => contextualizeFinding(profile, item));
 
   const filtered = contextualized
