@@ -2147,6 +2147,8 @@ export default function WorkspaceShell() {
                 key={activeDestination}
                 initialTab={activeDestination.slice("pv_".length)}
                 therapeuticArea={therapeuticArea}
+                workspaceId={activeWorkspaceId}
+                workspaces={workspaces}
               />
             ) : (
               <DestinationPlaceholder

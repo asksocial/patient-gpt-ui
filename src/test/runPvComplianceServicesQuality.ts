@@ -150,9 +150,11 @@ for (const phrase of ["Original post date", "Reviewer-identification date", "Gov
 for (const phrase of ["Screening Status · Structured review", "Continue to structured review", "Return to Review Queue", "pv-screening-structured-review"]) {
   assert(workbench.includes(phrase), `PV structured-review navigation is missing ${phrase}.`);
 }
-for (const phrase of ["Full mention", "Save review list", "Saved aggregate review lists", "Download CSV", "Share by email", "Assign to email or user ID"]) {
+for (const phrase of ["Full mention", "Save review list", "Name this review list", "Save to workspace", "Saved aggregate review lists", "Download CSV", "Share by email", "Assignee email or user ID"]) {
   assert(workbench.includes(phrase), `PV workbench is missing aggregate-review UX: ${phrase}`);
 }
+assert(reviewQueueSource.includes("const pageSize = 20") && reviewQueueSource.includes("pageRecords.map"), "The Potential PV Review Queue must display no more than 20 mentions per page.");
+assert(reviewQueueSource.includes("Select all PV mentions on this page") && reviewQueueSource.includes("Page {currentPage} of {pageCount}"), "PV queue pagination must preserve explicit page selection and navigation.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
 assert(!workbench.includes('disabled={busy.startsWith("review:") || !rationale.trim()}'), "PV decision buttons must not be silently disabled while the rationale is empty.");
 const importRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/imports/route.ts"), "utf8");
@@ -166,6 +168,11 @@ for (const contract of ["createPvReviewList", "listPvReviewLists", "updatePvRevi
 const reviewListRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/route.ts"), "utf8");
 const reviewListExportRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/[listId]/export/route.ts"), "utf8");
 assert(reviewListRoute.includes("requirePvPrincipal") && reviewListRoute.includes("therapeuticArea"), "PV review lists must be entitlement- and therapeutic-area-scoped.");
+assert(reviewListRoute.includes("workspaceId") && reviewListRoute.includes("saveIntelligenceWorkProduct") && reviewListRoute.includes('type: "pv_review_list"'), "Saved PV review lists must be registered in the selected workspace.");
 assert(reviewListExportRoute.includes("Content-Disposition") && reviewListExportRoute.includes("Full mention"), "PV aggregate-list exports must download the complete source evidence.");
+const workspaceManager = fs.readFileSync(path.resolve(process.cwd(), "src/components/WorkspaceManager.jsx"), "utf8");
+for (const phrase of ["PvReviewListDetail", "Assign to another user", "Send list by email", "Recipient email address", "PV review list"]) {
+  assert(workspaceManager.includes(phrase), `Workspace PV review-list UX is missing ${phrase}.`);
+}
 
 console.log("PV Compliance operational quality checks passed.");

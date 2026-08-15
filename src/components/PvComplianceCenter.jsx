@@ -82,7 +82,7 @@ function Empty({ children }) {
   return <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-5 py-8 text-center text-sm text-white/35">{children}</div>;
 }
 
-export default function PvComplianceCenter({ initialTab = "overview", therapeuticArea = "" }) {
+export default function PvComplianceCenter({ initialTab = "overview", therapeuticArea = "", workspaceId = "", workspaces = [] }) {
   const [tab, setTab] = useState(initialTab);
   const [overview, setOverview] = useState(null);
   const [records, setRecords] = useState([]);
@@ -172,7 +172,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
       {error ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{error}<p className="mt-1 text-xs text-rose-200/60">Apply the PV Supabase migration before using persistent workflow features.</p></div> : null}
 
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} /> : null}
-      {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
+      {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
       {tab === "screening" ? <ScreeningStatus sources={sources} screenings={screenings} selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReturnToQueue={() => setTab("queue")} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
       {tab === "reconciliation" ? <Reconciliation runs={reconciliations} busy={busy} onMutate={mutate} /> : null}
@@ -200,19 +200,57 @@ function Overview({ metrics, statusCounts }) {
   </div>;
 }
 
-function ReviewQueue({ therapeuticArea, records, reviewLists, selected, busy, onOpen, onContinueReview, onMutate }) {
+function ReviewQueue({ therapeuticArea, workspaceId, workspaces, records, reviewLists, selected, busy, onOpen, onContinueReview, onMutate }) {
+  const pageSize = 20;
+  const writableWorkspaces = useMemo(
+    () => workspaces.filter((workspace) => !workspace.archivedAt && workspace.role !== "viewer"),
+    [workspaces]
+  );
+  const initialWorkspaceId = writableWorkspaces.some((workspace) => workspace.id === workspaceId)
+    ? workspaceId
+    : writableWorkspaces[0]?.id || "";
+  const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [namingOpen, setNamingOpen] = useState(false);
   const [listName, setListName] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
+  const [listWorkspaceId, setListWorkspaceId] = useState(initialWorkspaceId);
   const [listAssignments, setListAssignments] = useState({});
   const [shareEmails, setShareEmails] = useState({});
   const [previewOpen, setPreviewOpen] = useState(false);
+  const pageCount = Math.max(1, Math.ceil(records.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const availableRecordIds = useMemo(() => new Set(records.map((record) => record.id)), [records]);
+  const validSelectedIds = selectedIds.filter((id) => availableRecordIds.has(id));
+  const pageRecords = records.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageIds = pageRecords.map((record) => record.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => validSelectedIds.includes(id));
+
   function openMention(recordId) { setPreviewOpen(true); onOpen(recordId); }
   function toggleRecord(recordId) { setSelectedIds((current) => current.includes(recordId) ? current.filter((id) => id !== recordId) : [...current, recordId]); }
-  function toggleAll() { setSelectedIds((current) => current.length === records.length ? [] : records.map((record) => record.id)); }
-  async function createList() {
-    const data = await onMutate("/api/pv/review-lists", { payload: { name: listName, therapeuticArea, recordIds: selectedIds, assignedTo } }, "review-list:create", "Selected mentions saved to a governed PV review list.");
-    if (data) { setSelectedIds([]); setListName(""); setAssignedTo(""); }
+  function togglePage() {
+    setSelectedIds((current) => allPageSelected
+      ? current.filter((id) => !pageIds.includes(id))
+      : [...new Set([...current, ...pageIds])]);
+  }
+  function openNamingDialog() {
+    if (!validSelectedIds.length) return;
+    setListName("");
+    setListWorkspaceId(writableWorkspaces.some((workspace) => workspace.id === listWorkspaceId) ? listWorkspaceId : initialWorkspaceId);
+    setNamingOpen(true);
+  }
+  async function createList(event) {
+    event.preventDefault();
+    const data = await onMutate(
+      "/api/pv/review-lists",
+      { payload: { name: listName, workspaceId: listWorkspaceId, therapeuticArea, recordIds: validSelectedIds } },
+      "review-list:create",
+      "Selected mentions saved to the chosen workspace as a governed PV review list."
+    );
+    if (data) {
+      setSelectedIds([]);
+      setListName("");
+      setNamingOpen(false);
+    }
   }
   async function assignList(list) {
     await onMutate(`/api/pv/review-lists/${list.id}`, { method: "PATCH", payload: { assignedTo: listAssignments[list.id] ?? list.assigned_to ?? "" } }, `review-list:assign:${list.id}`, "PV review list assignment saved.");
@@ -222,17 +260,46 @@ function ReviewQueue({ therapeuticArea, records, reviewLists, selected, busy, on
     const data = await onMutate(`/api/pv/review-lists/${list.id}`, { method: "PATCH", payload: { sharedEmail: email } }, `review-list:share:${list.id}`, "Email share recorded in the PV audit trail.");
     if (data) {
       const subject = encodeURIComponent(`AskSocial PV review list: ${list.name}`);
-      const body = encodeURIComponent(`${list.name} contains ${list.items?.length || 0} potential PV mentions for ${list.therapeutic_area}.\n\nOpen AskSocial PV Compliance to review the governed list, or download its CSV export before sending.`);
+      const body = encodeURIComponent(`${list.name} contains ${list.items?.length || 0} potential PV mentions for ${list.therapeutic_area}.\n\nOpen AskSocial Workspaces to review the governed list: ${window.location.origin}/workspace`);
       window.location.href = `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
     }
   }
+
   return <div className="space-y-5">
+    {namingOpen ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Name and save PV review list" onMouseDown={(event) => { if (event.target === event.currentTarget && busy !== "review-list:create") setNamingOpen(false); }}>
+        <form onSubmit={createList} className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl">
+          <div className="flex items-start justify-between gap-4">
+            <div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Save review list</p><h2 className="mt-2 text-xl font-semibold text-white">Name this review list</h2><p className="mt-2 text-sm text-white/45">{validSelectedIds.length} selected mentions will be saved together in the chosen workspace.</p></div>
+            <button type="button" onClick={() => setNamingOpen(false)} disabled={busy === "review-list:create"} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 disabled:opacity-40">Close</button>
+          </div>
+          <label className="mt-6 block text-xs font-medium text-white/55" htmlFor="pv-review-list-name">Review list name</label>
+          <input id="pv-review-list-name" autoFocus value={listName} onChange={(event) => setListName(event.target.value)} placeholder="e.g., Botulinum toxin priority review" className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40" />
+          <label className="mt-4 block text-xs font-medium text-white/55" htmlFor="pv-review-list-workspace">Save to workspace</label>
+          <select id="pv-review-list-workspace" value={listWorkspaceId} onChange={(event) => setListWorkspaceId(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white">
+            <option value="">Select a workspace</option>
+            {writableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
+          </select>
+          {!writableWorkspaces.length ? <p className="mt-2 text-xs text-amber-200/70">Create a workspace or request editor access before saving a review list.</p> : null}
+          <div className="mt-6 flex justify-end gap-3">
+            <button type="button" onClick={() => setNamingOpen(false)} disabled={busy === "review-list:create"} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/55 disabled:opacity-40">Cancel</button>
+            <button type="submit" disabled={!listName.trim() || !listWorkspaceId || busy === "review-list:create"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{busy === "review-list:create" ? "Saving list…" : "Save review list"}</button>
+          </div>
+        </form>
+      </div>
+    ) : null}
+
     {selected && previewOpen ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2></div><button type="button" onClick={() => setPreviewOpen(false)} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-3"><Metric label="Original post date" value={formatDate(selected.record.posted_at)} /><Metric label="Reviewer identified" value={formatDate(selected.record.identified_at)} /><Metric label="Detection score" value={`${selected.record.detection_score}/100`} /></div><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-cyan-300">Open original source ↗</a> : null}<button type="button" onClick={() => { setPreviewOpen(false); onContinueReview(); }} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black">Continue to structured review</button></div></div></div> : null}
-    <Card title="Potential PV Review Queue" subtitle="Click any mention to view the full source text. Select multiple mentions to save a governed aggregate review list.">
-      {records.length ? <div className="overflow-x-auto"><table className="w-full min-w-[1420px] text-left text-xs"><thead className="border-b border-white/10 text-white/35"><tr><th className="px-3 py-3"><input type="checkbox" aria-label="Select all PV mentions" checked={selectedIds.length === records.length && records.length > 0} onChange={toggleAll} /></th>{["Status", "Product", "Potential event", "Full mention", "Source", "Original post date", "Reviewer identified", "Day-zero clock", "Score", "Reviewer"].map((head) => <th key={head} className="px-3 py-3 font-medium">{head}</th>)}</tr></thead><tbody>{records.map((record) => <tr key={record.id} className={`border-b border-white/[0.06] text-white/60 ${selectedIds.includes(record.id) ? "bg-cyan-400/[0.05]" : ""}`}><td className="px-3 py-3"><input type="checkbox" aria-label={`Select mention ${record.id}`} checked={selectedIds.includes(record.id)} onChange={() => toggleRecord(record.id)} /></td><td className="px-3 py-3"><ToneBadge tone={record.status === "not_relevant" ? "neutral" : record.status === "acknowledged" || record.status === "reconciled" ? "complete" : "approaching"}>{label(record.status)}</ToneBadge></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="max-w-[360px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 text-left leading-5 text-cyan-100/65 hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{record.source_type}</td><td className="px-3 py-3">{formatDate(record.posted_at)}</td><td className="px-3 py-3">{formatDate(record.identified_at)}</td><td className="px-3 py-3"><ToneBadge tone={record.day_zero_basis === "identified_at" ? "complete" : "neutral"}>{record.day_zero_basis === "identified_at" ? "Reviewer identification" : "Post date"}</ToneBadge></td><td className="px-3 py-3">{record.detection_score}</td><td className="px-3 py-3">{record.assigned_reviewer_id || "Unassigned"}</td></tr>)}</tbody></table></div> : <Empty>No potential PV records are awaiting review.</Empty>}
-      <div className="mt-5 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><div className="flex flex-wrap items-end gap-3"><div className="min-w-[220px] flex-1"><p className="text-xs font-medium text-white/60">Save selected mentions</p><p className="mt-1 text-[11px] text-white/30">{selectedIds.length} selected for aggregate review</p></div><input value={listName} onChange={(event) => setListName(event.target.value)} placeholder="Review list name" className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" /><input value={assignedTo} onChange={(event) => setAssignedTo(event.target.value)} placeholder="Assign to email or user ID" className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" /><button type="button" onClick={createList} disabled={!selectedIds.length || !listName.trim() || busy === "review-list:create"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{busy === "review-list:create" ? "Saving list…" : "Save review list"}</button></div></div>
+
+    <Card title="Potential PV Review Queue" subtitle="Click any mention to view the full source text. Select multiple mentions across pages to save a governed aggregate review list.">
+      {records.length ? <>
+        <div className="overflow-x-auto"><table className="w-full min-w-[1420px] text-left text-xs"><thead className="border-b border-white/10 text-white/35"><tr><th className="px-3 py-3"><input type="checkbox" aria-label="Select all PV mentions on this page" checked={allPageSelected} onChange={togglePage} /></th>{["Status", "Product", "Potential event", "Full mention", "Source", "Original post date", "Reviewer identified", "Day-zero clock", "Score", "Reviewer"].map((head) => <th key={head} className="px-3 py-3 font-medium">{head}</th>)}</tr></thead><tbody>{pageRecords.map((record) => <tr key={record.id} className={`border-b border-white/[0.06] text-white/60 ${selectedIds.includes(record.id) ? "bg-cyan-400/[0.05]" : ""}`}><td className="px-3 py-3"><input type="checkbox" aria-label={`Select mention ${record.id}`} checked={selectedIds.includes(record.id)} onChange={() => toggleRecord(record.id)} /></td><td className="px-3 py-3"><ToneBadge tone={record.status === "not_relevant" ? "neutral" : record.status === "acknowledged" || record.status === "reconciled" ? "complete" : "approaching"}>{label(record.status)}</ToneBadge></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="max-w-[360px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 text-left leading-5 text-cyan-100/65 hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{record.source_type}</td><td className="px-3 py-3">{formatDate(record.posted_at)}</td><td className="px-3 py-3">{formatDate(record.identified_at)}</td><td className="px-3 py-3"><ToneBadge tone={record.day_zero_basis === "identified_at" ? "complete" : "neutral"}>{record.day_zero_basis === "identified_at" ? "Reviewer identification" : "Post date"}</ToneBadge></td><td className="px-3 py-3">{record.detection_score}</td><td className="px-3 py-3">{record.assigned_reviewer_id || "Unassigned"}</td></tr>)}</tbody></table></div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/40"><span>Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, records.length)} of {records.length} mentions</span><div className="flex items-center gap-2"><button type="button" onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:opacity-30">← Previous</button><span>Page {currentPage} of {pageCount}</span><button type="button" onClick={() => setPage(Math.min(pageCount, currentPage + 1))} disabled={currentPage >= pageCount} className="rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:opacity-30">Next →</button></div></div>
+      </> : <Empty>No potential PV records are awaiting review.</Empty>}
+      <div className="mt-5 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-medium text-white/60">Save selected mentions</p><p className="mt-1 text-[11px] text-white/30">{validSelectedIds.length} selected across the review queue</p></div><button type="button" onClick={openNamingDialog} disabled={!validSelectedIds.length || busy === "review-list:create"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">Save review list</button></div></div>
     </Card>
-    <Card title="Saved aggregate review lists" subtitle="Download complete evidence as CSV, record an assignment, or prepare a governed email share.">{reviewLists.length ? <div className="space-y-3">{reviewLists.map((list) => <div key={list.id} className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-medium text-white/75">{list.name}</p><p className="mt-1 text-xs text-white/35">{list.items?.length || 0} mentions · {list.therapeutic_area} · Assigned to {list.assigned_to || "nobody"}</p></div><div className="flex gap-2"><ToneBadge tone={list.status === "exported" ? "complete" : "neutral"}>{label(list.status)}</ToneBadge><a href={`/api/pv/review-lists/${list.id}/export`} download className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Download CSV</a></div></div><div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto]"><input value={listAssignments[list.id] ?? list.assigned_to ?? ""} onChange={(event) => setListAssignments((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Assignee email or user ID" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => assignList(list)} disabled={busy === `review-list:assign:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Assign</button><input type="email" value={shareEmails[list.id] || ""} onChange={(event) => setShareEmails((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Recipient email" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => shareList(list)} disabled={!String(shareEmails[list.id] || "").trim() || busy === `review-list:share:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Share by email</button></div></div>)}</div> : <Empty>No aggregate PV review lists have been saved.</Empty>}</Card>
+
+    <Card title="Saved aggregate review lists" subtitle="Lists are also available in their selected workspace for governed assignment and email sharing.">{reviewLists.length ? <div className="space-y-3">{reviewLists.map((list) => <div key={list.id} className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-medium text-white/75">{list.name}</p><p className="mt-1 text-xs text-white/35">{list.items?.length || 0} mentions · {list.therapeutic_area} · Assigned to {list.assigned_to || "nobody"}</p></div><div className="flex gap-2"><ToneBadge tone={list.status === "exported" ? "complete" : "neutral"}>{label(list.status)}</ToneBadge><a href={`/api/pv/review-lists/${list.id}/export`} download className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Download CSV</a></div></div><div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto]"><input value={listAssignments[list.id] ?? list.assigned_to ?? ""} onChange={(event) => setListAssignments((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Assignee email or user ID" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => assignList(list)} disabled={busy === `review-list:assign:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Assign</button><input type="email" value={shareEmails[list.id] || ""} onChange={(event) => setShareEmails((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Recipient email" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => shareList(list)} disabled={!String(shareEmails[list.id] || "").trim() || busy === `review-list:share:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Share by email</button></div></div>)}</div> : <Empty>No aggregate PV review lists have been saved.</Empty>}</Card>
   </div>;
 }
 

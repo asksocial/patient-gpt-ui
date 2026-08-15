@@ -6,6 +6,105 @@ function Panel({ children, className = "" }) {
   return <section className={`rounded-2xl border border-white/10 bg-white/[0.03] p-5 ${className}`}>{children}</section>;
 }
 
+function PvReviewListDetail({ product, candidateUsers, members, onClose }) {
+  const reviewListId = product.payload?.reviewListId;
+  const [list, setList] = useState(null);
+  const [assignedTo, setAssignedTo] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [busy, setBusy] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!reviewListId) return;
+    fetch(`/api/pv/review-lists/${reviewListId}`, { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.ok) throw new Error(data.error || "Unable to load the PV review list.");
+        setList(data.list);
+        setAssignedTo(data.list.assigned_to || "");
+      })
+      .catch((error) => setMessage(error instanceof Error ? error.message : "Unable to load the PV review list."));
+  }, [reviewListId]);
+
+  async function updateList(payload, busyKey, success) {
+    setBusy(busyKey);
+    setMessage("");
+    const response = await fetch(`/api/pv/review-lists/${reviewListId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    setBusy("");
+    if (!response.ok || !data.ok) {
+      setMessage(data.error || "Unable to update the PV review list.");
+      return null;
+    }
+    setList((current) => ({ ...current, ...data.list }));
+    setMessage(success);
+    return data.list;
+  }
+
+  async function assignList() {
+    await updateList({ assignedTo }, "assign", "Review-list assignment saved.");
+  }
+
+  async function shareList() {
+    const email = recipientEmail.trim();
+    const updated = await updateList({ sharedEmail: email }, "share", "Email share recorded in the governed audit trail.");
+    if (!updated) return;
+    const subject = encodeURIComponent(`AskSocial PV review list: ${list.name}`);
+    const body = encodeURIComponent(`${list.name} contains ${list.items?.length || product.payload?.itemCount || 0} potential PV mentions for ${list.therapeutic_area}.\n\nOpen AskSocial Workspaces to review the governed list: ${window.location.origin}/workspace`);
+    window.location.href = `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
+  }
+
+  function workspaceMemberLabel(userId) {
+    const user = candidateUsers.find((candidate) => candidate.userId === userId);
+    return user ? `${user.name} · ${user.identifier}` : userId;
+  }
+
+  return (
+    <Panel>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.16em] text-cyan-300/65">PV review list</p>
+          <h3 className="mt-2 text-lg font-semibold text-white">{list?.name || product.title}</h3>
+          <p className="mt-1 text-xs text-white/35">{list ? `${list.items?.length || 0} mentions · ${list.therapeutic_area} · ${list.status}` : "Loading governed review list…"}</p>
+        </div>
+        <div className="flex gap-2">
+          {reviewListId ? <a href={`/api/pv/review-lists/${reviewListId}/export`} download className="rounded-xl border border-cyan-300/20 px-3 py-2 text-xs font-medium text-cyan-300">Download CSV</a> : null}
+          <button type="button" onClick={onClose} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</button>
+        </div>
+      </div>
+
+      {message ? <p className="mt-4 rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/55">{message}</p> : null}
+
+      {list ? (
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+            <h4 className="text-sm font-semibold text-white/70">Assign to another user</h4>
+            <p className="mt-1 text-xs text-white/35">Assign the list to a member who already has access to this workspace.</p>
+            <select value={assignedTo} onChange={(event) => setAssignedTo(event.target.value)} className="mt-4 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white">
+              <option value="">Unassigned</option>
+              {assignedTo && !members.some((member) => member.userId === assignedTo) ? <option value={assignedTo}>{assignedTo} · current assignee</option> : null}
+              {members.map((member) => <option key={member.userId} value={member.userId}>{workspaceMemberLabel(member.userId)} · {member.role}</option>)}
+            </select>
+            <button type="button" onClick={assignList} disabled={busy === "assign"} className="mt-3 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-40">{busy === "assign" ? "Assigning…" : "Assign list"}</button>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+            <h4 className="text-sm font-semibold text-white/70">Send by email</h4>
+            <p className="mt-1 text-xs text-white/35">Record the recipient in the audit trail and prepare an email from your configured mail client.</p>
+            <input type="email" value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} placeholder="Recipient email address" className="mt-4 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" />
+            <button type="button" onClick={shareList} disabled={!recipientEmail.trim() || busy === "share"} className="mt-3 rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-semibold text-cyan-300 disabled:opacity-40">{busy === "share" ? "Preparing email…" : "Send list by email"}</button>
+            {list.shared_emails?.length ? <p className="mt-3 text-xs leading-5 text-white/35">Previously shared: {list.shared_emails.join(", ")}</p> : null}
+          </div>
+        </div>
+      ) : null}
+    </Panel>
+  );
+}
+
 function ProductDetail({ product, onClose }) {
   if (!product) return null;
   const payload = product.payload || {};
@@ -227,12 +326,12 @@ export default function WorkspaceManager({
               </Panel>
 
               <Panel>
-                <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-white/70">Saved intelligence</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-white/70">Saved intelligence and review lists</h3>
                 {loading ? <p className="mt-3 text-sm text-white/35">Loading workspace…</p> : null}
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   {products.map((product) => (
                     <button key={product.id} type="button" onClick={() => setSelectedProduct(product)} className="rounded-xl border border-white/10 bg-black/20 p-3 text-left hover:border-white/25">
-                      <span className="text-xs uppercase text-white/35">{product.kind}</span>
+                      <span className="text-xs uppercase text-white/35">{product.payload?.type === "pv_review_list" ? "PV review list" : product.kind}</span>
                       <span className="mt-1 block text-sm font-medium text-white/75">{product.title}</span>
                     </button>
                   ))}
@@ -240,7 +339,11 @@ export default function WorkspaceManager({
                 </div>
               </Panel>
 
-              {selectedProduct ? <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} /> : null}
+              {selectedProduct ? (
+                selectedProduct.payload?.type === "pv_review_list"
+                  ? <PvReviewListDetail key={selectedProduct.id} product={selectedProduct} candidateUsers={candidateUsers} members={members} onClose={() => setSelectedProduct(null)} />
+                  : <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+              ) : null}
 
               <Panel>
                 <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-white/70">Members and permissions</h3>
