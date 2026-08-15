@@ -50,6 +50,8 @@ for (const result of results) {
     result.evidence.some(
       (item) =>
         item.findingId === "unknown" ||
+        !item.fullMention.trim() ||
+        item.fullMention.length < item.quote.length ||
         !item.matchedSectionIds.length ||
         !item.matchedSectionLabels.length ||
         item.contextualRelevanceScore <= item.qualityScore
@@ -108,6 +110,10 @@ if (
   !workspaceSource.includes("<ModuleIntelligenceView") ||
   !workspaceSource.includes("`module_${moduleId}`") ||
   !viewSource.includes("Generate ${module.name} Intelligence") ||
+  !viewSource.includes('aria-label="Full module evidence mention"') ||
+  !viewSource.includes("View full mention") ||
+  !viewSource.includes("selectedEvidence.fullMention || selectedEvidence.quote") ||
+  !viewSource.includes("Open original source ↗") ||
   !routeSource.includes("MODULE_ENTITLEMENTS[moduleId]") ||
   !routeSource.includes('kind: "report"')
 ) {

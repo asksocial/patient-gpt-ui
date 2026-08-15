@@ -44,13 +44,24 @@ function CountList({ title, items }) {
 
 export default function ModuleIntelligenceView({ module, agents, workflows, therapeuticArea, workspaceId }) {
   const [result, setResult] = useState(null);
+  const [selectedEvidence, setSelectedEvidence] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setResult(null);
+    setSelectedEvidence(null);
     setError("");
   }, [module.id, therapeuticArea]);
+
+  useEffect(() => {
+    if (!selectedEvidence) return undefined;
+    function closeOnEscape(event) {
+      if (event.key === "Escape") setSelectedEvidence(null);
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [selectedEvidence]);
 
   async function runAnalysis() {
     setLoading(true);
@@ -101,6 +112,46 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
 
   return (
     <div className="space-y-5">
+      {selectedEvidence ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Full module evidence mention"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedEvidence(null);
+          }}
+        >
+          <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p>
+                <h2 className="mt-2 text-xl font-semibold text-white">
+                  {selectedEvidence.mentionTitle || `${module.name} evidence`}
+                </h2>
+              </div>
+              <button type="button" onClick={() => setSelectedEvidence(null)} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.06]">
+                Close
+              </button>
+            </div>
+            <blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">
+              {selectedEvidence.fullMention || selectedEvidence.quote}
+            </blockquote>
+            <div className="mt-5 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
+              <div><p className="text-white/30">Source</p><p className="mt-1 text-white/65">{selectedEvidence.sourceLabel}</p></div>
+              <div><p className="text-white/30">Audience</p><p className="mt-1 text-white/65">{selectedEvidence.voice.replaceAll("_", " ")}</p></div>
+              <div><p className="text-white/30">Evidence class</p><p className="mt-1 text-white/65">{selectedEvidence.evidenceClass.replaceAll("_", " ")}</p></div>
+              <div><p className="text-white/30">Published</p><p className="mt-1 text-white/65">{selectedEvidence.publishedAt || "Not available"}</p></div>
+            </div>
+            {selectedEvidence.author ? <p className="mt-4 text-xs text-white/40">Author or account: <span className="text-white/65">{selectedEvidence.author}</span></p> : null}
+            {selectedEvidence.url ? (
+              <a href={selectedEvidence.url} target="_blank" rel="noreferrer noopener" className="mt-5 inline-flex rounded-xl border border-white/10 px-4 py-2.5 text-sm text-cyan-300 hover:bg-white/[0.04]">
+                Open original source ↗
+              </a>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-200/70">
           <span className="rounded-full border border-cyan-300/20 px-2 py-1">{result.dataQuality.assessment} coverage</span>
@@ -144,7 +195,15 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {result.evidence.slice(0, 12).map((item) => (
             <article key={item.id} className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <blockquote className="text-sm leading-6 text-white/65">“{item.quote}”</blockquote>
+              <button
+                type="button"
+                onClick={() => setSelectedEvidence(item)}
+                aria-label={`View full mention from ${item.sourceLabel}`}
+                className="block w-full rounded-lg text-left hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+              >
+                <blockquote className="text-sm leading-6 text-cyan-100/65">“{item.quote}”</blockquote>
+                <span className="mt-2 inline-block text-[11px] font-medium text-cyan-300/70">View full mention</span>
+              </button>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {item.matchedSectionLabels.map((label) => (
                   <span key={label} className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-2 py-1 text-[10px] text-cyan-200/65">

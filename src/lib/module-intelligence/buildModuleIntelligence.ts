@@ -61,6 +61,10 @@ export type ModuleIntelligenceResult = {
     id: string;
     findingId: string;
     quote: string;
+    fullMention: string;
+    mentionTitle?: string;
+    author?: string;
+    publishedAt?: string;
     sourceLabel: string;
     url?: string;
     country?: string;
@@ -264,6 +268,50 @@ function fallbackExcerpt(finding: CanonicalFinding) {
   ).trim();
 }
 
+function metadataString(
+  finding: CanonicalFinding,
+  ...keys: string[]
+) {
+  const value = keys
+    .map((key) => finding.rawMetadata?.normalizedFields?.[key])
+    .find((candidate) =>
+      Array.isArray(candidate)
+        ? candidate.some((item) => String(item || "").trim())
+        : String(candidate || "").trim()
+    );
+
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean).join("\n");
+  }
+
+  return String(value || "").trim();
+}
+
+function fullMention(finding: CanonicalFinding, source?: EvidenceRef) {
+  const raw = finding as CanonicalFinding & {
+    title?: string;
+    description?: string;
+    text?: string;
+    excerpt?: string;
+  };
+  const candidates = [
+    metadataString(finding, "full_text", "document_text", "article_body", "body", "content", "post_text", "opening_text", "text", "caption"),
+    raw.text,
+    raw.description,
+    metadataString(finding, "description", "summary"),
+    source?.excerpt,
+    raw.excerpt,
+    finding.summary,
+    finding.canonicalClaim,
+    metadataString(finding, "headline", "title"),
+    raw.title,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  return candidates.sort((left, right) => right.length - left.length)[0] || "Evidence mention unavailable";
+}
+
 const EVIDENCE_CLASS_AUDIENCE: Record<EvidenceClass, string> = {
   patient_conversation: "patient",
   caregiver_conversation: "caregiver",
@@ -438,6 +486,10 @@ export function buildModuleIntelligence(
         id: `${moduleId}:${findingId(finding)}`,
         findingId: findingId(finding),
         quote: source?.excerpt || fallbackExcerpt(finding),
+        fullMention: fullMention(finding, source),
+        mentionTitle: metadataString(finding, "headline", "title") || undefined,
+        author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,
+        publishedAt: metadataString(finding, "date", "published_at", "published_date", "alternate_date_format") || undefined,
         sourceLabel: source?.platform || intelligence.domain || intelligence.platform || "Source metadata unavailable",
         url: source?.url,
         country: source?.country,
