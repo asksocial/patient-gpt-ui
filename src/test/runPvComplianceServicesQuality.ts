@@ -150,12 +150,15 @@ for (const phrase of ["Original post date", "Reviewer-identification date", "Gov
 for (const phrase of ["Screening Status · Structured review", "Continue to structured review", "Return to Review Queue", "pv-screening-structured-review"]) {
   assert(workbench.includes(phrase), `PV structured-review navigation is missing ${phrase}.`);
 }
-for (const phrase of ["Full mention", "Save review list", "Name this review list", "Save to workspace", "Saved aggregate review lists", "Download CSV", "Share by email", "Assignee email or user ID"]) {
+for (const phrase of ["Full mention", "Save review list", "Save to workspace", "Saved aggregate review lists", "Download CSV", "Share by email", "Assignee email or user ID"]) {
   assert(workbench.includes(phrase), `PV workbench is missing aggregate-review UX: ${phrase}`);
 }
+assert(!workbench.includes("Name this review list") && !workbench.includes("Review list name"), "Saving a PV review list must not require a user-supplied name.");
+assert(reviewQueueSource.includes('busy === "review-list:create" ? "Saving…" : "Save"') && reviewQueueSource.includes('disabled={!listWorkspaceId || busy === "review-list:create"}'), "The simplified review-list action must be labeled Save and enabled whenever a writable workspace is selected.");
+assert(reviewQueueSource.includes("Create a workspace before saving a list"), "Users without a writable workspace must receive the required creation prompt.");
 assert(reviewQueueSource.includes("const pageSize = 20") && reviewQueueSource.includes("pageRecords.map"), "The Potential PV Review Queue must display no more than 20 mentions per page.");
 assert(reviewQueueSource.includes("Select all PV mentions on this page") && reviewQueueSource.includes("Page {currentPage} of {pageCount}"), "PV queue pagination must preserve explicit page selection and navigation.");
-assert(reviewQueueSource.includes("await onRefreshWorkspaces()") && reviewQueueSource.includes("currentWritableWorkspaces"), "Saving a PV review list must refresh and re-evaluate writable workspaces before opening the naming dialog.");
+assert(reviewQueueSource.includes("await onRefreshWorkspaces()") && reviewQueueSource.includes("currentWritableWorkspaces"), "Saving a PV review list must refresh and re-evaluate writable workspaces before opening the save dialog.");
 assert(workbench.includes("PV_REVIEW_WINDOW_MS = 15 * 24 * 60 * 60 * 1000") && reviewQueueSource.includes("reviewCountdown(record, nowMs)"), "The queue day-zero clock must count down from reviewer identification plus 15 days.");
 assert(reviewQueueSource.includes("setInterval(() => setNowMs(Date.now()), 30_000)"), "The queue day-zero countdown must update automatically as time elapses.");
 assert(reviewQueueSource.includes("PV_SCORE_TOOLTIP") && workbench.includes("It is not an adverse-event determination"), "The queue score column must explain how the screening score should be interpreted.");

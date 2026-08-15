@@ -239,8 +239,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
     : writableWorkspaces[0]?.id || "";
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState([]);
-  const [namingOpen, setNamingOpen] = useState(false);
-  const [listName, setListName] = useState("");
+  const [saveOpen, setSaveOpen] = useState(false);
   const [listWorkspaceId, setListWorkspaceId] = useState(initialWorkspaceId);
   const [listAssignments, setListAssignments] = useState({});
   const [shareEmails, setShareEmails] = useState({});
@@ -270,7 +269,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
       ? current.filter((id) => !pageIds.includes(id))
       : [...new Set([...current, ...pageIds])]);
   }
-  async function openNamingDialog() {
+  async function openSaveDialog() {
     if (!validSelectedIds.length) return;
     const refreshedWorkspaces = typeof onRefreshWorkspaces === "function" ? await onRefreshWorkspaces() : null;
     const currentWorkspaces = refreshedWorkspaces || workspaces;
@@ -278,22 +277,21 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
     const currentWorkspaceId = currentWritableWorkspaces.some((workspace) => workspace.id === workspaceId)
       ? workspaceId
       : currentWritableWorkspaces[0]?.id || "";
-    setListName("");
     setListWorkspaceId(currentWritableWorkspaces.some((workspace) => workspace.id === listWorkspaceId) ? listWorkspaceId : currentWorkspaceId);
-    setNamingOpen(true);
+    setSaveOpen(true);
   }
   async function createList(event) {
     event.preventDefault();
+    const generatedName = `${therapeuticArea || "PV"} review list · ${new Date().toLocaleString([], { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}`;
     const data = await onMutate(
       "/api/pv/review-lists",
-      { payload: { name: listName, workspaceId: listWorkspaceId, therapeuticArea, recordIds: validSelectedIds } },
+      { payload: { name: generatedName, workspaceId: listWorkspaceId, therapeuticArea, recordIds: validSelectedIds } },
       "review-list:create",
       "Selected mentions saved to the chosen workspace as a governed PV review list."
     );
     if (data) {
       setSelectedIds([]);
-      setListName("");
-      setNamingOpen(false);
+      setSaveOpen(false);
     }
   }
   async function assignList(list) {
@@ -310,24 +308,22 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
   }
 
   return <div className="space-y-5">
-    {namingOpen ? (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Name and save PV review list" onMouseDown={(event) => { if (event.target === event.currentTarget && busy !== "review-list:create") setNamingOpen(false); }}>
+    {saveOpen ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Save PV review list" onMouseDown={(event) => { if (event.target === event.currentTarget && busy !== "review-list:create") setSaveOpen(false); }}>
         <form onSubmit={createList} className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl">
           <div className="flex items-start justify-between gap-4">
-            <div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Save review list</p><h2 className="mt-2 text-xl font-semibold text-white">Name this review list</h2><p className="mt-2 text-sm text-white/45">{validSelectedIds.length} selected mentions will be saved together in the chosen workspace.</p></div>
-            <button type="button" onClick={() => setNamingOpen(false)} disabled={busy === "review-list:create"} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 disabled:opacity-40">Close</button>
+            <div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Save review list</p><p className="mt-2 text-sm text-white/45">{validSelectedIds.length} selected mentions will be saved together in the chosen workspace.</p></div>
+            <button type="button" onClick={() => setSaveOpen(false)} disabled={busy === "review-list:create"} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 disabled:opacity-40">Close</button>
           </div>
-          <label className="mt-6 block text-xs font-medium text-white/55" htmlFor="pv-review-list-name">Review list name</label>
-          <input id="pv-review-list-name" autoFocus value={listName} onChange={(event) => setListName(event.target.value)} placeholder="e.g., Botulinum toxin priority review" className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300/40" />
-          <label className="mt-4 block text-xs font-medium text-white/55" htmlFor="pv-review-list-workspace">Save to workspace</label>
-          <select id="pv-review-list-workspace" value={listWorkspaceId} onChange={(event) => setListWorkspaceId(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white">
+          <label className="mt-6 block text-xs font-medium text-white/55" htmlFor="pv-review-list-workspace">Save to workspace</label>
+          <select id="pv-review-list-workspace" autoFocus value={listWorkspaceId} onChange={(event) => setListWorkspaceId(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white">
             <option value="">Select a workspace</option>
             {writableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
           </select>
-          {!writableWorkspaces.length ? <p className="mt-2 text-xs text-amber-200/70">Create a workspace or request editor access before saving a review list.</p> : null}
+          {!writableWorkspaces.length ? <p className="mt-2 text-xs text-amber-200/70">Create a workspace before saving a list</p> : null}
           <div className="mt-6 flex justify-end gap-3">
-            <button type="button" onClick={() => setNamingOpen(false)} disabled={busy === "review-list:create"} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/55 disabled:opacity-40">Cancel</button>
-            <button type="submit" disabled={!listName.trim() || !listWorkspaceId || busy === "review-list:create"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{busy === "review-list:create" ? "Saving list…" : "Save review list"}</button>
+            <button type="button" onClick={() => setSaveOpen(false)} disabled={busy === "review-list:create"} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/55 disabled:opacity-40">Cancel</button>
+            <button type="submit" disabled={!listWorkspaceId || busy === "review-list:create"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{busy === "review-list:create" ? "Saving…" : "Save"}</button>
           </div>
         </form>
       </div>
@@ -340,7 +336,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
         <div className="overflow-x-auto"><table className="w-full min-w-[1420px] text-left text-xs"><thead className="border-b border-white/10 text-white/35"><tr><th className="px-3 py-3"><input type="checkbox" aria-label="Select all PV mentions on this page" checked={allPageSelected} onChange={togglePage} /></th>{["Status", "Product", "Potential event", "Full mention", "Source", "Original post date", "Reviewer identified", "Day-zero clock", "Score", "Reviewer"].map((head) => <th key={head} className="px-3 py-3 font-medium">{head === "Score" ? <Tooltip content={PV_SCORE_TOOLTIP} delay={200} side="bottom" align="start"><button type="button" aria-label={`Score: ${PV_SCORE_TOOLTIP}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>Score</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip> : head}</th>)}</tr></thead><tbody>{pageRecords.map((record) => { const countdown = reviewCountdown(record, nowMs); return <tr key={record.id} className={`border-b border-white/[0.06] text-white/60 ${selectedIds.includes(record.id) ? "bg-cyan-400/[0.05]" : ""}`}><td className="px-3 py-3"><input type="checkbox" aria-label={`Select mention ${record.id}`} checked={selectedIds.includes(record.id)} onChange={() => toggleRecord(record.id)} /></td><td className="px-3 py-3"><ToneBadge tone={record.status === "not_relevant" ? "neutral" : record.status === "acknowledged" || record.status === "reconciled" ? "complete" : "approaching"}>{label(record.status)}</ToneBadge></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="max-w-[360px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 text-left leading-5 text-cyan-100/65 hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.posted_at)}</td><td className="px-3 py-3">{formatDate(record.identified_at)}</td><td className="px-3 py-3"><ToneBadge tone={countdown.tone}>{countdown.label}</ToneBadge></td><td className="px-3 py-3">{record.detection_score}</td><td className="px-3 py-3">{record.assigned_reviewer_id || "Unassigned"}</td></tr>; })}</tbody></table></div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/40"><span>Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, records.length)} of {records.length} mentions</span><div className="flex items-center gap-2"><button type="button" onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:opacity-30">← Previous</button><span>Page {currentPage} of {pageCount}</span><button type="button" onClick={() => setPage(Math.min(pageCount, currentPage + 1))} disabled={currentPage >= pageCount} className="rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:opacity-30">Next →</button></div></div>
       </> : <Empty>No potential PV records are awaiting review.</Empty>}
-      <div className="mt-5 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-medium text-white/60">Save selected mentions</p><p className="mt-1 text-[11px] text-white/30">{validSelectedIds.length} selected across the review queue</p></div><button type="button" onClick={openNamingDialog} disabled={!validSelectedIds.length || busy === "review-list:create"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">Save review list</button></div></div>
+      <div className="mt-5 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-medium text-white/60">Save selected mentions</p><p className="mt-1 text-[11px] text-white/30">{validSelectedIds.length} selected across the review queue</p></div><button type="button" onClick={openSaveDialog} disabled={!validSelectedIds.length || busy === "review-list:create"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">Save review list</button></div></div>
     </Card>
 
     <Card title="Saved aggregate review lists" subtitle="Lists are also available in their selected workspace for governed assignment and email sharing.">{reviewLists.length ? <div className="space-y-3">{reviewLists.map((list) => <div key={list.id} className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-medium text-white/75">{list.name}</p><p className="mt-1 text-xs text-white/35">{list.items?.length || 0} mentions · {list.therapeutic_area} · Assigned to {list.assigned_to || "nobody"}</p></div><div className="flex gap-2"><ToneBadge tone={list.status === "exported" ? "complete" : "neutral"}>{label(list.status)}</ToneBadge><a href={`/api/pv/review-lists/${list.id}/export`} download className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Download CSV</a></div></div><div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto]"><input value={listAssignments[list.id] ?? list.assigned_to ?? ""} onChange={(event) => setListAssignments((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Assignee email or user ID" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => assignList(list)} disabled={busy === `review-list:assign:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Assign</button><input type="email" value={shareEmails[list.id] || ""} onChange={(event) => setShareEmails((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Recipient email" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => shareList(list)} disabled={!String(shareEmails[list.id] || "").trim() || busy === `review-list:share:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Share by email</button></div></div>)}</div> : <Empty>No aggregate PV review lists have been saved.</Empty>}</Card>
