@@ -3,7 +3,7 @@ import path from "node:path";
 import { askSocial } from "../app/api/ask";
 import { getRankingProfile } from "../answering/ranking/getRankingProfile";
 import { getThemeTaxonomy } from "../answering/themes/taxonomies";
-import { loadCanonicalFindingsForAsk } from "../lib/answers/loadCanonicalFindingsForAsk";
+import { loadCanonicalFindingsForAsk, loadCanonicalFindingsForModule } from "../lib/answers/loadCanonicalFindingsForAsk";
 import { getTherapeuticAreaCoverage } from "../lib/analytics/coverage";
 import { buildModuleIntelligence, type GeneratableModuleId } from "../lib/module-intelligence/buildModuleIntelligence";
 import { buildPatientIntelligence } from "../lib/patient-intelligence/buildPatientIntelligence";
@@ -38,12 +38,23 @@ assert(Boolean(intelligence.executiveIntelligence), "Botulinum toxin search must
 assert(intelligence.themeLongitudinalTracking.datedFindingCount > 0 && intelligence.themeLongitudinalTracking.themes.length > 0, "Botulinum toxin search must execute longitudinal analysis.");
 
 const modules: GeneratableModuleId[] = ["medical_affairs", "clinical_trials", "corporate_affairs", "commercial", "competitive", "advocacy"];
-const moduleResults = modules.map((moduleId) => buildModuleIntelligence(moduleId, "Botulinum toxin", corpus.findings, "2026-08-11T16:00:00.000Z"));
+const clinicalTrialsCorpus = loadCanonicalFindingsForModule("Botulinum toxin", "clinical_trials");
+assert(clinicalTrialsCorpus.status === "available", "The Botulinum toxin Clinical Trials corpus must load.");
+assert(clinicalTrialsCorpus.sourceLabel === "Botulinum toxin Clinical Trials Meltwater corpus", "Clinical Trials must use its dedicated Botulinum toxin corpus.");
+const moduleResults = modules.map((moduleId) => buildModuleIntelligence(
+  moduleId,
+  "Botulinum toxin",
+  moduleId === "clinical_trials" ? clinicalTrialsCorpus.findings : corpus.findings,
+  "2026-08-15T16:00:00.000Z"
+));
 for (const result of moduleResults) {
   const moduleId = result.moduleId;
   assert(result.sections.length === 4 && result.evidence.length > 0, `${moduleId} must generate contextual Botulinum toxin intelligence.`);
 }
 assert(new Set(moduleResults.map((result) => result.evidence.map((item) => item.findingId).join("|"))).size === modules.length, "Each Botulinum toxin module must use a distinct contextual evidence set.");
+const clinicalTrials = moduleResults.find((result) => result.moduleId === "clinical_trials");
+assert(clinicalTrials?.dataQuality.corpusFindingCount === clinicalTrialsCorpus.findings.length, "Clinical Trials generation must analyze the dedicated corpus.");
+assert(clinicalTrials.evidence.some((item) => item.evidenceClass === "clinical_study"), "Clinical Trials evidence must include directly classified study records.");
 const patient = buildPatientIntelligence("Botulinum toxin", corpus.findings, "2026-08-11T16:00:00.000Z");
 assert(patient.therapeuticArea === "Botulinum toxin" && patient.dataQuality.corpusFindingCount === corpus.findings.length && patient.dataQuality.patientVoiceFindingCount > 0, "Patient Intelligence must run against patient voice in the Botulinum toxin corpus.");
 

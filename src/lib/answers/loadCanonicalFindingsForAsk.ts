@@ -140,6 +140,27 @@ const CORPORA: Record<
   },
 };
 
+const MODULE_CORPORA: Record<
+  string,
+  Record<string, CorpusDefinition>
+> = {
+  botulinum_toxin: {
+    clinical_trials: {
+      source: "meltwater_csv",
+      sourceLabel: "Botulinum toxin Clinical Trials Meltwater corpus",
+      load: () =>
+        ingestMeltwaterCsv(
+          requireFile("data/botulinum-toxin-clinical-trials.csv"),
+          {
+            sourceType: "meltwater",
+            therapeuticArea: "botulinum_toxin",
+            profileId: "botulinum_toxin",
+          }
+        ) as CanonicalFinding[],
+    },
+  },
+};
+
 function cloneFindings(
   findings: CanonicalFinding[]
 ): CanonicalFinding[] {
@@ -232,5 +253,67 @@ export function loadCanonicalFindingsForAsk(
       corpus.sourceLabel,
     findings:
       cloneFindings(findings),
+  };
+}
+
+export function loadCanonicalFindingsForModule(
+  therapeuticArea: string,
+  moduleId: string
+): CanonicalFindingsLoadResult {
+  const therapeuticAreaId = normalizeTherapeuticAreaId(therapeuticArea);
+  const moduleCorpus = MODULE_CORPORA[therapeuticAreaId]?.[moduleId];
+
+  if (!moduleCorpus) {
+    return loadCanonicalFindingsForAsk(therapeuticArea);
+  }
+
+  const coverage = getTherapeuticAreaCoverage(therapeuticArea);
+  if (coverage.status !== "validated") {
+    return {
+      status: "unavailable",
+      therapeuticAreaId,
+      reason: coverage.reason || "Validated analytical coverage is unavailable.",
+      findings: [],
+    };
+  }
+
+  const cacheKey = `${therapeuticAreaId}:module:${moduleId}`;
+  let findings = cachedCorpora.get(cacheKey);
+
+  if (!findings) {
+    try {
+      findings = moduleCorpus.load();
+    } catch (error) {
+      console.error("[loadCanonicalFindingsForModule] failed to load corpus", {
+        therapeuticAreaId,
+        moduleId,
+        error,
+      });
+      return {
+        status: "unavailable",
+        therapeuticAreaId,
+        reason: "The configured module-specific finding corpus could not be loaded.",
+        findings: [],
+      };
+    }
+
+    if (findings.length === 0) {
+      return {
+        status: "unavailable",
+        therapeuticAreaId,
+        reason: "The configured module-specific finding corpus is empty.",
+        findings: [],
+      };
+    }
+
+    cachedCorpora.set(cacheKey, findings);
+  }
+
+  return {
+    status: "available",
+    therapeuticAreaId,
+    source: moduleCorpus.source,
+    sourceLabel: moduleCorpus.sourceLabel,
+    findings: cloneFindings(findings),
   };
 }

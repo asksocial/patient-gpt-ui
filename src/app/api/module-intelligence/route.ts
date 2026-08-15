@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loadCanonicalFindingsForAsk } from "../../../lib/answers/loadCanonicalFindingsForAsk";
+import { loadCanonicalFindingsForModule } from "../../../lib/answers/loadCanonicalFindingsForAsk";
 import { getCurrentEntitlements } from "../../../lib/entitlements/server";
 import {
   MODULE_ENTITLEMENTS,
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const corpus = loadCanonicalFindingsForAsk(therapeuticArea);
+    const corpus = loadCanonicalFindingsForModule(therapeuticArea, moduleId);
     if (corpus.status !== "available") {
       return NextResponse.json({ ok: false, error: corpus.reason }, { status: 422 });
     }

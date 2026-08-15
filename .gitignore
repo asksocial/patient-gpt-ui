@@ -65,6 +65,7 @@ next-env.d.ts
 /data/*
 !/data/regen-aesthetics.csv
 !/data/botulinum-toxin.csv
+!/data/botulinum-toxin-clinical-trials.csv
 !/data/botulinum-toxin-pv-relevance.csv
 !/data/HepB_-_Patients__Caregivers - Mar 11, 2026 - 11 47 15 AM.csv
 !/data/medical-aesthetics-evidence-labels.csv
