@@ -145,7 +145,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
             </div>
             {selectedEvidence.author ? <p className="mt-4 text-xs text-white/40">Author or account: <span className="text-white/65">{selectedEvidence.author}</span></p> : null}
             {selectedEvidence.url ? (
-              <a href={selectedEvidence.url} target="_blank" rel="noreferrer noopener" className="mt-5 inline-flex rounded-xl border border-white/10 px-4 py-2.5 text-sm text-cyan-300 hover:bg-white/[0.04]">
+              <a href={selectedEvidence.url} target="_blank" rel="noreferrer noopener" className="mt-6 inline-flex items-center rounded-xl border border-cyan-300/35 bg-cyan-300/[0.10] px-5 py-3 text-sm font-semibold text-cyan-200 shadow-[0_0_24px_rgba(103,232,249,0.08)] transition hover:border-cyan-200/60 hover:bg-cyan-300/[0.16] hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70">
                 Open original source ↗
               </a>
             ) : null}
@@ -212,12 +212,13 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
                 ))}
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-white/35">
-                {item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="text-cyan-300 underline">{item.sourceLabel}</a> : <span>{item.sourceLabel}</span>}
+                <span>{item.sourceLabel}</span>
                 <span>{item.voice} voice</span>
                 <span>{item.evidenceClass.replaceAll("_", " ")}</span>
                 <span>quality {Math.round(item.qualityScore)}</span>
                 {item.promotionalContext ? <span className="text-amber-200/65">promotional context</span> : null}
               </div>
+              {item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex rounded-lg border border-cyan-300/25 bg-cyan-300/[0.07] px-3 py-2 text-[11px] font-semibold text-cyan-200/85 transition hover:border-cyan-200/50 hover:bg-cyan-300/[0.12]">Open original source ↗</a> : null}
             </article>
           ))}
         </div>

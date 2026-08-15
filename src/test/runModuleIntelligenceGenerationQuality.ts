@@ -105,6 +105,7 @@ if (!commercial.dataQuality.limitations.some((item) => item.includes("labeled co
 
 const workspaceSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/WorkspaceShell.jsx"), "utf8");
 const viewSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
+const globalStyles = fs.readFileSync(path.resolve(process.cwd(), "src/app/globals.css"), "utf8");
 const routeSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/route.ts"), "utf8");
 if (
   !workspaceSource.includes("<ModuleIntelligenceView") ||
@@ -114,10 +115,25 @@ if (
   !viewSource.includes("View full mention") ||
   !viewSource.includes("selectedEvidence.fullMention || selectedEvidence.quote") ||
   !viewSource.includes("Open original source ↗") ||
+  !viewSource.includes("border-cyan-300/35 bg-cyan-300/[0.10]") ||
   !routeSource.includes("MODULE_ENTITLEMENTS[moduleId]") ||
   !routeSource.includes('kind: "report"')
 ) {
   throw new Error("Module generation must remain wired through the licensed workspace, API, and governed work-product store.");
+}
+for (const cursorRule of [
+  "a[href]",
+  "button:not(:disabled)",
+  "select:not(:disabled)",
+  'input[type="checkbox"]:not(:disabled)',
+  '[role="button"]:not([aria-disabled="true"])',
+  "cursor: pointer",
+  "button:disabled",
+  "cursor: not-allowed",
+]) {
+  if (!globalStyles.includes(cursorRule)) {
+    throw new Error(`Global interactive cursor coverage is missing: ${cursorRule}`);
+  }
 }
 if (!workspaceSource.includes("<PatientIntelligenceView")) {
   throw new Error("The existing Patient Intelligence experience must remain intact.");
