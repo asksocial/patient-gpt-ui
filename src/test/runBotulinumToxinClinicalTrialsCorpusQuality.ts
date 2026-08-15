@@ -58,9 +58,16 @@ const evidenceRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/m
 const view = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
 assert(route.includes("loadCanonicalFindingsForModule(therapeuticArea, moduleId)"), "The module API must route through module-specific corpus resolution.");
 assert(evidenceRoute.includes("buildModuleEvidenceCatalog") && evidenceRoute.includes("pageSize"), "The evidence API must provide governed server-side search and pagination.");
-for (const phrase of ["Representative module evidence", "View all evidence", "Search mention text, source, author, or taxonomy", "Pre-qualified relevance · quality-ranked", 'module.id === "clinical_trials"', "evidenceDisplayTitle(item, module.name)"]) {
+for (const phrase of ["Representative module evidence", "View all evidence", "Search mentions by keyword", "Pre-qualified relevance · quality-ranked", 'module.id === "clinical_trials"', "evidenceDisplayTitle(item, module.name)"]) {
   assert(view.includes(phrase), `The Clinical Trials evidence browser is missing: ${phrase}`);
 }
+for (const column of ["Label", "Mention", "Source", "Audience", "Evidence Class", "Published"]) {
+  assert(view.includes(`>${column}</th>`), `The Clinical Trials evidence table is missing its ${column} column.`);
+}
+assert(view.includes("if (evidenceBrowserOpen)"), "View all evidence must open a dedicated evidence screen instead of expanding inline.");
+assert(view.includes('pageSize: "25"'), "The evidence table must paginate the retained corpus at a practical table page size.");
+assert(view.includes('className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75"'), "Table mentions must never exceed two lines.");
+assert(view.includes('href={item.url}') && view.includes("{item.sourceLabel} ↗"), "Every available table source must be an actionable original-source link.");
 assert(view.includes("Suggested next moves based on the strongest current signals"), "Module Recommended Actions must match the Search-screen presentation.");
 assert(view.includes("Action {idx + 1}"), "Module recommendations must use the same numbered action badges as Search.");
 assert(view.includes('className="line-clamp-2 text-sm font-semibold leading-6 text-white/80"'), "Representative Clinical Trials evidence titles must never exceed two lines.");

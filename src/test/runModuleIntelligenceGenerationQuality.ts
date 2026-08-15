@@ -121,7 +121,7 @@ if (
   patientViewSource.includes('{therapeuticArea} patient experience') ||
   !viewSource.includes('aria-label="Full module evidence mention"') ||
   !viewSource.includes("View full mention") ||
-  !viewSource.includes("selectedEvidence.fullMention || selectedEvidence.quote") ||
+  !viewSource.includes("evidence.fullMention || evidence.quote") ||
   !viewSource.includes("Open original source ↗") ||
   !viewSource.includes("border-cyan-300/35 bg-cyan-300/[0.10]") ||
   !viewSource.includes("View all evidence") ||
