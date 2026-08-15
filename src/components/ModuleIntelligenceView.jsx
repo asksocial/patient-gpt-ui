@@ -143,7 +143,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
       <div className="space-y-5">
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/70">{module.name} Intelligence</p>
-          <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea} {module.name.toLowerCase()} intelligence</h2>
+          <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea}</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/50">
             Generate evidence-qualified {module.description.charAt(0).toLowerCase() + module.description.slice(1)} The analysis applies this module’s audience, source, taxonomy, and decision lens.
           </p>

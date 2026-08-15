@@ -51,7 +51,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
     return (
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/70">Patient Intelligence</p>
-        <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea} patient experience</h2>
+        <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea}</h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/50">Analyze journey stages, treatment barriers, emotional burden, treatments, and unmet needs using the evidence-qualified patient and caregiver subset.</p>
         <button onClick={runAnalysis} disabled={loading || !therapeuticArea} className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
           {loading ? "Analyzing…" : "Generate Patient Intelligence"}

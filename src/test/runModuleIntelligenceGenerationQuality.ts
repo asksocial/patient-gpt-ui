@@ -107,6 +107,7 @@ if (!commercial.dataQuality.limitations.some((item) => item.includes("labeled co
 
 const workspaceSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/WorkspaceShell.jsx"), "utf8");
 const viewSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
+const patientViewSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/PatientIntelligenceView.jsx"), "utf8");
 const globalStyles = fs.readFileSync(path.resolve(process.cwd(), "src/app/globals.css"), "utf8");
 const routeSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/route.ts"), "utf8");
 const evidenceRouteSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/evidence/route.ts"), "utf8");
@@ -114,6 +115,10 @@ if (
   !workspaceSource.includes("<ModuleIntelligenceView") ||
   !workspaceSource.includes("`module_${moduleId}`") ||
   !viewSource.includes("Generate ${module.name} Intelligence") ||
+  !viewSource.includes('>{therapeuticArea}</h2>') ||
+  viewSource.includes('{therapeuticArea} {module.name.toLowerCase()} intelligence') ||
+  !patientViewSource.includes('>{therapeuticArea}</h2>') ||
+  patientViewSource.includes('{therapeuticArea} patient experience') ||
   !viewSource.includes('aria-label="Full module evidence mention"') ||
   !viewSource.includes("View full mention") ||
   !viewSource.includes("selectedEvidence.fullMention || selectedEvidence.quote") ||
