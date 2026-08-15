@@ -113,7 +113,9 @@ const routeSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/mod
 const evidenceRouteSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/evidence/route.ts"), "utf8");
 if (
   !workspaceSource.includes("<ModuleIntelligenceView") ||
-  !workspaceSource.includes("`module_${moduleId}`") ||
+  !workspaceSource.includes('destinationId.startsWith(') ||
+  !workspaceSource.includes('"module_"') ||
+  !workspaceSource.includes("workspaceId={activeWorkspaceId}") ||
   !viewSource.includes("Generate ${module.name} Intelligence") ||
   !viewSource.includes('>{therapeuticArea}</h2>') ||
   viewSource.includes('{therapeuticArea} {module.name.toLowerCase()} intelligence') ||

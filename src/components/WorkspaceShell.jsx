@@ -14,7 +14,6 @@ import PvComplianceCenter from "./PvComplianceCenter";
 import KnowledgeGraphView from "./KnowledgeGraphView";
 import WorkspaceManager from "./WorkspaceManager";
 import {
-  getModuleSwitcherOptions,
   resolveWorkspaceNavigationDestination,
 } from "../lib/intelligence-platform/navigation";
 
@@ -835,6 +834,11 @@ export default function WorkspaceShell() {
     [sessions, activeSessionId]
   );
 
+  const activeWorkspace = useMemo(
+    () => workspaces.find((workspace) => workspace.id === activeWorkspaceId) || null,
+    [activeWorkspaceId, workspaces]
+  );
+
   const filteredSessions = useMemo(() => {
     const query = sessionSearch.trim().toLowerCase();
     if (!query) return sessions;
@@ -895,14 +899,6 @@ export default function WorkspaceShell() {
 
   const canUseExecutiveIntelligence =
     entitlements?.capabilities?.executive_intelligence?.granted !== false;
-
-  const moduleOptions = useMemo(
-    () =>
-      getModuleSwitcherOptions(
-        intelligenceAccess
-      ),
-    [intelligenceAccess]
-  );
 
   const activeModule = useMemo(
     () =>
@@ -1104,28 +1100,6 @@ export default function WorkspaceShell() {
       const next = [q, ...prev.filter((item) => item !== q)];
       return next.slice(0, 8);
     });
-  }
-
-  async function createWorkspace() {
-    const name = window.prompt("Name this intelligence workspace");
-    if (!name?.trim()) return;
-    try {
-      const response = await fetch("/api/workspaces", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          therapeuticArea,
-          moduleIds: activeModuleId ? [activeModuleId] : [],
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error(data.error || "Failed to create workspace");
-      setWorkspaces((current) => [data.workspace, ...current]);
-      await selectWorkspace(data.workspace.id);
-    } catch (workspaceError) {
-      setError(workspaceError.message || "Failed to create workspace");
-    }
   }
 
   async function selectWorkspace(workspaceId) {
@@ -1376,25 +1350,6 @@ export default function WorkspaceShell() {
         );
       }
     }
-  }
-
-  function handleModuleChange(event) {
-    const moduleId =
-      event.target.value;
-    setActiveModuleId(moduleId);
-    if (
-      activeDestination.startsWith(
-        "module_"
-      )
-    ) {
-      setActiveDestination(
-        `module_${moduleId}`
-      );
-    }
-    window.localStorage.setItem(
-      "asksocial.activeModule",
-      moduleId
-    );
   }
 
   function beginRename(session) {
@@ -1955,78 +1910,22 @@ export default function WorkspaceShell() {
                 </p>
               </div>
 
-              <div className="grid w-full shrink-0 gap-3 sm:grid-cols-2 xl:w-[34rem]">
-                <div>
-                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                    Workspace
-                  </label>
-                  <div className="flex gap-2">
-                    <select
-                      value={activeWorkspaceId}
-                      onChange={(event) => selectWorkspace(event.target.value)}
-                      className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none"
-                    >
-                      <option value="">Session only</option>
-                      {workspaces.filter((workspace) => !workspace.archivedAt).map((workspace) => (
-                        <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>
-                          {workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}
-                        </option>
-                      ))}
-                    </select>
-                    <button type="button" onClick={createWorkspace} title="Create workspace" className="rounded-xl border border-white/10 px-3 text-white/60 hover:text-white">+</button>
-                  </div>
-                  <p className="mt-1.5 text-[11px] leading-4 text-white/30">Saved work becomes searchable across permitted workspaces.</p>
-                  {activeWorkspaceId ? (
-                    <p className={`mt-1 text-[11px] ${workspaceSaveStatus === "error" ? "text-rose-300/70" : "text-emerald-300/60"}`}>
-                      {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
-                    </p>
-                  ) : null}
-                </div>
-                <div>
-                <label
-                  htmlFor="global-module-switcher"
-                  className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40"
-                >
-                  Current module
-                </label>
-                <select
-                  id="global-module-switcher"
-                  value={activeModuleId}
-                  onChange={
-                    handleModuleChange
-                  }
-                  disabled={
-                    moduleOptions.length ===
-                    0
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none transition focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {moduleOptions.length ===
-                  0 ? (
-                    <option value="">
-                      No licensed modules
-                    </option>
-                  ) : (
-                    moduleOptions.map(
-                      (module) => (
-                        <option
-                          key={
-                            module.value
-                          }
-                          value={
-                            module.value
-                          }
-                        >
-                          {module.label}
-                        </option>
-                      )
-                    )
-                  )}
-                </select>
-                <p className="mt-1.5 text-[11px] leading-4 text-white/30">
-                  Switching modules keeps your current work open.
+              <div
+                data-testid="active-workspace-indicator"
+                aria-label={`Current workspace: ${activeWorkspace?.name || "Session only"}`}
+                className="shrink-0 self-end rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-right xl:ml-auto xl:self-start"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300">
+                  Workspace: {activeWorkspace?.name || "Session only"}
                 </p>
-                </div>
+                {activeWorkspace ? (
+                  <p
+                    aria-live="polite"
+                    className={`mt-1 text-[9px] font-medium uppercase tracking-[0.14em] ${workspaceSaveStatus === "error" ? "text-rose-300/80" : "text-cyan-200/45"}`}
+                  >
+                    {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
+                  </p>
+                ) : null}
               </div>
             </div>
 

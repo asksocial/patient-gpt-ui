@@ -21,7 +21,10 @@ assert(persistence.includes("workspace.member.upsert") && persistence.includes("
 assert(persistence.includes("row.created_by === principal.actorId") && persistence.includes('roles.get(row.id) || "owner"'), "Workspace creators must retain owner access when a membership row is temporarily unavailable.");
 assert(manager.includes("Workspace manager") && manager.includes("Saved intelligence") && manager.includes("Members and permissions"), "The workspace manager must expose content and governance.");
 assert(manager.includes("Delete permanently") && manager.includes("Archive") && manager.includes("Save changes"), "Workspace lifecycle controls are required.");
-assert(shell.includes("workspaceSaveStatus") && shell.includes("Saved to workspace"), "Visible save-state feedback is required.");
+assert(shell.includes('data-testid="active-workspace-indicator"') && shell.includes('Workspace: {activeWorkspace?.name || "Session only"}'), "The header must identify the active workspace.");
+assert(shell.includes("text-cyan-300") && shell.includes("uppercase"), "The active-workspace indicator must be cyan and uppercase.");
+assert(shell.includes("workspaceSaveStatus") && shell.includes("Saved to workspace"), "Visible save-state feedback must remain available within the workspace indicator.");
+assert(!shell.includes('id="global-module-switcher"') && !shell.includes("Saved work becomes searchable across permitted workspaces."), "Redundant global workspace and module dropdowns must remain removed.");
 assert(shell.includes("const loadWorkspaces = useCallback") && shell.includes('activeDestination.startsWith("pv_")'), "Workspace state must refresh when users enter workspace-dependent views.");
 assert(shell.includes("onRefreshWorkspaces={loadWorkspaces}"), "PV review-list saving must share the shell workspace refresh path.");
 assert(sessionRoute.includes("workspaceId") && sessionRoute.includes("assertWorkspaceAccess"), "Changing workspace must update and authorize the active conversation.");
