@@ -839,6 +839,11 @@ export default function WorkspaceShell() {
     [activeWorkspaceId, workspaces]
   );
 
+  const availableWorkspaces = useMemo(
+    () => workspaces.filter((workspace) => !workspace.archivedAt),
+    [workspaces]
+  );
+
   const filteredSessions = useMemo(() => {
     const query = sessionSearch.trim().toLowerCase();
     if (!query) return sessions;
@@ -995,7 +1000,7 @@ export default function WorkspaceShell() {
       setWorkspaces(nextWorkspaces);
       setActiveWorkspaceId((current) => {
         if (nextWorkspaces.some((workspace) => workspace.id === current)) return current;
-        return nextWorkspaces[0]?.id || "";
+        return "";
       });
       return nextWorkspaces;
     } catch (workspaceError) {
@@ -1271,7 +1276,6 @@ export default function WorkspaceShell() {
         .find((message) => message.role === "user")?.text || "";
       setQuestion(latestUserQuestion);
       setTherapeuticArea(data.session.therapeutic_area);
-      setActiveWorkspaceId(data.session.workspace_id || "");
     } catch (err) {
       setError(err?.message || "Failed to open session");
     }
@@ -1913,11 +1917,21 @@ export default function WorkspaceShell() {
               <div
                 data-testid="active-workspace-indicator"
                 aria-label={`Current workspace: ${activeWorkspace?.name || "Session only"}`}
-                className="shrink-0 self-end rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-right xl:ml-auto xl:self-start"
+                className="shrink-0 self-end text-right xl:ml-auto xl:self-start"
               >
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300">
-                  Workspace: {activeWorkspace?.name || "Session only"}
-                </p>
+                <select
+                  aria-label="Select current workspace"
+                  value={activeWorkspaceId}
+                  onChange={(event) => void selectWorkspace(event.target.value)}
+                  className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"
+                >
+                  <option value="">Workspace: Session only</option>
+                  {availableWorkspaces.map((workspace) => (
+                    <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>
+                      Workspace: {workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}
+                    </option>
+                  ))}
+                </select>
                 {activeWorkspace ? (
                   <p
                     aria-live="polite"
