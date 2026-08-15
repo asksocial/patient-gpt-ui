@@ -102,6 +102,8 @@ async function getWorkspaceAndRole(
     role = workspace.created_by === principal.actorId ? "owner" : "editor";
   } else if (memberError) {
     throw new Error(`Failed to verify workspace membership: ${memberError.message}`);
+  } else if (!membership && workspace.created_by === principal.actorId) {
+    role = "owner";
   } else if (!membership) {
     throw new Error("Workspace access denied.");
   } else {
@@ -167,8 +169,8 @@ export async function listIntelligenceWorkspaces(principal: PlatformPrincipal) {
     (memberships || []).map((member: any) => [member.workspace_id, member.role as WorkspaceRole])
   );
   return (data || [])
-    .filter((row: any) => roles.has(row.id))
-    .map((row: any) => mapWorkspace(row, roles.get(row.id)));
+    .filter((row: any) => roles.has(row.id) || row.created_by === principal.actorId)
+    .map((row: any) => mapWorkspace(row, roles.get(row.id) || "owner"));
 }
 
 export async function createIntelligenceWorkspace(

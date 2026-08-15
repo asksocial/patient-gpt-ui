@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Tooltip from "./ui/Tooltip";
 import ExecutiveIntelligenceView from "./ExecutiveIntelligenceView";
@@ -990,23 +990,31 @@ export default function WorkspaceShell() {
     loadTherapeuticAreas();
   }, []);
 
-  useEffect(() => {
-    async function loadWorkspaces() {
-      try {
-        const response = await fetch("/api/workspaces", { cache: "no-store" });
-        const data = await response.json();
-        if (!response.ok || !data.ok) return;
-        setWorkspaces(data.workspaces || []);
-        setActiveWorkspaceId((current) => {
-          if ((data.workspaces || []).some((workspace) => workspace.id === current)) return current;
-          return data.workspaces?.[0]?.id || "";
-        });
-      } catch (workspaceError) {
-        console.error("Failed to load persistent workspaces", workspaceError);
-      }
+  const loadWorkspaces = useCallback(async () => {
+    try {
+      const response = await fetch("/api/workspaces", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok || !data.ok) return null;
+      const nextWorkspaces = data.workspaces || [];
+      setWorkspaces(nextWorkspaces);
+      setActiveWorkspaceId((current) => {
+        if (nextWorkspaces.some((workspace) => workspace.id === current)) return current;
+        return nextWorkspaces[0]?.id || "";
+      });
+      return nextWorkspaces;
+    } catch (workspaceError) {
+      console.error("Failed to load persistent workspaces", workspaceError);
+      return null;
     }
-    loadWorkspaces();
   }, []);
+
+  useEffect(() => { void loadWorkspaces(); }, [loadWorkspaces]);
+
+  useEffect(() => {
+    if (activeDestination === "intelligence_workspaces" || activeDestination.startsWith("pv_")) {
+      void loadWorkspaces();
+    }
+  }, [activeDestination, loadWorkspaces]);
 
   useEffect(() => {
     async function loadEntitlements() {
@@ -2149,6 +2157,7 @@ export default function WorkspaceShell() {
                 therapeuticArea={therapeuticArea}
                 workspaceId={activeWorkspaceId}
                 workspaces={workspaces}
+                onRefreshWorkspaces={loadWorkspaces}
               />
             ) : (
               <DestinationPlaceholder

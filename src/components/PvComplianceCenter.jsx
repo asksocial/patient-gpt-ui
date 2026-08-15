@@ -82,7 +82,7 @@ function Empty({ children }) {
   return <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-5 py-8 text-center text-sm text-white/35">{children}</div>;
 }
 
-export default function PvComplianceCenter({ initialTab = "overview", therapeuticArea = "", workspaceId = "", workspaces = [] }) {
+export default function PvComplianceCenter({ initialTab = "overview", therapeuticArea = "", workspaceId = "", workspaces = [], onRefreshWorkspaces }) {
   const [tab, setTab] = useState(initialTab);
   const [overview, setOverview] = useState(null);
   const [records, setRecords] = useState([]);
@@ -172,7 +172,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
       {error ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{error}<p className="mt-1 text-xs text-rose-200/60">Apply the PV Supabase migration before using persistent workflow features.</p></div> : null}
 
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} /> : null}
-      {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
+      {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
       {tab === "screening" ? <ScreeningStatus sources={sources} screenings={screenings} selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReturnToQueue={() => setTab("queue")} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
       {tab === "reconciliation" ? <Reconciliation runs={reconciliations} busy={busy} onMutate={mutate} /> : null}
@@ -200,7 +200,7 @@ function Overview({ metrics, statusCounts }) {
   </div>;
 }
 
-function ReviewQueue({ therapeuticArea, workspaceId, workspaces, records, reviewLists, selected, busy, onOpen, onContinueReview, onMutate }) {
+function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorkspaces, records, reviewLists, selected, busy, onOpen, onContinueReview, onMutate }) {
   const pageSize = 20;
   const writableWorkspaces = useMemo(
     () => workspaces.filter((workspace) => !workspace.archivedAt && workspace.role !== "viewer"),
@@ -232,10 +232,16 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, records, review
       ? current.filter((id) => !pageIds.includes(id))
       : [...new Set([...current, ...pageIds])]);
   }
-  function openNamingDialog() {
+  async function openNamingDialog() {
     if (!validSelectedIds.length) return;
+    const refreshedWorkspaces = typeof onRefreshWorkspaces === "function" ? await onRefreshWorkspaces() : null;
+    const currentWorkspaces = refreshedWorkspaces || workspaces;
+    const currentWritableWorkspaces = currentWorkspaces.filter((workspace) => !workspace.archivedAt && workspace.role !== "viewer");
+    const currentWorkspaceId = currentWritableWorkspaces.some((workspace) => workspace.id === workspaceId)
+      ? workspaceId
+      : currentWritableWorkspaces[0]?.id || "";
     setListName("");
-    setListWorkspaceId(writableWorkspaces.some((workspace) => workspace.id === listWorkspaceId) ? listWorkspaceId : initialWorkspaceId);
+    setListWorkspaceId(currentWritableWorkspaces.some((workspace) => workspace.id === listWorkspaceId) ? listWorkspaceId : currentWorkspaceId);
     setNamingOpen(true);
   }
   async function createList(event) {
