@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from "../supabase/server";
 import type { PlatformPrincipal } from "../intelligence-platform/persistence";
 import { calculatePvClock } from "./clock";
 import { classifyPvContent } from "./detection";
+import { DEFAULT_PV_SLA, derivePvOverviewMetrics } from "./overview";
 import { reconcilePvOperations } from "./reconciliation";
 import type {
   PvContentInput,
@@ -18,14 +19,6 @@ import {
   BOTULINUM_PV_THERAPEUTIC_AREA,
   loadBotulinumPvCorpus,
 } from "./botulinumCorpus";
-
-const DEFAULT_SLA: PvSlaPolicy = {
-  reviewMinutes: 24 * 60,
-  transferMinutes: 24 * 60,
-  acknowledgmentMinutes: 48 * 60,
-  clockStart: "posted_at",
-  timezone: "UTC",
-};
 
 function hashPayload(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -473,6 +466,21 @@ export async function listPvRecords(principal: PlatformPrincipal, input: { statu
   return data || [];
 }
 
+async function listAllPvRecordsForOverview(principal: PlatformPrincipal, therapeuticArea?: string) {
+  const rows: any[] = [];
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    let query = getSupabaseServerClient().from("pv_records").select("*")
+      .eq("principal_id", principal.principalId).order("identified_at", { ascending: false }).range(from, from + pageSize - 1);
+    if (therapeuticArea) query = query.eq("therapeutic_area", therapeuticArea);
+    const { data, error } = await query;
+    if (error) throw new Error(`Failed to load the complete PV overview record ledger: ${error.message}`);
+    rows.push(...(data || []));
+    if ((data || []).length < pageSize) break;
+  }
+  return rows;
+}
+
 export async function listPvReviewLists(principal: PlatformPrincipal, therapeuticArea?: string) {
   assertPrincipal(principal);
   const supabase = getSupabaseServerClient();
@@ -569,7 +577,7 @@ export async function getPvRecord(principal: PlatformPrincipal, recordId: string
   const sla: PvSlaPolicy = policy ? {
     reviewMinutes: Number(policy.review_minutes), transferMinutes: Number(policy.transfer_minutes), acknowledgmentMinutes: Number(policy.acknowledgment_minutes),
     clockStart: policy.clock_start, timezone: policy.timezone,
-  } : DEFAULT_SLA;
+  } : DEFAULT_PV_SLA;
   const effectiveSla: PvSlaPolicy = {
     ...sla,
     clockStart: record.day_zero_basis === "identified_at" ? "identified_at" : sla.clockStart,
@@ -665,39 +673,27 @@ export async function listPvTransfers(principal: PlatformPrincipal, limit = 100)
 
 export async function getPvOperationsOverview(principal: PlatformPrincipal, therapeuticArea?: string) {
   assertPrincipal(principal);
-  const [records, sources, screeningRuns] = await Promise.all([
-    listPvRecords(principal, { therapeuticArea }), listPvSources(principal), listPvScreeningRuns(principal, 500),
+  const [records, sources, screeningRuns, reviewLists] = await Promise.all([
+    listAllPvRecordsForOverview(principal, therapeuticArea), listPvSources(principal), listPvScreeningRuns(principal, 500), listPvReviewLists(principal, therapeuticArea),
   ]);
-  const now = Date.now();
   const latestScreeningBySource = new Map<string, any>();
   for (const run of screeningRuns) if (run.status === "completed" && !latestScreeningBySource.has(run.source_id)) latestScreeningBySource.set(run.source_id, run);
-  const dueSources = sources.filter((source: any) => {
-    if (!source.active) return false;
-    const lastScreenedAt = latestScreeningBySource.get(source.id)?.completed_at;
-    return !lastScreenedAt || now - new Date(lastScreenedAt).getTime() >= Number(source.cadence_minutes) * 60_000;
-  });
-  const statusCounts = records.reduce((acc: Record<string, number>, record: any) => {
-    acc[record.status] = (acc[record.status] || 0) + 1;
-    return acc;
-  }, {});
-  const approaching = records.filter((record: any) => {
-    if (["not_relevant", "acknowledged", "reconciled"].includes(record.status)) return false;
-    const clockStart = record.day_zero_basis === "identified_at" ? record.identified_at : record.posted_at;
-    const elapsed = now - new Date(clockStart).getTime();
-    return elapsed >= DEFAULT_SLA.reviewMinutes * 60_000 * 0.8;
-  }).length;
+  const recordIds = records.map((record: any) => record.id);
+  const idChunks = Array.from({ length: Math.ceil(recordIds.length / 200) }, (_, index) => recordIds.slice(index * 200, (index + 1) * 200));
+  const supabase = getSupabaseServerClient();
+  const [reviewResults, transferResults, policyResult] = await Promise.all([
+    Promise.all(idChunks.map((ids) => supabase.from("pv_reviews").select("record_id,reviewed_at").eq("principal_id", principal.principalId).in("record_id", ids))),
+    Promise.all(idChunks.map((ids) => supabase.from("pv_transfers").select("record_id,status,transferred_at,acknowledged_at,created_at").eq("principal_id", principal.principalId).in("record_id", ids))),
+    supabase.from("pv_sla_policies").select("id,review_minutes,transfer_minutes,acknowledgment_minutes,clock_start,timezone").eq("principal_id", principal.principalId),
+  ]);
+  const relatedError = [...reviewResults, ...transferResults, policyResult].find((result) => result.error)?.error;
+  if (relatedError) throw new Error(`Failed to derive PV overview workflow metrics: ${relatedError.message}`);
+  const reviews = reviewResults.flatMap((result) => result.data || []);
+  const transfers = transferResults.flatMap((result) => result.data || []);
+  const derived = derivePvOverviewMetrics({ records, reviews, transfers, reviewLists, policies: policyResult.data || [], screeningRuns });
   return {
-    metrics: {
-      screeningCompliance: sources.length ? Math.max(0, Math.round(((sources.length - dueSources.length) / sources.length) * 1000) / 10) : 100,
-      sourcesDue: dueSources.length,
-      awaitingReview: (statusCounts.new || 0) + (statusCounts.in_review || 0),
-      approachingSla: approaching,
-      transferred: statusCounts.transferred || 0,
-      unacknowledged: statusCounts.transferred || 0,
-      nilReturns: screeningRuns.filter((run: any) => run.status === "completed" && run.nil_return).length,
-      reconciliationCompletion: records.length ? Math.round(((statusCounts.reconciled || 0) / records.length) * 100) : 100,
-    },
-    statusCounts,
+    metrics: derived.metrics,
+    statusCounts: derived.statusCounts,
     sources: sources.slice(0, 20).map((source: any) => ({ ...source, last_screened_at: latestScreeningBySource.get(source.id)?.completed_at || null })),
     records: records.slice(0, 50),
   };

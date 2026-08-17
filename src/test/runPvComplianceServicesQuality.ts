@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { calculatePvClock, classifyPvContent, parsePvCsv, reconcilePvOperations, type PvDetectionConcept } from "../lib/pv";
+import { calculatePvClock, classifyPvContent, derivePvOverviewMetrics, parsePvCsv, reconcilePvOperations, type PvDetectionConcept, type PvRecordStatus } from "../lib/pv";
 import { buildEcosystemNavigation, configurationFromEntitlements, resolveCustomerIntelligenceAccess } from "../lib/intelligence-platform";
 import { resolveEntitlements } from "../lib/entitlements";
 
@@ -67,6 +67,39 @@ const identifiedClock = calculatePvClock({
 assert(identifiedClock.elapsedMinutes === 525, "CSV-import SLA timing must begin at reviewer identification, not the historical post date.");
 assert(identifiedClock.governingClock === "identified_at" && identifiedClock.governingTimestamp === "2026-08-06T00:15:00.000Z", "CSV-import clocks must label reviewer identification as day zero.");
 
+function overviewRecord(id: string, status: PvRecordStatus, assignedReviewerId: string | null = null) {
+  return {
+    id, status, assigned_reviewer_id: assignedReviewerId, day_zero_basis: "identified_at" as const,
+    posted_at: "2026-08-01T00:00:00.000Z", ingested_at: "2026-08-16T00:00:00.000Z", identified_at: "2026-08-16T00:00:00.000Z",
+  };
+}
+const overviewRecords = [
+  overviewRecord("unassigned", "new"), overviewRecord("list-assigned", "new"), overviewRecord("reviewer-assigned", "in_review", "reviewer-1"),
+  overviewRecord("closed", "not_relevant", "reviewer-1"), overviewRecord("ready", "ready_for_transfer", "reviewer-1"),
+  overviewRecord("sent", "transferred", "reviewer-1"), overviewRecord("received", "acknowledged", "reviewer-1"), overviewRecord("reconciled", "reconciled", "reviewer-1"),
+];
+const overviewReviews = ["closed", "ready", "sent", "received", "reconciled"].map((record_id) => ({ record_id, reviewed_at: "2026-08-16T00:00:00.000Z" }));
+const overviewTransfers = [
+  { record_id: "sent", status: "delivered" as const, transferred_at: "2026-08-16T04:00:00.000Z", created_at: "2026-08-16T04:00:00.000Z" },
+  { record_id: "received", status: "acknowledged" as const, transferred_at: "2026-08-16T04:00:00.000Z", acknowledged_at: "2026-08-16T05:00:00.000Z", created_at: "2026-08-16T04:00:00.000Z" },
+];
+const overviewMetrics = derivePvOverviewMetrics({
+  records: overviewRecords, reviews: overviewReviews, transfers: overviewTransfers,
+  reviewLists: [{ assigned_to: "reviewer-2", items: [{ record_id: "list-assigned" }] }],
+  screeningRuns: [{ status: "completed", nil_return: true }, { status: "completed", nil_return: false }], now: new Date("2026-08-16T20:00:00.000Z"),
+}).metrics;
+assert(overviewMetrics.totalRecords === 8 && overviewMetrics.reviewedRecords === 5, "PV overview totals must account for every flagged and human-reviewed record exactly once.");
+assert(overviewMetrics.unassignedActiveClock === 1, "Only unreviewed and unassigned records with an active day-zero clock belong in the unassigned-clock card.");
+assert(overviewMetrics.awaitingReview === 3 && overviewMetrics.screeningCompliance === 87.5, "Assignment and review actions must update the awaiting-review and compliance cards without hiding open records.");
+assert(overviewMetrics.transferred === 3 && overviewMetrics.unacknowledged === 1, "Transferred totals must survive acknowledgment while the unacknowledged card retains only sponsor responses still pending.");
+assert(overviewMetrics.approachingSla === 4 && overviewMetrics.nilReturns === 1 && overviewMetrics.reconciliationCompletion === 13, "SLA, nil-return, and reconciliation cards must reflect their current workflow stages.");
+const postReviewMetrics = derivePvOverviewMetrics({
+  records: overviewRecords.map((record) => record.id === "unassigned" ? { ...record, status: "not_relevant" as const, assigned_reviewer_id: "reviewer-3" } : record),
+  reviews: [...overviewReviews, { record_id: "unassigned", reviewed_at: "2026-08-16T20:30:00.000Z" }], transfers: overviewTransfers,
+  reviewLists: [{ assigned_to: "reviewer-2", items: [{ record_id: "list-assigned" }] }], now: new Date("2026-08-16T21:00:00.000Z"),
+}).metrics;
+assert(postReviewMetrics.unassignedActiveClock === 0 && postReviewMetrics.awaitingReview === 2 && postReviewMetrics.reviewedRecords === 6 && postReviewMetrics.screeningCompliance === 100, "Completing review must immediately reconcile every affected overview card.");
+
 const parsedCsv = parsePvCsv(new TextEncoder().encode([
   "Date,Text,URL,ID",
   '2026-08-01T12:00:00Z,"Product A caused a rash, then hives",https://example.test/post-1,csv-1',
@@ -117,7 +150,7 @@ assert(!workbench.includes("Eight connected PV services"), "The removed PV servi
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {
   assert(workbench.toLowerCase().includes(phrase.toLowerCase()), `PV workbench is missing required UX: ${phrase}`);
 }
-for (const phrase of ["Sources overdue for screening", "Potential records awaiting human review", "source-level operational queue", "candidates for qualified human assessment", "PV_LIFECYCLE_TOOLTIPS"]) {
+for (const phrase of ["Flagged records", "Human review completed", "Unassigned records with active clocks", "Potential records awaiting human review", "Not reviewed or assigned", "PV_LIFECYCLE_TOOLTIPS"]) {
   assert(workbench.includes(phrase), `PV Compliance Overview is missing clarified stage guidance: ${phrase}`);
 }
 for (const phrase of ["combined screening score", "confidence that the mention refers", "potential safety-relevant situation", "Origin provides provenance"]) {
@@ -170,6 +203,7 @@ assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a 
 assert(!importRoute.includes('form.get("identifiedAt")'), "The client must not control the reviewer-identification timestamp.");
 const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
 assert(pvService.includes("Math.min(1000, input.limit || 500)"), "The PV review queue must expose the complete 271-record Botulinum candidate set instead of silently capping it at 100.");
+assert(pvService.includes("listAllPvRecordsForOverview") && pvService.includes("derivePvOverviewMetrics"), "Compliance Overview must use the complete record ledger and lifecycle-derived metrics.");
 assert(pvService.includes('adverseEventOntology: review.validated_ae_ontology') && pvService.includes('ontologyStatus: "reviewer_validated"'), "Sponsor transfers must include the final reviewer-approved adverse-event ontology.");
 assert(!pvService.includes("proposedAdverseEventOntology") && !pvService.includes("validatedAdverseEventOntology"), "Sponsor transfers must not expose parallel proposed and validated ontology fields.");
 for (const contract of ["createPvReviewList", "listPvReviewLists", "updatePvReviewList", "review_list.share_email", "review_list.export"]) assert(pvService.includes(contract), `PV aggregate-review service is missing ${contract}.`);
