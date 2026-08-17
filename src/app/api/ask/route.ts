@@ -247,6 +247,8 @@ export async function POST(req: NextRequest) {
     const curatedThemes = normalizeCuratedThemes(hybridData?.curatedThemes || []);
     const liveThemes = normalizeLiveThemes(hybridData?.liveThemes || []);
     const matches = hybridData?.matches || [];
+    const curatedIntelligenceAvailable =
+      curatedThemes.length > 0 || curatedInsights.length > 0;
 
     const canonicalData =
       loadCanonicalFindingsForAsk(
@@ -361,6 +363,7 @@ export async function POST(req: NextRequest) {
       answer,
       citationManifest,
       relevantCuratedInsights: curatedInsights,
+      curatedIntelligenceAvailable,
       analyticalStatus:
         !themeIntelligenceGranted
           ? "forbidden"

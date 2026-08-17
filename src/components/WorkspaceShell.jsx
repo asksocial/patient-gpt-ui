@@ -397,6 +397,10 @@ function AssistantAnswer({
   const liveThemes = answer?.liveData?.themes || [];
   const emergingNarratives = answer?.liveData?.emergingNarratives || [];
   const recommendedActions = answer?.recommendedActions || [];
+  const curatedIntelligenceAvailable =
+    typeof responsePayload?.curatedIntelligenceAvailable === "boolean"
+      ? responsePayload.curatedIntelligenceAvailable
+      : curatedInsights.length > 0 || curatedThemes.length > 0;
 
   if (!answer) return null;
 
@@ -415,14 +419,20 @@ function AssistantAnswer({
 
       <KeyMarketDifferences insights={curatedInsights} />
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Panel
-          title="From Curated Intelligence"
-          subtitle="Baseline themes from existing reports"
-        >
-          <div className="space-y-4">
-            {curatedThemes.length ? (
-              curatedThemes.map((theme, idx) => (
+      <div
+        className={
+          curatedIntelligenceAvailable
+            ? "grid gap-4 xl:grid-cols-2"
+            : "grid gap-4"
+        }
+      >
+        {curatedIntelligenceAvailable ? (
+          <Panel
+            title="From Curated Intelligence"
+            subtitle="Baseline themes from existing reports"
+          >
+            <div className="space-y-4">
+              {curatedThemes.map((theme, idx) => (
                 <div
                   key={`${theme.name}-${idx}`}
                   className="rounded-xl border border-white/10 bg-black/30 p-4"
@@ -434,14 +444,10 @@ function AssistantAnswer({
                     {theme.description}
                   </p>
                 </div>
-              ))
-            ) : (
-              <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-white/40">
-                No baseline report themes were available for this response.
-              </div>
-            )}
-          </div>
-        </Panel>
+              ))}
+            </div>
+          </Panel>
+        ) : null}
 
         <Panel
           title="What’s Emerging In Social Data"
@@ -1244,6 +1250,8 @@ export default function WorkspaceShell() {
                   message.content.relevantCuratedInsights ||
                   message.content.curatedInsights ||
                   [],
+                curatedIntelligenceAvailable:
+                  message.content.curatedIntelligenceAvailable,
                 executiveIntelligence:
                   message.content.executiveIntelligence || null,
                 analyticalStatus:
@@ -1516,6 +1524,8 @@ export default function WorkspaceShell() {
       const responsePayload = {
         answer: data.answer,
         relevantCuratedInsights: data.relevantCuratedInsights || [],
+        curatedIntelligenceAvailable:
+          data.curatedIntelligenceAvailable === true,
         debug: data.debug || {},
         executiveIntelligence:
           data.executiveIntelligence ||
@@ -1559,6 +1569,8 @@ export default function WorkspaceShell() {
           content: {
             answer: data.answer,
             relevantCuratedInsights: data.relevantCuratedInsights || [],
+            curatedIntelligenceAvailable:
+              responsePayload.curatedIntelligenceAvailable,
             executiveIntelligence:
               responsePayload.executiveIntelligence,
             analyticalStatus:
