@@ -195,6 +195,10 @@ assert(reviewQueueSource.includes("await onRefreshWorkspaces()") && reviewQueueS
 assert(workbench.includes("PV_REVIEW_WINDOW_MS = 15 * 24 * 60 * 60 * 1000") && reviewQueueSource.includes("reviewCountdown(record, nowMs)"), "The queue day-zero clock must count down from reviewer identification plus 15 days.");
 assert(reviewQueueSource.includes("setInterval(() => setNowMs(Date.now()), 30_000)"), "The queue day-zero countdown must update automatically as time elapses.");
 assert(reviewQueueSource.includes("PV_SCORE_TOOLTIP") && workbench.includes("It is not an adverse-event determination"), "The queue score column must explain how the screening score should be interpreted.");
+assert(reviewQueueSource.includes("const [scoreSortDirection, setScoreSortDirection] = useState(null)") && reviewQueueSource.includes("function sortByScore()"), "The queue Score header must provide an interactive sorting control.");
+assert(reviewQueueSource.includes('current === "desc" ? "asc" : "desc"') && reviewQueueSource.includes('"highest to lowest"'), "The first Score-header action must sort mentions from highest to lowest and allow users to reverse the order.");
+assert(reviewQueueSource.includes("const sortedRecords = useMemo") && reviewQueueSource.includes("const pageRecords = sortedRecords.slice"), "Score sorting must apply to the complete PV queue before pagination.");
+assert(reviewQueueSource.includes('aria-sort={head === "Score"') && reviewQueueSource.includes('className="inline-flex cursor-pointer'), "The sortable Score header must expose its direction accessibly and display the interaction cursor.");
 assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('sourceType.endsWith("_csv")'), "CSV-origin PV queue records must be labeled Social.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
 assert(!workbench.includes('disabled={busy.startsWith("review:") || !rationale.trim()}'), "PV decision buttons must not be silently disabled while the rationale is empty.");
