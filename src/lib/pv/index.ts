@@ -7,3 +7,4 @@ export * from "./ontology";
 export * from "./csvImport";
 export * from "./botulinumCorpus";
 export * from "./overview";
+export * from "./sponsorReport";

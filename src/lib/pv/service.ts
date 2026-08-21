@@ -496,6 +496,75 @@ export async function listPvRecords(principal: PlatformPrincipal, input: { statu
   }));
 }
 
+export async function listPvSponsorCases(principal: PlatformPrincipal, therapeuticArea?: string) {
+  assertPrincipal(principal);
+  const supabase = getSupabaseServerClient();
+  const { data: reviews, error: reviewError } = await supabase.from("pv_reviews").select("*")
+    .eq("principal_id", principal.principalId).eq("decision", "escalate")
+    .order("reviewed_at", { ascending: false }).limit(1000);
+  if (reviewError) throw new Error(`Failed to load sponsor escalation reviews: ${reviewError.message}`);
+  const recordIds = [...new Set((reviews || []).map((review: any) => String(review.record_id)))];
+  if (!recordIds.length) return [];
+  const idChunks = Array.from({ length: Math.ceil(recordIds.length / 200) }, (_, index) => recordIds.slice(index * 200, (index + 1) * 200));
+  const [recordResults, transferResults] = await Promise.all([
+    Promise.all(idChunks.map((ids) => {
+      let query = supabase.from("pv_records").select("*").eq("principal_id", principal.principalId).in("id", ids);
+      if (therapeuticArea) query = query.eq("therapeutic_area", therapeuticArea);
+      return query;
+    })),
+    Promise.all(idChunks.map((ids) => supabase.from("pv_transfers").select("*")
+      .eq("principal_id", principal.principalId).in("record_id", ids).order("created_at", { ascending: false }))),
+  ]);
+  const relatedError = [...recordResults, ...transferResults].find((result) => result.error)?.error;
+  if (relatedError) throw new Error(`Failed to assemble sponsor escalation cases: ${relatedError.message}`);
+  const recordById = new Map(recordResults.flatMap((result) => result.data || []).map((record: any) => [String(record.id), record]));
+  const latestTransferByRecord = new Map<string, any>();
+  for (const transfer of transferResults.flatMap((result) => result.data || [])) {
+    const recordId = String(transfer.record_id);
+    if (!latestTransferByRecord.has(recordId)) latestTransferByRecord.set(recordId, transfer);
+  }
+  return (reviews || []).flatMap((review: any) => {
+    const record: any = recordById.get(String(review.record_id));
+    if (!record) return [];
+    return [{
+      id: review.id,
+      record: {
+        ...record,
+        publication_timestamp: record.posted_at,
+        collection_timestamp: record.ingested_at,
+        algorithm_timestamp: record.created_at || record.identified_at,
+        review_timestamp: record.identified_at,
+        escalation_timestamp: review.reviewed_at,
+      },
+      review,
+      transfer: latestTransferByRecord.get(String(record.id)) || null,
+    }];
+  });
+}
+
+export async function recordPvSponsorReportActivity(
+  principal: PlatformPrincipal,
+  input: { action: "export" | "share"; therapeuticArea?: string; caseIds: string[]; recipientEmail?: string; reportHash?: string }
+) {
+  assertPrincipal(principal);
+  const recipientEmail = input.recipientEmail?.trim().toLowerCase();
+  if (recipientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) throw new Error("Enter a valid sponsor email address.");
+  return appendPvAuditEvent(principal, {
+    action: `sponsor_report.${input.action}`,
+    resourceType: "pv_sponsor_report",
+    resourceId: hashPayload({ therapeuticArea: input.therapeuticArea || "all", caseIds: input.caseIds }),
+    outcome: "completed",
+    metadata: {
+      therapeuticArea: input.therapeuticArea || null,
+      caseCount: input.caseIds.length,
+      caseIds: input.caseIds,
+      recipientEmail: recipientEmail || null,
+      reportHash: input.reportHash || null,
+      standard: "ICH E2D(R1)",
+    },
+  });
+}
+
 async function listAllPvRecordsForOverview(principal: PlatformPrincipal, therapeuticArea?: string) {
   const rows: any[] = [];
   const pageSize = 1000;

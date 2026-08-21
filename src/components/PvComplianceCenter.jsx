@@ -132,6 +132,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   const [sources, setSources] = useState([]);
   const [screenings, setScreenings] = useState([]);
   const [reviewLists, setReviewLists] = useState([]);
+  const [sponsorCases, setSponsorCases] = useState([]);
   const [transfers, setTransfers] = useState([]);
   const [reconciliations, setReconciliations] = useState([]);
   const [libraries, setLibraries] = useState([]);
@@ -144,8 +145,8 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   const loadAll = useCallback(async () => {
     setError("");
     try {
-      const endpoints = ["overview", "records", "sources", "screenings", "transfers", "reconciliation", "library", "review-lists"];
-      const scopedEndpoints = new Set(["overview", "records", "review-lists"]);
+      const endpoints = ["overview", "records", "sources", "screenings", "transfers", "reconciliation", "library", "review-lists", "sponsor-reports"];
+      const scopedEndpoints = new Set(["overview", "records", "review-lists", "sponsor-reports"]);
       const scope = therapeuticArea ? `?therapeuticArea=${encodeURIComponent(therapeuticArea)}` : "";
       const responses = await Promise.all(endpoints.map((endpoint) => fetch(`/api/pv/${endpoint}${scopedEndpoints.has(endpoint) ? scope : ""}`, { cache: "no-store" })));
       const payloads = await Promise.all(responses.map((response) => response.json()));
@@ -160,6 +161,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
       setLibraries(payloads[6].libraries || []);
       setConcepts(payloads[6].concepts || []);
       setReviewLists(payloads[7].lists || []);
+      setSponsorCases(payloads[8].cases || []);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "PV Compliance could not be loaded.");
     }
@@ -216,7 +218,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
 
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
-      {tab === "screening" ? <ScreeningStatus sources={sources} screenings={screenings} selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReturnToQueue={() => setTab("queue")} /> : null}
+      {tab === "screening" ? <ScreeningStatus therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} sources={sources} screenings={screenings} selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReturnToQueue={() => setTab("queue")} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
       {tab === "reconciliation" ? <Reconciliation runs={reconciliations} busy={busy} onMutate={mutate} /> : null}
       {tab === "sources" ? <SourceRegistry sources={sources} busy={busy} onMutate={mutate} /> : null}
@@ -430,6 +432,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
 
 function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const { record, clock, reviews, transfers, audit } = detail;
+  const retainedOntology = reviews.find((review) => review.decision === "escalate")?.validated_ae_ontology;
   const [productMention, setProductMention] = useState("unclear");
   const [healthExperience, setHealthExperience] = useState("unclear");
   const [selectedClasses, setSelectedClasses] = useState(record.proposed_classifications || []);
@@ -437,7 +440,8 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const [reviewError, setReviewError] = useState("");
   const [destination, setDestination] = useState("");
   const [transferMethod, setTransferMethod] = useState("manual_export");
-  const proposedOntology = record.ae_ontology || {};
+  const proposedOntology = retainedOntology && Object.keys(retainedOntology).length ? retainedOntology : record.ae_ontology || {};
+  const retainedIcsr = proposedOntology.icsrAssessment || {};
   const [ontologyReview, setOntologyReview] = useState({
     productProcedure: proposedOntology.productProcedures?.[0]?.value || record.product_name || "",
     adverseEvent: proposedOntology.adverseEvents?.[0]?.value || record.potential_event || "",
@@ -449,6 +453,27 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
     unexpectedness: proposedOntology.unexpectedness?.value || "unclear",
     causalityType: proposedOntology.causality?.[0]?.value || "temporal_association",
     causalityLanguage: proposedOntology.causality?.[0]?.phrase || "",
+  });
+  const [e2dReview, setE2dReview] = useState({
+    reportType: retainedIcsr.reportType || "undetermined",
+    primarySourceType: retainedIcsr.primarySourceType || "unknown",
+    patientIdentifiable: retainedIcsr.minimumCriteria?.identifiablePatient?.status || "unclear",
+    patientIdentifierBasis: retainedIcsr.minimumCriteria?.identifiablePatient?.evidence || "",
+    reporterIdentifiable: retainedIcsr.minimumCriteria?.identifiableReporter?.status || "unclear",
+    reporterIdentifierBasis: retainedIcsr.minimumCriteria?.identifiableReporter?.evidence || "",
+    seriousnessCriteria: retainedIcsr.seriousnessCriteria || proposedOntology.seriousness?.criteria || [],
+    patientCharacteristics: retainedIcsr.clinicalNarrative?.patientCharacteristics || "",
+    therapyDetails: retainedIcsr.clinicalNarrative?.therapyDetails || "",
+    medicalHistory: retainedIcsr.clinicalNarrative?.medicalHistory || "",
+    concurrentConditions: retainedIcsr.clinicalNarrative?.concurrentConditions || "",
+    clinicalCourse: retainedIcsr.clinicalNarrative?.clinicalCourse || "",
+    diagnosisAndLaboratoryEvidence: retainedIcsr.clinicalNarrative?.diagnosisAndLaboratoryEvidence || "",
+    alternativeCausesAndConfounders: retainedIcsr.clinicalNarrative?.alternativeCausesAndConfounders || "",
+    followUpNeeded: retainedIcsr.followUp?.needed || "unclear",
+    followUpQuestions: retainedIcsr.followUp?.questions || "",
+    duplicateStatus: retainedIcsr.duplicateAssessment?.status || "not_checked",
+    duplicateReference: retainedIcsr.duplicateAssessment?.reference || "",
+    regionalReportingAssessment: retainedIcsr.regionalReportingAssessment || "",
   });
   function validatedOntology() {
     return {
@@ -463,6 +488,29 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       causality: ontologyReview.causalityLanguage ? [{ value: ontologyReview.causalityType, phrase: ontologyReview.causalityLanguage, evidence: ontologyReview.causalityLanguage, confidence: 1 }] : [],
       ontologyVersion: proposedOntology.ontologyVersion || record.ontology_version,
       reviewedByHuman: true,
+      icsrAssessment: {
+        reportType: e2dReview.reportType,
+        primarySourceType: e2dReview.primarySourceType,
+        minimumCriteria: {
+          suspectProduct: { status: productMention, evidence: ontologyReview.productProcedure || record.product_name || "" },
+          adverseEventOrObservation: { status: healthExperience, evidence: ontologyReview.adverseEvent || record.potential_event || selectedClasses.join(", ") },
+          identifiablePatient: { status: e2dReview.patientIdentifiable, evidence: e2dReview.patientIdentifierBasis },
+          identifiableReporter: { status: e2dReview.reporterIdentifiable, evidence: e2dReview.reporterIdentifierBasis },
+        },
+        seriousnessCriteria: e2dReview.seriousnessCriteria,
+        clinicalNarrative: {
+          patientCharacteristics: e2dReview.patientCharacteristics,
+          therapyDetails: e2dReview.therapyDetails,
+          medicalHistory: e2dReview.medicalHistory,
+          concurrentConditions: e2dReview.concurrentConditions,
+          clinicalCourse: e2dReview.clinicalCourse,
+          diagnosisAndLaboratoryEvidence: e2dReview.diagnosisAndLaboratoryEvidence,
+          alternativeCausesAndConfounders: e2dReview.alternativeCausesAndConfounders,
+        },
+        followUp: { needed: e2dReview.followUpNeeded, questions: e2dReview.followUpQuestions },
+        duplicateAssessment: { status: e2dReview.duplicateStatus, reference: e2dReview.duplicateReference },
+        regionalReportingAssessment: e2dReview.regionalReportingAssessment,
+      },
     };
   }
   function toggleClassification(value) { setSelectedClasses((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]); }
@@ -484,7 +532,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       <Card title={`PV Record ${record.id.slice(0, 8)}`} subtitle="Original evidence is immutable. Translations, review decisions, and workflow events are stored separately.">
         <div className="space-y-4"><div className="rounded-xl border border-white/10 bg-black/40 p-4"><div className="flex flex-wrap items-center gap-2"><ToneBadge>{record.source_type}</ToneBadge><ToneBadge>{record.original_language}</ToneBadge><ToneBadge tone={record.priority === "critical" ? "breached" : record.priority === "high" ? "approaching" : "neutral"}>{record.priority} priority</ToneBadge></div><blockquote className="mt-4 border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{record.original_verbatim}</blockquote><div className="mt-4 grid gap-3 text-xs sm:grid-cols-2"><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Original post date</p><p className="mt-1 text-white/65">{formatDate(record.posted_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.posted_at_source_column ? `CSV date column: ${record.posted_at_source_column}${record.posted_at_raw_value ? ` · Raw: ${record.posted_at_raw_value}` : ""}` : "Captured from the source record"}</p></div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Reviewer-identification date</p><p className="mt-1 text-cyan-100/75">{formatDate(record.identified_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.import_batch_id ? "Server time when the CSV became available to this AskSocial tenant" : "Timestamp when AskSocial identified the content for review"}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Ingested</p><p className="mt-1 text-white/65">{formatDate(record.ingested_at)}</p>{record.import_batch_id ? <p className="mt-1 text-[10px] text-white/25">Batch {record.import_batch_id.slice(0, 8)} · CSV row {record.source_row_number}</p> : null}</div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Governing day-zero clock</p><p className="mt-1 text-white/65">{record.day_zero_basis === "identified_at" ? "Reviewer identification" : "Original post date"}</p><p className="mt-1 text-[10px] leading-4 text-white/25">{record.day_zero_reason || "Determined by the applicable source and SLA policy."}</p></div></div>{String(record.source_url || "").startsWith("http") ? <a href={record.source_url} target="_blank" rel="noreferrer" className="inline-block text-xs text-cyan-300">Open source ↗</a> : null}<p className="mt-3 break-all text-[10px] text-white/20">Evidence hash {record.evidence_hash}</p></div>
         <div className="grid gap-3 md:grid-cols-4"><Metric label="PV detection score" value={`${record.detection_score}/100`} tooltip="AskSocial's combined screening score based on product, health-experience, context, and configured detection signals. It prioritizes the record for human review and is not an adverse-event determination." /><Metric label="Product confidence" value={`${record.product_confidence}%`} tooltip="AskSocial's confidence that the mention refers to the relevant product or procedure. A qualified reviewer must confirm the product relationship against the source evidence." /><Metric label="Health experience" value={`${record.health_experience_confidence}%`} tooltip="AskSocial's confidence that the mention describes a health experience or potential safety-relevant situation. This score supports triage and does not establish an adverse event." /><Metric label="Evidence origin" value={evidenceOriginLabel(record)} tooltip="Where the evidence entered AskSocial. Mentions ingested from CSV social-data files are labeled Social; other origins retain their governed provenance label. Origin provides provenance and does not indicate evidence quality or causality." /></div>
-        {!['transferred', 'acknowledged', 'reconciled'].includes(record.status) ? <PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /> : null}
+        {!['transferred', 'acknowledged', 'reconciled'].includes(record.status) ? <><PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /><E2dCaseAssessment value={e2dReview} onChange={setE2dReview} /></> : null}
         <div><p className="text-xs font-medium text-white/55">Why AskSocial surfaced this</p><div className="mt-2 space-y-2">{(record.detection_rationale || []).map((reason, index) => <p key={index} className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-xs leading-5 text-white/40">{reason}</p>)}</div></div>
         <div><p className="text-xs font-medium text-white/55">Matched concepts</p><div className="mt-2 flex flex-wrap gap-2">{(record.matched_concepts || []).map((match) => <ToneBadge key={`${match.conceptId}-${match.matchedTerm}`}>{label(match.category)} · {match.matchedTerm}</ToneBadge>)}</div></div></div>
       </Card>
@@ -528,20 +576,93 @@ function PvOntologyReview({ value, onChange }) {
   return <section className="rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/75">Adverse-event ontology review</h3><p className="mt-1 text-xs leading-5 text-white/35">Confirm or correct every extracted field against the verbatim and applicable reference label before escalation. These reviewer-approved values become the final ontology in the sponsor package.</p><div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4"><OntologyText labelText="Product / procedure" {...field("productProcedure")} /><OntologyText labelText="Adverse event" {...field("adverseEvent")} /><OntologySelect labelText="Seriousness" options={AE_ONTOLOGY_OPTIONS.seriousness} {...field("seriousness")} /><OntologySelect labelText="Outcome" options={AE_ONTOLOGY_OPTIONS.outcome} {...field("outcome")} /><OntologySelect labelText="Time to onset" options={AE_ONTOLOGY_OPTIONS.timeToOnset} {...field("timeToOnset")} /><OntologyText labelText="Onset detail" {...field("timeToOnsetDetail")} /><OntologySelect labelText="Severity" options={AE_ONTOLOGY_OPTIONS.severity} {...field("severity")} /><OntologySelect labelText="Unexpectedness" options={AE_ONTOLOGY_OPTIONS.unexpectedness} {...field("unexpectedness")} /><OntologySelect labelText="Causality type" options={["temporal_association", "possible_attribution", "reported_attribution", "denied"]} {...field("causalityType")} /><OntologySelect labelText="Causality language" options={causalityLanguageOptions} emptyLabel="Not stated / unclear" {...field("causalityLanguage")} /></div></section>;
 }
 
+function E2dCaseAssessment({ value, onChange }) {
+  const seriousnessCriteria = ["death", "life_threatening", "hospitalization", "disability_or_incapacity", "congenital_anomaly_or_birth_defect", "important_medical_event"];
+  function field(key) { return { value: value[key], onChange: (event) => onChange((current) => ({ ...current, [key]: event.target.value })) }; }
+  function toggleCriterion(criterion) {
+    onChange((current) => ({
+      ...current,
+      seriousnessCriteria: current.seriousnessCriteria.includes(criterion)
+        ? current.seriousnessCriteria.filter((item) => item !== criterion)
+        : [...current.seriousnessCriteria, criterion],
+    }));
+  }
+  return <section className="rounded-2xl border border-violet-400/15 bg-violet-400/[0.04] p-4">
+    <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-100/75">ICH E2D(R1) case assessment</h3>
+    <p className="mt-1 text-xs leading-5 text-white/35">Document minimum ICSR criteria, clinical narrative inputs, follow-up gaps, and duplicate assessment. Unknown information remains explicitly missing and is never inferred from a social handle or unverified post.</p>
+    <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <OntologySelect labelText="Report type" options={["undetermined", "spontaneous", "solicited"]} {...field("reportType")} />
+      <OntologySelect labelText="Primary source type" options={["unknown", "consumer", "healthcare_professional", "other"]} {...field("primarySourceType")} />
+      <DecisionSelect labelText="Identifiable patient?" value={value.patientIdentifiable} onChange={(patientIdentifiable) => onChange((current) => ({ ...current, patientIdentifiable }))} />
+      <DecisionSelect labelText="Identifiable reporter?" value={value.reporterIdentifiable} onChange={(reporterIdentifiable) => onChange((current) => ({ ...current, reporterIdentifiable }))} />
+      <OntologyText labelText="Patient identifier basis" {...field("patientIdentifierBasis")} />
+      <OntologyText labelText="Reporter identifier basis" {...field("reporterIdentifierBasis")} />
+      <OntologySelect labelText="Follow-up needed" options={["unclear", "yes", "no"]} {...field("followUpNeeded")} />
+      <OntologySelect labelText="Duplicate assessment" options={["not_checked", "no_match", "potential_duplicate", "confirmed_duplicate"]} {...field("duplicateStatus")} />
+      <OntologyText labelText="Duplicate / linked-case reference" {...field("duplicateReference")} />
+    </div>
+    <fieldset className="mt-5"><legend className="text-xs font-medium text-white/55">Seriousness criteria (select every criterion supported by the source)</legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{seriousnessCriteria.map((criterion) => <label key={criterion} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.seriousnessCriteria.includes(criterion)} onChange={() => toggleCriterion(criterion)} />{label(criterion)}</label>)}</div></fieldset>
+    <div className="mt-5 grid gap-3 md:grid-cols-2">
+      <E2dTextArea labelText="Patient characteristics" {...field("patientCharacteristics")} placeholder="Age/category, sex, gestational age, initials or another permitted identifier, if reported." />
+      <E2dTextArea labelText="Therapy details" {...field("therapyDetails")} placeholder="Product, dose, route, indication, treatment dates, concomitant therapy, if reported." />
+      <E2dTextArea labelText="Medical history" {...field("medicalHistory")} placeholder="Relevant history reported by the source." />
+      <E2dTextArea labelText="Concurrent conditions" {...field("concurrentConditions")} placeholder="Concurrent conditions reported by the source." />
+      <E2dTextArea labelText="Clinical course" {...field("clinicalCourse")} placeholder="Chronological course, interventions and outcome; the source verbatim remains separately preserved." />
+      <E2dTextArea labelText="Diagnosis / laboratory evidence" {...field("diagnosisAndLaboratoryEvidence")} placeholder="Diagnosis, tests, laboratory findings and normal ranges, if reported." />
+      <E2dTextArea labelText="Alternative causes / confounders" {...field("alternativeCausesAndConfounders")} placeholder="Alternative explanations or confounders considered during review." />
+      <E2dTextArea labelText="Targeted follow-up questions" {...field("followUpQuestions")} placeholder="Specific missing information to request where follow-up is permissible and feasible." />
+      <E2dTextArea labelText="Regional / local reporting assessment" {...field("regionalReportingAssessment")} placeholder="Document applicable reporting conclusion or retain as pending sponsor assessment." className="md:col-span-2" />
+    </div>
+  </section>;
+}
+
 function OntologyText({ labelText, value, onChange }) { return <label className="text-xs text-white/40">{labelText}<input value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
 function OntologySelect({ labelText, options, value, onChange, emptyLabel = "Unclear" }) { return <label className="text-xs text-white/40">{labelText}<select value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white">{options.map((option) => <option key={option || "empty"} value={option}>{option ? label(option) : emptyLabel}</option>)}</select></label>; }
+function E2dTextArea({ labelText, value, onChange, placeholder, className = "" }) { return <label className={`text-xs text-white/40 ${className}`}>{labelText}<textarea value={value} onChange={onChange} rows={3} placeholder={placeholder} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
 
-function ScreeningStatus({ sources, screenings, selected, busy, onMutate, onRefreshRecord, onReturnToQueue }) {
+function ScreeningStatus({ therapeuticArea, sponsorCases, sources, screenings, selected, busy, onMutate, onRefreshRecord, onReturnToQueue }) {
   const [sourceId, setSourceId] = useState("");
   const [items, setItems] = useState(0);
   const [potential, setPotential] = useState(0);
+  const [sponsorEmail, setSponsorEmail] = useState("");
   const now = new Date().toISOString();
+  const sponsorReportScope = therapeuticArea ? `?therapeuticArea=${encodeURIComponent(therapeuticArea)}` : "";
   async function submit(event) { event.preventDefault(); await onMutate("/api/pv/screenings", { payload: { sourceId, screenedFrom: new Date(Date.now() - 86400000).toISOString(), screenedUntil: now, itemsScreened: items, potentialRecords: potential, nilReturn: potential === 0 } }, "screening", "Screening run and nil-return status recorded."); }
+  async function shareSponsorReport() {
+    const recipientEmail = sponsorEmail.trim();
+    const data = await onMutate("/api/pv/sponsor-reports", { payload: { therapeuticArea, recipientEmail } }, "sponsor-report:share", "Sponsor report share recorded in the governed PV audit trail.");
+    if (!data || data.delivery === "provider") return;
+    const download = document.createElement("a");
+    download.href = `/api/pv/sponsor-reports/export${sponsorReportScope}`;
+    download.download = data.fileName || "asksocial-pv-sponsor-screening-report.pdf";
+    document.body.appendChild(download);
+    download.click();
+    download.remove();
+    const subject = encodeURIComponent(`AskSocial PV sponsor screening report - ${therapeuticArea || "All therapeutic areas"}`);
+    const body = encodeURIComponent(`Attached is the AskSocial ICH E2D(R1) sponsor screening report containing ${data.caseCount} escalated mention${data.caseCount === 1 ? "" : "s"}.\n\nThe PDF has been downloaded to this device. Please attach it before sending. This working document supports PV intake and does not replace qualified medical review or applicable regional reporting requirements.`);
+    window.location.href = `mailto:${encodeURIComponent(recipientEmail)}?subject=${subject}&body=${body}`;
+  }
   return <div className="space-y-5">
     {selected ? <section id="pv-screening-structured-review" className="space-y-5 scroll-mt-6">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-4"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">Screening Status · Structured review</p><p className="mt-1 text-sm text-white/45">Confirm the extracted safety ontology, record the reviewer decision, and preserve the governed audit trail.</p></div><button type="button" onClick={onReturnToQueue} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60">Return to Review Queue</button></div>
       <RecordWorkbench key={selected.record.id} detail={selected} busy={busy} onMutate={onMutate} onRefresh={() => onRefreshRecord(selected.record.id)} />
     </section> : null}
+    <Card title="Escalated sponsor assessments" subtitle="Every Escalate to Sponsor decision is aggregated here. The PDF preserves the source verbatim, review provenance, all available ICH E2D(R1) case data, and clearly marks information that requires follow-up." actions={<ToneBadge tone={sponsorCases.length ? "complete" : "neutral"}>{sponsorCases.length} screened mention{sponsorCases.length === 1 ? "" : "s"}</ToneBadge>}>
+      {sponsorCases.length ? <div className="space-y-4">
+        <div className="max-h-[30rem] overflow-auto rounded-xl border border-white/10"><table className="w-full min-w-[980px] text-left text-xs"><thead className="sticky top-0 bg-[#090909] text-white/35"><tr>{["Product / procedure", "Adverse event", "Review timestamp", "Reviewer", "Minimum criteria", "Transfer status"].map((item) => <th key={item} className="px-3 py-3">{item}</th>)}</tr></thead><tbody>{sponsorCases.map((item) => {
+          const ontology = item.review?.validated_ae_ontology || {};
+          const criteria = ontology.icsrAssessment?.minimumCriteria || {};
+          const criteriaMet = [criteria.suspectProduct, criteria.adverseEventOrObservation, criteria.identifiablePatient, criteria.identifiableReporter].every((criterion) => criterion?.status === "yes");
+          return <tr key={item.id} className="border-t border-white/[0.06] text-white/55"><td className="px-3 py-3 text-white/75">{ontology.productProcedures?.[0]?.value || item.record.product_name || "Unspecified"}</td><td className="px-3 py-3">{ontology.adverseEvents?.[0]?.value || item.record.potential_event || "Unspecified"}</td><td className="px-3 py-3">{formatDate(item.review.reviewed_at)}</td><td className="px-3 py-3">{item.review.reviewer_id}</td><td className="px-3 py-3"><ToneBadge tone={criteriaMet ? "healthy" : "approaching"}>{criteriaMet ? "Complete" : "Follow-up needed"}</ToneBadge></td><td className="px-3 py-3">{label(item.transfer?.status || "not_transferred")}</td></tr>;
+        })}</tbody></table></div>
+        <div className="grid gap-3 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4 lg:grid-cols-[auto_1fr_auto] lg:items-end">
+          <a href={`/api/pv/sponsor-reports/export${sponsorReportScope}`} download className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black">Create PDF</a>
+          <label className="text-xs text-white/40">Sponsor email<input type="email" value={sponsorEmail} onChange={(event) => setSponsorEmail(event.target.value)} placeholder="pv@sponsor.com" className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" /></label>
+          <button type="button" onClick={shareSponsorReport} disabled={!sponsorEmail.trim() || busy === "sponsor-report:share"} className="cursor-pointer rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-semibold text-cyan-300 disabled:cursor-not-allowed disabled:opacity-40">{busy === "sponsor-report:share" ? "Preparing…" : "Share PDF via email"}</button>
+        </div>
+        <p className="text-[11px] leading-5 text-white/30">If a governed email provider is configured, AskSocial sends the PDF as an attachment. Otherwise, the PDF downloads and your email client opens with a prepared message so you can attach and send it.</p>
+      </div> : <Empty>Escalated structured reviews will appear here as sponsor-ready assessments.</Empty>}
+    </Card>
     <Card title="Screening Status" subtitle="Cadence is tied to the governed source registry; every completed run records records found or an explicit nil return."><div className="overflow-x-auto">{sources.length ? <table className="w-full min-w-[760px] text-left text-xs"><thead className="text-white/35"><tr>{["Source", "Ownership", "Cadence", "Products", "Markets", "Status"].map((item) => <th className="px-3 py-3" key={item}>{item}</th>)}</tr></thead><tbody>{sources.map((source) => <tr key={source.id} className="border-t border-white/[0.06] text-white/55"><td className="px-3 py-3 text-white/75">{source.name}</td><td className="px-3 py-3">{label(source.ownership_classification)}</td><td className="px-3 py-3">Every {source.cadence_minutes} min</td><td className="px-3 py-3">{source.products?.join(", ") || "—"}</td><td className="px-3 py-3">{source.markets?.join(", ") || "—"}</td><td className="px-3 py-3"><ToneBadge tone={source.active ? "healthy" : "neutral"}>{source.active ? "Active" : "Inactive"}</ToneBadge></td></tr>)}</tbody></table> : <Empty>Add a governed source before recording screening runs.</Empty>}</div></Card>
     <Card title="Record screening outcome" subtitle="A nil return documents that the agreed source was screened and no content required PV review."><form onSubmit={submit} className="grid gap-3 md:grid-cols-4"><select value={sourceId} onChange={(event) => setSourceId(event.target.value)} className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white"><option value="">Select source</option>{sources.map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}</select><input type="number" min="0" value={items} onChange={(event) => setItems(Number(event.target.value))} placeholder="Items screened" className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" /><input type="number" min="0" value={potential} onChange={(event) => setPotential(Number(event.target.value))} placeholder="Potential records" className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" /><button disabled={!sourceId || busy === "screening"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{busy === "screening" ? "Recording…" : potential === 0 ? "Record nil return" : "Complete screening"}</button></form><div className="mt-5 space-y-2">{screenings.slice(0, 12).map((run) => <div key={run.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-xs"><div><p className="text-white/65">{run.pv_sources?.name || run.source_id}</p><p className="mt-1 text-white/30">{run.items_screened} screened · {run.potential_records} routed · {formatDate(run.completed_at)}</p></div><ToneBadge tone={run.status === "completed" ? "healthy" : "breached"}>{run.nil_return ? "Nil return" : label(run.status)}</ToneBadge></div>)}</div></Card>
   </div>;

@@ -114,6 +114,35 @@ export type PvAdverseEventOntology = {
   }>;
   limitations: string[];
   ontologyVersion: string;
+  icsrAssessment?: {
+    reportType: "spontaneous" | "solicited" | "undetermined";
+    primarySourceType: "consumer" | "healthcare_professional" | "other" | "unknown";
+    minimumCriteria: {
+      suspectProduct: { status: "yes" | "no" | "unclear"; evidence?: string };
+      adverseEventOrObservation: { status: "yes" | "no" | "unclear"; evidence?: string };
+      identifiablePatient: { status: "yes" | "no" | "unclear"; evidence?: string };
+      identifiableReporter: { status: "yes" | "no" | "unclear"; evidence?: string };
+    };
+    seriousnessCriteria: string[];
+    clinicalNarrative: {
+      patientCharacteristics?: string;
+      therapyDetails?: string;
+      medicalHistory?: string;
+      concurrentConditions?: string;
+      clinicalCourse?: string;
+      diagnosisAndLaboratoryEvidence?: string;
+      alternativeCausesAndConfounders?: string;
+    };
+    followUp: {
+      needed: "yes" | "no" | "unclear";
+      questions?: string;
+    };
+    duplicateAssessment: {
+      status: "not_checked" | "no_match" | "potential_duplicate" | "confirmed_duplicate";
+      reference?: string;
+    };
+    regionalReportingAssessment?: string;
+  };
 };
 
 export type PvConceptMatch = {

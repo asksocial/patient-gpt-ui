@@ -3,6 +3,7 @@ import path from "node:path";
 import { calculatePvClock, classifyPvContent, derivePvOverviewMetrics, parsePvCsv, reconcilePvOperations, type PvDetectionConcept, type PvRecordStatus } from "../lib/pv";
 import { buildEcosystemNavigation, configurationFromEntitlements, resolveCustomerIntelligenceAccess } from "../lib/intelligence-platform";
 import { resolveEntitlements } from "../lib/entitlements";
+import { createPvSponsorReport } from "../lib/pv/sponsorReport";
 
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
 
@@ -183,6 +184,12 @@ for (const phrase of ["Original post date", "Reviewer-identification date", "Gov
 for (const phrase of ["Screening Status · Structured review", "Continue to structured review", "Return to Review Queue", "pv-screening-structured-review"]) {
   assert(workbench.includes(phrase), `PV structured-review navigation is missing ${phrase}.`);
 }
+for (const phrase of ["ICH E2D(R1) case assessment", "Identifiable patient?", "Identifiable reporter?", "Seriousness criteria", "Targeted follow-up questions", "Duplicate assessment", "Regional / local reporting assessment"]) {
+  assert(workbench.includes(phrase), `PV structured review is missing its E2D(R1) assessment field: ${phrase}.`);
+}
+for (const phrase of ["Escalated sponsor assessments", "Create PDF", "Share PDF via email", "Minimum criteria", "sponsorCases.map"]) {
+  assert(screeningStatusSource.includes(phrase), `Screening Status is missing sponsor-report aggregation UX: ${phrase}.`);
+}
 for (const phrase of ["Full mention", "Save review list", "Save to workspace", "Saved aggregate review lists", "Download CSV", "Share by email", "Assignee email or user ID"]) {
   assert(workbench.includes(phrase), `PV workbench is missing aggregate-review UX: ${phrase}`);
 }
@@ -222,6 +229,7 @@ for (const field of ["publication_timestamp", "collection_timestamp", "algorithm
 assert(pvService.includes('.eq("decision", "escalate")') && pvService.includes("escalationByRecord"), "The Escalation timestamp must come from the first governed escalation review.");
 assert(pvService.includes("listAllPvRecordsForOverview") && pvService.includes("derivePvOverviewMetrics"), "Compliance Overview must use the complete record ledger and lifecycle-derived metrics.");
 assert(pvService.includes('adverseEventOntology: review.validated_ae_ontology') && pvService.includes('ontologyStatus: "reviewer_validated"'), "Sponsor transfers must include the final reviewer-approved adverse-event ontology.");
+assert(pvService.includes("listPvSponsorCases") && pvService.includes("recordPvSponsorReportActivity") && pvService.includes('decision", "escalate'), "Escalated reviews must be aggregated into auditable sponsor reports.");
 assert(!pvService.includes("proposedAdverseEventOntology") && !pvService.includes("validatedAdverseEventOntology"), "Sponsor transfers must not expose parallel proposed and validated ontology fields.");
 for (const contract of ["createPvReviewList", "listPvReviewLists", "updatePvReviewList", "review_list.share_email", "review_list.export"]) assert(pvService.includes(contract), `PV aggregate-review service is missing ${contract}.`);
 const reviewListRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/route.ts"), "utf8");
@@ -234,4 +242,29 @@ for (const phrase of ["PvReviewListDetail", "Assign to another user", "Send list
   assert(workspaceManager.includes(phrase), `Workspace PV review-list UX is missing ${phrase}.`);
 }
 
-console.log("PV Compliance operational quality checks passed.");
+const sponsorReportRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/sponsor-reports/route.ts"), "utf8");
+const sponsorReportExportRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/sponsor-reports/export/route.ts"), "utf8");
+const sponsorReportSource = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/sponsorReport.ts"), "utf8");
+for (const phrase of ["publication timestamp", "collection timestamp", "algorithm timestamp", "review / day-zero timestamp", "escalation timestamp", "ICH E2D(R1) minimum ICSR criteria", "identifiable patient", "identifiable reporter", "unfiltered primary-source evidence", "seriousness criteria", "stand-alone clinical narrative inputs", "duplicate assessment", "targeted follow-up questions", "regional / local reporting assessment"]) {
+  assert(sponsorReportSource.toLowerCase().includes(phrase.toLowerCase()), `Sponsor PDF is missing E2D(R1) report content: ${phrase}.`);
+}
+assert(sponsorReportExportRoute.includes('"Content-Type": "application/pdf"') && sponsorReportExportRoute.includes("recordPvSponsorReportActivity"), "Sponsor-report export must return an audited PDF.");
+assert(sponsorReportRoute.includes("RESEND_API_KEY") && sponsorReportRoute.includes("PV_SPONSOR_FROM_EMAIL") && sponsorReportRoute.includes('transferMethod: "secure_email"'), "Sponsor-report sharing must support governed email attachment delivery and transfer provenance.");
+void (async () => {
+  const sampleSponsorPdf = await createPvSponsorReport({
+    therapeuticArea: "Test area",
+    generatedBy: "reviewer-1",
+    generatedAt: "2026-08-21T12:00:00.000Z",
+    cases: [{
+      id: "review-1",
+      record: { id: "record-1", status: "ready_for_transfer", therapeutic_area: "Test area", product_name: "Product A", potential_event: "Rash", source_type: "social", source_url: "https://example.test/post", original_verbatim: "I developed a rash after Product A.", original_language: "en", posted_at: "2026-08-20T10:00:00.000Z", ingested_at: "2026-08-20T11:00:00.000Z", identified_at: "2026-08-20T12:00:00.000Z", created_at: "2026-08-20T11:05:00.000Z", evidence_hash: "evidence", classifier_version: "1", library_version: 1, ontology_version: "1" },
+      review: { id: "review-1", reviewer_id: "reviewer-1", reviewed_at: "2026-08-20T12:00:00.000Z", classifications: ["adverse_event"], rationale: "Product and event supported by verbatim.", validated_ae_ontology: { productProcedures: [{ value: "Product A" }], adverseEvents: [{ value: "Rash" }], seriousness: { value: "non_serious" }, icsrAssessment: { reportType: "spontaneous", primarySourceType: "consumer", minimumCriteria: { suspectProduct: { status: "yes" }, adverseEventOrObservation: { status: "yes" }, identifiablePatient: { status: "unclear" }, identifiableReporter: { status: "unclear" } }, seriousnessCriteria: [], clinicalNarrative: {}, followUp: { needed: "yes", questions: "Obtain patient and reporter identifiers." }, duplicateAssessment: { status: "not_checked" } } } },
+      transfer: null,
+    }],
+  });
+  assert(Buffer.from(sampleSponsorPdf.bytes).subarray(0, 5).toString() === "%PDF-", "Sponsor report generation must produce a valid PDF document.");
+  console.log("PV Compliance operational quality checks passed.");
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
