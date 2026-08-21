@@ -148,12 +148,32 @@ if (
     ">\n                Executive brief\n"
   ) ||
   !workspaceShell.includes(
-    ">\n                Workspace\n              </div>"
+    ">\n                  AskSocial\n                </div>"
+  ) ||
+  !workspaceShell.includes(
+    ">\n                  Workspace\n                </div>"
   )
 ) {
   throw new Error(
     "The Workspace left rail must retain its identity while omitting redundant Conversation and Executive Brief buttons."
   );
+}
+
+for (const contract of [
+  "const [leftRailCollapsed, setLeftRailCollapsed] = useState(false)",
+  "function toggleLeftRail()",
+  'aria-label="Collapse left rail"',
+  'aria-label="Show left rail"',
+  'id="workspace-left-rail"',
+  '"grid min-h-screen lg:grid-cols-[1fr]"',
+  '"grid min-h-screen lg:grid-cols-[320px_1fr]"',
+  'className="flex min-h-screen min-w-0 flex-col"',
+]) {
+  if (!workspaceShell.includes(contract)) {
+    throw new Error(
+      `The Workspace left rail is missing its responsive collapse contract: ${contract}`
+    );
+  }
 }
 
 const modeOptions =

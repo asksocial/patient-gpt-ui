@@ -834,6 +834,7 @@ export default function WorkspaceShell() {
   const [workspaces, setWorkspaces] = useState([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState("");
   const [workspaceSaveStatus, setWorkspaceSaveStatus] = useState("idle");
+  const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) || null,
@@ -1651,18 +1652,46 @@ export default function WorkspaceShell() {
     submitQuestion(question);
   }
 
+  function toggleLeftRail() {
+    setLeftRailCollapsed((current) => !current);
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="grid min-h-screen lg:grid-cols-[320px_1fr]">
-        <aside className="border-r border-white/10 bg-black/80 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
+      <div
+        className={
+          leftRailCollapsed
+            ? "grid min-h-screen lg:grid-cols-[1fr]"
+            : "grid min-h-screen lg:grid-cols-[320px_1fr]"
+        }
+      >
+        <aside
+          id="workspace-left-rail"
+          aria-hidden={leftRailCollapsed}
+          className={`${leftRailCollapsed ? "hidden" : "block"} border-r border-white/10 bg-black/80 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto`}
+        >
           <div className="flex min-h-full flex-col p-5">
-            <div>
-              <div className="text-2xl font-semibold tracking-tight">
-                AskSocial
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-2xl font-semibold tracking-tight">
+                  AskSocial
+                </div>
+                <div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/40">
+                  Workspace
+                </div>
               </div>
-              <div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/40">
-                Workspace
-              </div>
+              <button
+                type="button"
+                onClick={toggleLeftRail}
+                aria-label="Collapse left rail"
+                aria-controls="workspace-left-rail"
+                aria-expanded="true"
+                title="Collapse left rail"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-white/10 px-2.5 py-2 text-[11px] text-white/45 transition hover:border-white/20 hover:text-white/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+              >
+                <span>Collapse</span>
+                <span aria-hidden="true">‹</span>
+              </button>
             </div>
 
             <div className="mt-7">
@@ -1884,23 +1913,39 @@ export default function WorkspaceShell() {
           </div>
         </aside>
 
-        <main className="flex min-h-screen flex-col">
+        <main className="flex min-h-screen min-w-0 flex-col">
           <header className="order-1 sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
-            <div className="mb-5 border-b border-white/10 pb-4">
-              <EcosystemNavigation
-                access={
-                  intelligenceAccess
-                }
-                isAdmin={
-                  entitlements?.isAdmin
-                }
-                activeItem={
-                  activeDestination
-                }
-                onNavigate={
-                  handleNavigation
-                }
-              />
+            <div className="mb-5 flex items-start gap-3 border-b border-white/10 pb-4">
+              {leftRailCollapsed ? (
+                <button
+                  type="button"
+                  onClick={toggleLeftRail}
+                  aria-label="Show left rail"
+                  aria-controls="workspace-left-rail"
+                  aria-expanded="false"
+                  title="Show left rail"
+                  className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-cyan-400/20 bg-cyan-400/[0.06] px-3 py-2 text-xs text-cyan-200/70 transition hover:border-cyan-300/40 hover:text-cyan-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                >
+                  <span aria-hidden="true">›</span>
+                  <span>Show left rail</span>
+                </button>
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <EcosystemNavigation
+                  access={
+                    intelligenceAccess
+                  }
+                  isAdmin={
+                    entitlements?.isAdmin
+                  }
+                  activeItem={
+                    activeDestination
+                  }
+                  onNavigate={
+                    handleNavigation
+                  }
+                />
+              </div>
             </div>
             <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
               <div className="flex flex-col gap-2">
