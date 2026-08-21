@@ -39,6 +39,21 @@ const PV_LIFECYCLE_TOOLTIPS = {
 
 const PV_REVIEW_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
 const PV_SCORE_TOOLTIP = "AskSocial’s 0–100 screening score combines product-reference and health-experience signals to prioritize qualified human review. It is not an adverse-event determination or a measure of clinical seriousness.";
+const PV_QUEUE_HEADERS = [
+  { key: "status", label: "Status" },
+  { key: "product", label: "Product" },
+  { key: "event", label: "Potential event" },
+  { key: "mention", label: "Full mention" },
+  { key: "source", label: "Source" },
+  { key: "publication", label: "Publication timestamp", tooltip: "When the author originally posted the mention online. This preserves source chronology and does not govern day zero for this external-platform workflow." },
+  { key: "collection", label: "Collection timestamp", tooltip: "When the listening system accessed or ingested the mention, establishing when the ODCS acquired the content." },
+  { key: "algorithm", label: "Algorithm timestamp", tooltip: "When AskSocial’s automated processing flagged and classified the mention for potential PV review." },
+  { key: "review", label: "Review timestamp", tooltip: "When the MAH or authorized third party identified the potential AE/ADR with enough information to assess reporting criteria. This timestamp starts the day-zero clock." },
+  { key: "escalation", label: "Escalation timestamp", tooltip: "When the information was escalated into the designated PV workflow, documenting the vendor-to-PV handoff." },
+  { key: "day-zero", label: "Day-zero clock", tooltip: "The remaining time in the 15-day triage window, calculated from the Review timestamp." },
+  { key: "score", label: "Score" },
+  { key: "reviewer", label: "Reviewer" },
+];
 
 function formatDate(value) {
   if (!value) return "—";
@@ -62,12 +77,12 @@ function sourceLabel(record) {
 
 function reviewCountdown(record, nowMs) {
   if (typeof nowMs !== "number") return { label: "Calculating…", tone: "neutral" };
-  const identifiedAt = new Date(record.identified_at || "").getTime();
-  if (Number.isNaN(identifiedAt)) return { label: "Unavailable", tone: "neutral" };
+  const reviewTimestamp = new Date(record.review_timestamp || "").getTime();
+  if (Number.isNaN(reviewTimestamp)) return { label: "Not started", tone: "neutral" };
   if (["not_relevant", "ready_for_transfer", "transferred", "acknowledged", "reconciled"].includes(record.status)) {
     return { label: "Triaged", tone: "complete" };
   }
-  const millisecondsRemaining = identifiedAt + PV_REVIEW_WINDOW_MS - nowMs;
+  const millisecondsRemaining = reviewTimestamp + PV_REVIEW_WINDOW_MS - nowMs;
   const totalMinutes = Math.max(0, Math.ceil(Math.abs(millisecondsRemaining) / 60_000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -355,19 +370,19 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
     <Card title="Potential PV Review Queue" subtitle="Click any mention to view the full source text. Select multiple mentions across pages to save a governed aggregate review list.">
       {records.length ? <>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1420px] text-left text-xs">
+          <table className="w-full min-w-[2100px] text-left text-xs">
             <thead className="border-b border-white/10 text-white/35">
               <tr>
                 <th className="px-3 py-3">
                   <input type="checkbox" aria-label="Select all PV mentions on this page" checked={allPageSelected} onChange={togglePage} />
                 </th>
-                {["Status", "Product", "Potential event", "Full mention", "Source", "Original post date", "Reviewer identified", "Day-zero clock", "Score", "Reviewer"].map((head) => (
+                {PV_QUEUE_HEADERS.map((head) => (
                   <th
-                    key={head}
+                    key={head.key}
                     className="px-3 py-3 font-medium"
-                    aria-sort={head === "Score" ? scoreSortDirection === "desc" ? "descending" : scoreSortDirection === "asc" ? "ascending" : "none" : undefined}
+                    aria-sort={head.key === "score" ? scoreSortDirection === "desc" ? "descending" : scoreSortDirection === "asc" ? "ascending" : "none" : undefined}
                   >
-                    {head === "Score" ? (
+                    {head.key === "score" ? (
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
@@ -384,7 +399,14 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
                           <button type="button" aria-label={`About score: ${PV_SCORE_TOOLTIP}`} className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">?</button>
                         </Tooltip>
                       </div>
-                    ) : head}
+                    ) : head.tooltip ? (
+                      <Tooltip content={head.tooltip} delay={200} side="bottom" align="start">
+                        <button type="button" aria-label={`${head.label}: ${head.tooltip}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">
+                          <span>{head.label}</span>
+                          <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span>
+                        </button>
+                      </Tooltip>
+                    ) : head.label}
                   </th>
                 ))}
               </tr>
@@ -392,7 +414,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
             <tbody>
               {pageRecords.map((record) => {
                 const countdown = reviewCountdown(record, nowMs);
-                return <tr key={record.id} className={`border-b border-white/[0.06] text-white/60 ${selectedIds.includes(record.id) ? "bg-cyan-400/[0.05]" : ""}`}><td className="px-3 py-3"><input type="checkbox" aria-label={`Select mention ${record.id}`} checked={selectedIds.includes(record.id)} onChange={() => toggleRecord(record.id)} /></td><td className="px-3 py-3"><ToneBadge tone={record.status === "not_relevant" ? "neutral" : record.status === "acknowledged" || record.status === "reconciled" ? "complete" : "approaching"}>{label(record.status)}</ToneBadge></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="max-w-[360px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 text-left leading-5 text-cyan-100/65 hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.posted_at)}</td><td className="px-3 py-3">{formatDate(record.identified_at)}</td><td className="px-3 py-3"><ToneBadge tone={countdown.tone}>{countdown.label}</ToneBadge></td><td className="px-3 py-3">{record.detection_score}</td><td className="px-3 py-3">{record.assigned_reviewer_id || "Unassigned"}</td></tr>;
+                return <tr key={record.id} className={`border-b border-white/[0.06] text-white/60 ${selectedIds.includes(record.id) ? "bg-cyan-400/[0.05]" : ""}`}><td className="px-3 py-3"><input type="checkbox" aria-label={`Select mention ${record.id}`} checked={selectedIds.includes(record.id)} onChange={() => toggleRecord(record.id)} /></td><td className="px-3 py-3"><ToneBadge tone={record.status === "not_relevant" ? "neutral" : record.status === "acknowledged" || record.status === "reconciled" ? "complete" : "approaching"}>{label(record.status)}</ToneBadge></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="max-w-[360px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 cursor-pointer text-left leading-5 text-cyan-100/65 hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.publication_timestamp)}</td><td className="px-3 py-3">{formatDate(record.collection_timestamp)}</td><td className="px-3 py-3">{formatDate(record.algorithm_timestamp)}</td><td className="px-3 py-3 font-medium text-cyan-100/70">{formatDate(record.review_timestamp)}</td><td className="px-3 py-3">{formatDate(record.escalation_timestamp)}</td><td className="px-3 py-3"><ToneBadge tone={countdown.tone}>{countdown.label}</ToneBadge></td><td className="px-3 py-3">{record.detection_score}</td><td className="px-3 py-3">{record.assigned_reviewer_id || "Unassigned"}</td></tr>;
               })}
             </tbody>
           </table>

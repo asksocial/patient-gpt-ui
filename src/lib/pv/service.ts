@@ -457,13 +457,43 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
 
 export async function listPvRecords(principal: PlatformPrincipal, input: { status?: string; limit?: number; therapeuticArea?: string } = {}) {
   assertPrincipal(principal);
-  let query = getSupabaseServerClient().from("pv_records").select("*").eq("principal_id", principal.principalId)
+  const supabase = getSupabaseServerClient();
+  let query = supabase.from("pv_records").select("*").eq("principal_id", principal.principalId)
     .order("identified_at", { ascending: false }).limit(Math.max(1, Math.min(1000, input.limit || 500)));
   if (input.status) query = query.eq("status", input.status);
   if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load PV records: ${error.message}`);
-  return data || [];
+  const records = data || [];
+  const recordIds = records.map((record: any) => record.id);
+  const idChunks = Array.from(
+    { length: Math.ceil(recordIds.length / 200) },
+    (_, index) => recordIds.slice(index * 200, (index + 1) * 200)
+  );
+  const escalationResults = await Promise.all(
+    idChunks.map((ids) => supabase.from("pv_reviews")
+      .select("record_id,reviewed_at")
+      .eq("principal_id", principal.principalId)
+      .eq("decision", "escalate")
+      .in("record_id", ids))
+  );
+  const escalationError = escalationResults.find((result) => result.error)?.error;
+  if (escalationError) throw new Error(`Failed to load PV escalation timestamps: ${escalationError.message}`);
+  const escalationByRecord = new Map<string, string>();
+  for (const review of escalationResults.flatMap((result) => result.data || [])) {
+    const current = escalationByRecord.get(review.record_id);
+    if (!current || new Date(review.reviewed_at).getTime() < new Date(current).getTime()) {
+      escalationByRecord.set(review.record_id, review.reviewed_at);
+    }
+  }
+  return records.map((record: any) => ({
+    ...record,
+    publication_timestamp: record.posted_at,
+    collection_timestamp: record.ingested_at,
+    algorithm_timestamp: record.created_at || record.identified_at,
+    review_timestamp: record.identified_at,
+    escalation_timestamp: escalationByRecord.get(record.id) || null,
+  }));
 }
 
 async function listAllPvRecordsForOverview(principal: PlatformPrincipal, therapeuticArea?: string) {

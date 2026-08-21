@@ -192,13 +192,22 @@ assert(reviewQueueSource.includes("Create a workspace before saving a list"), "U
 assert(reviewQueueSource.includes("const pageSize = 20") && reviewQueueSource.includes("pageRecords.map"), "The Potential PV Review Queue must display no more than 20 mentions per page.");
 assert(reviewQueueSource.includes("Select all PV mentions on this page") && reviewQueueSource.includes("Page {currentPage} of {pageCount}"), "PV queue pagination must preserve explicit page selection and navigation.");
 assert(reviewQueueSource.includes("await onRefreshWorkspaces()") && reviewQueueSource.includes("currentWritableWorkspaces"), "Saving a PV review list must refresh and re-evaluate writable workspaces before opening the save dialog.");
-assert(workbench.includes("PV_REVIEW_WINDOW_MS = 15 * 24 * 60 * 60 * 1000") && reviewQueueSource.includes("reviewCountdown(record, nowMs)"), "The queue day-zero clock must count down from reviewer identification plus 15 days.");
+for (const timestamp of ["Publication timestamp", "Collection timestamp", "Algorithm timestamp", "Review timestamp", "Escalation timestamp"]) {
+  assert(workbench.includes(timestamp), `The Potential PV Review Queue is missing the governed ${timestamp}.`);
+}
+assert(reviewQueueSource.includes("PV_QUEUE_HEADERS.map"), "The Potential PV Review Queue must render the governed timestamp headers.");
+for (const field of ["publication_timestamp", "collection_timestamp", "algorithm_timestamp", "review_timestamp", "escalation_timestamp"]) {
+  assert(reviewQueueSource.includes(`formatDate(record.${field})`), `The Potential PV Review Queue must display ${field}.`);
+}
+assert(workbench.includes("PV_REVIEW_WINDOW_MS = 15 * 24 * 60 * 60 * 1000") && reviewQueueSource.includes("reviewCountdown(record, nowMs)"), "The queue day-zero clock must retain the 15-day review window.");
+assert(workbench.includes('record.review_timestamp || ""') && !workbench.includes('const identifiedAt = new Date(record.identified_at'), "The queue day-zero countdown must start exclusively from the displayed Review timestamp.");
+assert(workbench.includes("This timestamp starts the day-zero clock") && workbench.includes("calculated from the Review timestamp"), "The queue timestamp guidance must explain which timestamp governs day zero.");
 assert(reviewQueueSource.includes("setInterval(() => setNowMs(Date.now()), 30_000)"), "The queue day-zero countdown must update automatically as time elapses.");
 assert(reviewQueueSource.includes("PV_SCORE_TOOLTIP") && workbench.includes("It is not an adverse-event determination"), "The queue score column must explain how the screening score should be interpreted.");
 assert(reviewQueueSource.includes("const [scoreSortDirection, setScoreSortDirection] = useState(null)") && reviewQueueSource.includes("function sortByScore()"), "The queue Score header must provide an interactive sorting control.");
 assert(reviewQueueSource.includes('current === "desc" ? "asc" : "desc"') && reviewQueueSource.includes('"highest to lowest"'), "The first Score-header action must sort mentions from highest to lowest and allow users to reverse the order.");
 assert(reviewQueueSource.includes("const sortedRecords = useMemo") && reviewQueueSource.includes("const pageRecords = sortedRecords.slice"), "Score sorting must apply to the complete PV queue before pagination.");
-assert(reviewQueueSource.includes('aria-sort={head === "Score"') && reviewQueueSource.includes('className="inline-flex cursor-pointer'), "The sortable Score header must expose its direction accessibly and display the interaction cursor.");
+assert(reviewQueueSource.includes('aria-sort={head.key === "score"') && reviewQueueSource.includes('className="inline-flex cursor-pointer'), "The sortable Score header must expose its direction accessibly and display the interaction cursor.");
 assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('sourceType.endsWith("_csv")'), "CSV-origin PV queue records must be labeled Social.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
 assert(!workbench.includes('disabled={busy.startsWith("review:") || !rationale.trim()}'), "PV decision buttons must not be silently disabled while the rationale is empty.");
@@ -207,6 +216,10 @@ assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a 
 assert(!importRoute.includes('form.get("identifiedAt")'), "The client must not control the reviewer-identification timestamp.");
 const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
 assert(pvService.includes("Math.min(1000, input.limit || 500)"), "The PV review queue must expose the complete 271-record Botulinum candidate set instead of silently capping it at 100.");
+for (const field of ["publication_timestamp", "collection_timestamp", "algorithm_timestamp", "review_timestamp", "escalation_timestamp"]) {
+  assert(pvService.includes(field), `The PV queue service is missing its ${field} chronology field.`);
+}
+assert(pvService.includes('.eq("decision", "escalate")') && pvService.includes("escalationByRecord"), "The Escalation timestamp must come from the first governed escalation review.");
 assert(pvService.includes("listAllPvRecordsForOverview") && pvService.includes("derivePvOverviewMetrics"), "Compliance Overview must use the complete record ledger and lifecycle-derived metrics.");
 assert(pvService.includes('adverseEventOntology: review.validated_ae_ontology') && pvService.includes('ontologyStatus: "reviewer_validated"'), "Sponsor transfers must include the final reviewer-approved adverse-event ontology.");
 assert(!pvService.includes("proposedAdverseEventOntology") && !pvService.includes("validatedAdverseEventOntology"), "Sponsor transfers must not expose parallel proposed and validated ontology fields.");
