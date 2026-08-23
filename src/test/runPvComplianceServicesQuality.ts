@@ -4,6 +4,7 @@ import { calculatePvClock, classifyPvContent, derivePvOverviewMetrics, parsePvCs
 import { buildEcosystemNavigation, configurationFromEntitlements, resolveCustomerIntelligenceAccess } from "../lib/intelligence-platform";
 import { resolveEntitlements } from "../lib/entitlements";
 import { createPvSponsorReport } from "../lib/pv/sponsorReport";
+import { assessIcsrIdentifiability } from "../lib/pv/identifiability";
 
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
 
@@ -20,6 +21,15 @@ const patientResult = classifyPvContent({
 assert(patientResult.shouldCreateRecord, "A product-linked health experience must route to human PV review.");
 assert(patientResult.classifications.includes("adverse_event"), "Potential adverse-event classification should be proposed.");
 assert(patientResult.rationale.some((item) => item.includes("not an adverse-event determination")), "Detection must explicitly preserve human determination.");
+
+const supportedIdentifiability = assessIcsrIdentifiability({ original_verbatim: "I am a 42-year-old woman and developed a rash after Product A.", author_identifier: "Jane Smith" });
+assert(supportedIdentifiability.patient.status === "supported" && supportedIdentifiability.reporter.status === "supported", "Qualifying patient characteristics and a named first-hand reporter must support both ICH identifiability dimensions.");
+const handleOnlyIdentifiability = assessIcsrIdentifiability({ original_verbatim: "I developed a rash after Product A.", author_identifier: "@patient123" });
+assert(handleOnlyIdentifiability.patient.status === "not_established" && handleOnlyIdentifiability.reporter.status === "not_established", "A first-person post and digital handle alone must not establish a real patient or reporter under ICH E2D(R1).");
+const namedButNotFirstHand = assessIcsrIdentifiability({ original_verbatim: "Reports online say that Product A caused a rash.", author_identifier: "Jane Smith" });
+assert(namedButNotFirstHand.reporter.status === "not_established", "A reporter name without personal experience or first-hand patient information must not establish an identifiable reporter.");
+const patientOnlyQualifier = assessIcsrIdentifiability({ original_verbatim: "I am a 42-year-old woman and developed a rash after Product A.", author_identifier: "@patient123" });
+assert(patientOnlyQualifier.patient.status === "supported" && patientOnlyQualifier.reporter.status === "not_established", "A patient characteristic must not be reused as a reporter identifier when a digital handle is the only author identifier.");
 
 const ontologyResult = classifyPvContent({
   externalId: "post-ontology", sourceType: "curated", sourceUrl: "https://example.test/post-ontology", dataOrigin: "curated",
@@ -196,7 +206,7 @@ for (const phrase of ["ICH E2D(R1) case assessment", "Identifiable patient?", "I
 for (const phrase of ["Escalated sponsor assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
   assert(screeningStatusSource.includes(phrase), `Screening Status is missing sponsor-report aggregation UX: ${phrase}.`);
 }
-for (const phrase of ["Full mention", "Save review list", "Save to workspace", "Saved aggregate review lists", "Download CSV", "Share by email", "Assignee email or user ID"]) {
+for (const phrase of ["Full mention", "Patient and reporter identification", "ICH E2D(R1) Section 6.1", "A digital handle alone", "Save review list", "Save to workspace", "Saved aggregate review lists", "Download CSV", "Share by email", "Assignee email or user ID"]) {
   assert(workbench.includes(phrase), `PV workbench is missing aggregate-review UX: ${phrase}`);
 }
 assert(!workbench.includes("Name this review list") && !workbench.includes("Review list name"), "Saving a PV review list must not require a user-supplied name.");
@@ -205,22 +215,23 @@ assert(reviewQueueSource.includes("Create a workspace before saving a list"), "U
 assert(reviewQueueSource.includes("const pageSize = 20") && reviewQueueSource.includes("pageRecords.map"), "The Potential PV Review Queue must display no more than 20 mentions per page.");
 assert(reviewQueueSource.includes("Select all PV mentions on this page") && reviewQueueSource.includes("Page {currentPage} of {pageCount}"), "PV queue pagination must preserve explicit page selection and navigation.");
 assert(reviewQueueSource.includes("await onRefreshWorkspaces()") && reviewQueueSource.includes("currentWritableWorkspaces"), "Saving a PV review list must refresh and re-evaluate writable workspaces before opening the save dialog.");
-for (const timestamp of ["Publication timestamp", "Collection timestamp", "Algorithm timestamp", "Review timestamp", "Escalation timestamp"]) {
+for (const timestamp of ["Publication timestamp", "Collection timestamp", "Review timestamp", "Escalation timestamp"]) {
   assert(workbench.includes(timestamp), `The Potential PV Review Queue is missing the governed ${timestamp}.`);
 }
 assert(reviewQueueSource.includes("PV_QUEUE_HEADERS.map"), "The Potential PV Review Queue must render the governed timestamp headers.");
-for (const field of ["publication_timestamp", "collection_timestamp", "algorithm_timestamp", "review_timestamp", "escalation_timestamp"]) {
+for (const field of ["publication_timestamp", "collection_timestamp", "review_timestamp", "escalation_timestamp"]) {
   assert(reviewQueueSource.includes(`formatDate(record.${field})`), `The Potential PV Review Queue must display ${field}.`);
 }
 assert(workbench.includes("PV_REVIEW_WINDOW_MS = 15 * 24 * 60 * 60 * 1000") && reviewQueueSource.includes("reviewCountdown(record, nowMs)"), "The queue day-zero clock must retain the 15-day review window.");
-assert(workbench.includes('record.review_timestamp || ""') && !workbench.includes('const identifiedAt = new Date(record.identified_at'), "The queue day-zero countdown must start exclusively from the displayed Review timestamp.");
-assert(workbench.includes("This timestamp starts the day-zero clock") && workbench.includes("calculated from the Review timestamp"), "The queue timestamp guidance must explain which timestamp governs day zero.");
+assert(workbench.includes('record.reportability_identified_at || ""') && !workbench.includes('const identifiedAt = new Date(record.identified_at'), "The queue day-zero countdown must start exclusively from qualified reportability identification.");
+assert(workbench.includes("Opening structured review does not start this clock") && workbench.includes("does not itself start Day Zero"), "The queue timestamp guidance must separate review initiation from Day Zero.");
 assert(reviewQueueSource.includes("setInterval(() => setNowMs(Date.now()), 30_000)"), "The queue day-zero countdown must update automatically as time elapses.");
 assert(reviewQueueSource.includes("PV_SCORE_TOOLTIP") && workbench.includes("It is not an adverse-event determination"), "The queue score column must explain how the screening score should be interpreted.");
-assert(reviewQueueSource.includes("const [scoreSortDirection, setScoreSortDirection] = useState(null)") && reviewQueueSource.includes("function sortByScore()"), "The queue Score header must provide an interactive sorting control.");
-assert(reviewQueueSource.includes('current === "desc" ? "asc" : "desc"') && reviewQueueSource.includes('"highest to lowest"'), "The first Score-header action must sort mentions from highest to lowest and allow users to reverse the order.");
-assert(reviewQueueSource.includes("const sortedRecords = useMemo") && reviewQueueSource.includes("const pageRecords = sortedRecords.slice"), "Score sorting must apply to the complete PV queue before pagination.");
-assert(reviewQueueSource.includes('aria-sort={head.key === "score"') && reviewQueueSource.includes('className="inline-flex cursor-pointer'), "The sortable Score header must expose its direction accessibly and display the interaction cursor.");
+assert(reviewQueueSource.includes('const [sort, setSort] = useState({ key: "", direction: "" })') && reviewQueueSource.includes("function sortByColumn(key)"), "Every queue data column must use the shared interactive sorting control.");
+assert(reviewQueueSource.includes('key === "score" ? "desc" : "asc"') && reviewQueueSource.includes('head.key === "score" ? "highest to lowest"'), "Score must initially sort highest-to-lowest while other columns initially sort ascending.");
+assert(reviewQueueSource.includes("PV_QUEUE_HEADERS.map") && reviewQueueSource.includes("onClick={() => sortByColumn(head.key)}"), "Every governed queue header must be clickable for sorting.");
+assert(reviewQueueSource.includes('aria-sort={sort.key === head.key') && reviewQueueSource.includes('className="inline-flex cursor-pointer'), "Every sortable header must expose its direction accessibly and display the interaction cursor.");
+assert(!reviewQueueSource.includes("formatDate(record.algorithm_timestamp)"), "The queue must omit the redundant Algorithm timestamp column when it cannot be distinguished from collection.");
 assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('sourceType.endsWith("_csv")'), "CSV-origin PV queue records must be labeled Social.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
 assert(workbench.includes("Confirm all four minimum ICSR criteria") && workbench.includes("Confirm reportability & escalate"), "Escalation must require the four minimum ICSR criteria and explicitly establish Day Zero.");
@@ -228,6 +239,7 @@ assert(!workbench.includes('disabled={busy.startsWith("review:") || !rationale.t
 const importRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/imports/route.ts"), "utf8");
 assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a file-upload route.");
 assert(!importRoute.includes('form.get("identifiedAt")'), "The client must not control the reviewer-identification timestamp.");
+assert(importRoute.includes("authorIdentifierColumn"), "PV CSV ingestion must preserve an available author/reporter identifier for ICH identifiability review.");
 const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
 assert(pvService.includes("Math.min(1000, input.limit || 500)"), "The PV review queue must expose the complete 271-record Botulinum candidate set instead of silently capping it at 100.");
 for (const field of ["publication_timestamp", "collection_timestamp", "algorithm_timestamp", "review_timestamp", "escalation_timestamp"]) {
@@ -238,6 +250,10 @@ assert(pvService.includes("listAllPvRecordsForOverview") && pvService.includes("
 assert(pvService.includes('adverseEventOntology: review.validated_ae_ontology') && pvService.includes('ontologyStatus: "reviewer_validated"'), "Sponsor transfers must include the final reviewer-approved adverse-event ontology.");
 assert(pvService.includes("listPvSponsorCases") && pvService.includes("recordPvSponsorReportActivity") && pvService.includes('decision", "escalate'), "Escalated reviews must be aggregated into auditable sponsor reports.");
 assert(pvService.includes("recordUpdates.reportability_identified_at = reportabilityIdentifiedAt") && pvService.includes("dayZeroStarted"), "Qualified escalation must persist and audit the first reportability-review Day Zero trigger.");
+assert(pvService.includes("reportabilityIdentifiedAt: record.reportability_identified_at || undefined"), "A saved review decision must never substitute for the qualified reportability-identification timestamp that starts Day Zero.");
+assert(pvService.includes("startPvRecordReview") && pvService.includes('action: "review.start"') && pvService.includes("review_started_at"), "Continue to structured review must retain its own immutable human-review start timestamp.");
+const reviewStartMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608230002_add_pv_review_start.sql"), "utf8");
+assert(reviewStartMigration.includes("review_started_at") && !reviewStartMigration.includes("update public.pv_records"), "Historical records must remain blank rather than inferring a structured-review timestamp from a different workflow event.");
 assert(!pvService.includes("proposedAdverseEventOntology") && !pvService.includes("validatedAdverseEventOntology"), "Sponsor transfers must not expose parallel proposed and validated ontology fields.");
 for (const contract of ["createPvReviewList", "listPvReviewLists", "updatePvReviewList", "review_list.share_email", "review_list.export"]) assert(pvService.includes(contract), `PV aggregate-review service is missing ${contract}.`);
 const reviewListRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/route.ts"), "utf8");

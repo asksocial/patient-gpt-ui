@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       contentColumns: contentColumns.length ? contentColumns : undefined,
       sourceUrlColumn: String(form.get("sourceUrlColumn") || "").trim() || undefined,
       externalIdColumn: String(form.get("externalIdColumn") || "").trim() || undefined,
+      authorIdentifierColumn: String(form.get("authorIdentifierColumn") || "").trim() || undefined,
     });
     const imported = await importPvCsvBatch(principal, {
       libraryId: String(form.get("libraryId") || ""),
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
       contentColumns: parsed.contentColumns,
       sourceUrlColumn: parsed.sourceUrlColumn,
       externalIdColumn: parsed.externalIdColumn,
+      authorIdentifierColumn: parsed.authorIdentifierColumn,
       rowCount: parsed.rowCount,
       rows: parsed.rows,
       parseErrors: parsed.errors,

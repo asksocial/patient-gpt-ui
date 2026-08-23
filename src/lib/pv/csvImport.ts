@@ -5,6 +5,7 @@ export type PvCsvColumnMapping = {
   contentColumns?: string[];
   sourceUrlColumn?: string;
   externalIdColumn?: string;
+  authorIdentifierColumn?: string;
 };
 
 export type PvCsvImportRow = {
@@ -14,6 +15,7 @@ export type PvCsvImportRow = {
   sourceUrl: string;
   postedAt: string;
   postedAtRawValue: string;
+  authorIdentifier?: string;
 };
 
 export type PvCsvImportError = {
@@ -25,6 +27,7 @@ const DATE_COLUMNS = ["date", "post date", "posted date", "published date", "pub
 const CONTENT_COLUMNS = ["hit sentence", "opening text", "title", "text", "content", "body", "message", "post"];
 const URL_COLUMNS = ["url", "source url", "post url", "link", "document url"];
 const ID_COLUMNS = ["external id", "document id", "post id", "id"];
+const AUTHOR_COLUMNS = ["author", "influencer", "author name", "reporter", "username", "user name", "twitter screen name"];
 
 function normalizeHeader(value: string) {
   return value.replace(/^\uFEFF/, "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -121,6 +124,7 @@ export function parsePvCsv(bytes: Uint8Array, fileName: string, mapping: PvCsvCo
   if (!contentColumns.length) throw new Error("CSV is missing a supported social-content column. Provide one or more content column names.");
   const sourceUrlColumn = resolveHeader(headers, mapping.sourceUrlColumn, URL_COLUMNS, false);
   const externalIdColumn = resolveHeader(headers, mapping.externalIdColumn, ID_COLUMNS, false);
+  const authorIdentifierColumn = resolveHeader(headers, mapping.authorIdentifierColumn, AUTHOR_COLUMNS, false);
   const indexes = new Map(headers.map((header, index) => [header, index]));
   const fileHash = createHash("sha256").update(bytes).digest("hex");
   const rows: PvCsvImportRow[] = [];
@@ -134,11 +138,12 @@ export function parsePvCsv(bytes: Uint8Array, fileName: string, mapping: PvCsvCo
       if (!verbatim) throw new Error("Social content is empty.");
       const externalId = cell(externalIdColumn).replace(/^"+|"+$/g, "") || createHash("sha256").update(`${fileHash}:${rowNumber}`).digest("hex");
       const sourceUrl = cell(sourceUrlColumn) || `urn:asksocial:pv-import:${fileHash}:${rowNumber}`;
-      rows.push({ rowNumber, externalId, verbatim, sourceUrl, postedAt: parseCsvPostDate(postedAtRawValue), postedAtRawValue });
+      const authorIdentifier = cell(authorIdentifierColumn) || undefined;
+      rows.push({ rowNumber, externalId, verbatim, sourceUrl, postedAt: parseCsvPostDate(postedAtRawValue), postedAtRawValue, authorIdentifier });
     } catch (error) {
       errors.push({ rowNumber, error: error instanceof Error ? error.message : "CSV row could not be parsed." });
     }
   });
   if (!rows.length) throw new Error(`CSV has no screenable rows. ${errors[0]?.error || "Check the selected columns."}`);
-  return { fileName, fileHash, headers, dateColumn, contentColumns, sourceUrlColumn, externalIdColumn, rowCount: parsed.length - 1, rows, errors };
+  return { fileName, fileHash, headers, dateColumn, contentColumns, sourceUrlColumn, externalIdColumn, authorIdentifierColumn, rowCount: parsed.length - 1, rows, errors };
 }

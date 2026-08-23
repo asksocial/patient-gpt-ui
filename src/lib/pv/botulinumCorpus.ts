@@ -65,6 +65,7 @@ export function loadBotulinumPvCorpus() {
     contentColumns: ["Headline", "Opening Text", "Hit Sentence"],
     sourceUrlColumn: "URL",
     externalIdColumn: "Document ID",
+    authorIdentifierColumn: "Influencer",
   });
   const candidates = parsed.rows.filter(isBotulinumPvCandidate);
   return { ...parsed, corpusId: BOTULINUM_PV_CORPUS_ID, therapeuticArea: BOTULINUM_PV_THERAPEUTIC_AREA, candidates };

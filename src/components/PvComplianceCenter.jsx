@@ -47,10 +47,9 @@ const PV_QUEUE_HEADERS = [
   { key: "source", label: "Source" },
   { key: "publication", label: "Publication timestamp", tooltip: "When the author originally posted the mention online. This preserves source chronology and does not govern day zero for this external-platform workflow." },
   { key: "collection", label: "Collection timestamp", tooltip: "When the listening system accessed or ingested the mention, establishing when the ODCS acquired the content." },
-  { key: "algorithm", label: "Algorithm timestamp", tooltip: "When AskSocial’s automated processing flagged and classified the mention for potential PV review." },
-  { key: "review", label: "Review timestamp", tooltip: "When the MAH or authorized third party identified the potential AE/ADR with enough information to assess reporting criteria. This timestamp starts the day-zero clock." },
+  { key: "review", label: "Review timestamp", tooltip: "When an authorized reviewer first clicked Continue to structured review. It documents the start of human assessment but does not itself start Day Zero." },
   { key: "escalation", label: "Escalation timestamp", tooltip: "When the information was escalated into the designated PV workflow, documenting the vendor-to-PV handoff." },
-  { key: "day-zero", label: "Day-zero clock", tooltip: "The remaining time in the 15-day triage window, calculated from the Review timestamp." },
+  { key: "day-zero", label: "Day-zero clock", tooltip: "The 15-day reporting clock begins only when a qualified reviewer confirms all four minimum ICSR criteria. Opening structured review does not start this clock." },
   { key: "score", label: "Score" },
   { key: "reviewer", label: "Reviewer" },
 ];
@@ -77,12 +76,12 @@ function sourceLabel(record) {
 
 function reviewCountdown(record, nowMs) {
   if (typeof nowMs !== "number") return { label: "Calculating…", tone: "neutral" };
-  const reviewTimestamp = new Date(record.review_timestamp || "").getTime();
-  if (Number.isNaN(reviewTimestamp)) return { label: "Not started", tone: "neutral" };
+  const dayZeroTimestamp = new Date(record.reportability_identified_at || "").getTime();
+  if (Number.isNaN(dayZeroTimestamp)) return { label: "Not started", tone: "neutral" };
   if (["not_relevant", "ready_for_transfer", "transferred", "acknowledged", "reconciled"].includes(record.status)) {
     return { label: "Triaged", tone: "complete" };
   }
-  const millisecondsRemaining = reviewTimestamp + PV_REVIEW_WINDOW_MS - nowMs;
+  const millisecondsRemaining = dayZeroTimestamp + PV_REVIEW_WINDOW_MS - nowMs;
   const totalMinutes = Math.max(0, Math.ceil(Math.abs(millisecondsRemaining) / 60_000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -119,6 +118,14 @@ function Card({ title, subtitle, children, actions }) {
 function Metric({ label: metricLabel, value, detail, tooltip, tone = "neutral" }) {
   const border = tone === "warning" ? "border-amber-400/20 bg-amber-400/[0.05]" : tone === "danger" ? "border-rose-400/20 bg-rose-400/[0.05]" : "border-white/10 bg-black/30";
   return <div className={`rounded-2xl border p-4 ${border}`}><div className="text-xs text-white/40">{tooltip ? <Tooltip content={tooltip} delay={200} side="bottom" align="start"><button type="button" aria-label={`${metricLabel}: ${tooltip}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{metricLabel}</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip> : metricLabel}</div><p className="mt-2 text-2xl font-semibold text-white">{value}</p>{detail ? <p className="mt-1 text-xs text-white/30">{detail}</p> : null}</div>;
+}
+
+function IdentifiabilitySummary({ assessment }) {
+  if (!assessment) return null;
+  return <section className="mt-5 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4" aria-label="ICH E2D(R1) patient and reporter identifiability">
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/75">Patient and reporter identification</h3><p className="mt-1 text-xs leading-5 text-white/35">Preliminary assessment against ICH E2D(R1) Section 6.1. A digital handle alone never establishes identifiability.</p></div><ToneBadge>{assessment.standard}</ToneBadge></div>
+    <div className="mt-4 grid gap-3 md:grid-cols-2">{[["Patient", assessment.patient], ["Reporter", assessment.reporter]].map(([dimension, result]) => <div key={dimension} className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex items-center justify-between gap-3"><p className="text-xs font-medium text-white/65">{dimension}</p><ToneBadge tone={result.status === "supported" ? "healthy" : "approaching"}>{result.label}</ToneBadge></div>{result.evidence?.length ? <ul className="mt-3 space-y-1.5 text-xs leading-5 text-white/50">{result.evidence.map((item) => <li key={item}>• {item}</li>)}</ul> : <p className="mt-3 text-xs text-white/35">No qualifying characteristic was detected.</p>}{result.limitations?.map((item) => <p key={item} className="mt-2 text-xs leading-5 text-amber-200/60">Follow-up: {item}</p>)}</div>)}</div>
+  </section>;
 }
 
 function Empty({ children }) {
@@ -178,7 +185,12 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
     setSelectedRecord(data);
   }
 
-  function continueStructuredReview() {
+  async function continueStructuredReview() {
+    const recordId = selectedRecord?.record?.id;
+    if (!recordId) return;
+    const started = await mutate(`/api/pv/records/${recordId}`, { method: "PATCH", payload: { action: "start_review" } }, `review-start:${recordId}`, "Structured review started. The review timestamp has been retained; Day Zero remains separate until reportability is confirmed.");
+    if (!started) return;
+    await openRecord(recordId);
     setTab("screening");
     window.setTimeout(() => document.getElementById("pv-screening-structured-review")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
@@ -258,7 +270,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
     ? workspaceId
     : writableWorkspaces[0]?.id || "";
   const [page, setPage] = useState(1);
-  const [scoreSortDirection, setScoreSortDirection] = useState(null);
+  const [sort, setSort] = useState({ key: "", direction: "" });
   const [selectedIds, setSelectedIds] = useState([]);
   const [saveOpen, setSaveOpen] = useState(false);
   const [listWorkspaceId, setListWorkspaceId] = useState(initialWorkspaceId);
@@ -267,19 +279,40 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
   const [previewOpen, setPreviewOpen] = useState(false);
   const [nowMs, setNowMs] = useState(null);
   const sortedRecords = useMemo(() => {
-    if (!scoreSortDirection) return pendingRecords;
-    const direction = scoreSortDirection === "desc" ? -1 : 1;
+    if (!sort.key) return pendingRecords;
+    const direction = sort.direction === "desc" ? -1 : 1;
+    const sortValue = (record) => {
+      const values = {
+        status: record.status,
+        product: record.product_name,
+        event: record.potential_event,
+        mention: record.original_verbatim,
+        source: sourceLabel(record),
+        publication: record.publication_timestamp,
+        collection: record.collection_timestamp,
+        review: record.review_timestamp,
+        escalation: record.escalation_timestamp,
+        "day-zero": record.reportability_identified_at,
+        score: record.detection_score,
+        reviewer: record.review_started_by || record.assigned_reviewer_id,
+      };
+      return values[sort.key];
+    };
     return [...pendingRecords].sort((left, right) => {
-      const leftScore = Number(left.detection_score);
-      const rightScore = Number(right.detection_score);
-      const leftHasScore = left.detection_score !== null && left.detection_score !== undefined && left.detection_score !== "" && Number.isFinite(leftScore);
-      const rightHasScore = right.detection_score !== null && right.detection_score !== undefined && right.detection_score !== "" && Number.isFinite(rightScore);
-      if (!leftHasScore && !rightHasScore) return 0;
-      if (!leftHasScore) return 1;
-      if (!rightHasScore) return -1;
-      return (leftScore - rightScore) * direction;
+      const leftValue = sortValue(left);
+      const rightValue = sortValue(right);
+      const leftMissing = leftValue === null || leftValue === undefined || leftValue === "";
+      const rightMissing = rightValue === null || rightValue === undefined || rightValue === "";
+      if (leftMissing && rightMissing) return 0;
+      if (leftMissing) return 1;
+      if (rightMissing) return -1;
+      if (sort.key === "score") return (Number(leftValue) - Number(rightValue)) * direction;
+      if (["publication", "collection", "review", "escalation", "day-zero"].includes(sort.key)) {
+        return (new Date(leftValue).getTime() - new Date(rightValue).getTime()) * direction;
+      }
+      return String(leftValue).localeCompare(String(rightValue), undefined, { numeric: true, sensitivity: "base" }) * direction;
     });
-  }, [pendingRecords, scoreSortDirection]);
+  }, [pendingRecords, sort]);
   const pageCount = Math.max(1, Math.ceil(sortedRecords.length / pageSize));
   const currentPage = Math.min(page, pageCount);
   const availableRecordIds = useMemo(() => new Set(pendingRecords.map((record) => record.id)), [pendingRecords]);
@@ -298,8 +331,10 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
   }, []);
 
   function openMention(recordId) { setPreviewOpen(true); onOpen(recordId); }
-  function sortByScore() {
-    setScoreSortDirection((current) => current === "desc" ? "asc" : "desc");
+  function sortByColumn(key) {
+    setSort((current) => current.key === key
+      ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
+      : { key, direction: key === "score" ? "desc" : "asc" });
     setPage(1);
   }
   function toggleRecord(recordId) { setSelectedIds((current) => current.includes(recordId) ? current.filter((id) => id !== recordId) : [...current, recordId]); }
@@ -368,12 +403,12 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
       </div>
     ) : null}
 
-    {selected && previewOpen ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2></div><button type="button" onClick={() => setPreviewOpen(false)} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-3"><Metric label="Original post date" value={formatDate(selected.record.posted_at)} /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} /><Metric label="Detection score" value={`${selected.record.detection_score}/100`} /></div><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}<button type="button" onClick={() => { setPreviewOpen(false); onContinueReview(); }} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black">Continue to structured review</button></div></div></div> : null}
+    {selected && previewOpen ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2></div><button type="button" onClick={() => setPreviewOpen(false)} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-3"><Metric label="Original post date" value={formatDate(selected.record.posted_at)} /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} /><Metric label="Detection score" value={`${selected.record.detection_score}/100`} /></div><IdentifiabilitySummary assessment={selected.record.identifiability_assessment} /><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}<button type="button" onClick={() => { setPreviewOpen(false); onContinueReview(); }} disabled={busy === `review-start:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-start:${selected.record.id}` ? "Starting structured review…" : "Continue to structured review"}</button></div></div></div> : null}
 
     <Card title="Potential PV Review Queue" subtitle="Click any mention to view the full source text. Select multiple mentions across pages to save a governed aggregate review list.">
       {pendingRecords.length ? <>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[2100px] text-left text-xs">
+          <table className="w-full min-w-[1900px] text-left text-xs">
             <thead className="border-b border-white/10 text-white/35">
               <tr>
                 <th className="px-3 py-3">
@@ -383,33 +418,9 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
                   <th
                     key={head.key}
                     className="px-3 py-3 font-medium"
-                    aria-sort={head.key === "score" ? scoreSortDirection === "desc" ? "descending" : scoreSortDirection === "asc" ? "ascending" : "none" : undefined}
+                    aria-sort={sort.key === head.key ? sort.direction === "desc" ? "descending" : "ascending" : "none"}
                   >
-                    {head.key === "score" ? (
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={sortByScore}
-                          aria-label={`Sort by score ${scoreSortDirection === "desc" ? "lowest to highest" : "highest to lowest"}`}
-                          className="inline-flex cursor-pointer items-center gap-1 text-left transition-colors hover:text-cyan-200 focus:outline-none focus-visible:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-400/60"
-                        >
-                          <span>Score</span>
-                          <span aria-hidden="true" className={scoreSortDirection ? "text-cyan-300" : "text-white/30"}>
-                            {scoreSortDirection === "asc" ? "↑" : "↓"}
-                          </span>
-                        </button>
-                        <Tooltip content={PV_SCORE_TOOLTIP} delay={200} side="bottom" align="start">
-                          <button type="button" aria-label={`About score: ${PV_SCORE_TOOLTIP}`} className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">?</button>
-                        </Tooltip>
-                      </div>
-                    ) : head.tooltip ? (
-                      <Tooltip content={head.tooltip} delay={200} side="bottom" align="start">
-                        <button type="button" aria-label={`${head.label}: ${head.tooltip}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">
-                          <span>{head.label}</span>
-                          <span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span>
-                        </button>
-                      </Tooltip>
-                    ) : head.label}
+                    <div className="flex items-center gap-1.5"><button type="button" onClick={() => sortByColumn(head.key)} aria-label={`Sort by ${head.label} ${sort.key === head.key && sort.direction === "asc" ? "descending" : head.key === "score" ? "highest to lowest" : "ascending"}`} className="inline-flex cursor-pointer items-center gap-1 text-left transition-colors hover:text-cyan-200 focus:outline-none focus-visible:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{head.label}</span><span aria-hidden="true" className={sort.key === head.key ? "text-cyan-300" : "text-white/25"}>{sort.key === head.key && sort.direction === "asc" ? "↑" : "↓"}</span></button>{head.tooltip || head.key === "score" ? <Tooltip content={head.key === "score" ? PV_SCORE_TOOLTIP : head.tooltip} delay={200} side="bottom" align="start"><button type="button" aria-label={`About ${head.label}: ${head.key === "score" ? PV_SCORE_TOOLTIP : head.tooltip}`} className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">?</button></Tooltip> : null}</div>
                   </th>
                 ))}
               </tr>
@@ -417,7 +428,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
             <tbody>
               {pageRecords.map((record) => {
                 const countdown = reviewCountdown(record, nowMs);
-                return <tr key={record.id} className={`border-b border-white/[0.06] text-white/60 ${selectedIds.includes(record.id) ? "bg-cyan-400/[0.05]" : ""}`}><td className="px-3 py-3"><input type="checkbox" aria-label={`Select mention ${record.id}`} checked={selectedIds.includes(record.id)} onChange={() => toggleRecord(record.id)} /></td><td className="px-3 py-3"><ToneBadge tone={record.status === "not_relevant" ? "neutral" : record.status === "acknowledged" || record.status === "reconciled" ? "complete" : "approaching"}>{label(record.status)}</ToneBadge></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="max-w-[360px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 cursor-pointer text-left leading-5 text-cyan-100/65 hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.publication_timestamp)}</td><td className="px-3 py-3">{formatDate(record.collection_timestamp)}</td><td className="px-3 py-3">{formatDate(record.algorithm_timestamp)}</td><td className="px-3 py-3 font-medium text-cyan-100/70">{formatDate(record.review_timestamp)}</td><td className="px-3 py-3">{formatDate(record.escalation_timestamp)}</td><td className="px-3 py-3"><ToneBadge tone={countdown.tone}>{countdown.label}</ToneBadge></td><td className="px-3 py-3">{record.detection_score}</td><td className="px-3 py-3">{record.assigned_reviewer_id || "Unassigned"}</td></tr>;
+                return <tr key={record.id} className={`border-b border-white/[0.06] text-white/60 ${selectedIds.includes(record.id) ? "bg-cyan-400/[0.05]" : ""}`}><td className="px-3 py-3"><input type="checkbox" aria-label={`Select mention ${record.id}`} checked={selectedIds.includes(record.id)} onChange={() => toggleRecord(record.id)} /></td><td className="px-3 py-3"><ToneBadge tone={record.status === "not_relevant" ? "neutral" : record.status === "acknowledged" || record.status === "reconciled" ? "complete" : "approaching"}>{label(record.status)}</ToneBadge></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="max-w-[360px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 cursor-pointer text-left leading-5 text-cyan-100/65 hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.publication_timestamp)}</td><td className="px-3 py-3">{formatDate(record.collection_timestamp)}</td><td className="px-3 py-3 font-medium text-cyan-100/70">{formatDate(record.review_timestamp)}</td><td className="px-3 py-3">{formatDate(record.escalation_timestamp)}</td><td className="px-3 py-3"><ToneBadge tone={countdown.tone}>{countdown.label}</ToneBadge></td><td className="px-3 py-3">{record.detection_score}</td><td className="px-3 py-3">{record.review_started_by || record.assigned_reviewer_id || "Unassigned"}</td></tr>;
               })}
             </tbody>
           </table>
@@ -443,6 +454,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const [transferMethod, setTransferMethod] = useState("manual_export");
   const proposedOntology = retainedOntology && Object.keys(retainedOntology).length ? retainedOntology : record.ae_ontology || {};
   const retainedIcsr = proposedOntology.icsrAssessment || {};
+  const proposedIdentifiability = record.identifiability_assessment || {};
   const [ontologyReview, setOntologyReview] = useState({
     productProcedure: proposedOntology.productProcedures?.[0]?.value || record.product_name || "",
     adverseEvent: proposedOntology.adverseEvents?.[0]?.value || record.potential_event || "",
@@ -458,10 +470,10 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const [e2dReview, setE2dReview] = useState({
     reportType: retainedIcsr.reportType || "undetermined",
     primarySourceType: retainedIcsr.primarySourceType || "unknown",
-    patientIdentifiable: retainedIcsr.minimumCriteria?.identifiablePatient?.status || "unclear",
-    patientIdentifierBasis: retainedIcsr.minimumCriteria?.identifiablePatient?.evidence || "",
-    reporterIdentifiable: retainedIcsr.minimumCriteria?.identifiableReporter?.status || "unclear",
-    reporterIdentifierBasis: retainedIcsr.minimumCriteria?.identifiableReporter?.evidence || "",
+    patientIdentifiable: retainedIcsr.minimumCriteria?.identifiablePatient?.status || (proposedIdentifiability.patient?.status === "supported" ? "yes" : "unclear"),
+    patientIdentifierBasis: retainedIcsr.minimumCriteria?.identifiablePatient?.evidence || proposedIdentifiability.patient?.evidence?.join(" ") || "",
+    reporterIdentifiable: retainedIcsr.minimumCriteria?.identifiableReporter?.status || (proposedIdentifiability.reporter?.status === "supported" ? "yes" : "unclear"),
+    reporterIdentifierBasis: retainedIcsr.minimumCriteria?.identifiableReporter?.evidence || proposedIdentifiability.reporter?.evidence?.join(" ") || "",
     seriousnessCriteria: retainedIcsr.seriousnessCriteria || proposedOntology.seriousness?.criteria || [],
     patientCharacteristics: retainedIcsr.clinicalNarrative?.patientCharacteristics || "",
     therapyDetails: retainedIcsr.clinicalNarrative?.therapyDetails || "",
@@ -538,7 +550,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   return <div className="space-y-5">
     <div className="grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
       <Card title={`PV Record ${record.id.slice(0, 8)}`} subtitle="Original evidence is immutable. Translations, review decisions, and workflow events are stored separately.">
-        <div className="space-y-4"><div className="rounded-xl border border-white/10 bg-black/40 p-4"><div className="flex flex-wrap items-center gap-2"><ToneBadge>{sourceLabel(record)}</ToneBadge><ToneBadge>{record.original_language}</ToneBadge><ToneBadge tone={record.priority === "critical" ? "breached" : record.priority === "high" ? "approaching" : "neutral"}>{record.priority} priority</ToneBadge></div><blockquote className="mt-4 border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{record.original_verbatim}</blockquote><div className="mt-4 grid gap-3 text-xs sm:grid-cols-2"><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Original post date</p><p className="mt-1 text-white/65">{formatDate(record.posted_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.posted_at_source_column ? `CSV date column: ${record.posted_at_source_column}${record.posted_at_raw_value ? ` · Raw: ${record.posted_at_raw_value}` : ""}` : "Captured from the source record"}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Content availability</p><p className="mt-1 text-white/65">{formatDate(record.identified_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.import_batch_id ? "Server time when the CSV became available to this AskSocial tenant" : "Timestamp when AskSocial made the content available for review"}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Ingested</p><p className="mt-1 text-white/65">{formatDate(record.ingested_at)}</p>{record.import_batch_id ? <p className="mt-1 text-[10px] text-white/25">Batch {record.import_batch_id.slice(0, 8)} · CSV row {record.source_row_number}</p> : null}</div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Reportability review / Day Zero</p><p className="mt-1 text-cyan-100/75">{record.reportability_identified_at ? formatDate(record.reportability_identified_at) : "Not started"}</p><p className="mt-1 text-[10px] leading-4 text-white/25">{record.day_zero_reason || "Starts only when a qualified reviewer confirms all four minimum ICSR criteria."}</p></div></div>{String(record.source_url || "").startsWith("http") ? <a href={record.source_url} target="_blank" rel="noreferrer" className="inline-block cursor-pointer rounded-lg border border-cyan-300/20 px-3 py-2 text-xs font-semibold text-cyan-300">Open original source ↗</a> : null}<p className="mt-3 break-all text-[10px] text-white/20">Evidence hash {record.evidence_hash}</p></div>
+        <div className="space-y-4"><div className="rounded-xl border border-white/10 bg-black/40 p-4"><div className="flex flex-wrap items-center gap-2"><ToneBadge>{sourceLabel(record)}</ToneBadge><ToneBadge>{record.original_language}</ToneBadge><ToneBadge tone={record.priority === "critical" ? "breached" : record.priority === "high" ? "approaching" : "neutral"}>{record.priority} priority</ToneBadge></div><blockquote className="mt-4 border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{record.original_verbatim}</blockquote><div className="mt-4 grid gap-3 text-xs sm:grid-cols-2"><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Original post date</p><p className="mt-1 text-white/65">{formatDate(record.posted_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.posted_at_source_column ? `CSV date column: ${record.posted_at_source_column}${record.posted_at_raw_value ? ` · Raw: ${record.posted_at_raw_value}` : ""}` : "Captured from the source record"}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Content availability</p><p className="mt-1 text-white/65">{formatDate(record.identified_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.import_batch_id ? "Server time when the CSV became available to this AskSocial tenant" : "Timestamp when AskSocial made the content available for review"}</p></div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Structured review started</p><p className="mt-1 text-cyan-100/75">{formatDate(record.review_started_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.review_started_at ? `Started by ${record.review_started_by || record.assigned_reviewer_id || "authorized reviewer"}` : "Populates when Continue to structured review is selected."}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Ingested</p><p className="mt-1 text-white/65">{formatDate(record.ingested_at)}</p>{record.import_batch_id ? <p className="mt-1 text-[10px] text-white/25">Batch {record.import_batch_id.slice(0, 8)} · CSV row {record.source_row_number}</p> : null}</div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Reportability review / Day Zero</p><p className="mt-1 text-cyan-100/75">{record.reportability_identified_at ? formatDate(record.reportability_identified_at) : "Not started"}</p><p className="mt-1 text-[10px] leading-4 text-white/25">{record.day_zero_reason || "Starts only when a qualified reviewer confirms all four minimum ICSR criteria."}</p></div></div>{String(record.source_url || "").startsWith("http") ? <a href={record.source_url} target="_blank" rel="noreferrer" className="inline-block cursor-pointer rounded-lg border border-cyan-300/20 px-3 py-2 text-xs font-semibold text-cyan-300">Open original source ↗</a> : null}<p className="mt-3 break-all text-[10px] text-white/20">Evidence hash {record.evidence_hash}</p></div>
         <div className="grid gap-3 md:grid-cols-4"><Metric label="PV detection score" value={`${record.detection_score}/100`} tooltip="AskSocial's combined screening score based on product, health-experience, context, and configured detection signals. It prioritizes the record for human review and is not an adverse-event determination." /><Metric label="Product confidence" value={`${record.product_confidence}%`} tooltip="AskSocial's confidence that the mention refers to the relevant product or procedure. A qualified reviewer must confirm the product relationship against the source evidence." /><Metric label="Health experience" value={`${record.health_experience_confidence}%`} tooltip="AskSocial's confidence that the mention describes a health experience or potential safety-relevant situation. This score supports triage and does not establish an adverse event." /><Metric label="Evidence origin" value={evidenceOriginLabel(record)} tooltip="Where the evidence entered AskSocial. Mentions ingested from CSV social-data files are labeled Social; other origins retain their governed provenance label. Origin provides provenance and does not indicate evidence quality or causality." /></div>
         {!['transferred', 'acknowledged', 'reconciled'].includes(record.status) ? <><PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /><E2dCaseAssessment value={e2dReview} onChange={setE2dReview} /></> : null}
         <div><p className="text-xs font-medium text-white/55">Why AskSocial surfaced this</p><div className="mt-2 space-y-2">{(record.detection_rationale || []).map((reason, index) => <p key={index} className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-xs leading-5 text-white/40">{reason}</p>)}</div></div>

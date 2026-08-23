@@ -5,6 +5,7 @@ import { calculatePvClock } from "./clock";
 import { classifyPvContent } from "./detection";
 import { DEFAULT_PV_SLA, derivePvOverviewMetrics } from "./overview";
 import { reconcilePvOperations } from "./reconciliation";
+import { assessIcsrIdentifiability } from "./identifiability";
 import type {
   PvContentInput,
   PvDetectionConcept,
@@ -275,6 +276,7 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
   contentColumns: string[];
   sourceUrlColumn?: string;
   externalIdColumn?: string;
+  authorIdentifierColumn?: string;
   rowCount: number;
   rows: PvCsvImportRow[];
   parseErrors?: PvCsvImportError[];
@@ -305,7 +307,7 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
   if (batchError || !batch) throw new Error(`Failed to register PV CSV import: ${batchError?.message || "missing batch"}`);
   await appendPvAuditEvent(principal, {
     action: "csv_import.available", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed",
-    metadata: { fileName: input.fileName, fileHash: input.fileHash, availableAt, contentAvailabilityDate: availableAt, dayZeroBasis: "reportability_identified_at", dateColumn: input.dateColumn, rowCount: input.rowCount, parseFailureCount: input.parseErrors?.length || 0 },
+    metadata: { fileName: input.fileName, fileHash: input.fileHash, availableAt, contentAvailabilityDate: availableAt, dayZeroBasis: "reportability_identified_at", dateColumn: input.dateColumn, authorIdentifierColumn: input.authorIdentifierColumn || null, rowCount: input.rowCount, parseFailureCount: input.parseErrors?.length || 0 },
   });
 
   let screenedCount = 0;
@@ -316,7 +318,7 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
     try {
       const detection = await detectAndStorePvContent(principal, {
         libraryId: input.libraryId, sourceId: input.sourceId, sourceType: "csv", sourceUrl: row.sourceUrl,
-        externalId: row.externalId, verbatim: row.verbatim, postedAt: row.postedAt,
+        externalId: row.externalId, authorIdentifier: row.authorIdentifier, verbatim: row.verbatim, postedAt: row.postedAt,
         ingestedAt: availableAt, identifiedAt: availableAt, dataOrigin: input.dataOrigin,
         importBatchId: String(batch.id), sourceRowNumber: row.rowNumber,
         postedAtSourceColumn: input.dateColumn, postedAtRawValue: row.postedAtRawValue,
@@ -393,7 +395,21 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
   const { data: existingBatch, error: existingBatchError } = await supabase.from("pv_import_batches").select("*")
     .eq("principal_id", principal.principalId).eq("file_hash", corpus.fileHash).maybeSingle();
   if (existingBatchError) throw new Error(`Failed to check the bundled PV corpus: ${existingBatchError.message}`);
-  if (existingBatch) return { ...existingBatch, alreadyImported: true };
+  if (existingBatch) {
+    const authorRows = corpus.candidates.filter((row) => row.authorIdentifier);
+    let enrichedAuthorCount = 0;
+    for (let index = 0; index < authorRows.length; index += 40) {
+      const results = await Promise.all(authorRows.slice(index, index + 40).map((row) => supabase.from("pv_records")
+        .update({ author_identifier: row.authorIdentifier })
+        .eq("principal_id", principal.principalId).eq("external_id", row.externalId)
+        .is("author_identifier", null).select("id")));
+      const failed = results.find((result) => result.error)?.error;
+      if (failed) throw new Error(`Failed to enrich the bundled PV reporter identifiers: ${failed.message}`);
+      enrichedAuthorCount += results.reduce((count, result) => count + (result.data?.length || 0), 0);
+    }
+    if (enrichedAuthorCount) await appendPvAuditEvent(principal, { action: "corpus.identifiability_enrich", resourceType: "pv_import_batch", resourceId: String(existingBatch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, enrichedAuthorCount, standard: "ICH E2D(R1) 6.1" } });
+    return { ...existingBatch, alreadyImported: true, enrichedAuthorCount };
+  }
 
   const availableAt = new Date().toISOString();
   const { data: batch, error: batchError } = await supabase.from("pv_import_batches").insert({
@@ -423,7 +439,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
       principal_id: principal.principalId, external_id: row.externalId, therapeutic_area: corpus.therapeuticArea,
       library_id: library.id, status: "new", priority: result.contextConfidence >= 70 ? "critical" : result.score >= 80 ? "high" : "standard",
       product_name: productMatch?.canonicalTerm || null, potential_event: eventMatch?.canonicalTerm || null,
-      source_type: "curated_csv", source_url: row.sourceUrl, original_verbatim: row.verbatim, original_language: "en",
+      source_type: "curated_csv", source_url: row.sourceUrl, author_identifier: row.authorIdentifier || null, original_verbatim: row.verbatim, original_language: "en",
       thread_context: [], evidence_hash: hashPayload({ verbatim: row.verbatim, url: row.sourceUrl, postedAt: row.postedAt }),
       posted_at: row.postedAt, ingested_at: availableAt, identified_at: availableAt,
       detection_score: result.score, product_confidence: result.productConfidence,
@@ -488,10 +504,11 @@ export async function listPvRecords(principal: PlatformPrincipal, input: { statu
   }
   return records.map((record: any) => ({
     ...record,
+    identifiability_assessment: assessIcsrIdentifiability(record),
     publication_timestamp: record.posted_at,
     collection_timestamp: record.ingested_at,
     algorithm_timestamp: record.created_at || record.identified_at,
-    review_timestamp: record.reportability_identified_at || escalationByRecord.get(record.id) || null,
+    review_timestamp: record.review_started_at || null,
     escalation_timestamp: escalationByRecord.get(record.id) || null,
   }));
 }
@@ -530,10 +547,11 @@ export async function listPvSponsorCases(principal: PlatformPrincipal, therapeut
       id: review.id,
       record: {
         ...record,
+        identifiability_assessment: assessIcsrIdentifiability(record),
         publication_timestamp: record.posted_at,
         collection_timestamp: record.ingested_at,
         algorithm_timestamp: record.created_at || record.identified_at,
-        review_timestamp: record.reportability_identified_at || review.reviewed_at,
+        review_timestamp: record.review_started_at || null,
         escalation_timestamp: review.reviewed_at,
       },
       review,
@@ -685,10 +703,50 @@ export async function getPvRecord(principal: PlatformPrincipal, recordId: string
   };
   const clock = calculatePvClock({
     status: record.status, postedAt: record.posted_at, ingestedAt: record.ingested_at, identifiedAt: record.identified_at,
-    reportabilityIdentifiedAt: record.reportability_identified_at || latestReview?.reviewed_at,
+    reportabilityIdentifiedAt: record.reportability_identified_at || undefined,
     reviewedAt: latestReview?.reviewed_at, transferredAt: latestTransfer?.transferred_at, acknowledgedAt: latestTransfer?.acknowledged_at,
   }, effectiveSla);
-  return { record, reviews: reviews || [], transfers: transfers || [], audit: audit || [], clock, sla: effectiveSla };
+  return { record: { ...record, identifiability_assessment: assessIcsrIdentifiability(record) }, reviews: reviews || [], transfers: transfers || [], audit: audit || [], clock, sla: effectiveSla };
+}
+
+export async function startPvRecordReview(principal: PlatformPrincipal, recordId: string) {
+  assertPrincipal(principal);
+  const supabase = getSupabaseServerClient();
+  const { data: record, error } = await supabase.from("pv_records")
+    .select("id,status,review_started_at,review_started_by")
+    .eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
+  if (error || !record) throw new Error("PV record not found.");
+  if (!["new", "in_review"].includes(record.status)) throw new Error("Only records awaiting review can enter structured review.");
+  if (record.review_started_at) {
+    return { status: record.status, reviewStartedAt: record.review_started_at, reviewStartedBy: record.review_started_by, alreadyStarted: true };
+  }
+  const reviewStartedAt = new Date().toISOString();
+  const { data: updated, error: updateError } = await supabase.from("pv_records").update({
+    status: "in_review",
+    review_started_at: reviewStartedAt,
+    review_started_by: principal.actorId,
+    assigned_reviewer_id: principal.actorId,
+    updated_at: reviewStartedAt,
+  }).eq("id", recordId).eq("principal_id", principal.principalId).is("review_started_at", null)
+    .select("id,status,review_started_at,review_started_by").maybeSingle();
+  if (updateError) throw new Error(`Failed to start structured review: ${updateError.message}`);
+  if (!updated) {
+    const { data: concurrentlyStarted, error: concurrentError } = await supabase.from("pv_records")
+      .select("id,status,review_started_at,review_started_by")
+      .eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
+    if (concurrentError || !concurrentlyStarted?.review_started_at) {
+      throw new Error(`Failed to retain the structured-review timestamp: ${concurrentError?.message || "concurrent update did not persist a timestamp"}`);
+    }
+    return { status: concurrentlyStarted.status, reviewStartedAt: concurrentlyStarted.review_started_at, reviewStartedBy: concurrentlyStarted.review_started_by, alreadyStarted: true };
+  }
+  await appendPvAuditEvent(principal, {
+    action: "review.start",
+    resourceType: "pv_record",
+    resourceId: recordId,
+    outcome: "completed",
+    metadata: { reviewStartedAt, reviewStartedBy: principal.actorId, dayZeroStarted: false },
+  });
+  return { status: updated.status, reviewStartedAt: updated.review_started_at, reviewStartedBy: updated.review_started_by, alreadyStarted: false };
 }
 
 export async function reviewPvRecord(principal: PlatformPrincipal, recordId: string, decision: PvReviewDecision) {
