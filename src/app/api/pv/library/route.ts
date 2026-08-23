@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, concept }, { status: 201 });
     }
     const library = await createPvDetectionLibrary(principal, {
-      name: String(body?.name || ""), sponsorName: body?.sponsorName, productId: body?.productId,
+      name: String(body?.name || ""), therapeuticArea: String(body?.therapeuticArea || "").trim() || undefined, sponsorName: body?.sponsorName, productId: body?.productId,
       market: body?.market, language: body?.language, detectionThreshold: Number(body?.detectionThreshold ?? 55),
       expectedEventTerms: Array.isArray(body?.expectedEventTerms) ? body.expectedEventTerms : [],
     });

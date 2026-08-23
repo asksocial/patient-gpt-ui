@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 function detectionInput(body: any, defaultLibraryId?: string) {
   return {
     libraryId: String(body?.libraryId || defaultLibraryId || ""), slaPolicyId: body?.slaPolicyId, externalId: String(body?.externalId || ""),
+    therapeuticArea: String(body?.therapeuticArea || "").trim() || undefined,
     sourceId: body?.sourceId, sourceType: String(body?.sourceType || ""), sourceUrl: String(body?.sourceUrl || ""),
     authorIdentifier: body?.authorIdentifier, verbatim: String(body?.verbatim || ""), language: body?.language,
     market: body?.market, postedAt: String(body?.postedAt || ""), ingestedAt: body?.ingestedAt,

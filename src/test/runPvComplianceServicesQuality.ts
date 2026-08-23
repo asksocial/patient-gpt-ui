@@ -127,6 +127,14 @@ assert(parsedCsv.rows[0]?.postedAtRawValue === "2026-08-01T12:00:00Z", "PV CSV i
 assert(parsedCsv.rows[0]?.verbatim.includes("rash, then hives"), "PV CSV intake must preserve quoted content containing delimiters.");
 const sparseCsv = parsePvCsv(new TextEncoder().encode("Date,Text\n2026-08-01,Product A rash\n2026-08-02,"), "sparse.csv");
 assert(sparseCsv.rowCount === 2 && sparseCsv.rows.length === 1 && sparseCsv.errors[0]?.rowNumber === 3, "PV CSV intake must retain row-level failures without discarding valid social data.");
+for (const [therapeuticArea, reporterHeader, reporterValue] of [
+  ["Medical Aesthetics", "Author Name", "Jane Smith"],
+  ["Gene Therapy", "Creator Name", "Alex Rivera"],
+  ["Botulinum toxin", "Influencer", "Morgan Lee"],
+] as const) {
+  const areaCsv = parsePvCsv(new TextEncoder().encode(`Date,Text,${reporterHeader}\n2026-08-01,Product A caused a rash,${reporterValue}`), `${therapeuticArea}.csv`);
+  assert(areaCsv.authorIdentifierColumn === reporterHeader && areaCsv.rows[0]?.authorIdentifier === reporterValue, `${therapeuticArea} reporter identifiers must use the shared therapeutic-area-agnostic CSV mapping.`);
+}
 
 const reconciliation = reconcilePvOperations({
   records: [{ id: "record-1", status: "transferred", reviewedAt: "2026-08-01T01:00:00Z", transferredAt: "2026-08-01T02:00:00Z" }],
@@ -150,6 +158,7 @@ const ontologyMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/
 const csvImportMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608100001_create_pv_csv_imports.sql"), "utf8");
 const corpusMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608110002_scope_pv_corpora.sql"), "utf8");
 const reviewListMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608110003_create_pv_review_lists.sql"), "utf8");
+const genericEnrichmentMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608230003_generalize_pv_reporter_enrichment.sql"), "utf8");
 for (const table of ["pv_detection_libraries", "pv_detection_concepts", "pv_sources", "pv_screening_runs", "pv_sla_policies", "pv_records", "pv_reviews", "pv_transfers", "pv_audit_events", "pv_reconciliation_runs", "pv_reconciliation_issues"]) {
   assert(migration.includes(`public.${table}`), `PV migration is missing ${table}.`);
 }
@@ -162,6 +171,7 @@ for (const field of ["pv_import_batches", "available_at", "posted_at_source_colu
 }
 for (const field of ["corpus_id", "therapeutic_area", "pv_records_therapeutic_area_queue_idx"]) assert(corpusMigration.includes(field), `PV corpus scoping migration is missing ${field}.`);
 for (const field of ["pv_review_lists", "pv_review_list_items", "assigned_to", "shared_emails", "record_id"]) assert(reviewListMigration.includes(field), `PV review-list migration is missing ${field}.`);
+for (const field of ["author_identifier_column", "pv_detection_libraries", "pv_import_batches", "pv_records", "therapeutic_area"]) assert(genericEnrichmentMigration.includes(field), `Therapeutic-area-agnostic PV enrichment migration is missing ${field}.`);
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
 assert(!workbench.includes("Eight connected PV services"), "The removed PV services marketing overview must not return to Compliance Overview.");
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {
@@ -240,8 +250,13 @@ const importRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/
 assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a file-upload route.");
 assert(!importRoute.includes('form.get("identifiedAt")'), "The client must not control the reviewer-identification timestamp.");
 assert(importRoute.includes("authorIdentifierColumn"), "PV CSV ingestion must preserve an available author/reporter identifier for ICH identifiability review.");
+assert(importRoute.includes('form.get("therapeuticArea")'), "PV CSV ingestion must preserve the user-selected therapeutic area for every corpus.");
 const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
-assert(pvService.includes("Math.min(1000, input.limit || 500)"), "The PV review queue must expose the complete 271-record Botulinum candidate set instead of silently capping it at 100.");
+assert(pvService.includes("Math.min(1000, input.limit || 500)"), "The PV review queue must expose complete therapeutic-area evidence sets instead of silently capping them at 100.");
+for (const contract of ["enrichPvRecordsWithAvailableMetadata", "repeat_csv_import", "record.available_metadata_enrich", "enrichedAvailableFields", "library.therapeutic_area", "author_identifier_column"]) {
+  assert(pvService.includes(contract), `Generic PV ingestion is missing the shared metadata-enrichment contract ${contract}.`);
+}
+assert(pvService.includes("overwriteExistingValues: false"), "Reporter enrichment must preserve existing governed identifiers rather than overwrite them.");
 for (const field of ["publication_timestamp", "collection_timestamp", "algorithm_timestamp", "review_timestamp", "escalation_timestamp"]) {
   assert(pvService.includes(field), `The PV queue service is missing its ${field} chronology field.`);
 }
@@ -254,6 +269,12 @@ assert(pvService.includes("reportabilityIdentifiedAt: record.reportability_ident
 assert(pvService.includes("startPvRecordReview") && pvService.includes('action: "review.start"') && pvService.includes("review_started_at"), "Continue to structured review must retain its own immutable human-review start timestamp.");
 const reviewStartMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608230002_add_pv_review_start.sql"), "utf8");
 assert(reviewStartMigration.includes("review_started_at") && !reviewStartMigration.includes("update public.pv_records"), "Historical records must remain blank rather than inferring a structured-review timestamp from a different workflow event.");
+const recordsRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/records/route.ts"), "utf8");
+const libraryRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/library/route.ts"), "utf8");
+assert(recordsRoute.includes("therapeuticArea") && libraryRoute.includes("therapeuticArea"), "Live detection and detection-library APIs must retain therapeutic-area scope.");
+assert(workbench.includes("therapeuticArea, libraries") && workbench.includes("Therapeutic area: {therapeuticArea}"), "PV Detection Library configuration must visibly inherit the selected therapeutic area.");
+const moduleView = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
+assert(!moduleView.includes("Botulinum toxin") && moduleView.includes("View all evidence"), "Shared module evidence UX must remain therapeutic-area agnostic.");
 assert(!pvService.includes("proposedAdverseEventOntology") && !pvService.includes("validatedAdverseEventOntology"), "Sponsor transfers must not expose parallel proposed and validated ontology fields.");
 for (const contract of ["createPvReviewList", "listPvReviewLists", "updatePvReviewList", "review_list.share_email", "review_list.export"]) assert(pvService.includes(contract), `PV aggregate-review service is missing ${contract}.`);
 const reviewListRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/route.ts"), "utf8");

@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     });
     const imported = await importPvCsvBatch(principal, {
       libraryId: String(form.get("libraryId") || ""),
+      therapeuticArea: String(form.get("therapeuticArea") || "").trim() || undefined,
       sourceId: String(form.get("sourceId") || "").trim() || undefined,
       fileName: parsed.fileName,
       fileHash: parsed.fileHash,

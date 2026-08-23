@@ -27,7 +27,11 @@ const DATE_COLUMNS = ["date", "post date", "posted date", "published date", "pub
 const CONTENT_COLUMNS = ["hit sentence", "opening text", "title", "text", "content", "body", "message", "post"];
 const URL_COLUMNS = ["url", "source url", "post url", "link", "document url"];
 const ID_COLUMNS = ["external id", "document id", "post id", "id"];
-const AUTHOR_COLUMNS = ["author", "influencer", "author name", "reporter", "username", "user name", "twitter screen name"];
+const AUTHOR_COLUMNS = [
+  "author name", "reporter name", "author", "reporter", "influencer", "creator name", "account name", "profile name",
+  "author identifier", "reporter identifier", "author id", "creator", "social author", "source author",
+  "author username", "author handle", "username", "user name", "screen name", "twitter screen name", "account", "handle",
+];
 
 function normalizeHeader(value: string) {
   return value.replace(/^\uFEFF/, "").trim().toLowerCase().replace(/\s+/g, " ");

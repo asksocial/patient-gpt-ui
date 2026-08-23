@@ -29,6 +29,56 @@ function assertPrincipal(principal: PlatformPrincipal) {
   if (!principal.principalId.trim() || !principal.actorId.trim()) throw new Error("A PV principal and actor are required.");
 }
 
+function availableReporterIdentifier(value?: string | null) {
+  const identifier = String(value || "").trim();
+  return identifier ? identifier.slice(0, 500) : null;
+}
+
+async function enrichPvRecordsWithAvailableMetadata(
+  principal: PlatformPrincipal,
+  rows: Array<Pick<PvCsvImportRow, "externalId" | "authorIdentifier">>,
+  input: { therapeuticArea?: string | null; resourceId: string; source: string }
+) {
+  const supabase = getSupabaseServerClient();
+  const rowByExternalId = new Map(rows.map((row) => [row.externalId, row]));
+  const externalIds = Array.from(rowByExternalId.keys());
+  const records: any[] = [];
+  for (let index = 0; index < externalIds.length; index += 200) {
+    const { data, error } = await supabase.from("pv_records")
+      .select("id,external_id,author_identifier,therapeutic_area")
+      .eq("principal_id", principal.principalId).in("external_id", externalIds.slice(index, index + 200));
+    if (error) throw new Error(`Failed to inspect existing PV metadata: ${error.message}`);
+    records.push(...(data || []));
+  }
+  let reporterIdentifierCount = 0;
+  let therapeuticAreaCount = 0;
+  const updates = records.map((record) => {
+    const row = rowByExternalId.get(String(record.external_id));
+    const reporterIdentifier = availableReporterIdentifier(row?.authorIdentifier);
+    const values: Record<string, unknown> = {};
+    if (!record.author_identifier && reporterIdentifier) {
+      values.author_identifier = reporterIdentifier;
+      reporterIdentifierCount += 1;
+    }
+    if (!record.therapeutic_area && input.therapeuticArea) {
+      values.therapeutic_area = input.therapeuticArea;
+      therapeuticAreaCount += 1;
+    }
+    return Object.keys(values).length ? { id: record.id, values: { ...values, updated_at: new Date().toISOString() } } : null;
+  }).filter(Boolean) as Array<{ id: string; values: Record<string, unknown> }>;
+  for (let index = 0; index < updates.length; index += 40) {
+    const results = await Promise.all(updates.slice(index, index + 40).map((update) => supabase.from("pv_records")
+      .update(update.values).eq("id", update.id).eq("principal_id", principal.principalId)));
+    const failed = results.find((result) => result.error)?.error;
+    if (failed) throw new Error(`Failed to enrich existing PV metadata: ${failed.message}`);
+  }
+  if (updates.length) await appendPvAuditEvent(principal, {
+    action: "record.available_metadata_enrich", resourceType: "pv_import_batch", resourceId: input.resourceId, outcome: "completed",
+    metadata: { source: input.source, reporterIdentifierCount, therapeuticAreaCount, standard: "ICH E2D(R1) 6.1", overwriteExistingValues: false },
+  });
+  return { enrichedRecordCount: updates.length, enrichedReporterIdentifierCount: reporterIdentifierCount, enrichedTherapeuticAreaCount: therapeuticAreaCount };
+}
+
 export async function appendPvAuditEvent(
   principal: PlatformPrincipal,
   input: {
@@ -77,19 +127,19 @@ export async function listPvDetectionLibrary(principal: PlatformPrincipal) {
 
 export async function createPvDetectionLibrary(
   principal: PlatformPrincipal,
-  input: { name: string; sponsorName?: string; productId?: string; market?: string; language?: string; detectionThreshold?: number; expectedEventTerms?: string[] }
+  input: { name: string; therapeuticArea?: string; sponsorName?: string; productId?: string; market?: string; language?: string; detectionThreshold?: number; expectedEventTerms?: string[] }
 ) {
   assertPrincipal(principal);
   if (!input.name.trim()) throw new Error("Library name is required.");
   const { data, error } = await getSupabaseServerClient().from("pv_detection_libraries").insert({
-    principal_id: principal.principalId,
+    principal_id: principal.principalId, therapeutic_area: input.therapeuticArea?.trim() || null,
     name: input.name.trim(), sponsor_name: input.sponsorName?.trim() || null, product_id: input.productId?.trim() || null,
     market: input.market?.trim() || null, language: input.language?.trim() || "en",
     detection_threshold: Math.max(1, Math.min(100, input.detectionThreshold ?? 55)),
     expected_event_terms: (input.expectedEventTerms || []).map((term) => term.trim()).filter(Boolean), created_by: principal.actorId,
   }).select("*").single();
   if (error || !data) throw new Error(`Failed to create PV Detection Library: ${error?.message || "missing row"}`);
-  await appendPvAuditEvent(principal, { action: "detection_library.create", resourceType: "detection_library", resourceId: String(data.id), outcome: "completed", metadata: { version: 1 } });
+  await appendPvAuditEvent(principal, { action: "detection_library.create", resourceType: "detection_library", resourceId: String(data.id), outcome: "completed", metadata: { version: 1, therapeuticArea: data.therapeutic_area || null } });
   return data;
 }
 
@@ -211,6 +261,10 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
   });
   const evidenceHash = hashPayload({ verbatim: input.verbatim, url: input.sourceUrl, postedAt: input.postedAt, parentContext: input.parentContext, threadContext: input.threadContext });
   const identificationTimestamp = input.identifiedAt || new Date().toISOString();
+  if (input.therapeuticArea?.trim() && library.therapeutic_area && input.therapeuticArea.trim() !== library.therapeutic_area) {
+    throw new Error("The selected PV Detection Library belongs to a different therapeutic area.");
+  }
+  const therapeuticArea = input.therapeuticArea?.trim() || String(library.therapeutic_area || "").trim() || null;
 
   if (!result.shouldCreateRecord) {
     await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, evidenceHash, classifierVersion: result.classifierVersion, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber, postedAtSourceColumn: input.postedAtSourceColumn, postedAtRawValue: input.postedAtRawValue } });
@@ -221,24 +275,36 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
     .eq("principal_id", principal.principalId).eq("external_id", input.externalId).maybeSingle();
   if (duplicateLookupError) throw new Error(`Failed to check for an existing PV record: ${duplicateLookupError.message}`);
   if (existingRecord) {
+    const duplicateUpdates: Record<string, unknown> = {};
+    const reporterIdentifier = availableReporterIdentifier(input.authorIdentifier);
+    if (!existingRecord.author_identifier && reporterIdentifier) duplicateUpdates.author_identifier = reporterIdentifier;
+    if (!existingRecord.therapeutic_area && therapeuticArea) duplicateUpdates.therapeutic_area = therapeuticArea;
+    let retainedRecord = existingRecord;
+    if (Object.keys(duplicateUpdates).length) {
+      const { data: enrichedRecord, error: enrichmentError } = await supabase.from("pv_records")
+        .update({ ...duplicateUpdates, updated_at: new Date().toISOString() })
+        .eq("id", existingRecord.id).eq("principal_id", principal.principalId).select("*").single();
+      if (enrichmentError || !enrichedRecord) throw new Error(`Failed to enrich the existing PV record: ${enrichmentError?.message || "missing row"}`);
+      retainedRecord = enrichedRecord;
+    }
     await appendPvAuditEvent(principal, {
       action: "detection.duplicate",
       resourceType: "pv_record",
       resourceId: String(existingRecord.id),
       outcome: "completed",
-      metadata: { externalId: input.externalId, evidenceHash, retainedExistingRecord: true, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber },
+      metadata: { externalId: input.externalId, evidenceHash, retainedExistingRecord: true, enrichedAvailableFields: Object.keys(duplicateUpdates), postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber },
     });
-    return { result, record: existingRecord, duplicate: true };
+    return { result, record: retainedRecord, duplicate: true };
   }
 
   const productMatch = result.matches.find((match) => match.category === "product");
   const eventMatch = result.matches.find((match) => !["product", "severity", "treatment_change"].includes(match.category));
   const now = new Date().toISOString();
   const { data: record, error: recordError } = await supabase.from("pv_records").insert({
-    principal_id: principal.principalId, external_id: input.externalId, therapeutic_area: input.therapeuticArea || null, source_id: input.sourceId || null, library_id: input.libraryId,
+    principal_id: principal.principalId, external_id: input.externalId, therapeutic_area: therapeuticArea, source_id: input.sourceId || null, library_id: input.libraryId,
     sla_policy_id: input.slaPolicyId || null, status: "new", priority: result.contextConfidence >= 70 ? "critical" : result.score >= 80 ? "high" : "standard",
     product_name: productMatch?.canonicalTerm || null, potential_event: eventMatch?.canonicalTerm || null, source_type: input.sourceType,
-    source_url: input.sourceUrl, author_identifier: input.authorIdentifier || null, original_verbatim: input.verbatim,
+    source_url: input.sourceUrl, author_identifier: availableReporterIdentifier(input.authorIdentifier), original_verbatim: input.verbatim,
     original_language: input.language || "en", parent_context: input.parentContext || null, thread_context: input.threadContext || [],
     immutable_capture_url: input.immutableCaptureUrl || null, evidence_hash: evidenceHash, posted_at: input.postedAt,
     ingested_at: input.ingestedAt || now, identified_at: identificationTimestamp, detection_score: result.score,
@@ -268,6 +334,7 @@ export async function listPvImportBatches(principal: PlatformPrincipal, limit = 
 
 export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
   libraryId: string;
+  therapeuticArea?: string;
   sourceId?: string;
   fileName: string;
   fileHash: string;
@@ -284,23 +351,47 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
   assertPrincipal(principal);
   if (!input.libraryId || !input.fileName || !input.rows.length) throw new Error("Library, CSV file, and at least one row are required.");
   const supabase = getSupabaseServerClient();
-  const { data: library, error: libraryError } = await supabase.from("pv_detection_libraries").select("id")
+  const { data: library, error: libraryError } = await supabase.from("pv_detection_libraries").select("id,therapeutic_area")
     .eq("id", input.libraryId).eq("principal_id", principal.principalId).eq("status", "active").maybeSingle();
   if (libraryError || !library) throw new Error("Select an active PV Detection Library owned by this tenant.");
+  const therapeuticArea = input.therapeuticArea?.trim() || String(library.therapeutic_area || "").trim() || null;
+  if (input.therapeuticArea?.trim() && library.therapeutic_area && input.therapeuticArea.trim() !== library.therapeutic_area) {
+    throw new Error("The selected PV Detection Library belongs to a different therapeutic area.");
+  }
   if (input.sourceId) {
     const { data: source, error: sourceError } = await supabase.from("pv_sources").select("id")
       .eq("id", input.sourceId).eq("principal_id", principal.principalId).maybeSingle();
     if (sourceError || !source) throw new Error("Select a governed PV source owned by this tenant.");
   }
-  const { data: existing } = await supabase.from("pv_import_batches").select("id,status,available_at")
+  const { data: existing } = await supabase.from("pv_import_batches").select("*")
     .eq("principal_id", principal.principalId).eq("file_hash", input.fileHash).maybeSingle();
-  if (existing) throw new Error(`This CSV was already made available on ${new Date(existing.available_at).toLocaleString()}.`);
+  if (existing) {
+    if (existing.therapeutic_area && therapeuticArea && existing.therapeutic_area !== therapeuticArea) {
+      throw new Error("This CSV is already governed under a different therapeutic area.");
+    }
+    const enrichment = await enrichPvRecordsWithAvailableMetadata(principal, input.rows, {
+      therapeuticArea, resourceId: String(existing.id), source: "repeat_csv_import",
+    });
+    const batchUpdates: Record<string, unknown> = {};
+    if (!existing.therapeutic_area && therapeuticArea) batchUpdates.therapeutic_area = therapeuticArea;
+    if (!existing.author_identifier_column && input.authorIdentifierColumn) batchUpdates.author_identifier_column = input.authorIdentifierColumn;
+    let retainedBatch = existing;
+    if (Object.keys(batchUpdates).length) {
+      const { data: enrichedBatch, error: batchEnrichmentError } = await supabase.from("pv_import_batches")
+        .update({ ...batchUpdates, updated_at: new Date().toISOString() })
+        .eq("id", existing.id).eq("principal_id", principal.principalId).select("*").single();
+      if (batchEnrichmentError || !enrichedBatch) throw new Error(`Failed to enrich the existing PV import provenance: ${batchEnrichmentError?.message || "missing row"}`);
+      retainedBatch = enrichedBatch;
+    }
+    return { ...retainedBatch, ...enrichment, alreadyImported: true };
+  }
   const availableAt = new Date().toISOString();
   const { data: batch, error: batchError } = await supabase.from("pv_import_batches").insert({
-    principal_id: principal.principalId, library_id: input.libraryId, source_id: input.sourceId || null,
+    principal_id: principal.principalId, library_id: input.libraryId, source_id: input.sourceId || null, therapeutic_area: therapeuticArea,
     file_name: input.fileName, file_hash: input.fileHash, data_origin: input.dataOrigin,
     date_column: input.dateColumn, content_columns: input.contentColumns,
     source_url_column: input.sourceUrlColumn || null, external_id_column: input.externalIdColumn || null,
+    author_identifier_column: input.authorIdentifierColumn || null,
     uploaded_by: principal.actorId, uploaded_at: availableAt, available_at: availableAt,
     day_zero_basis: "reportability_identified_at", row_count: input.rowCount, status: "processing",
   }).select("*").single();
@@ -317,7 +408,7 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
   for (const row of input.rows) {
     try {
       const detection = await detectAndStorePvContent(principal, {
-        libraryId: input.libraryId, sourceId: input.sourceId, sourceType: "csv", sourceUrl: row.sourceUrl,
+        libraryId: input.libraryId, therapeuticArea: therapeuticArea || undefined, sourceId: input.sourceId, sourceType: "csv", sourceUrl: row.sourceUrl,
         externalId: row.externalId, authorIdentifier: row.authorIdentifier, verbatim: row.verbatim, postedAt: row.postedAt,
         ingestedAt: availableAt, identifiedAt: availableAt, dataOrigin: input.dataOrigin,
         importBatchId: String(batch.id), sourceRowNumber: row.rowNumber,
@@ -396,19 +487,21 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     .eq("principal_id", principal.principalId).eq("file_hash", corpus.fileHash).maybeSingle();
   if (existingBatchError) throw new Error(`Failed to check the bundled PV corpus: ${existingBatchError.message}`);
   if (existingBatch) {
-    const authorRows = corpus.candidates.filter((row) => row.authorIdentifier);
-    let enrichedAuthorCount = 0;
-    for (let index = 0; index < authorRows.length; index += 40) {
-      const results = await Promise.all(authorRows.slice(index, index + 40).map((row) => supabase.from("pv_records")
-        .update({ author_identifier: row.authorIdentifier })
-        .eq("principal_id", principal.principalId).eq("external_id", row.externalId)
-        .is("author_identifier", null).select("id")));
-      const failed = results.find((result) => result.error)?.error;
-      if (failed) throw new Error(`Failed to enrich the bundled PV reporter identifiers: ${failed.message}`);
-      enrichedAuthorCount += results.reduce((count, result) => count + (result.data?.length || 0), 0);
+    const enrichment = await enrichPvRecordsWithAvailableMetadata(principal, corpus.candidates, {
+      therapeuticArea: corpus.therapeuticArea, resourceId: String(existingBatch.id), source: "bundled_corpus_reactivation",
+    });
+    const batchUpdates: Record<string, unknown> = {};
+    if (!existingBatch.therapeutic_area) batchUpdates.therapeutic_area = corpus.therapeuticArea;
+    if (!existingBatch.author_identifier_column && corpus.authorIdentifierColumn) batchUpdates.author_identifier_column = corpus.authorIdentifierColumn;
+    let retainedBatch = existingBatch;
+    if (Object.keys(batchUpdates).length) {
+      const { data: enrichedBatch, error: batchEnrichmentError } = await supabase.from("pv_import_batches")
+        .update({ ...batchUpdates, updated_at: new Date().toISOString() })
+        .eq("id", existingBatch.id).eq("principal_id", principal.principalId).select("*").single();
+      if (batchEnrichmentError || !enrichedBatch) throw new Error(`Failed to enrich the bundled PV import provenance: ${batchEnrichmentError?.message || "missing row"}`);
+      retainedBatch = enrichedBatch;
     }
-    if (enrichedAuthorCount) await appendPvAuditEvent(principal, { action: "corpus.identifiability_enrich", resourceType: "pv_import_batch", resourceId: String(existingBatch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, enrichedAuthorCount, standard: "ICH E2D(R1) 6.1" } });
-    return { ...existingBatch, alreadyImported: true, enrichedAuthorCount };
+    return { ...retainedBatch, alreadyImported: true, ...enrichment };
   }
 
   const availableAt = new Date().toISOString();
@@ -417,6 +510,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     file_hash: corpus.fileHash, corpus_id: corpus.corpusId, therapeutic_area: corpus.therapeuticArea,
     data_origin: "curated", date_column: corpus.dateColumn, content_columns: corpus.contentColumns,
     source_url_column: corpus.sourceUrlColumn || null, external_id_column: corpus.externalIdColumn || null,
+    author_identifier_column: corpus.authorIdentifierColumn || null,
     uploaded_by: principal.actorId, uploaded_at: availableAt, available_at: availableAt,
     day_zero_basis: "reportability_identified_at", row_count: corpus.rowCount, status: "processing",
   }).select("*").single();
@@ -439,7 +533,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
       principal_id: principal.principalId, external_id: row.externalId, therapeutic_area: corpus.therapeuticArea,
       library_id: library.id, status: "new", priority: result.contextConfidence >= 70 ? "critical" : result.score >= 80 ? "high" : "standard",
       product_name: productMatch?.canonicalTerm || null, potential_event: eventMatch?.canonicalTerm || null,
-      source_type: "curated_csv", source_url: row.sourceUrl, author_identifier: row.authorIdentifier || null, original_verbatim: row.verbatim, original_language: "en",
+      source_type: "curated_csv", source_url: row.sourceUrl, author_identifier: availableReporterIdentifier(row.authorIdentifier), original_verbatim: row.verbatim, original_language: "en",
       thread_context: [], evidence_hash: hashPayload({ verbatim: row.verbatim, url: row.sourceUrl, postedAt: row.postedAt }),
       posted_at: row.postedAt, ingested_at: availableAt, identified_at: availableAt,
       detection_score: result.score, product_confidence: result.productConfidence,
