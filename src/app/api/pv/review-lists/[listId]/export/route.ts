@@ -13,7 +13,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ li
     const principal = await requirePvPrincipal();
     const { listId } = await context.params;
     const list: any = await getPvReviewList(principal, listId);
-    const header = ["Record ID","Product / procedure","Potential adverse event","Status","Detection score","Original post date","Reviewer identification date","Source type","Source URL","Full mention"];
+    const header = ["Record ID","Product / procedure","Potential adverse event","Status","Detection score","Original post date","Content availability date","Source type","Source URL","Full mention"];
     const rows = (list.items || []).map((item: any) => {
       const record = item.pv_records || {};
       return [record.id, record.product_name, record.potential_event, record.status, record.detection_score, record.posted_at, record.identified_at, record.source_type, record.source_url, record.original_verbatim];

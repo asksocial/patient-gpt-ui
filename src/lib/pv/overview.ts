@@ -2,7 +2,7 @@ import { calculatePvClock } from "./clock";
 import type { PvRecordStatus, PvSlaPolicy } from "./types";
 
 export const DEFAULT_PV_SLA: PvSlaPolicy = {
-  reviewMinutes: 24 * 60,
+  reviewMinutes: 15 * 24 * 60,
   transferMinutes: 24 * 60,
   acknowledgmentMinutes: 48 * 60,
   clockStart: "posted_at",
@@ -14,10 +14,11 @@ type OverviewRecord = {
   status: PvRecordStatus;
   assigned_reviewer_id?: string | null;
   sla_policy_id?: string | null;
-  day_zero_basis?: "posted_at" | "identified_at" | null;
+  day_zero_basis?: "posted_at" | "identified_at" | "reportability_identified_at" | null;
   posted_at: string;
   ingested_at: string;
   identified_at: string;
+  reportability_identified_at?: string | null;
 };
 
 type OverviewReview = { record_id: string; reviewed_at: string };
@@ -119,13 +120,16 @@ export function derivePvOverviewMetrics(input: {
     } : DEFAULT_PV_SLA;
     const effectivePolicy: PvSlaPolicy = {
       ...policy,
-      clockStart: record.day_zero_basis === "identified_at" ? "identified_at" : policy.clockStart,
+      clockStart: record.day_zero_basis === "reportability_identified_at"
+        ? "reportability_identified_at"
+        : record.day_zero_basis === "identified_at" ? "identified_at" : policy.clockStart,
     };
     const clock = calculatePvClock({
       status: record.status,
       postedAt: record.posted_at,
       ingestedAt: record.ingested_at,
       identifiedAt: record.identified_at,
+      reportabilityIdentifiedAt: record.reportability_identified_at || undefined,
       reviewedAt: review?.reviewed_at,
       transferredAt: transfer?.transferred_at || undefined,
       acknowledgedAt: transfer?.acknowledged_at || undefined,

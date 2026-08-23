@@ -13,6 +13,7 @@ export function calculatePvClock(
     postedAt: string;
     ingestedAt: string;
     identifiedAt: string;
+    reportabilityIdentifiedAt?: string;
     reviewedAt?: string;
     transferredAt?: string;
     acknowledgedAt?: string;
@@ -24,8 +25,19 @@ export function calculatePvClock(
     posted_at: validTime(input.postedAt),
     ingested_at: validTime(input.ingestedAt),
     identified_at: validTime(input.identifiedAt),
+    reportability_identified_at: validTime(input.reportabilityIdentifiedAt),
   };
   const initialStart = startCandidates[policy.clockStart];
+  if (!initialStart && policy.clockStart === "reportability_identified_at") {
+    return {
+      stage: "not_started",
+      startedAt: "",
+      elapsedMinutes: 0,
+      percentConsumed: 0,
+      state: "not_started",
+      governingClock: policy.clockStart,
+    };
+  }
   if (!initialStart) throw new Error(`A valid ${policy.clockStart} timestamp is required.`);
 
   let stage: PvClockStatus["stage"] = "review";

@@ -68,10 +68,16 @@ const identifiedClock = calculatePvClock({
 assert(identifiedClock.elapsedMinutes === 525, "CSV-import SLA timing must begin at reviewer identification, not the historical post date.");
 assert(identifiedClock.governingClock === "identified_at" && identifiedClock.governingTimestamp === "2026-08-06T00:15:00.000Z", "CSV-import clocks must label reviewer identification as day zero.");
 
+const pendingReportabilityClock = calculatePvClock({
+  status: "new", postedAt: "2026-07-01T00:00:00.000Z", ingestedAt: "2026-08-06T00:10:00.000Z", identifiedAt: "2026-08-06T00:15:00.000Z",
+}, { reviewMinutes: 15 * 24 * 60, transferMinutes: 600, acknowledgmentMinutes: 1200, clockStart: "reportability_identified_at", timezone: "UTC" }, new Date("2026-08-06T09:00:00.000Z"));
+assert(pendingReportabilityClock.state === "not_started" && !pendingReportabilityClock.governingTimestamp, "Imported social evidence must not start Day Zero before qualified reportability review.");
+
 function overviewRecord(id: string, status: PvRecordStatus, assignedReviewerId: string | null = null) {
   return {
-    id, status, assigned_reviewer_id: assignedReviewerId, day_zero_basis: "identified_at" as const,
+    id, status, assigned_reviewer_id: assignedReviewerId, day_zero_basis: "reportability_identified_at" as const,
     posted_at: "2026-08-01T00:00:00.000Z", ingested_at: "2026-08-16T00:00:00.000Z", identified_at: "2026-08-16T00:00:00.000Z",
+    reportability_identified_at: "2026-08-16T00:00:00.000Z",
   };
 }
 const overviewRecords = [
@@ -93,7 +99,7 @@ assert(overviewMetrics.totalRecords === 8 && overviewMetrics.reviewedRecords ===
 assert(overviewMetrics.unassignedActiveClock === 1, "Only unreviewed and unassigned records with an active day-zero clock belong in the unassigned-clock card.");
 assert(overviewMetrics.awaitingReview === 3 && overviewMetrics.screeningCompliance === 87.5, "Assignment and review actions must update the awaiting-review and compliance cards without hiding open records.");
 assert(overviewMetrics.transferred === 3 && overviewMetrics.unacknowledged === 1, "Transferred totals must survive acknowledgment while the unacknowledged card retains only sponsor responses still pending.");
-assert(overviewMetrics.approachingSla === 4 && overviewMetrics.nilReturns === 1 && overviewMetrics.reconciliationCompletion === 13, "SLA, nil-return, and reconciliation cards must reflect their current workflow stages.");
+assert(overviewMetrics.approachingSla === 1 && overviewMetrics.nilReturns === 1 && overviewMetrics.reconciliationCompletion === 13, "SLA, nil-return, and reconciliation cards must reflect their current workflow stages.");
 const postReviewMetrics = derivePvOverviewMetrics({
   records: overviewRecords.map((record) => record.id === "unassigned" ? { ...record, status: "not_relevant" as const, assigned_reviewer_id: "reviewer-3" } : record),
   reviews: [...overviewReviews, { record_id: "unassigned", reviewed_at: "2026-08-16T20:30:00.000Z" }], transfers: overviewTransfers,
@@ -178,7 +184,7 @@ const workbenchOntologyIndex = workbench.indexOf("<PvOntologyReview", workbenchM
 const workbenchRationaleIndex = workbench.indexOf("Why AskSocial surfaced this", workbenchMetricsIndex);
 assert(workbenchMetricsIndex >= 0 && workbenchOntologyIndex > workbenchMetricsIndex && workbenchOntologyIndex < workbenchRationaleIndex, "The interactive ontology review must appear directly below the four screening metrics.");
 assert(!workbench.includes("CSV social-data intake"), "The browser-facing CSV social-data intake section must remain removed from Screening Status.");
-for (const phrase of ["Original post date", "Reviewer-identification date", "Governing day-zero clock", "CSV date column", "Day zero:"]) {
+for (const phrase of ["Original post date", "Content availability", "Reportability review / Day Zero", "CSV date column", "Day zero:"]) {
   assert(workbench.includes(phrase), `PV workbench is missing two-clock timestamp UX: ${phrase}`);
 }
 for (const phrase of ["Screening Status · Structured review", "Continue to structured review", "Return to Review Queue", "pv-screening-structured-review"]) {
@@ -187,7 +193,7 @@ for (const phrase of ["Screening Status · Structured review", "Continue to stru
 for (const phrase of ["ICH E2D(R1) case assessment", "Identifiable patient?", "Identifiable reporter?", "Seriousness criteria", "Targeted follow-up questions", "Duplicate assessment", "Regional / local reporting assessment"]) {
   assert(workbench.includes(phrase), `PV structured review is missing its E2D(R1) assessment field: ${phrase}.`);
 }
-for (const phrase of ["Escalated sponsor assessments", "Create PDF", "Share PDF via email", "Minimum criteria", "sponsorCases.map"]) {
+for (const phrase of ["Escalated sponsor assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
   assert(screeningStatusSource.includes(phrase), `Screening Status is missing sponsor-report aggregation UX: ${phrase}.`);
 }
 for (const phrase of ["Full mention", "Save review list", "Save to workspace", "Saved aggregate review lists", "Download CSV", "Share by email", "Assignee email or user ID"]) {
@@ -217,6 +223,7 @@ assert(reviewQueueSource.includes("const sortedRecords = useMemo") && reviewQueu
 assert(reviewQueueSource.includes('aria-sort={head.key === "score"') && reviewQueueSource.includes('className="inline-flex cursor-pointer'), "The sortable Score header must expose its direction accessibly and display the interaction cursor.");
 assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('sourceType.endsWith("_csv")'), "CSV-origin PV queue records must be labeled Social.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
+assert(workbench.includes("Confirm all four minimum ICSR criteria") && workbench.includes("Confirm reportability & escalate"), "Escalation must require the four minimum ICSR criteria and explicitly establish Day Zero.");
 assert(!workbench.includes('disabled={busy.startsWith("review:") || !rationale.trim()}'), "PV decision buttons must not be silently disabled while the rationale is empty.");
 const importRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/imports/route.ts"), "utf8");
 assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a file-upload route.");
@@ -230,6 +237,7 @@ assert(pvService.includes('.eq("decision", "escalate")') && pvService.includes("
 assert(pvService.includes("listAllPvRecordsForOverview") && pvService.includes("derivePvOverviewMetrics"), "Compliance Overview must use the complete record ledger and lifecycle-derived metrics.");
 assert(pvService.includes('adverseEventOntology: review.validated_ae_ontology') && pvService.includes('ontologyStatus: "reviewer_validated"'), "Sponsor transfers must include the final reviewer-approved adverse-event ontology.");
 assert(pvService.includes("listPvSponsorCases") && pvService.includes("recordPvSponsorReportActivity") && pvService.includes('decision", "escalate'), "Escalated reviews must be aggregated into auditable sponsor reports.");
+assert(pvService.includes("recordUpdates.reportability_identified_at = reportabilityIdentifiedAt") && pvService.includes("dayZeroStarted"), "Qualified escalation must persist and audit the first reportability-review Day Zero trigger.");
 assert(!pvService.includes("proposedAdverseEventOntology") && !pvService.includes("validatedAdverseEventOntology"), "Sponsor transfers must not expose parallel proposed and validated ontology fields.");
 for (const contract of ["createPvReviewList", "listPvReviewLists", "updatePvReviewList", "review_list.share_email", "review_list.export"]) assert(pvService.includes(contract), `PV aggregate-review service is missing ${contract}.`);
 const reviewListRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/review-lists/route.ts"), "utf8");
@@ -245,11 +253,12 @@ for (const phrase of ["PvReviewListDetail", "Assign to another user", "Send list
 const sponsorReportRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/sponsor-reports/route.ts"), "utf8");
 const sponsorReportExportRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/sponsor-reports/export/route.ts"), "utf8");
 const sponsorReportSource = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/sponsorReport.ts"), "utf8");
-for (const phrase of ["publication timestamp", "collection timestamp", "algorithm timestamp", "review / day-zero timestamp", "escalation timestamp", "ICH E2D(R1) minimum ICSR criteria", "identifiable patient", "identifiable reporter", "unfiltered primary-source evidence", "seriousness criteria", "stand-alone clinical narrative inputs", "duplicate assessment", "targeted follow-up questions", "regional / local reporting assessment"]) {
+for (const phrase of ["publication timestamp", "collection timestamp", "algorithm timestamp", "reportability review / day-zero timestamp", "escalation timestamp", "ICH E2D(R1) minimum ICSR criteria", "identifiable patient", "identifiable reporter", "unfiltered primary-source evidence", "seriousness criteria", "stand-alone clinical narrative inputs", "duplicate assessment", "targeted follow-up questions", "regional / local reporting assessment"]) {
   assert(sponsorReportSource.toLowerCase().includes(phrase.toLowerCase()), `Sponsor PDF is missing E2D(R1) report content: ${phrase}.`);
 }
 assert(sponsorReportExportRoute.includes('"Content-Type": "application/pdf"') && sponsorReportExportRoute.includes("recordPvSponsorReportActivity"), "Sponsor-report export must return an audited PDF.");
 assert(sponsorReportRoute.includes("RESEND_API_KEY") && sponsorReportRoute.includes("PV_SPONSOR_FROM_EMAIL") && sponsorReportRoute.includes('transferMethod: "secure_email"'), "Sponsor-report sharing must support governed email attachment delivery and transfer provenance.");
+assert(sponsorReportRoute.includes('delivery === "provider" ? "share" : "prepare"'), "A client-email draft must be audited as prepared rather than falsely marked as sent.");
 void (async () => {
   const sampleSponsorPdf = await createPvSponsorReport({
     therapeuticArea: "Test area",

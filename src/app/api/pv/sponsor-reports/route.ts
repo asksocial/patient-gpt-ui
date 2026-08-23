@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       }
     }
     await recordPvSponsorReportActivity(principal, {
-      action: "share",
+      action: delivery === "provider" ? "share" : "prepare",
       therapeuticArea,
       caseIds: cases.map((item: any) => item.id),
       recipientEmail,

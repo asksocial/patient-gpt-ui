@@ -67,7 +67,7 @@ export type PvContentInput = {
   sourceRowNumber?: number;
   postedAtSourceColumn?: string;
   postedAtRawValue?: string;
-  dayZeroBasis?: "posted_at" | "identified_at";
+  dayZeroBasis?: "posted_at" | "identified_at" | "reportability_identified_at";
   dayZeroReason?: string;
 };
 
@@ -172,20 +172,20 @@ export type PvSlaPolicy = {
   reviewMinutes: number;
   transferMinutes: number;
   acknowledgmentMinutes: number;
-  clockStart: "posted_at" | "ingested_at" | "identified_at";
+  clockStart: "posted_at" | "ingested_at" | "identified_at" | "reportability_identified_at";
   timezone: string;
 };
 
 export type PvClockStatus = {
-  stage: "review" | "transfer" | "acknowledgment" | "complete";
+  stage: "not_started" | "review" | "transfer" | "acknowledgment" | "complete";
   startedAt: string;
   dueAt?: string;
   elapsedMinutes: number;
   remainingMinutes?: number;
   percentConsumed: number;
-  state: "healthy" | "approaching" | "breached" | "complete";
-  governingClock: "posted_at" | "ingested_at" | "identified_at";
-  governingTimestamp: string;
+  state: "not_started" | "healthy" | "approaching" | "breached" | "complete";
+  governingClock: "posted_at" | "ingested_at" | "identified_at" | "reportability_identified_at";
+  governingTimestamp?: string;
 };
 
 export type PvReviewDecision = {

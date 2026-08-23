@@ -169,7 +169,8 @@ export async function createPvSponsorReport(input: {
     field("Publication timestamp", timestamp(record.posted_at));
     field("Collection timestamp", timestamp(record.ingested_at));
     field("Algorithm timestamp", timestamp(record.created_at || record.identified_at));
-    field("Review / day-zero timestamp", timestamp(record.identified_at));
+    field("Content availability timestamp", timestamp(record.identified_at));
+    field("Reportability review / day-zero timestamp", timestamp(record.reportability_identified_at || review.reviewed_at));
     field("Escalation timestamp", timestamp(review.reviewed_at));
     field("Sponsor transfer timestamp", timestamp(transfer?.transferred_at));
 

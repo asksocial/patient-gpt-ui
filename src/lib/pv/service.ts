@@ -212,7 +212,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
   const identificationTimestamp = input.identifiedAt || new Date().toISOString();
 
   if (!result.shouldCreateRecord) {
-    await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, evidenceHash, classifierVersion: result.classifierVersion, postDate: input.postedAt, reviewerIdentificationDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber, postedAtSourceColumn: input.postedAtSourceColumn, postedAtRawValue: input.postedAtRawValue } });
+    await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, evidenceHash, classifierVersion: result.classifierVersion, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber, postedAtSourceColumn: input.postedAtSourceColumn, postedAtRawValue: input.postedAtRawValue } });
     return { result, record: null };
   }
 
@@ -225,7 +225,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
       resourceType: "pv_record",
       resourceId: String(existingRecord.id),
       outcome: "completed",
-      metadata: { externalId: input.externalId, evidenceHash, retainedExistingRecord: true, postDate: input.postedAt, reviewerIdentificationDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber },
+      metadata: { externalId: input.externalId, evidenceHash, retainedExistingRecord: true, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber },
     });
     return { result, record: existingRecord, duplicate: true };
   }
@@ -251,7 +251,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
     day_zero_basis: input.dayZeroBasis || "posted_at", day_zero_reason: input.dayZeroReason || null,
   }).select("*").single();
   if (recordError || !record) throw new Error(`Failed to create potential PV record: ${recordError?.message || "missing row"}`);
-  await appendPvAuditEvent(principal, { action: "record.create_from_detection", resourceType: "pv_record", resourceId: String(record.id), outcome: "completed", metadata: { score: result.score, evidenceHash, humanReviewRequired: true, postDate: input.postedAt, reviewerIdentificationDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber } });
+  await appendPvAuditEvent(principal, { action: "record.create_from_detection", resourceType: "pv_record", resourceId: String(record.id), outcome: "completed", metadata: { score: result.score, evidenceHash, humanReviewRequired: true, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber } });
   return { result, record, duplicate: false };
 }
 
@@ -300,12 +300,12 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
     date_column: input.dateColumn, content_columns: input.contentColumns,
     source_url_column: input.sourceUrlColumn || null, external_id_column: input.externalIdColumn || null,
     uploaded_by: principal.actorId, uploaded_at: availableAt, available_at: availableAt,
-    day_zero_basis: "identified_at", row_count: input.rowCount, status: "processing",
+    day_zero_basis: "reportability_identified_at", row_count: input.rowCount, status: "processing",
   }).select("*").single();
   if (batchError || !batch) throw new Error(`Failed to register PV CSV import: ${batchError?.message || "missing batch"}`);
   await appendPvAuditEvent(principal, {
     action: "csv_import.available", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed",
-    metadata: { fileName: input.fileName, fileHash: input.fileHash, availableAt, reviewerIdentificationDate: availableAt, dayZeroBasis: "identified_at", dateColumn: input.dateColumn, rowCount: input.rowCount, parseFailureCount: input.parseErrors?.length || 0 },
+    metadata: { fileName: input.fileName, fileHash: input.fileHash, availableAt, contentAvailabilityDate: availableAt, dayZeroBasis: "reportability_identified_at", dateColumn: input.dateColumn, rowCount: input.rowCount, parseFailureCount: input.parseErrors?.length || 0 },
   });
 
   let screenedCount = 0;
@@ -320,8 +320,8 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
         ingestedAt: availableAt, identifiedAt: availableAt, dataOrigin: input.dataOrigin,
         importBatchId: String(batch.id), sourceRowNumber: row.rowNumber,
         postedAtSourceColumn: input.dateColumn, postedAtRawValue: row.postedAtRawValue,
-        dayZeroBasis: "identified_at",
-        dayZeroReason: "Reviewer identification began when the uploaded CSV became available to the AskSocial tenant.",
+        dayZeroBasis: "reportability_identified_at",
+        dayZeroReason: "Day Zero starts only when a qualified reviewer confirms the minimum ICSR criteria.",
       });
       screenedCount += 1;
       if (detection.record && !detection.duplicate) routedCount += 1;
@@ -338,7 +338,7 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
   if (updateError || !completed) throw new Error(`Failed to finalize PV CSV import: ${updateError?.message || "missing batch"}`);
   await appendPvAuditEvent(principal, {
     action: "csv_import.complete", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: status === "failed" ? "failed" : "completed",
-    metadata: { screenedCount, routedCount, duplicateCount, failedCount: errors.length, availableAt, dayZeroBasis: "identified_at" },
+    metadata: { screenedCount, routedCount, duplicateCount, failedCount: errors.length, availableAt, dayZeroBasis: "reportability_identified_at" },
   });
   return completed;
 }
@@ -402,10 +402,10 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     data_origin: "curated", date_column: corpus.dateColumn, content_columns: corpus.contentColumns,
     source_url_column: corpus.sourceUrlColumn || null, external_id_column: corpus.externalIdColumn || null,
     uploaded_by: principal.actorId, uploaded_at: availableAt, available_at: availableAt,
-    day_zero_basis: "identified_at", row_count: corpus.rowCount, status: "processing",
+    day_zero_basis: "reportability_identified_at", row_count: corpus.rowCount, status: "processing",
   }).select("*").single();
   if (batchError || !batch) throw new Error(`Failed to register the bundled PV corpus: ${batchError?.message || "missing batch"}`);
-  await appendPvAuditEvent(principal, { action: "csv_import.available", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, fileHash: corpus.fileHash, availableAt, reviewerIdentificationDate: availableAt, dayZeroBasis: "identified_at", rowCount: corpus.rowCount } });
+  await appendPvAuditEvent(principal, { action: "csv_import.available", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, fileHash: corpus.fileHash, availableAt, contentAvailabilityDate: availableAt, dayZeroBasis: "reportability_identified_at", rowCount: corpus.rowCount } });
 
   const candidateIds = corpus.candidates.map((row) => row.externalId);
   const existingIds = new Set<string>();
@@ -433,8 +433,8 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
       detection_rationale: result.rationale, data_origin: "curated", ae_ontology: result.ontologyExtraction,
       ontology_version: result.ontologyExtraction.ontologyVersion, import_batch_id: batch.id,
       source_row_number: row.rowNumber, posted_at_source_column: corpus.dateColumn,
-      posted_at_raw_value: row.postedAtRawValue, day_zero_basis: "identified_at",
-      day_zero_reason: "Reviewer identification began when the bundled Botulinum toxin corpus became available to the AskSocial tenant.",
+      posted_at_raw_value: row.postedAtRawValue, day_zero_basis: "reportability_identified_at",
+      day_zero_reason: "Day Zero starts only when a qualified reviewer confirms the minimum ICSR criteria.",
     };
   });
   let routedCount = 0;
@@ -451,7 +451,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     failed_count: failedCount, status, error_summary: corpus.errors.slice(0, 100), updated_at: new Date().toISOString(),
   }).eq("id", batch.id).eq("principal_id", principal.principalId).select("*").single();
   if (updateError || !completed) throw new Error(`Failed to finalize the bundled PV corpus: ${updateError?.message || "missing batch"}`);
-  await appendPvAuditEvent(principal, { action: "csv_import.complete", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, screenedCount: corpus.rows.length, candidateCount: corpus.candidates.length, routedCount, duplicateCount: existingIds.size, failedCount, availableAt, dayZeroBasis: "identified_at", screeningMethod: "botulinum-pv-context-rules" } });
+  await appendPvAuditEvent(principal, { action: "csv_import.complete", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, screenedCount: corpus.rows.length, candidateCount: corpus.candidates.length, routedCount, duplicateCount: existingIds.size, failedCount, availableAt, dayZeroBasis: "reportability_identified_at", screeningMethod: "botulinum-pv-context-rules" } });
   return completed;
 }
 
@@ -491,7 +491,7 @@ export async function listPvRecords(principal: PlatformPrincipal, input: { statu
     publication_timestamp: record.posted_at,
     collection_timestamp: record.ingested_at,
     algorithm_timestamp: record.created_at || record.identified_at,
-    review_timestamp: record.identified_at,
+    review_timestamp: record.reportability_identified_at || escalationByRecord.get(record.id) || null,
     escalation_timestamp: escalationByRecord.get(record.id) || null,
   }));
 }
@@ -533,7 +533,7 @@ export async function listPvSponsorCases(principal: PlatformPrincipal, therapeut
         publication_timestamp: record.posted_at,
         collection_timestamp: record.ingested_at,
         algorithm_timestamp: record.created_at || record.identified_at,
-        review_timestamp: record.identified_at,
+        review_timestamp: record.reportability_identified_at || review.reviewed_at,
         escalation_timestamp: review.reviewed_at,
       },
       review,
@@ -544,7 +544,7 @@ export async function listPvSponsorCases(principal: PlatformPrincipal, therapeut
 
 export async function recordPvSponsorReportActivity(
   principal: PlatformPrincipal,
-  input: { action: "export" | "share"; therapeuticArea?: string; caseIds: string[]; recipientEmail?: string; reportHash?: string }
+  input: { action: "export" | "prepare" | "share"; therapeuticArea?: string; caseIds: string[]; recipientEmail?: string; reportHash?: string }
 ) {
   assertPrincipal(principal);
   const recipientEmail = input.recipientEmail?.trim().toLowerCase();
@@ -679,10 +679,13 @@ export async function getPvRecord(principal: PlatformPrincipal, recordId: string
   } : DEFAULT_PV_SLA;
   const effectiveSla: PvSlaPolicy = {
     ...sla,
-    clockStart: record.day_zero_basis === "identified_at" ? "identified_at" : sla.clockStart,
+    clockStart: record.day_zero_basis === "reportability_identified_at"
+      ? "reportability_identified_at"
+      : record.day_zero_basis === "identified_at" ? "identified_at" : sla.clockStart,
   };
   const clock = calculatePvClock({
     status: record.status, postedAt: record.posted_at, ingestedAt: record.ingested_at, identifiedAt: record.identified_at,
+    reportabilityIdentifiedAt: record.reportability_identified_at || latestReview?.reviewed_at,
     reviewedAt: latestReview?.reviewed_at, transferredAt: latestTransfer?.transferred_at, acknowledgedAt: latestTransfer?.acknowledged_at,
   }, effectiveSla);
   return { record, reviews: reviews || [], transfers: transfers || [], audit: audit || [], clock, sla: effectiveSla };
@@ -694,8 +697,20 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
   if (decision.action === "escalate" && (decision.productMention === "no" || decision.healthExperience === "no" || !decision.classifications.length)) {
     throw new Error("Escalation requires product relevance, a health experience or special situation, and at least one classification.");
   }
+  if (decision.action === "escalate") {
+    const minimum = decision.ontologyReview?.icsrAssessment?.minimumCriteria;
+    const criteriaMet = [
+      minimum?.suspectProduct?.status,
+      minimum?.adverseEventOrObservation?.status,
+      minimum?.identifiablePatient?.status,
+      minimum?.identifiableReporter?.status,
+    ].every((status) => status === "yes");
+    if (!criteriaMet) {
+      throw new Error("Confirm all four minimum ICSR criteria before escalating. If patient or reporter identifiability remains unclear, retain the assessment for follow-up without starting Day Zero.");
+    }
+  }
   const supabase = getSupabaseServerClient();
-  const { data: record } = await supabase.from("pv_records").select("id,status").eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
+  const { data: record } = await supabase.from("pv_records").select("id,status,reportability_identified_at").eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
   if (!record) throw new Error("PV record not found.");
   if (["transferred", "acknowledged", "reconciled"].includes(record.status)) throw new Error("Transferred PV records cannot be reclassified without a governed correction workflow.");
   const reviewedAt = new Date().toISOString();
@@ -707,11 +722,18 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
   }).select("*").single();
   if (reviewError || !review) throw new Error(`Failed to save PV review: ${reviewError?.message || "missing row"}`);
   const nextStatus = decision.action === "escalate" ? "ready_for_transfer" : "not_relevant";
-  const { error: updateError } = await supabase.from("pv_records").update({ status: nextStatus, assigned_reviewer_id: principal.actorId, updated_at: reviewedAt })
+  const recordUpdates: Record<string, unknown> = { status: nextStatus, assigned_reviewer_id: principal.actorId, updated_at: reviewedAt };
+  const reportabilityIdentifiedAt = record.reportability_identified_at || reviewedAt;
+  if (decision.action === "escalate") {
+    recordUpdates.reportability_identified_at = reportabilityIdentifiedAt;
+    recordUpdates.day_zero_basis = "reportability_identified_at";
+    recordUpdates.day_zero_reason = "Day Zero began when the qualified reviewer confirmed the minimum ICSR criteria and escalated the AE/ADR for sponsor handoff.";
+  }
+  const { error: updateError } = await supabase.from("pv_records").update(recordUpdates)
     .eq("id", recordId).eq("principal_id", principal.principalId);
   if (updateError) throw new Error(`Failed to update PV record status: ${updateError.message}`);
-  await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, ontologyReviewed: Boolean(decision.ontologyReview), retained: true } });
-  return { review, status: nextStatus };
+  await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, ontologyReviewed: Boolean(decision.ontologyReview), retained: true, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null, dayZeroStarted: decision.action === "escalate" && !record.reportability_identified_at } });
+  return { review, status: nextStatus, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null };
 }
 
 export async function transferPvRecord(principal: PlatformPrincipal, recordId: string, input: { destination: string; transferMethod: "secure_api" | "sftp" | "secure_email" | "manual_export" }) {
@@ -726,6 +748,7 @@ export async function transferPvRecord(principal: PlatformPrincipal, recordId: s
   const payload = {
     recordId: record.id, product: record.product_name, originalVerbatim: record.original_verbatim, source: record.source_type,
     sourceUrl: record.source_url, originalPostTimestamp: record.posted_at, identificationTimestamp: record.identified_at,
+    reportabilityIdentificationTimestamp: record.reportability_identified_at,
     dayZeroBasis: record.day_zero_basis, dayZeroReason: record.day_zero_reason,
     importBatchId: record.import_batch_id, sourceRowNumber: record.source_row_number,
     reviewer: review.reviewer_id, classifications: review.classifications, reviewerRationale: review.rationale,
