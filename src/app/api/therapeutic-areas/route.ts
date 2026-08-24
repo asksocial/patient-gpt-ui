@@ -9,6 +9,9 @@ import {
   getActiveTherapeuticAreas,
   getUserTherapeuticAreas,
 } from "../../../lib/therapeuticAccess/server";
+import {
+  sortTherapeuticAreas,
+} from "../../../lib/therapeuticAreas";
 
 export const dynamic = "force-dynamic";
 
@@ -43,11 +46,13 @@ export async function GET() {
       )
     );
     const therapeuticAreas =
-      activeTherapeuticAreas.filter(
-        (area) =>
-          assignedSet.has(
-            area.toLowerCase()
-          )
+      sortTherapeuticAreas(
+        activeTherapeuticAreas.filter(
+          (area) =>
+            assignedSet.has(
+              area.toLowerCase()
+            )
+        )
       );
 
     return NextResponse.json({

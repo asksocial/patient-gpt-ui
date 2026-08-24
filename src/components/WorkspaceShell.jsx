@@ -16,6 +16,7 @@ import WorkspaceManager from "./WorkspaceManager";
 import {
   resolveWorkspaceNavigationDestination,
 } from "../lib/intelligence-platform/navigation";
+import { sortTherapeuticAreas } from "../lib/therapeuticAreas";
 
 const QUICK_ACTIONS = [
   "What are people saying right now?",
@@ -978,7 +979,9 @@ export default function WorkspaceShell() {
           throw new Error(data.error || "Failed to load therapeutic areas");
         }
 
-        const areas = data.therapeuticAreas || [];
+        const areas = sortTherapeuticAreas(
+          data.therapeuticAreas || []
+        );
         setTherapeuticAreas(areas);
         setAnalyticalCoverage(data.analyticalCoverage || []);
 

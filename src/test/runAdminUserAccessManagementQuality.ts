@@ -11,6 +11,9 @@ import {
 import {
   getRoleFromClaims,
 } from "../lib/auth/isAdmin";
+import {
+  sortTherapeuticAreas,
+} from "../lib/therapeuticAreas";
 
 for (const claims of [
   {
@@ -108,6 +111,30 @@ try {
 if (!rejectedInactiveArea) {
   throw new Error(
     "Inactive therapeutic areas must be rejected."
+  );
+}
+
+const alphabetizedAreas =
+  sortTherapeuticAreas([
+    "Uterine Fibroids",
+    "Hepatitis B",
+    "Botulinum toxin",
+    "Medical Aesthetics",
+    "Gene Therapy",
+  ]);
+
+if (
+  alphabetizedAreas.join("|") !==
+  [
+    "Botulinum toxin",
+    "Gene Therapy",
+    "Hepatitis B",
+    "Medical Aesthetics",
+    "Uterine Fibroids",
+  ].join("|")
+) {
+  throw new Error(
+    "Available therapeutic areas must always be displayed alphabetically."
   );
 }
 
