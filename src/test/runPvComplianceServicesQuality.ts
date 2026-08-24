@@ -43,6 +43,8 @@ const reporterInitials = assessIcsrIdentifiability({ original_verbatim: "I devel
 assert(reporterInitials.reporter.qualifyingCharacteristics.some((item) => item.startsWith("Initials")), "Reporter initials must be retained as an ICH qualifying characteristic without implying verification.");
 const reporterOrganisation = assessIcsrIdentifiability({ original_verbatim: "We treated a patient who developed a rash after Product A.", author_identifier: "Dr. Smith, City Hospital" });
 assert(reporterOrganisation.reporter.relationship === "first_hand_other" && reporterOrganisation.reporter.qualifyingCharacteristics.some((item) => item.startsWith("Organisation")), "Reporter qualification and organisation characteristics must support follow-up of a first-hand report.");
+const professionalPage = assessIcsrIdentifiability({ original_verbatim: "Product A can help headaches.", author_identifier: "The Jaw Physio" });
+assert(professionalPage.reporter.qualifyingCharacteristics.some((item) => item.startsWith("Qualification")) && !professionalPage.reporter.qualifyingCharacteristics.some((item) => item.startsWith("Name")), "A professional page label must not be misrepresented as a verified personal name.");
 const promotionalFirstPerson = assessIcsrIdentifiability({ original_verbatim: "My clinic offers Product A and discusses rash risks.", author_identifier: "Jane Smith" });
 assert(promotionalFirstPerson.reporter.relationship === "unclear", "Generic first-person promotional language must not be classified as personal experience.");
 const aggregatePatients = assessIcsrIdentifiability({ original_verbatim: "Twenty patients experienced rash after Product A.", author_identifier: "Jane Smith" });

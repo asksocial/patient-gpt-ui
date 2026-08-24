@@ -44,7 +44,7 @@ const GESTATIONAL_AGE = /\b\d{1,2}\s*weeks?\s*(?:pregnant|gestation)\b/i;
 const PATIENT_INITIALS = /\b(?:patient\s+)?[A-Z]\.?\s*[A-Z]\.?\b/;
 const AGGREGATE_PATIENT_STATEMENT = /\b(?:\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|several|multiple|many|a few|some)\s+patients?\b/i;
 const CONTACT = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b|\+?\d[\d\s().-]{7,}\d/;
-const REPORTER_QUALIFICATION = /\b(?:physician|doctor|dr\.?|nurse|pharmacist|healthcare professional|health care professional|hcp|dentist|surgeon|physiotherapist|physical therapist|lawyer|attorney|consumer|caregiver|parent|patient advocate|researcher)\b/i;
+const REPORTER_QUALIFICATION = /\b(?:physician|doctor|dr\.?|m\.?d\.?|nurse|r\.?n\.?|pharmacist|healthcare professional|health care professional|hcp|dentist|surgeon|physio|physiotherapist|physical therapist|lawyer|attorney|consumer|caregiver|parent|patient advocate|researcher)\b/i;
 const REPORTER_INITIALS = /^(?:[\p{L}]\.?\s*){2,4}$/u;
 const REAL_NAME = /^[\p{Lu}][\p{L}'’-]+(?:\s+[\p{Lu}][\p{L}'’-]+)+$/u;
 const ORGANIZATION_OR_DEPARTMENT = /\b(?:organisation|organization|department|clinic|hospital|medical cent(?:er|re)|practice|pharmacy|university|law firm|health system)\b/i;
@@ -108,7 +108,8 @@ export function assessIcsrIdentifiability(record: {
   if (author && CONTACT.test(author)) qualifyingCharacteristics.push(`Contact characteristic: ${author}`);
   if (author && REPORTER_QUALIFICATION.test(author)) qualifyingCharacteristics.push(`Qualification: ${author}`);
   if (author && REPORTER_INITIALS.test(author)) qualifyingCharacteristics.push(`Initials: ${author}`);
-  if (author && REAL_NAME.test(author) && !isAnonymous) qualifyingCharacteristics.push(`Name: ${author}`);
+  const looksLikeProfessionalOrOrganisation = /^(?:the)\b/i.test(author) || ORGANIZATION_OR_DEPARTMENT.test(author) || REPORTER_QUALIFICATION.test(author);
+  if (author && REAL_NAME.test(author) && !isAnonymous && !looksLikeProfessionalOrOrganisation) qualifyingCharacteristics.push(`Name: ${author}`);
   if (author && ORGANIZATION_OR_DEPARTMENT.test(author)) qualifyingCharacteristics.push(`Organisation or department: ${author}`);
   if (author && ADDRESS_OR_LOCATION.test(author)) qualifyingCharacteristics.push(`Address or location characteristic: ${author}`);
 
