@@ -4,7 +4,7 @@ import { calculatePvClock, classifyPvContent, derivePvOverviewMetrics, parsePvCs
 import { buildEcosystemNavigation, configurationFromEntitlements, resolveCustomerIntelligenceAccess } from "../lib/intelligence-platform";
 import { resolveEntitlements } from "../lib/entitlements";
 import { createPvSponsorReport } from "../lib/pv/sponsorReport";
-import { assessIcsrIdentifiability } from "../lib/pv/identifiability";
+import { assessIcsrIdentifiability, reporterCriterionStatus } from "../lib/pv/identifiability";
 
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
 
@@ -23,13 +23,30 @@ assert(patientResult.classifications.includes("adverse_event"), "Potential adver
 assert(patientResult.rationale.some((item) => item.includes("not an adverse-event determination")), "Detection must explicitly preserve human determination.");
 
 const supportedIdentifiability = assessIcsrIdentifiability({ original_verbatim: "I am a 42-year-old woman and developed a rash after Product A.", author_identifier: "Jane Smith" });
-assert(supportedIdentifiability.patient.status === "supported" && supportedIdentifiability.reporter.status === "supported", "Qualifying patient characteristics and a named first-hand reporter must support both ICH identifiability dimensions.");
+assert(supportedIdentifiability.patient.status === "supported" && supportedIdentifiability.reporter.status === "characteristics_detected", "A named first-hand reporter must remain verification-pending until the existence of a real reporter is verified.");
+assert(reporterCriterionStatus({ relationship: supportedIdentifiability.reporter.relationship, existenceStatus: supportedIdentifiability.reporter.status, identifierBasis: supportedIdentifiability.reporter.qualifyingCharacteristics.join("; ") }) === "unclear", "Detected reporter characteristics must not automatically satisfy the reporter criterion.");
+assert(reporterCriterionStatus({ relationship: "self_report", existenceStatus: "verified", identifierBasis: "Name: Jane Smith" }) === "unclear", "Selecting verified without documenting verification evidence must not satisfy the reporter criterion.");
+const verifiedIdentifiability = assessIcsrIdentifiability({ original_verbatim: "I am a 42-year-old woman and developed a rash after Product A.", author_identifier: "Jane Smith", reporter_existence_status: "verified", reporter_verification_evidence: "Identity confirmed during permitted follow-up." });
+assert(verifiedIdentifiability.reporter.status === "verified" && reporterCriterionStatus({ relationship: verifiedIdentifiability.reporter.relationship, existenceStatus: verifiedIdentifiability.reporter.status, identifierBasis: verifiedIdentifiability.reporter.qualifyingCharacteristics.join("; "), verificationEvidence: verifiedIdentifiability.reporter.verificationEvidence }) === "yes", "A verified real, first-hand reporter with documented evidence must satisfy the reporter criterion.");
+const anonymousVerified = assessIcsrIdentifiability({ original_verbatim: "I developed a rash after Product A.", author_identifier: "Anonymous", reporter_existence_status: "anonymous_verified", reporter_verification_evidence: "PV intake staff verified the individual's existence while retaining anonymity." });
+assert(anonymousVerified.reporter.status === "anonymous_verified" && reporterCriterionStatus({ relationship: anonymousVerified.reporter.relationship, existenceStatus: anonymousVerified.reporter.status, verificationEvidence: anonymousVerified.reporter.verificationEvidence }) === "yes", "An anonymous reporter must qualify when existence and first-hand knowledge are verified and documented.");
+const anonymousUnverified = assessIcsrIdentifiability({ original_verbatim: "I developed a rash after Product A.", author_identifier: "Anonymous" });
+assert(anonymousUnverified.reporter.isAnonymous && anonymousUnverified.reporter.status === "not_established", "Anonymous intent alone must not establish that a real reporter exists.");
 const handleOnlyIdentifiability = assessIcsrIdentifiability({ original_verbatim: "I developed a rash after Product A.", author_identifier: "@patient123" });
 assert(handleOnlyIdentifiability.patient.status === "not_established" && handleOnlyIdentifiability.reporter.status === "not_established", "A first-person post and digital handle alone must not establish a real patient or reporter under ICH E2D(R1).");
 const namedButNotFirstHand = assessIcsrIdentifiability({ original_verbatim: "Reports online say that Product A caused a rash.", author_identifier: "Jane Smith" });
-assert(namedButNotFirstHand.reporter.status === "not_established", "A reporter name without personal experience or first-hand patient information must not establish an identifiable reporter.");
+assert(namedButNotFirstHand.reporter.status === "characteristics_detected" && namedButNotFirstHand.reporter.relationship === "second_hand", "A reporter name without personal experience or first-hand patient information must remain incomplete and be identified as second-hand.");
+assert(reporterCriterionStatus({ relationship: namedButNotFirstHand.reporter.relationship, existenceStatus: "verified", verificationEvidence: "Identity verified" }) === "no", "A verified person providing only second-hand information must not qualify as the primary-source reporter.");
 const patientOnlyQualifier = assessIcsrIdentifiability({ original_verbatim: "I am a 42-year-old woman and developed a rash after Product A.", author_identifier: "@patient123" });
 assert(patientOnlyQualifier.patient.status === "supported" && patientOnlyQualifier.reporter.status === "not_established", "A patient characteristic must not be reused as a reporter identifier when a digital handle is the only author identifier.");
+const reporterInitials = assessIcsrIdentifiability({ original_verbatim: "I developed a rash after Product A.", author_identifier: "J.S." });
+assert(reporterInitials.reporter.qualifyingCharacteristics.some((item) => item.startsWith("Initials")), "Reporter initials must be retained as an ICH qualifying characteristic without implying verification.");
+const reporterOrganisation = assessIcsrIdentifiability({ original_verbatim: "We treated a patient who developed a rash after Product A.", author_identifier: "Dr. Smith, City Hospital" });
+assert(reporterOrganisation.reporter.relationship === "first_hand_other" && reporterOrganisation.reporter.qualifyingCharacteristics.some((item) => item.startsWith("Organisation")), "Reporter qualification and organisation characteristics must support follow-up of a first-hand report.");
+const promotionalFirstPerson = assessIcsrIdentifiability({ original_verbatim: "My clinic offers Product A and discusses rash risks.", author_identifier: "Jane Smith" });
+assert(promotionalFirstPerson.reporter.relationship === "unclear", "Generic first-person promotional language must not be classified as personal experience.");
+const aggregatePatients = assessIcsrIdentifiability({ original_verbatim: "Twenty patients experienced rash after Product A.", author_identifier: "Jane Smith" });
+assert(aggregatePatients.patient.status === "not_established" && aggregatePatients.patient.limitations.some((item) => item.includes("specific identifiable patient")) && aggregatePatients.reporter.relationship === "unclear", "A definite-number aggregate statement must not establish a specific patient or a first-hand reporter.");
 
 const ontologyResult = classifyPvContent({
   externalId: "post-ontology", sourceType: "curated", sourceUrl: "https://example.test/post-ontology", dataOrigin: "curated",
@@ -210,7 +227,7 @@ for (const phrase of ["Original post date", "Content availability", "Reportabili
 for (const phrase of ["Screening Status · Structured review", "Continue to structured review", "Return to Review Queue", "pv-screening-structured-review"]) {
   assert(workbench.includes(phrase), `PV structured-review navigation is missing ${phrase}.`);
 }
-for (const phrase of ["ICH E2D(R1) case assessment", "Identifiable patient?", "Identifiable reporter?", "Seriousness criteria", "Targeted follow-up questions", "Duplicate assessment", "Regional / local reporting assessment"]) {
+for (const phrase of ["ICH E2D(R1) case assessment", "Identifiable patient?", "Identifiable reporter criterion", "Reporter relationship to event", "Reporter existence status", "Reporter qualifying characteristics", "Reporter existence verification evidence", "Reporter follow-up feasible", "Reporter follow-up status", "Seriousness criteria", "Targeted follow-up questions", "Duplicate assessment", "Regional / local reporting assessment"]) {
   assert(workbench.includes(phrase), `PV structured review is missing its E2D(R1) assessment field: ${phrase}.`);
 }
 for (const phrase of ["Escalated sponsor assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
@@ -265,6 +282,7 @@ assert(pvService.includes("listAllPvRecordsForOverview") && pvService.includes("
 assert(pvService.includes('adverseEventOntology: review.validated_ae_ontology') && pvService.includes('ontologyStatus: "reviewer_validated"'), "Sponsor transfers must include the final reviewer-approved adverse-event ontology.");
 assert(pvService.includes("listPvSponsorCases") && pvService.includes("recordPvSponsorReportActivity") && pvService.includes('decision", "escalate'), "Escalated reviews must be aggregated into auditable sponsor reports.");
 assert(pvService.includes("recordUpdates.reportability_identified_at = reportabilityIdentifiedAt") && pvService.includes("dayZeroStarted"), "Qualified escalation must persist and audit the first reportability-review Day Zero trigger.");
+assert(pvService.includes("reporterCriterionStatus") && pvService.includes("anonymous-but-known reporters") && pvService.includes("verificationEvidence"), "Server-side escalation must independently enforce ICH-aligned reporter existence, first-hand knowledge, and verification evidence.");
 assert(pvService.includes("reportabilityIdentifiedAt: record.reportability_identified_at || undefined"), "A saved review decision must never substitute for the qualified reportability-identification timestamp that starts Day Zero.");
 assert(pvService.includes("startPvRecordReview") && pvService.includes('action: "review.start"') && pvService.includes("review_started_at"), "Continue to structured review must retain its own immutable human-review start timestamp.");
 const reviewStartMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608230002_add_pv_review_start.sql"), "utf8");
@@ -290,7 +308,7 @@ for (const phrase of ["PvReviewListDetail", "Assign to another user", "Send list
 const sponsorReportRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/sponsor-reports/route.ts"), "utf8");
 const sponsorReportExportRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/sponsor-reports/export/route.ts"), "utf8");
 const sponsorReportSource = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/sponsorReport.ts"), "utf8");
-for (const phrase of ["publication timestamp", "collection timestamp", "algorithm timestamp", "reportability review / day-zero timestamp", "escalation timestamp", "ICH E2D(R1) minimum ICSR criteria", "identifiable patient", "identifiable reporter", "unfiltered primary-source evidence", "seriousness criteria", "stand-alone clinical narrative inputs", "duplicate assessment", "targeted follow-up questions", "regional / local reporting assessment"]) {
+for (const phrase of ["publication timestamp", "collection timestamp", "algorithm timestamp", "reportability review / day-zero timestamp", "escalation timestamp", "ICH E2D(R1) minimum ICSR criteria", "identifiable patient", "identifiable reporter", "reporter relationship to event", "reporter existence status", "reporter qualifying characteristics", "reporter verification evidence", "reporter follow-up feasibility", "reporter follow-up status", "unfiltered primary-source evidence", "seriousness criteria", "stand-alone clinical narrative inputs", "duplicate assessment", "targeted follow-up questions", "regional / local reporting assessment"]) {
   assert(sponsorReportSource.toLowerCase().includes(phrase.toLowerCase()), `Sponsor PDF is missing E2D(R1) report content: ${phrase}.`);
 }
 assert(sponsorReportExportRoute.includes('"Content-Type": "application/pdf"') && sponsorReportExportRoute.includes("recordPvSponsorReportActivity"), "Sponsor-report export must return an audited PDF.");

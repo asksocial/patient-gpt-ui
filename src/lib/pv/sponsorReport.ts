@@ -136,6 +136,7 @@ export async function createPvSponsorReport(input: {
     const ontology = review.validated_ae_ontology || {};
     const icsr = ontology.icsrAssessment || {};
     const minimum = icsr.minimumCriteria || {};
+    const reporterAssessment = icsr.reporterAssessment || {};
     const narrative = icsr.clinicalNarrative || {};
     const followUp = icsr.followUp || {};
     const duplicate = icsr.duplicateAssessment || {};
@@ -181,6 +182,12 @@ export async function createPvSponsorReport(input: {
     field("AE/ADR or other observation", `${display(minimum.adverseEventOrObservation?.status, "Unclear")} - ${printable(minimum.adverseEventOrObservation?.evidence || event)}`);
     field("Identifiable patient", `${display(minimum.identifiablePatient?.status, "Unclear")} - ${printable(minimum.identifiablePatient?.evidence)}`);
     field("Identifiable reporter", `${display(minimum.identifiableReporter?.status, "Unclear")} - ${printable(minimum.identifiableReporter?.evidence)}`);
+    field("Reporter relationship to event", display(reporterAssessment.relationship, "Unclear"));
+    field("Reporter existence status", display(reporterAssessment.existenceStatus, "Not established"));
+    field("Reporter qualifying characteristics", reporterAssessment.qualifyingCharacteristics);
+    field("Reporter verification evidence", reporterAssessment.verificationEvidence);
+    field("Reporter follow-up feasibility", display(reporterAssessment.followUpFeasibility, "Unclear"));
+    field("Reporter follow-up status", display(reporterAssessment.followUpStatus, "Not started"));
 
     section("Unfiltered primary-source evidence");
     paragraph(record.original_verbatim);

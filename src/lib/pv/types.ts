@@ -123,6 +123,15 @@ export type PvAdverseEventOntology = {
       identifiablePatient: { status: "yes" | "no" | "unclear"; evidence?: string };
       identifiableReporter: { status: "yes" | "no" | "unclear"; evidence?: string };
     };
+    reporterAssessment?: {
+      relationship: "self_report" | "first_hand_other" | "second_hand" | "unclear";
+      existenceStatus: "verified" | "anonymous_verified" | "characteristics_detected" | "not_established";
+      qualifyingCharacteristics?: string[];
+      identifierBasis?: string;
+      verificationEvidence?: string;
+      followUpFeasibility?: "yes" | "no" | "unclear";
+      followUpStatus?: "not_started" | "attempted" | "response_received" | "not_feasible";
+    };
     seriousnessCriteria: string[];
     clinicalNarrative: {
       patientCharacteristics?: string;

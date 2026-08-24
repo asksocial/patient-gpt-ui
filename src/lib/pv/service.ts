@@ -5,7 +5,7 @@ import { calculatePvClock } from "./clock";
 import { classifyPvContent } from "./detection";
 import { DEFAULT_PV_SLA, derivePvOverviewMetrics } from "./overview";
 import { reconcilePvOperations } from "./reconciliation";
-import { assessIcsrIdentifiability } from "./identifiability";
+import { assessIcsrIdentifiability, reporterCriterionStatus } from "./identifiability";
 import type {
   PvContentInput,
   PvDetectionConcept,
@@ -851,14 +851,21 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
   }
   if (decision.action === "escalate") {
     const minimum = decision.ontologyReview?.icsrAssessment?.minimumCriteria;
+    const reporterAssessment = decision.ontologyReview?.icsrAssessment?.reporterAssessment;
+    const reporterStatus = reporterCriterionStatus({
+      relationship: reporterAssessment?.relationship,
+      existenceStatus: reporterAssessment?.existenceStatus,
+      identifierBasis: reporterAssessment?.identifierBasis || minimum?.identifiableReporter?.evidence,
+      verificationEvidence: reporterAssessment?.verificationEvidence,
+    });
     const criteriaMet = [
       minimum?.suspectProduct?.status,
       minimum?.adverseEventOrObservation?.status,
       minimum?.identifiablePatient?.status,
-      minimum?.identifiableReporter?.status,
-    ].every((status) => status === "yes");
+      reporterStatus,
+    ].every((status) => status === "yes") && minimum?.identifiableReporter?.status === reporterStatus;
     if (!criteriaMet) {
-      throw new Error("Confirm all four minimum ICSR criteria before escalating. If patient or reporter identifiability remains unclear, retain the assessment for follow-up without starting Day Zero.");
+      throw new Error("Confirm all four minimum ICSR criteria before escalating. Reporter identifiability requires verified existence (including anonymous-but-known reporters), self-experience or first-hand information, and documented verification evidence. Otherwise retain the assessment for follow-up without starting Day Zero.");
     }
   }
   const supabase = getSupabaseServerClient();

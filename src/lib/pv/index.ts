@@ -8,3 +8,4 @@ export * from "./csvImport";
 export * from "./botulinumCorpus";
 export * from "./overview";
 export * from "./sponsorReport";
+export * from "./identifiability";
