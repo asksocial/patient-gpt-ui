@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { reporterCriterionStatus } from "../lib/pv/identifiability";
+import { patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
 import Tooltip from "./ui/Tooltip";
 
 const TABS = [
@@ -17,6 +17,11 @@ const TABS = [
 const CLASSIFICATIONS = [
   "adverse_event", "product_quality_complaint", "pregnancy", "medication_error",
   "lack_of_efficacy", "overdose", "misuse_abuse", "other",
+];
+
+const PATIENT_CHARACTERISTIC_TYPES = [
+  "age_or_age_category", "gestational_age", "sex_or_gender", "initials",
+  "date_of_birth", "name", "patient_identifier", "regional_or_local_identifier",
 ];
 
 const AE_ONTOLOGY_OPTIONS = {
@@ -124,12 +129,12 @@ function Metric({ label: metricLabel, value, detail, tooltip, tone = "neutral" }
 function IdentifiabilitySummary({ assessment }) {
   if (!assessment) return null;
   function assessmentTone(dimension, result) {
-    if (dimension === "Patient") return result.status === "supported" ? "healthy" : "approaching";
+    if (dimension === "Patient") return result.criterionStatus === "yes" ? "healthy" : "approaching";
     return result.status === "verified" || result.status === "anonymous_verified" ? "healthy" : "approaching";
   }
   return <section className="mt-5 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4" aria-label="ICH E2D(R1) patient and reporter identifiability">
-    <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/75">Patient and reporter identification</h3><p className="mt-1 text-xs leading-5 text-white/35">Preliminary assessment against ICH E2D(R1) Section 6.1. A digital handle alone never establishes identifiability, and a detected characteristic is not the same as verification that a real reporter exists.</p></div><ToneBadge>{assessment.standard}</ToneBadge></div>
-    <div className="mt-4 grid gap-3 md:grid-cols-2">{[["Patient", assessment.patient], ["Reporter", assessment.reporter]].map(([dimension, result]) => <div key={dimension} className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex items-center justify-between gap-3"><p className="text-xs font-medium text-white/65">{dimension}</p><ToneBadge tone={assessmentTone(dimension, result)}>{result.label}</ToneBadge></div>{dimension === "Reporter" && result.relationshipLabel ? <p className="mt-2 text-[11px] font-medium text-cyan-100/55">Source relationship: {result.relationshipLabel}</p> : null}{result.evidence?.length ? <ul className="mt-3 space-y-1.5 text-xs leading-5 text-white/50">{result.evidence.map((item) => <li key={item}>• {item}</li>)}</ul> : <p className="mt-3 text-xs text-white/35">No qualifying characteristic was detected.</p>}{result.limitations?.map((item) => <p key={item} className="mt-2 text-xs leading-5 text-amber-200/60">Follow-up: {item}</p>)}</div>)}</div>
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/75">Patient and reporter identification</h3><p className="mt-1 text-xs leading-5 text-white/35">Preliminary assessment against ICH E2D(R1) Section 6.1. A qualifying patient characteristic must be associated with one specific patient; aggregate statements and digital handles alone are insufficient. Reporter existence is assessed separately.</p></div><ToneBadge>{assessment.standard}</ToneBadge></div>
+    <div className="mt-4 grid gap-3 md:grid-cols-2">{[["Patient", assessment.patient], ["Reporter", assessment.reporter]].map(([dimension, result]) => <div key={dimension} className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex items-center justify-between gap-3"><p className="text-xs font-medium text-white/65">{dimension}</p><ToneBadge tone={assessmentTone(dimension, result)}>{result.label}</ToneBadge></div>{dimension === "Patient" && result.associationLabel ? <p className="mt-2 text-[11px] font-medium text-cyan-100/55">Patient association: {result.associationLabel} · Criterion {label(result.criterionStatus)}</p> : null}{dimension === "Reporter" && result.relationshipLabel ? <p className="mt-2 text-[11px] font-medium text-cyan-100/55">Source relationship: {result.relationshipLabel}</p> : null}{result.evidence?.length ? <ul className="mt-3 space-y-1.5 text-xs leading-5 text-white/50">{result.evidence.map((item) => <li key={item}>• {item}</li>)}</ul> : <p className="mt-3 text-xs text-white/35">No qualifying characteristic was detected.</p>}{result.limitations?.map((item) => <p key={item} className="mt-2 text-xs leading-5 text-amber-200/60">Follow-up: {item}</p>)}</div>)}</div>
   </section>;
 }
 
@@ -460,6 +465,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const proposedOntology = retainedOntology && Object.keys(retainedOntology).length ? retainedOntology : record.ae_ontology || {};
   const retainedIcsr = proposedOntology.icsrAssessment || {};
   const proposedIdentifiability = record.identifiability_assessment || {};
+  const retainedPatient = retainedIcsr.patientAssessment || {};
   const retainedReporter = retainedIcsr.reporterAssessment || {};
   const [ontologyReview, setOntologyReview] = useState({
     productProcedure: proposedOntology.productProcedures?.[0]?.value || record.product_name || "",
@@ -476,8 +482,13 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const [e2dReview, setE2dReview] = useState({
     reportType: retainedIcsr.reportType || "undetermined",
     primarySourceType: retainedIcsr.primarySourceType || "unknown",
-    patientIdentifiable: retainedIcsr.minimumCriteria?.identifiablePatient?.status || (proposedIdentifiability.patient?.status === "supported" ? "yes" : "unclear"),
-    patientIdentifierBasis: retainedIcsr.minimumCriteria?.identifiablePatient?.evidence || proposedIdentifiability.patient?.evidence?.join(" ") || "",
+    patientIdentifierBasis: retainedIcsr.minimumCriteria?.identifiablePatient?.evidence || proposedIdentifiability.patient?.qualifyingCharacteristics?.join("; ") || "",
+    patientAssociation: retainedPatient.association || proposedIdentifiability.patient?.association || "unclear",
+    patientExistenceStatus: retainedPatient.existenceStatus || proposedIdentifiability.patient?.status || "not_established",
+    patientCharacteristicTypes: retainedPatient.characteristicTypes || proposedIdentifiability.patient?.characteristicTypes || [],
+    patientVerificationEvidence: retainedPatient.verificationEvidence || proposedIdentifiability.patient?.verificationEvidence || "",
+    patientFollowUpFeasibility: retainedPatient.followUpFeasibility || "unclear",
+    patientFollowUpStatus: retainedPatient.followUpStatus || "not_started",
     reporterIdentifierBasis: retainedIcsr.minimumCriteria?.identifiableReporter?.evidence || proposedIdentifiability.reporter?.qualifyingCharacteristics?.join("; ") || "",
     reporterRelationship: retainedReporter.relationship || proposedIdentifiability.reporter?.relationship || "unclear",
     reporterExistenceStatus: retainedReporter.existenceStatus || proposedIdentifiability.reporter?.status || "not_established",
@@ -497,6 +508,13 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
     duplicateStatus: retainedIcsr.duplicateAssessment?.status || "not_checked",
     duplicateReference: retainedIcsr.duplicateAssessment?.reference || "",
     regionalReportingAssessment: retainedIcsr.regionalReportingAssessment || "",
+  });
+  const patientCriterion = patientCriterionStatus({
+    association: e2dReview.patientAssociation,
+    existenceStatus: e2dReview.patientExistenceStatus,
+    characteristicTypes: e2dReview.patientCharacteristicTypes,
+    identifierBasis: e2dReview.patientIdentifierBasis,
+    verificationEvidence: e2dReview.patientVerificationEvidence,
   });
   const reporterCriterion = reporterCriterionStatus({
     relationship: e2dReview.reporterRelationship,
@@ -523,8 +541,18 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
         minimumCriteria: {
           suspectProduct: { status: productMention, evidence: ontologyReview.productProcedure || record.product_name || "" },
           adverseEventOrObservation: { status: healthExperience, evidence: ontologyReview.adverseEvent || record.potential_event || selectedClasses.join(", ") },
-          identifiablePatient: { status: e2dReview.patientIdentifiable, evidence: e2dReview.patientIdentifierBasis },
+          identifiablePatient: { status: patientCriterion, evidence: e2dReview.patientIdentifierBasis },
           identifiableReporter: { status: reporterCriterion, evidence: e2dReview.reporterIdentifierBasis },
+        },
+        patientAssessment: {
+          association: e2dReview.patientAssociation,
+          existenceStatus: e2dReview.patientExistenceStatus,
+          characteristicTypes: e2dReview.patientCharacteristicTypes,
+          qualifyingCharacteristics: e2dReview.patientIdentifierBasis.split(/\n|;/).map((item) => item.trim()).filter(Boolean),
+          identifierBasis: e2dReview.patientIdentifierBasis,
+          verificationEvidence: e2dReview.patientVerificationEvidence,
+          followUpFeasibility: e2dReview.patientFollowUpFeasibility,
+          followUpStatus: e2dReview.patientFollowUpStatus,
         },
         reporterAssessment: {
           relationship: e2dReview.reporterRelationship,
@@ -558,9 +586,9 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       return;
     }
     if (decision === "escalate") {
-      const minimumStatuses = [productMention, healthExperience, e2dReview.patientIdentifiable, reporterCriterion];
+      const minimumStatuses = [productMention, healthExperience, patientCriterion, reporterCriterion];
       if (!minimumStatuses.every((status) => status === "yes")) {
-        setReviewError("Confirm the suspect product, AE/ADR or observation, and identifiable patient. The reporter criterion also requires verified existence (including anonymous-but-known reporters), first-hand information, and documented verification evidence before escalation. This confirmation starts Day Zero.");
+        setReviewError("Confirm the suspect product and AE/ADR or observation. The patient criterion requires one specific patient, at least one controlled ICH qualifying characteristic, and supporting evidence. The reporter criterion requires verified existence, first-hand information, and documented verification evidence. This confirmation starts Day Zero.");
         return;
       }
     }
@@ -577,7 +605,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       <Card title={`PV Record ${record.id.slice(0, 8)}`} subtitle="Original evidence is immutable. Translations, review decisions, and workflow events are stored separately.">
         <div className="space-y-4"><div className="rounded-xl border border-white/10 bg-black/40 p-4"><div className="flex flex-wrap items-center gap-2"><ToneBadge>{sourceLabel(record)}</ToneBadge><ToneBadge>{record.original_language}</ToneBadge><ToneBadge tone={record.priority === "critical" ? "breached" : record.priority === "high" ? "approaching" : "neutral"}>{record.priority} priority</ToneBadge></div><blockquote className="mt-4 border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{record.original_verbatim}</blockquote><div className="mt-4 grid gap-3 text-xs sm:grid-cols-2"><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Original post date</p><p className="mt-1 text-white/65">{formatDate(record.posted_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.posted_at_source_column ? `CSV date column: ${record.posted_at_source_column}${record.posted_at_raw_value ? ` · Raw: ${record.posted_at_raw_value}` : ""}` : "Captured from the source record"}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Content availability</p><p className="mt-1 text-white/65">{formatDate(record.identified_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.import_batch_id ? "Server time when the CSV became available to this AskSocial tenant" : "Timestamp when AskSocial made the content available for review"}</p></div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Structured review started</p><p className="mt-1 text-cyan-100/75">{formatDate(record.review_started_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.review_started_at ? `Started by ${record.review_started_by || record.assigned_reviewer_id || "authorized reviewer"}` : "Populates when Continue to structured review is selected."}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Ingested</p><p className="mt-1 text-white/65">{formatDate(record.ingested_at)}</p>{record.import_batch_id ? <p className="mt-1 text-[10px] text-white/25">Batch {record.import_batch_id.slice(0, 8)} · CSV row {record.source_row_number}</p> : null}</div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Reportability review / Day Zero</p><p className="mt-1 text-cyan-100/75">{record.reportability_identified_at ? formatDate(record.reportability_identified_at) : "Not started"}</p><p className="mt-1 text-[10px] leading-4 text-white/25">{record.day_zero_reason || "Starts only when a qualified reviewer confirms all four minimum ICSR criteria."}</p></div></div>{String(record.source_url || "").startsWith("http") ? <a href={record.source_url} target="_blank" rel="noreferrer" className="inline-block cursor-pointer rounded-lg border border-cyan-300/20 px-3 py-2 text-xs font-semibold text-cyan-300">Open original source ↗</a> : null}<p className="mt-3 break-all text-[10px] text-white/20">Evidence hash {record.evidence_hash}</p></div>
         <div className="grid gap-3 md:grid-cols-4"><Metric label="PV detection score" value={`${record.detection_score}/100`} tooltip="AskSocial's combined screening score based on product, health-experience, context, and configured detection signals. It prioritizes the record for human review and is not an adverse-event determination." /><Metric label="Product confidence" value={`${record.product_confidence}%`} tooltip="AskSocial's confidence that the mention refers to the relevant product or procedure. A qualified reviewer must confirm the product relationship against the source evidence." /><Metric label="Health experience" value={`${record.health_experience_confidence}%`} tooltip="AskSocial's confidence that the mention describes a health experience or potential safety-relevant situation. This score supports triage and does not establish an adverse event." /><Metric label="Evidence origin" value={evidenceOriginLabel(record)} tooltip="Where the evidence entered AskSocial. Mentions ingested from CSV social-data files are labeled Social; other origins retain their governed provenance label. Origin provides provenance and does not indicate evidence quality or causality." /></div>
-        {!['transferred', 'acknowledged', 'reconciled'].includes(record.status) ? <><PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /><E2dCaseAssessment value={e2dReview} onChange={setE2dReview} reporterCriterion={reporterCriterion} /></> : null}
+        {!['transferred', 'acknowledged', 'reconciled'].includes(record.status) ? <><PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /><E2dCaseAssessment value={e2dReview} onChange={setE2dReview} patientCriterion={patientCriterion} reporterCriterion={reporterCriterion} /></> : null}
         <div><p className="text-xs font-medium text-white/55">Why AskSocial surfaced this</p><div className="mt-2 space-y-2">{(record.detection_rationale || []).map((reason, index) => <p key={index} className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-xs leading-5 text-white/40">{reason}</p>)}</div></div>
         <div><p className="text-xs font-medium text-white/55">Matched concepts</p><div className="mt-2 flex flex-wrap gap-2">{(record.matched_concepts || []).map((match) => <ToneBadge key={`${match.conceptId}-${match.matchedTerm}`}>{label(match.category)} · {match.matchedTerm}</ToneBadge>)}</div></div></div>
       </Card>
@@ -621,7 +649,7 @@ function PvOntologyReview({ value, onChange }) {
   return <section className="rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/75">Adverse-event ontology review</h3><p className="mt-1 text-xs leading-5 text-white/35">Confirm or correct every extracted field against the verbatim and applicable reference label before escalation. These reviewer-approved values become the final ontology in the sponsor package.</p><div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4"><OntologyText labelText="Product / procedure" {...field("productProcedure")} /><OntologyText labelText="Adverse event" {...field("adverseEvent")} /><OntologySelect labelText="Seriousness" options={AE_ONTOLOGY_OPTIONS.seriousness} {...field("seriousness")} /><OntologySelect labelText="Outcome" options={AE_ONTOLOGY_OPTIONS.outcome} {...field("outcome")} /><OntologySelect labelText="Time to onset" options={AE_ONTOLOGY_OPTIONS.timeToOnset} {...field("timeToOnset")} /><OntologyText labelText="Onset detail" {...field("timeToOnsetDetail")} /><OntologySelect labelText="Severity" options={AE_ONTOLOGY_OPTIONS.severity} {...field("severity")} /><OntologySelect labelText="Unexpectedness" options={AE_ONTOLOGY_OPTIONS.unexpectedness} {...field("unexpectedness")} /><OntologySelect labelText="Causality type" options={["temporal_association", "possible_attribution", "reported_attribution", "denied"]} {...field("causalityType")} /><OntologySelect labelText="Causality language" options={causalityLanguageOptions} emptyLabel="Not stated / unclear" {...field("causalityLanguage")} /></div></section>;
 }
 
-function E2dCaseAssessment({ value, onChange, reporterCriterion }) {
+function E2dCaseAssessment({ value, onChange, patientCriterion, reporterCriterion }) {
   const seriousnessCriteria = ["death", "life_threatening", "hospitalization", "disability_or_incapacity", "congenital_anomaly_or_birth_defect", "important_medical_event"];
   function field(key) { return { value: value[key], onChange: (event) => onChange((current) => ({ ...current, [key]: event.target.value })) }; }
   function toggleCriterion(criterion) {
@@ -632,14 +660,28 @@ function E2dCaseAssessment({ value, onChange, reporterCriterion }) {
         : [...current.seriousnessCriteria, criterion],
     }));
   }
+  function togglePatientCharacteristic(characteristic) {
+    onChange((current) => ({
+      ...current,
+      patientCharacteristicTypes: current.patientCharacteristicTypes.includes(characteristic)
+        ? current.patientCharacteristicTypes.filter((item) => item !== characteristic)
+        : [...current.patientCharacteristicTypes, characteristic],
+    }));
+  }
   return <section className="rounded-2xl border border-violet-400/15 bg-violet-400/[0.04] p-4">
     <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-100/75">ICH E2D(R1) case assessment</h3>
     <p className="mt-1 text-xs leading-5 text-white/35">Document minimum ICSR criteria, clinical narrative inputs, follow-up gaps, and duplicate assessment. Unknown information remains explicitly missing and is never inferred from a social handle or unverified post.</p>
     <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       <OntologySelect labelText="Report type" options={["undetermined", "spontaneous", "solicited"]} {...field("reportType")} />
       <OntologySelect labelText="Primary source type" options={["unknown", "consumer", "healthcare_professional", "other"]} {...field("primarySourceType")} />
-      <DecisionSelect labelText="Identifiable patient?" value={value.patientIdentifiable} onChange={(patientIdentifiable) => onChange((current) => ({ ...current, patientIdentifiable }))} />
+      <OntologySelect labelText="Patient association" options={["unclear", "specific_patient", "aggregate_patients"]} {...field("patientAssociation")} />
+      <OntologySelect labelText="Patient existence status" options={["not_established", "characteristics_detected", "verified"]} {...field("patientExistenceStatus")} />
+      <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"><p className="text-xs font-medium text-white/55">Identifiable patient criterion</p><div className="mt-2"><ToneBadge tone={patientCriterion === "yes" ? "healthy" : patientCriterion === "no" ? "breached" : "approaching"}>{label(patientCriterion)}</ToneBadge></div><p className="mt-2 text-[10px] leading-4 text-white/30">Yes requires an AE/ADR or observation associated with one specific patient, at least one controlled ICH qualifying characteristic, and documented supporting evidence. Aggregate statements and handles alone do not qualify.</p></div>
       <OntologyText labelText="Patient identifier basis" {...field("patientIdentifierBasis")} />
+      <OntologyText labelText="Patient existence verification evidence" {...field("patientVerificationEvidence")} />
+      <OntologySelect labelText="Patient follow-up feasible" options={["unclear", "yes", "no"]} {...field("patientFollowUpFeasibility")} />
+      <OntologySelect labelText="Patient follow-up status" options={["not_started", "attempted", "response_received", "not_feasible"]} {...field("patientFollowUpStatus")} />
+      <fieldset className="md:col-span-2 xl:col-span-4"><legend className="text-xs font-medium text-white/55">Patient qualifying characteristics (select every characteristic supported by the source)</legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{PATIENT_CHARACTERISTIC_TYPES.map((characteristic) => <label key={characteristic} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.patientCharacteristicTypes.includes(characteristic)} onChange={() => togglePatientCharacteristic(characteristic)} />{label(characteristic)}</label>)}</div></fieldset>
       <OntologySelect labelText="Reporter relationship to event" options={["unclear", "self_report", "first_hand_other", "second_hand"]} {...field("reporterRelationship")} />
       <OntologySelect labelText="Reporter existence status" options={["not_established", "characteristics_detected", "verified", "anonymous_verified"]} {...field("reporterExistenceStatus")} />
       <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"><p className="text-xs font-medium text-white/55">Identifiable reporter criterion</p><div className="mt-2"><ToneBadge tone={reporterCriterion === "yes" ? "healthy" : reporterCriterion === "no" ? "breached" : "approaching"}>{label(reporterCriterion)}</ToneBadge></div><p className="mt-2 text-[10px] leading-4 text-white/30">Yes requires a verified real reporter, or an anonymous reporter whose existence is verified, plus self-experience or first-hand knowledge and documented evidence.</p></div>

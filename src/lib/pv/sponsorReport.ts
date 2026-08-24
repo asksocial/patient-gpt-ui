@@ -136,6 +136,7 @@ export async function createPvSponsorReport(input: {
     const ontology = review.validated_ae_ontology || {};
     const icsr = ontology.icsrAssessment || {};
     const minimum = icsr.minimumCriteria || {};
+    const patientAssessment = icsr.patientAssessment || {};
     const reporterAssessment = icsr.reporterAssessment || {};
     const narrative = icsr.clinicalNarrative || {};
     const followUp = icsr.followUp || {};
@@ -181,6 +182,13 @@ export async function createPvSponsorReport(input: {
     field("Suspect or interacting product", `${display(minimum.suspectProduct?.status, "Unclear")} - ${printable(minimum.suspectProduct?.evidence || product)}`);
     field("AE/ADR or other observation", `${display(minimum.adverseEventOrObservation?.status, "Unclear")} - ${printable(minimum.adverseEventOrObservation?.evidence || event)}`);
     field("Identifiable patient", `${display(minimum.identifiablePatient?.status, "Unclear")} - ${printable(minimum.identifiablePatient?.evidence)}`);
+    field("Patient association", display(patientAssessment.association, "Unclear"));
+    field("Patient existence status", display(patientAssessment.existenceStatus, "Not established"));
+    field("Patient qualifying characteristic types", patientAssessment.characteristicTypes);
+    field("Patient qualifying characteristics", patientAssessment.qualifyingCharacteristics);
+    field("Patient verification evidence", patientAssessment.verificationEvidence);
+    field("Patient follow-up feasibility", display(patientAssessment.followUpFeasibility, "Unclear"));
+    field("Patient follow-up status", display(patientAssessment.followUpStatus, "Not started"));
     field("Identifiable reporter", `${display(minimum.identifiableReporter?.status, "Unclear")} - ${printable(minimum.identifiableReporter?.evidence)}`);
     field("Reporter relationship to event", display(reporterAssessment.relationship, "Unclear"));
     field("Reporter existence status", display(reporterAssessment.existenceStatus, "Not established"));

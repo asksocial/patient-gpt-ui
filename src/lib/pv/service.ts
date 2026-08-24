@@ -5,7 +5,7 @@ import { calculatePvClock } from "./clock";
 import { classifyPvContent } from "./detection";
 import { DEFAULT_PV_SLA, derivePvOverviewMetrics } from "./overview";
 import { reconcilePvOperations } from "./reconciliation";
-import { assessIcsrIdentifiability, reporterCriterionStatus } from "./identifiability";
+import { assessIcsrIdentifiability, patientCriterionStatus, reporterCriterionStatus } from "./identifiability";
 import type {
   PvContentInput,
   PvDetectionConcept,
@@ -851,7 +851,15 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
   }
   if (decision.action === "escalate") {
     const minimum = decision.ontologyReview?.icsrAssessment?.minimumCriteria;
+    const patientAssessment = decision.ontologyReview?.icsrAssessment?.patientAssessment;
     const reporterAssessment = decision.ontologyReview?.icsrAssessment?.reporterAssessment;
+    const patientStatus = patientCriterionStatus({
+      association: patientAssessment?.association,
+      existenceStatus: patientAssessment?.existenceStatus,
+      characteristicTypes: patientAssessment?.characteristicTypes,
+      identifierBasis: patientAssessment?.identifierBasis || minimum?.identifiablePatient?.evidence,
+      verificationEvidence: patientAssessment?.verificationEvidence,
+    });
     const reporterStatus = reporterCriterionStatus({
       relationship: reporterAssessment?.relationship,
       existenceStatus: reporterAssessment?.existenceStatus,
@@ -861,11 +869,13 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     const criteriaMet = [
       minimum?.suspectProduct?.status,
       minimum?.adverseEventOrObservation?.status,
-      minimum?.identifiablePatient?.status,
+      patientStatus,
       reporterStatus,
-    ].every((status) => status === "yes") && minimum?.identifiableReporter?.status === reporterStatus;
+    ].every((status) => status === "yes")
+      && minimum?.identifiablePatient?.status === patientStatus
+      && minimum?.identifiableReporter?.status === reporterStatus;
     if (!criteriaMet) {
-      throw new Error("Confirm all four minimum ICSR criteria before escalating. Reporter identifiability requires verified existence (including anonymous-but-known reporters), self-experience or first-hand information, and documented verification evidence. Otherwise retain the assessment for follow-up without starting Day Zero.");
+      throw new Error("Confirm all four minimum ICSR criteria before escalating. Patient identifiability requires one specific patient, at least one controlled ICH qualifying characteristic, and supporting evidence. Reporter identifiability requires verified existence, first-hand information, and documented verification evidence. Otherwise retain the assessment for follow-up without starting Day Zero.");
     }
   }
   const supabase = getSupabaseServerClient();
