@@ -179,8 +179,8 @@ export function buildEcosystemNavigation(
                 kind: "destination" as const,
               },
               {
-                id: "pv_screening",
-                label: "Screening Status",
+                id: "pv_handoff",
+                label: "QA & Sponsor Handoff",
                 kind: "destination" as const,
               },
               {

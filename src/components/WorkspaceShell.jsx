@@ -96,10 +96,10 @@ const DESTINATION_COPY = {
     title: "Review Queue",
     description: "Review potential PV-relevant records through a structured human workflow.",
   },
-  pv_screening: {
+  pv_handoff: {
     eyebrow: "PV Compliance",
-    title: "Screening Status",
-    description: "Track governed source cadence, screening completion, and nil returns.",
+    title: "QA & Sponsor Handoff",
+    description: "Quality-check escalated cases, create sponsor-ready PDFs, and coordinate governed handoff.",
   },
   pv_transfers: {
     eyebrow: "PV Compliance",

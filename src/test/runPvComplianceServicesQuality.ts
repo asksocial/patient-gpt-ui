@@ -229,9 +229,11 @@ assert(!workbench.includes("Proposed adverse-event ontology"), "The machine-prop
 assert(workbench.includes('record.import_batch_id ? "Social"'), "CSV-ingested mentions must display Social as their evidence origin.");
 const reviewQueueSource = workbench.slice(workbench.indexOf("function ReviewQueue"), workbench.indexOf("function RecordWorkbench"));
 assert(!reviewQueueSource.includes("PvOntologyReview") && !reviewQueueSource.includes("Adverse-event ontology review"), "Adverse-event ontology review must not render inside Review Queue.");
-const screeningStatusSource = workbench.slice(workbench.indexOf("function ScreeningStatus"), workbench.indexOf("function Transfers"));
-assert(screeningStatusSource.includes("<RecordWorkbench"), "The ontology workbench must render within Screening Status.");
-assert(!screeningStatusSource.includes("Botulinum toxin PV corpus"), "The Botulinum toxin corpus activation section must not render in Screening Status.");
+const structuredReviewSource = workbench.slice(workbench.indexOf("function StructuredReview"), workbench.indexOf("function SponsorHandoff"));
+const sponsorHandoffSource = workbench.slice(workbench.indexOf("function SponsorHandoff"), workbench.indexOf("function Transfers"));
+const sourceRegistrySource = workbench.slice(workbench.indexOf("function SourceRegistry"), workbench.indexOf("function Configuration"));
+assert(structuredReviewSource.includes("<RecordWorkbench"), "The ontology workbench must render within Structured Review.");
+assert(!structuredReviewSource.includes("Botulinum toxin PV corpus"), "The Botulinum toxin corpus activation section must not render in Structured Review.");
 const workbenchMetricsIndex = workbench.indexOf('label="PV detection score"');
 const workbenchOntologyIndex = workbench.indexOf("<PvOntologyReview", workbenchMetricsIndex);
 const workbenchRationaleIndex = workbench.indexOf("Why AskSocial surfaced this", workbenchMetricsIndex);
@@ -240,15 +242,22 @@ assert(!workbench.includes("CSV social-data intake"), "The browser-facing CSV so
 for (const phrase of ["Original post date", "Content availability", "Reportability review / Day Zero", "CSV date column", "Day zero:"]) {
   assert(workbench.includes(phrase), `PV workbench is missing two-clock timestamp UX: ${phrase}`);
 }
-for (const phrase of ["Screening Status · Structured review", "Continue to structured review", "Return to Review Queue", "pv-screening-structured-review"]) {
+for (const phrase of ["Structured Review", "Continue to structured review", "Return to Review Queue", "pv-structured-review"]) {
   assert(workbench.includes(phrase), `PV structured-review navigation is missing ${phrase}.`);
 }
 for (const phrase of ["ICH E2D(R1) case assessment", "Identifiable patient criterion", "Patient association", "Patient existence status", "Patient qualifying characteristics", "Patient existence verification evidence", "Patient follow-up feasible", "Patient follow-up status", "Identifiable reporter criterion", "Reporter relationship to event", "Reporter existence status", "Reporter qualifying characteristics", "Reporter existence verification evidence", "Reporter follow-up feasible", "Reporter follow-up status", "Seriousness criteria", "Targeted follow-up questions", "Duplicate assessment", "Regional / local reporting assessment"]) {
   assert(workbench.includes(phrase), `PV structured review is missing its E2D(R1) assessment field: ${phrase}.`);
 }
-for (const phrase of ["Escalated sponsor assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
-  assert(screeningStatusSource.includes(phrase), `Screening Status is missing sponsor-report aggregation UX: ${phrase}.`);
+for (const phrase of ["Sponsor-ready assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
+  assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing sponsor-report aggregation UX: ${phrase}.`);
 }
+for (const phrase of ["Source Screening Coverage", "Log Source Screening Run", "nil return", "individual AE/ADR review status"]) {
+  assert(sourceRegistrySource.includes(phrase), `Source Registry is missing source-screening operations UX: ${phrase}.`);
+}
+for (const phrase of ["History &amp; Audit", "Record History", "Audit Details", "<details"]) {
+  assert(workbench.includes(phrase), `The consolidated record ledger is missing ${phrase}.`);
+}
+assert(!workbench.includes('Card title="Workflow history"') && !workbench.includes('Card title="Audit / provenance chain"'), "History and provenance must not remain as competing always-open cards.");
 for (const phrase of ["Full mention", "Patient and reporter identification", "ICH E2D(R1) Section 6.1", "digital handles alone", "Save review list", "Save to workspace", "Saved aggregate review lists", "Download CSV", "Share by email", "Assignee email or user ID"]) {
   assert(workbench.includes(phrase), `PV workbench is missing aggregate-review UX: ${phrase}`);
 }
