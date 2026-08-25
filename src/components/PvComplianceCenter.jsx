@@ -46,19 +46,66 @@ const PV_LIFECYCLE_TOOLTIPS = {
 const PV_REVIEW_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
 const PV_SCORE_TOOLTIP = "AskSocial’s 0–100 screening score combines product-reference and health-experience signals to prioritize qualified human review. It is not an adverse-event determination or a measure of clinical seriousness.";
 const PV_QUEUE_HEADERS = [
-  { key: "status", label: "Status" },
-  { key: "product", label: "Product" },
-  { key: "event", label: "Potential event" },
-  { key: "mention", label: "Full mention" },
-  { key: "source", label: "Source" },
+  { key: "status", label: "Status", tooltip: "The record’s current governed PV lifecycle state, such as New or In Review." },
+  { key: "product", label: "Product", tooltip: "The product or procedure proposed by automated screening. A qualified reviewer must confirm it during structured review." },
+  { key: "event", label: "Potential event", tooltip: "The health experience or special situation proposed by automated screening. It is not a confirmed AE/ADR determination." },
+  { key: "mention", label: "Full mention", tooltip: "The source verbatim retained for review. Select it to inspect the complete mention, provenance, and preliminary identifiability assessment." },
+  { key: "source", label: "Source", tooltip: "The governed evidence origin. CSV-ingested social data is labeled Social." },
   { key: "publication", label: "Publication timestamp", tooltip: "When the author originally posted the mention online. This preserves source chronology and does not govern day zero for this external-platform workflow." },
   { key: "collection", label: "Collection timestamp", tooltip: "When the listening system accessed or ingested the mention, establishing when the ODCS acquired the content." },
   { key: "review", label: "Review timestamp", tooltip: "When an authorized reviewer first clicked Continue to structured review. It documents the start of human assessment but does not itself start Day Zero." },
   { key: "escalation", label: "Escalation timestamp", tooltip: "When the information was escalated into the designated PV workflow, documenting the vendor-to-PV handoff." },
   { key: "day-zero", label: "Day-zero clock", tooltip: "The 15-day reporting clock begins only when a qualified reviewer confirms all four minimum ICSR criteria. Opening structured review does not start this clock." },
-  { key: "score", label: "Score" },
-  { key: "reviewer", label: "Reviewer" },
+  { key: "score", label: "Score", tooltip: PV_SCORE_TOOLTIP },
+  { key: "reviewer", label: "Reviewer", tooltip: "The authorized reviewer who began structured review or the assignee responsible for the record. Unassigned means no reviewer is currently retained." },
 ];
+
+const PV_REVIEW_FIELD_TOOLTIPS = {
+  "Does the content mention or reasonably imply a sponsor product?": "Confirm whether the verbatim names or reasonably implies the relevant product or procedure. This is one of the four minimum ICSR criteria.",
+  "Does it describe a health experience or potential special situation?": "Confirm whether the verbatim contains an AE/ADR, health experience, or another reportable special situation. This is one of the four minimum ICSR criteria.",
+  "Product / procedure": "The reviewer-confirmed product or procedure associated with the reported experience.",
+  "Adverse event": "The reviewer-confirmed adverse event, reaction, health experience, or special situation described by the source.",
+  Seriousness: "Whether the event meets a regulatory seriousness criterion. Seriousness is distinct from clinical severity.",
+  Outcome: "The latest reported patient outcome, such as recovered, ongoing, hospitalization, permanent injury, or fatal.",
+  "Time to onset": "The reported interval between product exposure or procedure and onset of the event.",
+  "Onset detail": "Verbatim or normalized detail supporting the selected time-to-onset category.",
+  Severity: "The reported clinical intensity of the event: mild, moderate, or severe. This does not determine regulatory seriousness.",
+  Unexpectedness: "Whether the event is consistent with the applicable reference safety information or may represent an emerging signal.",
+  "Causality type": "The reviewer’s classification of how the source relates the product or procedure to the event.",
+  "Causality language": "The exact or closest available causal wording used by the source. Select N/A when the field does not apply.",
+  "Report type": "Classify the case as spontaneous, solicited, or undetermined according to the source context.",
+  "Primary source type": "The qualification or role of the person providing first-hand information about the case.",
+  "Patient association": "Whether the AE/ADR can be associated with one specific patient rather than an aggregate group or unclear subject.",
+  "Patient existence status": "The degree to which the source supports the existence of a specific patient. A handle alone is insufficient.",
+  "Identifiable patient criterion": "Derived from the specific-patient association, a controlled ICH qualifying characteristic, and its supporting evidence.",
+  "Patient identifier basis": "Document the exact patient characteristic and source evidence supporting identifiability.",
+  "Patient existence verification evidence": "Document any permitted evidence used to verify that the patient is a real person.",
+  "Patient follow-up feasible": "Whether permissible and practical follow-up can be attempted to obtain missing patient information.",
+  "Patient follow-up status": "The current state of patient-identifiability follow-up efforts.",
+  "Patient qualifying characteristics (select every characteristic supported by the source)": "Select every ICH-recognized patient characteristic explicitly supported by the source; do not infer missing characteristics.",
+  "Reporter relationship to event": "Whether the reporter experienced the event or has first-hand, second-hand, or unclear knowledge of it.",
+  "Reporter existence status": "The degree to which the existence of a real reporter has been verified, including anonymous-but-known reporters.",
+  "Identifiable reporter criterion": "Derived from verified reporter existence, self-experience or first-hand knowledge, and documented supporting evidence.",
+  "Reporter qualifying characteristics": "Document the reporter’s qualifying characteristics, such as name, address, qualification, organization, email, or phone number.",
+  "Reporter existence verification evidence": "Document evidence confirming that a real reporter exists; a digital handle alone is insufficient.",
+  "Reporter follow-up feasible": "Whether permissible and practical follow-up can be attempted with the reporter.",
+  "Reporter follow-up status": "The current state of reporter follow-up efforts.",
+  "Follow-up needed": "Whether additional information is needed to complete or clarify the case assessment.",
+  "Duplicate assessment": "The result of checking whether the mention duplicates or relates to an existing case.",
+  "Duplicate / linked-case reference": "The identifier of any potential duplicate or linked case.",
+  "Seriousness criteria (select every criterion supported by the source)": "Select every regulatory seriousness criterion explicitly supported by the source evidence.",
+  "Patient characteristics": "Patient demographics and identifiers relevant to the case narrative, using only information reported by the source.",
+  "Therapy details": "Available product, dose, route, indication, treatment dates, and concomitant therapy details.",
+  "Medical history": "Relevant medical history reported by the source.",
+  "Concurrent conditions": "Concurrent medical conditions reported by the source.",
+  "Clinical course": "The chronological event course, interventions, treatment changes, and outcome.",
+  "Diagnosis / laboratory evidence": "Reported diagnoses, tests, laboratory findings, and normal ranges, when available.",
+  "Alternative causes / confounders": "Other plausible causes or confounding factors identified during qualified review.",
+  "Targeted follow-up questions": "Specific questions needed to resolve missing or unclear case information where follow-up is permissible and feasible.",
+  "Regional / local reporting assessment": "Document the applicable regional reporting conclusion or retain it as pending sponsor assessment.",
+  Classification: "Select every safety classification supported by the source. At least one is required for sponsor escalation.",
+  "Reviewer rationale": "Document the evidence and reasoning supporting the relevance or non-relevance decision.",
+};
 
 function formatDate(value) {
   if (!value) return "—";
@@ -107,6 +154,11 @@ function ToneBadge({ children, tone = "neutral" }) {
     complete: "border-cyan-400/20 bg-cyan-400/10 text-cyan-300",
   };
   return <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium ${tones[tone] || tones.neutral}`}>{children}</span>;
+}
+
+function FieldLabel({ labelText, tooltip }) {
+  const content = tooltip || PV_REVIEW_FIELD_TOOLTIPS[labelText];
+  return <span className="inline-flex items-center gap-1.5">{labelText}{content ? <Tooltip content={content} delay={200} side="bottom" align="start"><button type="button" aria-label={`About ${labelText}: ${content}`} className="inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">?</button></Tooltip> : null}</span>;
 }
 
 function Card({ title, subtitle, children, actions }) {
@@ -205,6 +257,13 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
     window.setTimeout(() => document.getElementById("pv-screening-structured-review")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
 
+  function completeRecordReview(decision) {
+    if (decision === "close_not_relevant") {
+      setSelectedRecord(null);
+      setTab("overview");
+    }
+  }
+
   async function mutate(path, body, busyKey, success) {
     setBusy(busyKey); setMessage("");
     const response = await fetch(path, { method: body.method || "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body.payload) });
@@ -240,7 +299,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
 
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
-      {tab === "screening" ? <ScreeningStatus therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} sources={sources} screenings={screenings} selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReturnToQueue={() => setTab("queue")} /> : null}
+      {tab === "screening" ? <ScreeningStatus therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} sources={sources} screenings={screenings} selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReviewComplete={completeRecordReview} onReturnToQueue={() => setTab("queue")} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
       {tab === "reconciliation" ? <Reconciliation runs={reconciliations} busy={busy} onMutate={mutate} /> : null}
       {tab === "sources" ? <SourceRegistry sources={sources} busy={busy} onMutate={mutate} /> : null}
@@ -413,7 +472,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
       </div>
     ) : null}
 
-    {selected && previewOpen ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2></div><button type="button" onClick={() => setPreviewOpen(false)} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-3"><Metric label="Original post date" value={formatDate(selected.record.posted_at)} /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} /><Metric label="Detection score" value={`${selected.record.detection_score}/100`} /></div><IdentifiabilitySummary assessment={selected.record.identifiability_assessment} /><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}<button type="button" onClick={() => { setPreviewOpen(false); onContinueReview(); }} disabled={busy === `review-start:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-start:${selected.record.id}` ? "Starting structured review…" : "Continue to structured review"}</button></div></div></div> : null}
+    {selected && previewOpen ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2></div><button type="button" onClick={() => setPreviewOpen(false)} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-3"><Metric label="Original post date" value={formatDate(selected.record.posted_at)} tooltip="When the author originally published the mention online." /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} tooltip="When the mention became available to authorized AskSocial reviewers." /><Metric label="Detection score" value={`${selected.record.detection_score}/100`} tooltip={PV_SCORE_TOOLTIP} /></div><IdentifiabilitySummary assessment={selected.record.identifiability_assessment} /><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}<button type="button" onClick={() => { setPreviewOpen(false); onContinueReview(); }} disabled={busy === `review-start:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-start:${selected.record.id}` ? "Starting structured review…" : "Continue to structured review"}</button></div></div></div> : null}
 
     <Card title="Potential PV Review Queue" subtitle="Click any mention to view the full source text. Select multiple mentions across pages to save a governed aggregate review list.">
       {pendingRecords.length ? <>
@@ -422,7 +481,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
             <thead className="border-b border-white/10 text-white/35">
               <tr>
                 <th className="px-3 py-3">
-                  <input type="checkbox" aria-label="Select all PV mentions on this page" checked={allPageSelected} onChange={togglePage} />
+                  <Tooltip content="Select or clear every mention currently displayed on this page. Selections on other pages are preserved." delay={200} side="bottom" align="start"><span className="inline-flex cursor-help"><input type="checkbox" aria-label="Select all PV mentions on this page" checked={allPageSelected} onChange={togglePage} /></span></Tooltip>
                 </th>
                 {PV_QUEUE_HEADERS.map((head) => (
                   <th
@@ -430,7 +489,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
                     className="px-3 py-3 font-medium"
                     aria-sort={sort.key === head.key ? sort.direction === "desc" ? "descending" : "ascending" : "none"}
                   >
-                    <div className="flex items-center gap-1.5"><button type="button" onClick={() => sortByColumn(head.key)} aria-label={`Sort by ${head.label} ${sort.key === head.key && sort.direction === "asc" ? "descending" : head.key === "score" ? "highest to lowest" : "ascending"}`} className="inline-flex cursor-pointer items-center gap-1 text-left transition-colors hover:text-cyan-200 focus:outline-none focus-visible:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{head.label}</span><span aria-hidden="true" className={sort.key === head.key ? "text-cyan-300" : "text-white/25"}>{sort.key === head.key && sort.direction === "asc" ? "↑" : "↓"}</span></button>{head.tooltip || head.key === "score" ? <Tooltip content={head.key === "score" ? PV_SCORE_TOOLTIP : head.tooltip} delay={200} side="bottom" align="start"><button type="button" aria-label={`About ${head.label}: ${head.key === "score" ? PV_SCORE_TOOLTIP : head.tooltip}`} className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">?</button></Tooltip> : null}</div>
+                    <div className="flex items-center gap-1.5"><button type="button" onClick={() => sortByColumn(head.key)} aria-label={`Sort by ${head.label} ${sort.key === head.key && sort.direction === "asc" ? "descending" : head.key === "score" ? "highest to lowest" : "ascending"}`} className="inline-flex cursor-pointer items-center gap-1 text-left transition-colors hover:text-cyan-200 focus:outline-none focus-visible:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{head.label}</span><span aria-hidden="true" className={sort.key === head.key ? "text-cyan-300" : "text-white/25"}>{sort.key === head.key && sort.direction === "asc" ? "↑" : "↓"}</span></button><Tooltip content={head.tooltip} delay={200} side="bottom" align="start"><button type="button" aria-label={`About ${head.label}: ${head.tooltip}`} className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">?</button></Tooltip></div>
                   </th>
                 ))}
               </tr>
@@ -452,9 +511,10 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
   </div>;
 }
 
-function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
+function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }) {
   const { record, clock, reviews, transfers, audit } = detail;
   const retainedOntology = reviews.find((review) => review.decision === "escalate")?.validated_ae_ontology;
+  const [markedRelevant, setMarkedRelevant] = useState(["ready_for_transfer", "transferred", "acknowledged", "reconciled"].includes(record.status));
   const [productMention, setProductMention] = useState("unclear");
   const [healthExperience, setHealthExperience] = useState("unclear");
   const [selectedClasses, setSelectedClasses] = useState(record.proposed_classifications || []);
@@ -580,7 +640,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
     };
   }
   function toggleClassification(value) { setSelectedClasses((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]); }
-  async function review(decision) {
+  async function review(decision, includeStructuredAssessment = markedRelevant) {
     if (!rationale.trim()) {
       setReviewError("Enter a reviewer rationale before saving this PV decision.");
       return;
@@ -593,37 +653,49 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       }
     }
     setReviewError("");
-    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention, healthExperience, classifications: selectedClasses, rationale, decision, ontologyReview: validatedOntology() } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : "Record retained and closed as not PV relevant.");
-    if (data) onRefresh();
+    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention, healthExperience, classifications: includeStructuredAssessment ? selectedClasses : [], rationale, decision, ontologyReview: includeStructuredAssessment ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : "Record retained and closed as not PV relevant.");
+    if (data) {
+      if (decision === "close_not_relevant") onReviewComplete?.(decision);
+      else onRefresh();
+    }
   }
   async function transfer() {
     const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "transfer", destination, transferMethod } }, "transfer", "Sponsor transfer package created with immutable payload hash.");
     if (data) onRefresh();
   }
   return <div className="space-y-5">
-    <div className="grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]">
       <Card title={`PV Record ${record.id.slice(0, 8)}`} subtitle="Original evidence is immutable. Translations, review decisions, and workflow events are stored separately.">
         <div className="space-y-4"><div className="rounded-xl border border-white/10 bg-black/40 p-4"><div className="flex flex-wrap items-center gap-2"><ToneBadge>{sourceLabel(record)}</ToneBadge><ToneBadge>{record.original_language}</ToneBadge><ToneBadge tone={record.priority === "critical" ? "breached" : record.priority === "high" ? "approaching" : "neutral"}>{record.priority} priority</ToneBadge></div><blockquote className="mt-4 border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{record.original_verbatim}</blockquote><div className="mt-4 grid gap-3 text-xs sm:grid-cols-2"><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Original post date</p><p className="mt-1 text-white/65">{formatDate(record.posted_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.posted_at_source_column ? `CSV date column: ${record.posted_at_source_column}${record.posted_at_raw_value ? ` · Raw: ${record.posted_at_raw_value}` : ""}` : "Captured from the source record"}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Content availability</p><p className="mt-1 text-white/65">{formatDate(record.identified_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.import_batch_id ? "Server time when the CSV became available to this AskSocial tenant" : "Timestamp when AskSocial made the content available for review"}</p></div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Structured review started</p><p className="mt-1 text-cyan-100/75">{formatDate(record.review_started_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.review_started_at ? `Started by ${record.review_started_by || record.assigned_reviewer_id || "authorized reviewer"}` : "Populates when Continue to structured review is selected."}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Ingested</p><p className="mt-1 text-white/65">{formatDate(record.ingested_at)}</p>{record.import_batch_id ? <p className="mt-1 text-[10px] text-white/25">Batch {record.import_batch_id.slice(0, 8)} · CSV row {record.source_row_number}</p> : null}</div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Reportability review / Day Zero</p><p className="mt-1 text-cyan-100/75">{record.reportability_identified_at ? formatDate(record.reportability_identified_at) : "Not started"}</p><p className="mt-1 text-[10px] leading-4 text-white/25">{record.day_zero_reason || "Starts only when a qualified reviewer confirms all four minimum ICSR criteria."}</p></div></div>{String(record.source_url || "").startsWith("http") ? <a href={record.source_url} target="_blank" rel="noreferrer" className="inline-block cursor-pointer rounded-lg border border-cyan-300/20 px-3 py-2 text-xs font-semibold text-cyan-300">Open original source ↗</a> : null}<p className="mt-3 break-all text-[10px] text-white/20">Evidence hash {record.evidence_hash}</p></div>
         <div className="grid gap-3 md:grid-cols-4"><Metric label="PV detection score" value={`${record.detection_score}/100`} tooltip="AskSocial's combined screening score based on product, health-experience, context, and configured detection signals. It prioritizes the record for human review and is not an adverse-event determination." /><Metric label="Product confidence" value={`${record.product_confidence}%`} tooltip="AskSocial's confidence that the mention refers to the relevant product or procedure. A qualified reviewer must confirm the product relationship against the source evidence." /><Metric label="Health experience" value={`${record.health_experience_confidence}%`} tooltip="AskSocial's confidence that the mention describes a health experience or potential safety-relevant situation. This score supports triage and does not establish an adverse event." /><Metric label="Evidence origin" value={evidenceOriginLabel(record)} tooltip="Where the evidence entered AskSocial. Mentions ingested from CSV social-data files are labeled Social; other origins retain their governed provenance label. Origin provides provenance and does not indicate evidence quality or causality." /></div>
-        {!['transferred', 'acknowledged', 'reconciled'].includes(record.status) ? <><PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /><E2dCaseAssessment value={e2dReview} onChange={setE2dReview} patientCriterion={patientCriterion} reporterCriterion={reporterCriterion} /></> : null}
+        {markedRelevant && !['transferred', 'acknowledged', 'reconciled'].includes(record.status) ? <><PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /><E2dCaseAssessment value={e2dReview} onChange={setE2dReview} patientCriterion={patientCriterion} reporterCriterion={reporterCriterion} /></> : null}
         <div><p className="text-xs font-medium text-white/55">Why AskSocial surfaced this</p><div className="mt-2 space-y-2">{(record.detection_rationale || []).map((reason, index) => <p key={index} className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-xs leading-5 text-white/40">{reason}</p>)}</div></div>
         <div><p className="text-xs font-medium text-white/55">Matched concepts</p><div className="mt-2 flex flex-wrap gap-2">{(record.matched_concepts || []).map((match) => <ToneBadge key={`${match.conceptId}-${match.matchedTerm}`}>{label(match.category)} · {match.matchedTerm}</ToneBadge>)}</div></div></div>
       </Card>
-      <Card title="Compliance clock" subtitle={`Clock stage: ${label(clock.stage)}`}><div className="rounded-2xl border border-white/10 bg-black/30 p-5"><div className="flex items-center justify-between"><ToneBadge tone={clock.state}>{label(clock.state)}</ToneBadge><span className="text-xs text-white/35">{clock.state === "not_started" ? "Awaiting reportability determination" : `${clock.percentConsumed}% consumed`}</span></div><div className="mt-4 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.05] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Governing clock</p><p className="mt-1 text-sm font-medium text-cyan-100/75">{clock.governingClock === "reportability_identified_at" ? "Qualified reportability review" : clock.governingClock === "identified_at" ? "Reviewer identification" : label(clock.governingClock)}</p><p className="mt-1 text-xs text-white/35">Day zero: {formatDate(clock.governingTimestamp)}</p></div>{clock.state === "not_started" ? <p className="mt-5 text-sm leading-6 text-white/45">Day Zero has not started. Confirm all four minimum ICSR criteria and escalate the record to establish the governed review timestamp.</p> : <><p className="mt-5 text-3xl font-semibold text-white">{Math.floor(clock.elapsedMinutes / 60)}h {clock.elapsedMinutes % 60}m</p><p className="mt-1 text-xs text-white/35">Elapsed in current stage</p><div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full ${clock.state === "breached" ? "bg-rose-400" : clock.state === "approaching" ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${Math.min(100, clock.percentConsumed)}%` }} /></div><dl className="mt-5 space-y-2 text-xs"><div className="flex justify-between"><dt className="text-white/35">Stage started</dt><dd className="text-white/65">{formatDate(clock.startedAt)}</dd></div><div className="flex justify-between"><dt className="text-white/35">Due</dt><dd className="text-white/65">{formatDate(clock.dueAt)}</dd></div><div className="flex justify-between"><dt className="text-white/35">Remaining</dt><dd className="text-white/65">{clock.remainingMinutes ?? 0} min</dd></div></dl></>}</div></Card>
+      <Card title="Compliance clock" subtitle={`Clock stage: ${label(clock.stage)}`}><div className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex flex-col items-start gap-2"><ToneBadge tone={clock.state}>{label(clock.state)}</ToneBadge><span className="text-[11px] leading-4 text-white/35">{clock.state === "not_started" ? "Awaiting reportability determination" : `${clock.percentConsumed}% consumed`}</span></div><div className="mt-3 rounded-lg border border-cyan-400/15 bg-cyan-400/[0.05] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Governing clock</p><p className="mt-1 text-xs font-medium text-cyan-100/75">{clock.governingClock === "reportability_identified_at" ? "Qualified reportability review" : clock.governingClock === "identified_at" ? "Reviewer identification" : label(clock.governingClock)}</p><p className="mt-1 text-[11px] text-white/35">Day zero: {formatDate(clock.governingTimestamp)}</p></div>{clock.state === "not_started" ? <p className="mt-3 text-xs leading-5 text-white/45">Confirm all four minimum ICSR criteria and escalate the record to start Day Zero.</p> : <><p className="mt-4 text-2xl font-semibold text-white">{Math.floor(clock.elapsedMinutes / 60)}h {clock.elapsedMinutes % 60}m</p><p className="mt-1 text-[11px] text-white/35">Elapsed in current stage</p><div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full ${clock.state === "breached" ? "bg-rose-400" : clock.state === "approaching" ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${Math.min(100, clock.percentConsumed)}%` }} /></div><dl className="mt-4 space-y-2 text-[11px]"><div className="flex justify-between gap-2"><dt className="text-white/35">Started</dt><dd className="text-right text-white/65">{formatDate(clock.startedAt)}</dd></div><div className="flex justify-between gap-2"><dt className="text-white/35">Due</dt><dd className="text-right text-white/65">{formatDate(clock.dueAt)}</dd></div><div className="flex justify-between gap-2"><dt className="text-white/35">Remaining</dt><dd className="text-right text-white/65">{clock.remainingMinutes ?? 0} min</dd></div></dl></>}</div></Card>
     </div>
-    {!["transferred", "acknowledged", "reconciled"].includes(record.status) ? (
+    {!markedRelevant && !["not_relevant", "transferred", "acknowledged", "reconciled"].includes(record.status) ? (
+      <Card title="Initial relevance decision" subtitle="Determine whether the mention contains a potential AE/ADR before opening the complete ontology and ICH case assessment.">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+          <label className="text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /><textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={3} placeholder="Required when closing the mention as not relevant." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" /></label>
+          <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setMarkedRelevant(true); setReviewError(""); }} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black">Mark as Relevant</button><button type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant", false)} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Relevant"}</button></div>
+        </div>
+        {reviewError ? <p role="alert" className="mt-3 text-xs text-amber-300">{reviewError}</p> : null}
+      </Card>
+    ) : null}
+    {markedRelevant && !["transferred", "acknowledged", "reconciled"].includes(record.status) ? (
       <Card title="Structured human review" subtitle="AI proposes relevance; a qualified reviewer makes and documents the workflow decision.">
         <div className="grid gap-5 xl:grid-cols-2">
           <div className="space-y-4">
             <DecisionSelect labelText="Does the content mention or reasonably imply a sponsor product?" value={productMention} onChange={setProductMention} />
             <DecisionSelect labelText="Does it describe a health experience or potential special situation?" value={healthExperience} onChange={setHealthExperience} />
             <div>
-              <p className="text-xs font-medium text-white/55">Classification</p>
+              <p className="text-xs font-medium text-white/55"><FieldLabel labelText="Classification" /></p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">{CLASSIFICATIONS.map((classification) => <label key={classification} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={selectedClasses.includes(classification)} onChange={() => toggleClassification(classification)} />{label(classification)}</label>)}</div>
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-white/55">Reviewer rationale</label>
+            <label className="text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /></label>
             <textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={9} placeholder="Document the evidence and reasoning supporting this decision." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" />
             {reviewError ? <p role="alert" className="mt-2 text-xs text-amber-300">{reviewError}</p> : <p className="mt-2 text-[11px] text-white/30">A rationale is required when the decision is submitted.</p>}
             <div className="mt-3 flex flex-wrap gap-2">
@@ -639,7 +711,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   </div>;
 }
 
-function DecisionSelect({ labelText, value, onChange }) { return <fieldset><legend className="text-xs font-medium text-white/55">{labelText}</legend><div className="mt-2 flex gap-2">{["yes", "no", "unclear"].map((option) => <label key={option} className={`rounded-lg border px-3 py-2 text-xs ${value === option ? "border-white bg-white text-black" : "border-white/10 text-white/50"}`}><input className="sr-only" type="radio" value={option} checked={value === option} onChange={() => onChange(option)} />{label(option)}</label>)}</div></fieldset>; }
+function DecisionSelect({ labelText, value, onChange }) { return <fieldset><legend className="text-xs font-medium text-white/55"><FieldLabel labelText={labelText} /></legend><div className="mt-2 flex gap-2">{["yes", "no", "unclear"].map((option) => <label key={option} className={`cursor-pointer rounded-lg border px-3 py-2 text-xs ${value === option ? "border-white bg-white text-black" : "border-white/10 text-white/50"}`}><input className="sr-only" type="radio" value={option} checked={value === option} onChange={() => onChange(option)} />{label(option)}</label>)}</div></fieldset>; }
 
 function PvOntologyReview({ value, onChange }) {
   function field(key) { return { value: value[key], onChange: (event) => onChange((current) => ({ ...current, [key]: event.target.value })) }; }
@@ -676,15 +748,15 @@ function E2dCaseAssessment({ value, onChange, patientCriterion, reporterCriterio
       <OntologySelect labelText="Primary source type" options={["unknown", "consumer", "healthcare_professional", "other"]} {...field("primarySourceType")} />
       <OntologySelect labelText="Patient association" options={["unclear", "specific_patient", "aggregate_patients"]} {...field("patientAssociation")} />
       <OntologySelect labelText="Patient existence status" options={["not_established", "characteristics_detected", "verified"]} {...field("patientExistenceStatus")} />
-      <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"><p className="text-xs font-medium text-white/55">Identifiable patient criterion</p><div className="mt-2"><ToneBadge tone={patientCriterion === "yes" ? "healthy" : patientCriterion === "no" ? "breached" : "approaching"}>{label(patientCriterion)}</ToneBadge></div><p className="mt-2 text-[10px] leading-4 text-white/30">Yes requires an AE/ADR or observation associated with one specific patient, at least one controlled ICH qualifying characteristic, and documented supporting evidence. Aggregate statements and handles alone do not qualify.</p></div>
+      <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"><p className="text-xs font-medium text-white/55"><FieldLabel labelText="Identifiable patient criterion" /></p><div className="mt-2"><ToneBadge tone={patientCriterion === "yes" ? "healthy" : patientCriterion === "no" ? "breached" : "approaching"}>{label(patientCriterion)}</ToneBadge></div><p className="mt-2 text-[10px] leading-4 text-white/30">Yes requires an AE/ADR or observation associated with one specific patient, at least one controlled ICH qualifying characteristic, and documented supporting evidence. Aggregate statements and handles alone do not qualify.</p></div>
       <OntologyText labelText="Patient identifier basis" {...field("patientIdentifierBasis")} />
       <OntologyText labelText="Patient existence verification evidence" {...field("patientVerificationEvidence")} />
       <OntologySelect labelText="Patient follow-up feasible" options={["unclear", "yes", "no"]} {...field("patientFollowUpFeasibility")} />
       <OntologySelect labelText="Patient follow-up status" options={["not_started", "attempted", "response_received", "not_feasible"]} {...field("patientFollowUpStatus")} />
-      <fieldset className="md:col-span-2 xl:col-span-4"><legend className="text-xs font-medium text-white/55">Patient qualifying characteristics (select every characteristic supported by the source)</legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{PATIENT_CHARACTERISTIC_TYPES.map((characteristic) => <label key={characteristic} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.patientCharacteristicTypes.includes(characteristic)} onChange={() => togglePatientCharacteristic(characteristic)} />{label(characteristic)}</label>)}</div></fieldset>
+      <fieldset className="md:col-span-2 xl:col-span-4"><legend className="text-xs font-medium text-white/55"><FieldLabel labelText="Patient qualifying characteristics (select every characteristic supported by the source)" /></legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{PATIENT_CHARACTERISTIC_TYPES.map((characteristic) => <label key={characteristic} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.patientCharacteristicTypes.includes(characteristic)} onChange={() => togglePatientCharacteristic(characteristic)} />{label(characteristic)}</label>)}</div></fieldset>
       <OntologySelect labelText="Reporter relationship to event" options={["unclear", "self_report", "first_hand_other", "second_hand"]} {...field("reporterRelationship")} />
       <OntologySelect labelText="Reporter existence status" options={["not_established", "characteristics_detected", "verified", "anonymous_verified"]} {...field("reporterExistenceStatus")} />
-      <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"><p className="text-xs font-medium text-white/55">Identifiable reporter criterion</p><div className="mt-2"><ToneBadge tone={reporterCriterion === "yes" ? "healthy" : reporterCriterion === "no" ? "breached" : "approaching"}>{label(reporterCriterion)}</ToneBadge></div><p className="mt-2 text-[10px] leading-4 text-white/30">Yes requires a verified real reporter, or an anonymous reporter whose existence is verified, plus self-experience or first-hand knowledge and documented evidence.</p></div>
+      <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"><p className="text-xs font-medium text-white/55"><FieldLabel labelText="Identifiable reporter criterion" /></p><div className="mt-2"><ToneBadge tone={reporterCriterion === "yes" ? "healthy" : reporterCriterion === "no" ? "breached" : "approaching"}>{label(reporterCriterion)}</ToneBadge></div><p className="mt-2 text-[10px] leading-4 text-white/30">Yes requires a verified real reporter, or an anonymous reporter whose existence is verified, plus self-experience or first-hand knowledge and documented evidence.</p></div>
       <OntologyText labelText="Reporter qualifying characteristics" {...field("reporterIdentifierBasis")} />
       <OntologyText labelText="Reporter existence verification evidence" {...field("reporterVerificationEvidence")} />
       <OntologySelect labelText="Reporter follow-up feasible" options={["unclear", "yes", "no"]} {...field("reporterFollowUpFeasibility")} />
@@ -693,7 +765,7 @@ function E2dCaseAssessment({ value, onChange, patientCriterion, reporterCriterio
       <OntologySelect labelText="Duplicate assessment" options={["not_checked", "no_match", "potential_duplicate", "confirmed_duplicate"]} {...field("duplicateStatus")} />
       <OntologyText labelText="Duplicate / linked-case reference" {...field("duplicateReference")} />
     </div>
-    <fieldset className="mt-5"><legend className="text-xs font-medium text-white/55">Seriousness criteria (select every criterion supported by the source)</legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{seriousnessCriteria.map((criterion) => <label key={criterion} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.seriousnessCriteria.includes(criterion)} onChange={() => toggleCriterion(criterion)} />{label(criterion)}</label>)}</div></fieldset>
+    <fieldset className="mt-5"><legend className="text-xs font-medium text-white/55"><FieldLabel labelText="Seriousness criteria (select every criterion supported by the source)" /></legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{seriousnessCriteria.map((criterion) => <label key={criterion} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.seriousnessCriteria.includes(criterion)} onChange={() => toggleCriterion(criterion)} />{label(criterion)}</label>)}</div></fieldset>
     <div className="mt-5 grid gap-3 md:grid-cols-2">
       <E2dTextArea labelText="Patient characteristics" {...field("patientCharacteristics")} placeholder="Age/category, sex, gestational age, initials or another permitted identifier, if reported." />
       <E2dTextArea labelText="Therapy details" {...field("therapyDetails")} placeholder="Product, dose, route, indication, treatment dates, concomitant therapy, if reported." />
@@ -708,11 +780,14 @@ function E2dCaseAssessment({ value, onChange, patientCriterion, reporterCriterio
   </section>;
 }
 
-function OntologyText({ labelText, value, onChange }) { return <label className="text-xs text-white/40">{labelText}<input value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
-function OntologySelect({ labelText, options, value, onChange, emptyLabel = "Unclear" }) { return <label className="text-xs text-white/40">{labelText}<select value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white">{options.map((option) => <option key={option || "empty"} value={option}>{option ? label(option) : emptyLabel}</option>)}</select></label>; }
-function E2dTextArea({ labelText, value, onChange, placeholder, className = "" }) { return <label className={`text-xs text-white/40 ${className}`}>{labelText}<textarea value={value} onChange={onChange} rows={3} placeholder={placeholder} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
+function OntologyText({ labelText, value, onChange }) { return <label className="text-xs text-white/40"><FieldLabel labelText={labelText} /><input value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
+function OntologySelect({ labelText, options, value, onChange, emptyLabel = "Unclear" }) {
+  const choices = options.includes("not_applicable") ? options : [...options, "not_applicable"];
+  return <label className="text-xs text-white/40"><FieldLabel labelText={labelText} /><select value={value} onChange={onChange} className="mt-1.5 w-full cursor-pointer rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white">{choices.map((option) => <option key={option || "empty"} value={option}>{option === "not_applicable" ? "N/A" : option ? label(option) : emptyLabel}</option>)}</select></label>;
+}
+function E2dTextArea({ labelText, value, onChange, placeholder, className = "" }) { return <label className={`text-xs text-white/40 ${className}`}><FieldLabel labelText={labelText} /><textarea value={value} onChange={onChange} rows={3} placeholder={placeholder} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
 
-function ScreeningStatus({ therapeuticArea, sponsorCases, sources, screenings, selected, busy, onMutate, onRefreshRecord, onReturnToQueue }) {
+function ScreeningStatus({ therapeuticArea, sponsorCases, sources, screenings, selected, busy, onMutate, onRefreshRecord, onReviewComplete, onReturnToQueue }) {
   const [sourceId, setSourceId] = useState("");
   const [items, setItems] = useState(0);
   const [potential, setPotential] = useState(0);
@@ -744,7 +819,7 @@ function ScreeningStatus({ therapeuticArea, sponsorCases, sources, screenings, s
     {shareConfirmOpen ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Confirm sponsor report handoff"><div className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300/70">Confirm sponsor handoff</p><h2 className="mt-2 text-xl font-semibold text-white">Share {sponsorCases.length} screened assessment{sponsorCases.length === 1 ? "" : "s"}?</h2><p className="mt-3 text-sm leading-6 text-white/45">The ICH E2D(R1) PDF will be prepared for <span className="font-medium text-white/75">{sponsorEmail.trim()}</span>. If governed email delivery is configured, this confirmation sends the attachment and records the transfer. Otherwise, AskSocial downloads the PDF and opens a draft email for your final review.</p><div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setShareConfirmOpen(false)} disabled={busy === "sponsor-report:share"} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">Cancel</button><button type="button" onClick={shareSponsorReport} disabled={busy === "sponsor-report:share"} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "sponsor-report:share" ? "Sending…" : "Confirm & continue"}</button></div></div></div> : null}
     {selected ? <section id="pv-screening-structured-review" className="space-y-5 scroll-mt-6">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-4"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">Screening Status · Structured review</p><p className="mt-1 text-sm text-white/45">Confirm the extracted safety ontology, record the reviewer decision, and preserve the governed audit trail.</p></div><button type="button" onClick={onReturnToQueue} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60">Return to Review Queue</button></div>
-      <RecordWorkbench key={selected.record.id} detail={selected} busy={busy} onMutate={onMutate} onRefresh={() => onRefreshRecord(selected.record.id)} />
+      <RecordWorkbench key={selected.record.id} detail={selected} busy={busy} onMutate={onMutate} onRefresh={() => onRefreshRecord(selected.record.id)} onReviewComplete={onReviewComplete} />
     </section> : null}
     <Card title="Escalated sponsor assessments" subtitle="Every Escalate to Sponsor decision is aggregated here. The PDF preserves the source verbatim, review provenance, all available ICH E2D(R1) case data, and clearly marks information that requires follow-up." actions={<ToneBadge tone={sponsorCases.length ? "complete" : "neutral"}>{sponsorCases.length} screened mention{sponsorCases.length === 1 ? "" : "s"}</ToneBadge>}>
       {sponsorCases.length ? <div className="space-y-4">

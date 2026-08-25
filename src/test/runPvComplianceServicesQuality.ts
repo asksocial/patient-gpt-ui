@@ -262,6 +262,9 @@ for (const timestamp of ["Publication timestamp", "Collection timestamp", "Revie
   assert(workbench.includes(timestamp), `The Potential PV Review Queue is missing the governed ${timestamp}.`);
 }
 assert(reviewQueueSource.includes("PV_QUEUE_HEADERS.map"), "The Potential PV Review Queue must render the governed timestamp headers.");
+for (const header of ["Status", "Product", "Potential event", "Full mention", "Source", "Publication timestamp", "Collection timestamp", "Review timestamp", "Escalation timestamp", "Day-zero clock", "Score", "Reviewer"]) {
+  assert(workbench.includes(`label: "${header}", tooltip:`), `Every Potential PV Review Queue field must provide an explanatory tooltip: ${header}.`);
+}
 for (const field of ["publication_timestamp", "collection_timestamp", "review_timestamp", "escalation_timestamp"]) {
   assert(reviewQueueSource.includes(`formatDate(record.${field})`), `The Potential PV Review Queue must display ${field}.`);
 }
@@ -277,6 +280,12 @@ assert(reviewQueueSource.includes('aria-sort={sort.key === head.key') && reviewQ
 assert(!reviewQueueSource.includes("formatDate(record.algorithm_timestamp)"), "The queue must omit the redundant Algorithm timestamp column when it cannot be distinguished from collection.");
 assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('sourceType.endsWith("_csv")'), "CSV-origin PV queue records must be labeled Social.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
+assert(workbench.includes('title="Initial relevance decision"') && workbench.includes("Mark as Relevant") && workbench.includes('review("close_not_relevant", false)'), "The structured-review workflow must require an explicit relevance decision before revealing the detailed assessment.");
+assert(workbench.includes("markedRelevant && !['transferred'") && workbench.includes("setMarkedRelevant(true)"), "Ontology and ICH case fields must remain hidden until the reviewer marks the mention relevant.");
+assert(workbench.includes('onReviewComplete?.(decision)') && workbench.includes('setTab("overview")'), "Either Close as Not Relevant action must return the reviewer to Compliance Overview after the retained decision succeeds.");
+assert(workbench.includes('option === "not_applicable" ? "N/A"') && workbench.includes('const choices = options.includes("not_applicable")'), "Every structured assessment dropdown must include an explicit N/A option.");
+assert(workbench.includes("PV_REVIEW_FIELD_TOOLTIPS") && workbench.includes("<FieldLabel labelText={labelText}"), "Structured-review fields must render contextual tooltips through the shared field-label control.");
+assert(workbench.includes("xl:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]"), "The Compliance Clock must use a compact width so the record content receives the available horizontal space.");
 assert(workbench.includes("Confirm all four minimum ICSR criteria") && workbench.includes("Confirm reportability & escalate"), "Escalation must require the four minimum ICSR criteria and explicitly establish Day Zero.");
 assert(!workbench.includes('disabled={busy.startsWith("review:") || !rationale.trim()}'), "PV decision buttons must not be silently disabled while the rationale is empty.");
 const importRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/imports/route.ts"), "utf8");
