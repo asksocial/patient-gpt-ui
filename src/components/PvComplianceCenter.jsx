@@ -194,7 +194,7 @@ function Empty({ children }) {
   return <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-5 py-8 text-center text-sm text-white/35">{children}</div>;
 }
 
-export default function PvComplianceCenter({ initialTab = "overview", therapeuticArea = "", workspaceId = "", workspaces = [], onRefreshWorkspaces }) {
+export default function PvComplianceCenter({ initialTab = "overview", therapeuticArea = "", workspaceId = "", workspaces = [], onRefreshWorkspaces, onNavigate }) {
   const [tab, setTab] = useState(initialTab);
   const [overview, setOverview] = useState(null);
   const [records, setRecords] = useState([]);
@@ -210,6 +210,11 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  function navigateTab(nextTab) {
+    setTab(nextTab);
+    onNavigate?.(`pv_${nextTab}`);
+  }
 
   const loadAll = useCallback(async () => {
     setError("");
@@ -260,7 +265,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   function completeRecordReview(decision) {
     if (decision === "close_not_relevant") {
       setSelectedRecord(null);
-      setTab("overview");
+      navigateTab("overview");
     }
   }
 
@@ -291,7 +296,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
       </section>
 
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="PV Compliance sections">
-        {TABS.map(([id, text]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-medium transition ${tab === id ? "border-white bg-white text-black" : "border-white/10 bg-white/[0.03] text-white/50 hover:text-white"}`}>{text}</button>)}
+        {TABS.map(([id, text]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => navigateTab(id)} className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-medium transition ${tab === id ? "border-white bg-white text-black" : "border-white/10 bg-white/[0.03] text-white/50 hover:text-white"}`}>{text}</button>)}
         {tab === "review" ? <button type="button" role="tab" aria-selected="true" className="shrink-0 rounded-xl border border-white bg-white px-3 py-2 text-xs font-medium text-black">Structured Review</button> : null}
       </div>
 
@@ -300,7 +305,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
 
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
-      {tab === "review" ? <StructuredReview selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReviewComplete={completeRecordReview} onReturnToQueue={() => setTab("queue")} /> : null}
+      {tab === "review" ? <StructuredReview selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReviewComplete={completeRecordReview} onReturnToQueue={() => navigateTab("queue")} /> : null}
       {tab === "handoff" ? <SponsorHandoff therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} busy={busy} onMutate={mutate} onOpenRecord={async (recordId) => { await openRecord(recordId); setTab("review"); }} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
       {tab === "reconciliation" ? <Reconciliation runs={reconciliations} busy={busy} onMutate={mutate} /> : null}
