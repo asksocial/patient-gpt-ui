@@ -835,6 +835,10 @@ export default function WorkspaceShell() {
   const [workspaces, setWorkspaces] = useState([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState("");
   const [workspaceSaveStatus, setWorkspaceSaveStatus] = useState("idle");
+  const [workspaceSaveDialogOpen, setWorkspaceSaveDialogOpen] = useState(false);
+  const [workspaceDraftName, setWorkspaceDraftName] = useState("");
+  const [workspaceCreateError, setWorkspaceCreateError] = useState("");
+  const [workspaceCreateBusy, setWorkspaceCreateBusy] = useState(false);
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
 
   const activeSession = useMemo(
@@ -1119,7 +1123,7 @@ export default function WorkspaceShell() {
 
   async function selectWorkspace(workspaceId) {
     const nextWorkspaceId = workspaceId || "";
-    if (nextWorkspaceId === activeWorkspaceId) return;
+    if (nextWorkspaceId === activeWorkspaceId) return true;
     setWorkspaceSaveStatus("saving");
     if (activeSessionId) {
       try {
@@ -1141,11 +1145,49 @@ export default function WorkspaceShell() {
       } catch (workspaceError) {
         setError(workspaceError.message || "Failed to move conversation");
         setWorkspaceSaveStatus("error");
-        return;
+        return false;
       }
     }
     setActiveWorkspaceId(nextWorkspaceId);
     setWorkspaceSaveStatus("saved");
+    return true;
+  }
+
+  function openWorkspaceSaveDialog() {
+    const suggestedName = activeSession?.title && activeSession.title !== "New conversation"
+      ? activeSession.title
+      : therapeuticArea
+        ? `${therapeuticArea} workspace`
+        : "My AskSocial workspace";
+    setWorkspaceDraftName(suggestedName);
+    setWorkspaceCreateError("");
+    setWorkspaceSaveDialogOpen(true);
+  }
+
+  async function saveCurrentSessionAsWorkspace(event) {
+    event.preventDefault();
+    const name = workspaceDraftName.trim();
+    if (!name) return setWorkspaceCreateError("Enter a workspace name before saving.");
+    setWorkspaceCreateBusy(true);
+    setWorkspaceCreateError("");
+    try {
+      const response = await fetch("/api/workspaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, therapeuticArea }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok || !data.workspace) throw new Error(data.error || "Unable to create workspace.");
+      addWorkspace(data.workspace);
+      const selected = await selectWorkspace(data.workspace.id);
+      if (!selected) throw new Error("The workspace was created, but the current session could not be attached. Reload and select it from Workspaces.");
+      setWorkspaceSaveDialogOpen(false);
+      setWorkspaceDraftName("");
+    } catch (workspaceError) {
+      setWorkspaceCreateError(workspaceError instanceof Error ? workspaceError.message : "Unable to save the current session as a workspace.");
+    } finally {
+      setWorkspaceCreateBusy(false);
+    }
   }
 
   function addWorkspace(workspace) {
@@ -1661,6 +1703,7 @@ export default function WorkspaceShell() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {workspaceSaveDialogOpen ? <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="save-current-session-title"><form onSubmit={saveCurrentSessionAsWorkspace} className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300/70">Workspace</p><h2 id="save-current-session-title" className="mt-2 text-xl font-semibold text-white">Save current session as workspace</h2><p className="mt-2 text-sm leading-6 text-white/45">Name this workspace to retain the active conversation and automatically save subsequent intelligence generated while it is selected.</p><label className="mt-5 block text-xs font-medium text-white/50">Workspace name<input autoFocus value={workspaceDraftName} onChange={(event) => { setWorkspaceDraftName(event.target.value); if (workspaceCreateError) setWorkspaceCreateError(""); }} placeholder="e.g., Botulinum toxin PV review" className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none focus:border-cyan-300/40" /></label>{workspaceCreateError ? <p role="alert" className="mt-3 text-xs text-amber-300">{workspaceCreateError}</p> : null}<div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setWorkspaceSaveDialogOpen(false)} disabled={workspaceCreateBusy} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">Cancel</button><button type="submit" disabled={workspaceCreateBusy || !workspaceDraftName.trim()} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{workspaceCreateBusy ? "Saving…" : "Save workspace"}</button></div></form></div> : null}
       <div
         className={
           leftRailCollapsed
@@ -1976,22 +2019,10 @@ export default function WorkspaceShell() {
 
               <div
                 data-testid="active-workspace-indicator"
-                aria-label={`Current workspace: ${activeWorkspace?.name || "Session only"}`}
+                aria-label={activeWorkspace ? `Current workspace: ${activeWorkspace.name}` : "Save current session as workspace"}
                 className="shrink-0 self-end text-right xl:ml-auto xl:self-start"
               >
-                <select
-                  aria-label="Select current workspace"
-                  value={activeWorkspaceId}
-                  onChange={(event) => void selectWorkspace(event.target.value)}
-                  className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"
-                >
-                  <option value="">Workspace: Session only</option>
-                  {availableWorkspaces.map((workspace) => (
-                    <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>
-                      Workspace: {workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}
-                    </option>
-                  ))}
-                </select>
+                {activeWorkspace ? <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">{availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}</select> : <button type="button" onClick={openWorkspaceSaveDialog} className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">Save current session as workspace</button>}
                 {activeWorkspace ? (
                   <p
                     aria-live="polite"

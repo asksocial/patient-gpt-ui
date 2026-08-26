@@ -137,7 +137,8 @@ export default function WorkspaceManager({
   onWorkspaceUpdated,
   onWorkspaceDeleted,
 }) {
-  const initialWorkspace = workspaces.find((workspace) => workspace.id === activeWorkspaceId) || workspaces[0] || null;
+  const validWorkspaces = useMemo(() => (workspaces || []).filter(Boolean), [workspaces]);
+  const initialWorkspace = validWorkspaces.find((workspace) => workspace.id === activeWorkspaceId) || validWorkspaces[0] || null;
   const [selectedId, setSelectedId] = useState(initialWorkspace?.id || "");
   const [products, setProducts] = useState([]);
   const [members, setMembers] = useState([]);
@@ -151,10 +152,11 @@ export default function WorkspaceManager({
   const [candidateUsers, setCandidateUsers] = useState([]);
 
   const visibleWorkspaces = useMemo(
-    () => workspaces.filter((workspace) => showArchived || !workspace.archivedAt),
-    [showArchived, workspaces]
+    () => validWorkspaces.filter((workspace) => showArchived || !workspace.archivedAt),
+    [showArchived, validWorkspaces]
   );
-  const selected = workspaces.find((workspace) => workspace.id === selectedId) || null;
+  const selected = validWorkspaces.find((workspace) => workspace.id === selectedId) || null;
+  const selectedWorkspaceId = selected?.id || "";
   const [draft, setDraft] = useState({
     name: initialWorkspace?.name || "",
     description: initialWorkspace?.description || "",
@@ -175,10 +177,10 @@ export default function WorkspaceManager({
   }
 
   useEffect(() => {
-    if (!selected) return;
+    if (!selectedWorkspaceId) return;
     Promise.all([
-      fetch(`/api/work-products?workspaceId=${encodeURIComponent(selected.id)}`, { cache: "no-store" }).then((response) => response.json()),
-      fetch(`/api/workspaces/members?workspaceId=${encodeURIComponent(selected.id)}`, { cache: "no-store" }).then((response) => response.json()),
+      fetch(`/api/work-products?workspaceId=${encodeURIComponent(selectedWorkspaceId)}`, { cache: "no-store" }).then((response) => response.json()),
+      fetch(`/api/workspaces/members?workspaceId=${encodeURIComponent(selectedWorkspaceId)}`, { cache: "no-store" }).then((response) => response.json()),
     ]).then(([productData, memberData]) => {
       if (productData.ok) setProducts(productData.products || []);
       else setMessage(productData.error || "Unable to load workspace content.");
@@ -187,7 +189,7 @@ export default function WorkspaceManager({
     }).catch(() => {
       setMessage("Unable to load workspace content. Reload to try again.");
     }).finally(() => setLoading(false));
-  }, [selected]);
+  }, [selectedWorkspaceId]);
 
   useEffect(() => {
     fetch("/api/workspaces/candidates", { cache: "no-store" })
@@ -221,11 +223,11 @@ export default function WorkspaceManager({
   }
 
   async function updateWorkspace(updates) {
-    if (!selected) return;
+    if (!selectedWorkspaceId) return;
     const response = await fetch("/api/workspaces", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceId: selected.id, ...updates }),
+      body: JSON.stringify({ workspaceId: selectedWorkspaceId, ...updates }),
     });
     const data = await response.json();
     if (!data.ok) return setMessage(data.error || "Unable to update workspace.");
@@ -234,11 +236,11 @@ export default function WorkspaceManager({
   }
 
   async function deleteWorkspace() {
-    if (!selected || !window.confirm(`Permanently delete “${selected.name}” and all of its saved work?`)) return;
-    const response = await fetch(`/api/workspaces?workspaceId=${encodeURIComponent(selected.id)}`, { method: "DELETE" });
+    if (!selectedWorkspaceId || !window.confirm(`Permanently delete “${selected?.name || "this workspace"}” and all of its saved work?`)) return;
+    const response = await fetch(`/api/workspaces?workspaceId=${encodeURIComponent(selectedWorkspaceId)}`, { method: "DELETE" });
     const data = await response.json();
     if (!data.ok) return setMessage(data.error || "Unable to delete workspace.");
-    onWorkspaceDeleted(selected.id);
+    onWorkspaceDeleted(selectedWorkspaceId);
     setSelectedId("");
     setProducts([]);
     setMembers([]);
@@ -247,21 +249,23 @@ export default function WorkspaceManager({
 
   async function saveMember(event) {
     event.preventDefault();
+    if (!selectedWorkspaceId) return setMessage("Choose a workspace before adding members.");
     const response = await fetch("/api/workspaces/members", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceId: selected.id, userId: memberUserId, role: memberRole }),
+      body: JSON.stringify({ workspaceId: selectedWorkspaceId, userId: memberUserId, role: memberRole }),
     });
     const data = await response.json();
     if (!data.ok) return setMessage(data.error || "Unable to save member.");
     setMemberUserId("");
-    const refreshed = await fetch(`/api/workspaces/members?workspaceId=${encodeURIComponent(selected.id)}`, { cache: "no-store" }).then((item) => item.json());
+    const refreshed = await fetch(`/api/workspaces/members?workspaceId=${encodeURIComponent(selectedWorkspaceId)}`, { cache: "no-store" }).then((item) => item.json());
     if (refreshed.ok) setMembers(refreshed.members || []);
     setMessage("Workspace member saved.");
   }
 
   async function removeMember(userId) {
-    const response = await fetch(`/api/workspaces/members?workspaceId=${encodeURIComponent(selected.id)}&userId=${encodeURIComponent(userId)}`, { method: "DELETE" });
+    if (!selectedWorkspaceId) return setMessage("Choose a workspace before removing members.");
+    const response = await fetch(`/api/workspaces/members?workspaceId=${encodeURIComponent(selectedWorkspaceId)}&userId=${encodeURIComponent(userId)}`, { method: "DELETE" });
     const data = await response.json();
     if (!data.ok) return setMessage(data.error || "Unable to remove member.");
     setMembers((current) => current.filter((member) => member.userId !== userId));
