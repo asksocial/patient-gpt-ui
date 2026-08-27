@@ -93,13 +93,16 @@ export function buildEcosystemNavigation(
   access: NavigationAccess,
   options: {
     isAdmin?: boolean;
+    pvComplianceEnabled?: boolean;
   } = {}
 ): EcosystemNavigationGroup[] {
-  const pvEnabled = access.agents.some(
-    (agent) =>
-      agent.id ===
-      "pharmacovigilance_assistant"
-  );
+  const pvEnabled =
+    options.pvComplianceEnabled ??
+    access.agents.some(
+      (agent) =>
+        agent.id ===
+        "pharmacovigilance_assistant"
+    );
   const groups:
     EcosystemNavigationGroup[] = [
     {

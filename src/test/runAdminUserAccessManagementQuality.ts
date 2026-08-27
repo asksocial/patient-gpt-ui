@@ -195,6 +195,27 @@ const files = {
     ),
     "utf8"
   ),
+  adminUsers: readFileSync(
+    join(
+      process.cwd(),
+      "src/app/api/admin/users/route.ts"
+    ),
+    "utf8"
+  ),
+  navigation: readFileSync(
+    join(
+      process.cwd(),
+      "src/lib/intelligence-platform/navigation.ts"
+    ),
+    "utf8"
+  ),
+  workspaceShell: readFileSync(
+    join(
+      process.cwd(),
+      "src/components/WorkspaceShell.jsx"
+    ),
+    "utf8"
+  ),
   adminLayout: readFileSync(
     join(
       process.cwd(),
@@ -243,7 +264,7 @@ const contracts = [
   ],
   [
     files.entitlementAdminPage,
-    "Available entitlements",
+    "/api/admin/users",
   ],
   [
     files.entitlementAdminPage,
@@ -251,15 +272,23 @@ const contracts = [
   ],
   [
     files.entitlementAdminPage,
-    "Therapeutic area access",
+    "Assign Therapeutic Areas by user",
   ],
   [
     files.entitlementAdminPage,
-    "therapeuticAreas,",
+    "Assign Modules by",
   ],
   [
     files.entitlementAdminPage,
-    "Load a user ID to enable therapeutic-area assignments.",
+    "Enable PV Compliance by",
+  ],
+  [
+    files.entitlementAdminPage,
+    "agent_pharmacovigilance_assistant",
+  ],
+  [
+    files.entitlementAdminPage,
+    "Advanced capability access",
   ],
   [
     files.entitlementAdminPage,
@@ -268,6 +297,22 @@ const contracts = [
   [
     files.entitlementAdminPage,
     "event.preventDefault();",
+  ],
+  [
+    files.adminUsers,
+    "client.users.getUserList",
+  ],
+  [
+    files.adminUsers,
+    "primaryEmailAddress",
+  ],
+  [
+    files.navigation,
+    "pvComplianceEnabled",
+  ],
+  [
+    files.workspaceShell,
+    "agent_pharmacovigilance_assistant",
   ],
   [
     files.adminLayout,
@@ -306,6 +351,9 @@ console.log(
         true,
       unifiedUserAccessScreen:
         true,
+      clerkUserDirectory: true,
+      moduleAssignment: true,
+      perUserPvCompliance: true,
       protectedAdminRoutes: true,
     },
     null,

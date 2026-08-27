@@ -233,6 +233,16 @@ const adminGroups =
     access,
     { isAdmin: true }
   );
+const pvEnabledGroups =
+  buildEcosystemNavigation(
+    access,
+    { pvComplianceEnabled: true }
+  );
+const pvDisabledGroups =
+  buildEcosystemNavigation(
+    access,
+    { pvComplianceEnabled: false }
+  );
 
 if (
   nonAdminLabels.includes(
@@ -261,10 +271,18 @@ if (
     (group) =>
       group.id === "power_user" &&
       group.label === "Power user"
+  ) ||
+  !pvEnabledGroups.some(
+    (group) =>
+      group.id === "pv_compliance"
+  ) ||
+  pvDisabledGroups.some(
+    (group) =>
+      group.id === "pv_compliance"
   )
 ) {
   throw new Error(
-    "Power-user navigation and its Library, Governance, and Administration destinations must be restricted to administrators."
+    "Power-user navigation must remain administrator-only and PV navigation must follow the explicit per-user entitlement."
   );
 }
 
@@ -289,6 +307,7 @@ console.log(
         ),
       topDropdownNavigation: true,
       powerUserAdminGate: true,
+      perUserPvNavigationGate: true,
       simplifiedLeftRail: true,
     },
     null,

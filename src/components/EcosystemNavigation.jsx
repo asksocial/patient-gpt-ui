@@ -61,6 +61,7 @@ function NavigationItem({
 export default function EcosystemNavigation({
   access,
   isAdmin,
+  pvComplianceEnabled,
   activeItem,
   onNavigate,
 }) {
@@ -73,7 +74,10 @@ export default function EcosystemNavigation({
         modules: [],
         agents: [],
       },
-      { isAdmin }
+      {
+        isAdmin,
+        pvComplianceEnabled,
+      }
     );
   const navigationGroups =
     groups.filter((group) =>

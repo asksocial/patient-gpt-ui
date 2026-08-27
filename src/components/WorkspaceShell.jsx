@@ -1984,6 +1984,11 @@ export default function WorkspaceShell() {
                   isAdmin={
                     entitlements?.isAdmin
                   }
+                  pvComplianceEnabled={
+                    entitlements?.capabilities
+                      ?.agent_pharmacovigilance_assistant
+                      ?.granted
+                  }
                   activeItem={
                     activeDestination
                   }
