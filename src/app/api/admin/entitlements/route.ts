@@ -12,6 +12,7 @@ import {
   resolveEntitlements,
 } from "../../../../lib/entitlements";
 import {
+  resolveAdminStatus,
   withAdmin,
 } from "../../../../lib/auth/isAdmin";
 import {
@@ -69,6 +70,11 @@ async function loadSubject(
           ?.emailAddress ||
         subjectId,
       publicMetadata: metadata,
+      isAdmin:
+        await resolveAdminStatus({
+          userId: subjectId,
+          publicMetadata: metadata,
+        }),
       entitlementMetadata:
         normalizeEntitlementMetadata(
           metadata[
@@ -96,6 +102,7 @@ async function loadSubject(
       displayName:
         organization.name,
       publicMetadata: metadata,
+      isAdmin: false,
       entitlementMetadata:
         normalizeEntitlementMetadata(
           metadata[
@@ -178,6 +185,10 @@ export const GET = withAdmin(
               "organization"
                 ? subject.entitlementMetadata
                 : undefined,
+            isAdmin:
+              subjectType === "user"
+                ? subject.isAdmin
+                : false,
             knowledgePersistenceEnabled:
               getKnowledgePersistenceMode() ===
               "persistent",

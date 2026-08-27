@@ -239,6 +239,10 @@ const contracts = [
     "entitlementsProvided",
   ],
   [
+    files.admin,
+    "resolveAdminStatus",
+  ],
+  [
     files.ask,
     "THERAPEUTIC_AREA_REQUIRED",
   ],
@@ -289,6 +293,10 @@ const contracts = [
   [
     files.entitlementAdminPage,
     "Advanced capability access",
+  ],
+  [
+    files.entitlementAdminPage,
+    "Administrator override",
   ],
   [
     files.entitlementAdminPage,

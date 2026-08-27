@@ -47,6 +47,20 @@ const PRIMARY_ACCESS_KEYS = new Set([
   PV_ENTITLEMENT_KEY,
 ]);
 
+function sortedTherapeuticAreas(
+  value: unknown
+): string[] {
+  return Array.isArray(value)
+    ? [...value].sort((left, right) =>
+        String(left).localeCompare(
+          String(right),
+          undefined,
+          { sensitivity: "base" }
+        )
+      )
+    : [];
+}
+
 function AccessSelector({
   value,
   disabled,
@@ -153,6 +167,7 @@ export default function EntitlementsAdminPage() {
   const [subjectType, setSubjectType] = useState("user");
   const [subjectId, setSubjectId] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [subjectIsAdmin, setSubjectIsAdmin] = useState(false);
   const [states, setStates] =
     useState<Record<string, AccessState>>({});
   const [effectiveCapabilities, setEffectiveCapabilities] =
@@ -184,6 +199,7 @@ export default function EntitlementsAdminPage() {
 
   function resetSubject() {
     setDisplayName("");
+    setSubjectIsAdmin(false);
     setStates({});
     setEffectiveCapabilities({});
     setTherapeuticAreas([]);
@@ -222,9 +238,9 @@ export default function EntitlementsAdminPage() {
         } else {
           setCatalog(nextCatalog);
           setTherapeuticAreaCatalog(
-            Array.isArray(data.therapeuticAreaCatalog)
-              ? data.therapeuticAreaCatalog
-              : []
+            sortedTherapeuticAreas(
+              data.therapeuticAreaCatalog
+            )
           );
         }
       } else {
@@ -323,11 +339,14 @@ export default function EntitlementsAdminPage() {
         : [];
 
       setDisplayName(data.subject.displayName);
+      setSubjectIsAdmin(
+        data.subject.isAdmin === true
+      );
       setCatalog(nextCatalog);
       setTherapeuticAreaCatalog(
-        Array.isArray(data.therapeuticAreaCatalog)
-          ? data.therapeuticAreaCatalog
-          : []
+        sortedTherapeuticAreas(
+          data.therapeuticAreaCatalog
+        )
       );
       setTherapeuticAreas(
         subjectType === "user" &&
@@ -542,6 +561,11 @@ export default function EntitlementsAdminPage() {
                 <p className="mt-1 font-mono text-xs text-white/35">
                   {subjectId}
                 </p>
+                {subjectIsAdmin ? (
+                  <p className="mt-2 inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-200">
+                    Administrator override · all capabilities are effectively enabled
+                  </p>
+                ) : null}
               </div>
               <button
                 type="button"
