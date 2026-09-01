@@ -186,6 +186,7 @@ export async function createPvSponsorReport(input: {
     field("Patient existence status", display(patientAssessment.existenceStatus, "Not established"));
     field("Patient qualifying characteristic types", patientAssessment.characteristicTypes);
     field("Patient qualifying characteristics", patientAssessment.qualifyingCharacteristics);
+    field("Reviewer confirmed patient evidence", patientAssessment.reviewerConfirmed === true ? "Yes" : "No");
     field("Patient verification evidence", patientAssessment.verificationEvidence);
     field("Patient follow-up feasibility", display(patientAssessment.followUpFeasibility, "Unclear"));
     field("Patient follow-up status", display(patientAssessment.followUpStatus, "Not started"));

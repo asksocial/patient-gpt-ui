@@ -218,8 +218,11 @@ for (const phrase of ["combined screening score", "confidence that the mention r
 }
 assert(!workbench.includes('label="Sources due"') && !workbench.includes('label="Awaiting review"'), "Ambiguous PV overview stage labels must not return.");
 assert(workbench.includes('import Tooltip from "./ui/Tooltip"'), "PV Compliance Overview must use the shared accessible tooltip behavior.");
-for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Outcome", "Time to onset", "Severity", "Unexpectedness", "Causality language", "Adverse-event ontology review"]) {
+for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Outcome", "Time to onset", "Severity", "Unexpectedness", "Causality language", "Adverse-event assessment"]) {
   assert(workbench.includes(phrase), `PV workbench is missing ontology UX: ${phrase}`);
+}
+for (const phrase of ["Reviewer workflow", "one specific patient", "ICH qualifying patient characteristic (select at least one)", "Patient supporting evidence (required)", "Reviewer patient-evidence confirmation"]) {
+  assert(workbench.includes(phrase), `Structured review is missing the reviewer guide or required patient-identifiability gate: ${phrase}`);
 }
 for (const option of ["non_serious", "permanent_injury", "immediate", "moderate", "expected_label_event", "possibly due to", "think it was from"]) {
   assert(workbench.includes(`"${option}"`), `PV ontology dropdowns are missing the controlled value ${option}.`);
@@ -236,8 +239,8 @@ assert(structuredReviewSource.includes("<RecordWorkbench"), "The ontology workbe
 assert(!structuredReviewSource.includes("Botulinum toxin PV corpus"), "The Botulinum toxin corpus activation section must not render in Structured Review.");
 const workbenchMetricsIndex = workbench.indexOf('label="PV detection score"');
 const workbenchOntologyIndex = workbench.indexOf("<PvOntologyReview", workbenchMetricsIndex);
-const workbenchRationaleIndex = workbench.indexOf("Why AskSocial surfaced this", workbenchMetricsIndex);
-assert(workbenchMetricsIndex >= 0 && workbenchOntologyIndex > workbenchMetricsIndex && workbenchOntologyIndex < workbenchRationaleIndex, "The interactive ontology review must appear directly below the four screening metrics.");
+const workbenchStructuredReviewIndex = workbench.indexOf('title="Structured human review"', workbenchMetricsIndex);
+assert(workbenchMetricsIndex >= 0 && workbenchStructuredReviewIndex > workbenchMetricsIndex && workbenchOntologyIndex > workbenchStructuredReviewIndex, "The reviewer-approved adverse-event assessment must appear inside the governed Structured Review after the initial relevance decision.");
 assert(!workbench.includes("CSV social-data intake"), "The browser-facing CSV social-data intake section must remain removed from Screening Status.");
 for (const phrase of ["Original post date", "Content availability", "Reportability review / Day Zero", "CSV date column", "Day zero:"]) {
   assert(workbench.includes(phrase), `PV workbench is missing two-clock timestamp UX: ${phrase}`);
@@ -245,8 +248,11 @@ for (const phrase of ["Original post date", "Content availability", "Reportabili
 for (const phrase of ["Structured Review", "Continue to structured review", "Return to Review Queue", "pv-structured-review"]) {
   assert(workbench.includes(phrase), `PV structured-review navigation is missing ${phrase}.`);
 }
-for (const phrase of ["ICH E2D(R1) case assessment", "Identifiable patient criterion", "Patient association", "Patient existence status", "Patient qualifying characteristics", "Patient existence verification evidence", "Patient follow-up feasible", "Patient follow-up status", "Identifiable reporter criterion", "Reporter relationship to event", "Reporter existence status", "Reporter qualifying characteristics", "Reporter existence verification evidence", "Reporter follow-up feasible", "Reporter follow-up status", "Seriousness criteria", "Targeted follow-up questions", "Duplicate assessment", "Regional / local reporting assessment"]) {
+for (const phrase of ["ICH E2D(R1) identifiability gate", "Four minimum ICSR criteria", "Identifiable patient criterion", "Patient association (required)", "ICH qualifying patient characteristic (select at least one)", "Patient supporting evidence (required)", "Reviewer patient-evidence confirmation", "Identifiable reporter criterion", "Reporter knowledge of the event (required)", "Reporter existence verification (required)", "Reporter qualifying characteristic or anonymous status", "Reporter verification evidence (required)", "Seriousness criteria", "Targeted follow-up questions", "Duplicate assessment"]) {
   assert(workbench.includes(phrase), `PV structured review is missing its E2D(R1) assessment field: ${phrase}.`);
+}
+for (const removedField of ["Patient existence status", "Patient existence verification evidence", "Patient follow-up feasible", "Patient follow-up status", "Reporter follow-up feasible", "Reporter follow-up status", "Patient characteristics", "Therapy details", "Medical history", "Concurrent conditions", "Diagnosis / laboratory evidence", "Alternative causes / confounders", "Regional / local reporting assessment", "Causality type"]) {
+  assert(!workbench.includes(`labelText="${removedField}"`), `The simplified Structured Review must not render the noncritical or duplicative input ${removedField}.`);
 }
 for (const phrase of ["Sponsor-ready assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
   assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing sponsor-report aggregation UX: ${phrase}.`);
@@ -290,7 +296,7 @@ assert(!reviewQueueSource.includes("formatDate(record.algorithm_timestamp)"), "T
 assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('sourceType.endsWith("_csv")'), "CSV-origin PV queue records must be labeled Social.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
 assert(workbench.includes('title="Initial relevance decision"') && workbench.includes("Mark as Relevant") && workbench.includes('review("close_not_relevant", false)'), "The structured-review workflow must require an explicit relevance decision before revealing the detailed assessment.");
-assert(workbench.includes("markedRelevant && !['transferred'") && workbench.includes("setMarkedRelevant(true)"), "Ontology and ICH case fields must remain hidden until the reviewer marks the mention relevant.");
+assert(workbench.includes('markedRelevant && !["transferred"') && workbench.includes("setMarkedRelevant(true)"), "Ontology and ICH case fields must remain hidden until the reviewer marks the mention relevant.");
 assert(workbench.includes('onReviewComplete?.(decision)') && workbench.includes('navigateTab("overview")'), "Either Close as Not Relevant action must return the reviewer to Compliance Overview after the retained decision succeeds.");
 assert(workbench.includes('onNavigate?.(`pv_${nextTab}`)') && workbench.includes('navigateTab("overview")'), "PV section navigation must keep the page heading synchronized when a closed record returns to Compliance Overview.");
 assert(workbench.includes('option === "not_applicable" ? "N/A"') && workbench.includes('const choices = options.includes("not_applicable")'), "Every structured assessment dropdown must include an explicit N/A option.");
@@ -317,7 +323,7 @@ assert(pvService.includes("listAllPvRecordsForOverview") && pvService.includes("
 assert(pvService.includes('adverseEventOntology: review.validated_ae_ontology') && pvService.includes('ontologyStatus: "reviewer_validated"'), "Sponsor transfers must include the final reviewer-approved adverse-event ontology.");
 assert(pvService.includes("listPvSponsorCases") && pvService.includes("recordPvSponsorReportActivity") && pvService.includes('decision", "escalate'), "Escalated reviews must be aggregated into auditable sponsor reports.");
 assert(pvService.includes("recordUpdates.reportability_identified_at = reportabilityIdentifiedAt") && pvService.includes("dayZeroStarted"), "Qualified escalation must persist and audit the first reportability-review Day Zero trigger.");
-assert(pvService.includes("patientCriterionStatus") && pvService.includes("controlled ICH qualifying characteristic") && pvService.includes("patientAssessment?.characteristicTypes"), "Server-side escalation must independently enforce the ICH patient characteristic and specific-patient association requirements.");
+assert(pvService.includes("patientCriterionStatus") && pvService.includes("controlled ICH qualifying characteristic") && pvService.includes("patientAssessment?.characteristicTypes") && pvService.includes("patientAssessment?.reviewerConfirmed === true"), "Server-side escalation must independently enforce the ICH patient characteristic, specific-patient association, supporting evidence, and reviewer-confirmation requirements.");
 assert(pvService.includes("reporterCriterionStatus") && pvService.includes("reporterAssessment?.relationship") && pvService.includes("reporterAssessment?.existenceStatus") && pvService.includes("verificationEvidence"), "Server-side escalation must independently enforce ICH-aligned reporter existence, first-hand knowledge, and verification evidence.");
 assert(pvService.includes("reportabilityIdentifiedAt: record.reportability_identified_at || undefined"), "A saved review decision must never substitute for the qualified reportability-identification timestamp that starts Day Zero.");
 assert(pvService.includes("startPvRecordReview") && pvService.includes('action: "review.start"') && pvService.includes("review_started_at"), "Continue to structured review must retain its own immutable human-review start timestamp.");

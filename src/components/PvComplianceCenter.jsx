@@ -71,38 +71,21 @@ const PV_REVIEW_FIELD_TOOLTIPS = {
   "Onset detail": "Verbatim or normalized detail supporting the selected time-to-onset category.",
   Severity: "The reported clinical intensity of the event: mild, moderate, or severe. This does not determine regulatory seriousness.",
   Unexpectedness: "Whether the event is consistent with the applicable reference safety information or may represent an emerging signal.",
-  "Causality type": "The reviewer’s classification of how the source relates the product or procedure to the event.",
   "Causality language": "The exact or closest available causal wording used by the source. Select N/A when the field does not apply.",
-  "Report type": "Classify the case as spontaneous, solicited, or undetermined according to the source context.",
-  "Primary source type": "The qualification or role of the person providing first-hand information about the case.",
-  "Patient association": "Whether the AE/ADR can be associated with one specific patient rather than an aggregate group or unclear subject.",
-  "Patient existence status": "The degree to which the source supports the existence of a specific patient. A handle alone is insufficient.",
+  "Patient association (required)": "Confirm whether the AE/ADR is associated with one specific patient. Aggregate or unclear references do not satisfy the minimum ICSR patient criterion.",
   "Identifiable patient criterion": "Derived from the specific-patient association, a controlled ICH qualifying characteristic, and its supporting evidence.",
-  "Patient identifier basis": "Document the exact patient characteristic and source evidence supporting identifiability.",
-  "Patient existence verification evidence": "Document any permitted evidence used to verify that the patient is a real person.",
-  "Patient follow-up feasible": "Whether permissible and practical follow-up can be attempted to obtain missing patient information.",
-  "Patient follow-up status": "The current state of patient-identifiability follow-up efforts.",
-  "Patient qualifying characteristics (select every characteristic supported by the source)": "Select every ICH-recognized patient characteristic explicitly supported by the source; do not infer missing characteristics.",
-  "Reporter relationship to event": "Whether the reporter experienced the event or has first-hand, second-hand, or unclear knowledge of it.",
-  "Reporter existence status": "The degree to which the existence of a real reporter has been verified, including anonymous-but-known reporters.",
+  "ICH qualifying patient characteristic (select at least one)": "Select at least one ICH-recognized characteristic explicitly supported by the source: age or age category, gestational age, sex, initials, date of birth, name, patient identifier, or a permitted regional identifier.",
+  "Patient supporting evidence (required)": "Quote or precisely document the retained source evidence that links the selected qualifying characteristic to the one specific patient.",
+  "Reviewer patient-evidence confirmation": "Required attestation that the reviewer checked the specific-patient association, selected ICH characteristic, and supporting evidence against the retained source before escalation.",
+  "Reporter knowledge of the event (required)": "Confirm that the reporter experienced the event or has first-hand knowledge about the specific patient. Second-hand or unclear reports do not satisfy the minimum reporter criterion.",
+  "Reporter existence verification (required)": "Confirm whether a real reporter exists, including an anonymous-but-known reporter. A digital handle alone is insufficient.",
   "Identifiable reporter criterion": "Derived from verified reporter existence, self-experience or first-hand knowledge, and documented supporting evidence.",
-  "Reporter qualifying characteristics": "Document the reporter’s qualifying characteristics, such as name, address, qualification, organization, email, or phone number.",
-  "Reporter existence verification evidence": "Document evidence confirming that a real reporter exists; a digital handle alone is insufficient.",
-  "Reporter follow-up feasible": "Whether permissible and practical follow-up can be attempted with the reporter.",
-  "Reporter follow-up status": "The current state of reporter follow-up efforts.",
-  "Follow-up needed": "Whether additional information is needed to complete or clarify the case assessment.",
+  "Reporter qualifying characteristic or anonymous status": "Document the reporter’s qualifying characteristic, such as name, initials, address, qualification, organization, email, or phone number. For an anonymous-but-known reporter, document that status instead.",
+  "Reporter verification evidence (required)": "Document evidence confirming that a real reporter exists and has first-hand knowledge. A digital handle alone is insufficient.",
   "Duplicate assessment": "The result of checking whether the mention duplicates or relates to an existing case.",
   "Duplicate / linked-case reference": "The identifier of any potential duplicate or linked case.",
   "Seriousness criteria (select every criterion supported by the source)": "Select every regulatory seriousness criterion explicitly supported by the source evidence.",
-  "Patient characteristics": "Patient demographics and identifiers relevant to the case narrative, using only information reported by the source.",
-  "Therapy details": "Available product, dose, route, indication, treatment dates, and concomitant therapy details.",
-  "Medical history": "Relevant medical history reported by the source.",
-  "Concurrent conditions": "Concurrent medical conditions reported by the source.",
-  "Clinical course": "The chronological event course, interventions, treatment changes, and outcome.",
-  "Diagnosis / laboratory evidence": "Reported diagnoses, tests, laboratory findings, and normal ranges, when available.",
-  "Alternative causes / confounders": "Other plausible causes or confounding factors identified during qualified review.",
   "Targeted follow-up questions": "Specific questions needed to resolve missing or unclear case information where follow-up is permissible and feasible.",
-  "Regional / local reporting assessment": "Document the applicable regional reporting conclusion or retain it as pending sponsor assessment.",
   Classification: "Select every safety classification supported by the source. At least one is required for sponsor escalation.",
   "Reviewer rationale": "Document the evidence and reasoning supporting the relevance or non-relevance decision.",
 };
@@ -114,6 +97,13 @@ function formatDate(value) {
 
 function label(value) {
   return String(value || "").replaceAll("_", " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function causalityTypeForLanguage(value) {
+  if (["possibly due to", "think it was from"].includes(value)) return "possible_attribution";
+  if (["caused by", "related to"].includes(value)) return "reported_attribution";
+  if (value === "no relationship reported") return "denied";
+  return "temporal_association";
 }
 
 function evidenceOriginLabel(record) {
@@ -527,6 +517,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
   const [selectedClasses, setSelectedClasses] = useState(record.proposed_classifications || []);
   const [rationale, setRationale] = useState("");
   const [reviewError, setReviewError] = useState("");
+  const [patientEvidenceConfirmed, setPatientEvidenceConfirmed] = useState(retainedOntology?.icsrAssessment?.patientAssessment?.reviewerConfirmed === true);
   const [destination, setDestination] = useState("");
   const [transferMethod, setTransferMethod] = useState("manual_export");
   const [historyView, setHistoryView] = useState("history");
@@ -544,7 +535,6 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
     timeToOnsetDetail: proposedOntology.timeToOnset?.value || "",
     severity: proposedOntology.severity?.value || "unclear",
     unexpectedness: proposedOntology.unexpectedness?.value || "unclear",
-    causalityType: proposedOntology.causality?.[0]?.value || "temporal_association",
     causalityLanguage: proposedOntology.causality?.[0]?.phrase || "",
   });
   const [e2dReview, setE2dReview] = useState({
@@ -577,13 +567,24 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
     duplicateReference: retainedIcsr.duplicateAssessment?.reference || "",
     regionalReportingAssessment: retainedIcsr.regionalReportingAssessment || "",
   });
-  const patientCriterion = patientCriterionStatus({
+  const patientExistenceStatus =
+    e2dReview.patientAssociation === "specific_patient" &&
+    e2dReview.patientCharacteristicTypes.length > 0 &&
+    e2dReview.patientIdentifierBasis.trim()
+      ? "characteristics_detected"
+      : "not_established";
+  const assessedPatientCriterion = patientCriterionStatus({
     association: e2dReview.patientAssociation,
-    existenceStatus: e2dReview.patientExistenceStatus,
+    existenceStatus: patientExistenceStatus,
     characteristicTypes: e2dReview.patientCharacteristicTypes,
     identifierBasis: e2dReview.patientIdentifierBasis,
     verificationEvidence: e2dReview.patientVerificationEvidence,
   });
+  const patientCriterion = patientEvidenceConfirmed
+    ? assessedPatientCriterion
+    : assessedPatientCriterion === "no"
+      ? "no"
+      : "unclear";
   const reporterCriterion = reporterCriterionStatus({
     relationship: e2dReview.reporterRelationship,
     existenceStatus: e2dReview.reporterExistenceStatus,
@@ -600,7 +601,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
       timeToOnset: { category: ontologyReview.timeToOnset, value: ontologyReview.timeToOnsetDetail || undefined, evidence: proposedOntology.timeToOnset?.evidence, confidence: ontologyReview.timeToOnset === "unknown" ? 0 : 1 },
       severity: { ...(proposedOntology.severity || {}), value: ontologyReview.severity, confidence: ontologyReview.severity === "unclear" ? 0 : 1 },
       unexpectedness: { ...(proposedOntology.unexpectedness || {}), value: ontologyReview.unexpectedness, confidence: ontologyReview.unexpectedness === "unclear" ? 0 : 1 },
-      causality: ontologyReview.causalityLanguage ? [{ value: ontologyReview.causalityType, phrase: ontologyReview.causalityLanguage, evidence: ontologyReview.causalityLanguage, confidence: 1 }] : [],
+      causality: ontologyReview.causalityLanguage ? [{ value: causalityTypeForLanguage(ontologyReview.causalityLanguage), phrase: ontologyReview.causalityLanguage, evidence: ontologyReview.causalityLanguage, confidence: 1 }] : [],
       ontologyVersion: proposedOntology.ontologyVersion || record.ontology_version,
       reviewedByHuman: true,
       icsrAssessment: {
@@ -614,11 +615,12 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
         },
         patientAssessment: {
           association: e2dReview.patientAssociation,
-          existenceStatus: e2dReview.patientExistenceStatus,
+          existenceStatus: patientExistenceStatus,
           characteristicTypes: e2dReview.patientCharacteristicTypes,
           qualifyingCharacteristics: e2dReview.patientIdentifierBasis.split(/\n|;/).map((item) => item.trim()).filter(Boolean),
           identifierBasis: e2dReview.patientIdentifierBasis,
           verificationEvidence: e2dReview.patientVerificationEvidence,
+          reviewerConfirmed: patientEvidenceConfirmed,
           followUpFeasibility: e2dReview.patientFollowUpFeasibility,
           followUpStatus: e2dReview.patientFollowUpStatus,
         },
@@ -641,7 +643,10 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
           diagnosisAndLaboratoryEvidence: e2dReview.diagnosisAndLaboratoryEvidence,
           alternativeCausesAndConfounders: e2dReview.alternativeCausesAndConfounders,
         },
-        followUp: { needed: e2dReview.followUpNeeded, questions: e2dReview.followUpQuestions },
+        followUp: {
+          needed: [productMention, healthExperience, patientCriterion, reporterCriterion].every((status) => status === "yes") ? "no" : "yes",
+          questions: e2dReview.followUpQuestions,
+        },
         duplicateAssessment: { status: e2dReview.duplicateStatus, reference: e2dReview.duplicateReference },
         regionalReportingAssessment: e2dReview.regionalReportingAssessment,
       },
@@ -654,6 +659,54 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
       return;
     }
     if (decision === "escalate") {
+      if (productMention !== "yes") {
+        setReviewError("Confirm that the source mentions or reasonably implies the sponsor product before escalating.");
+        return;
+      }
+      if (healthExperience !== "yes") {
+        setReviewError("Confirm that the source describes an AE/ADR, health experience, or reportable special situation before escalating.");
+        return;
+      }
+      if (e2dReview.patientAssociation !== "specific_patient") {
+        setReviewError("Patient criterion: confirm that the AE/ADR is associated with one specific patient.");
+        return;
+      }
+      if (!e2dReview.patientCharacteristicTypes.length) {
+        setReviewError("Patient criterion: select at least one controlled ICH qualifying patient characteristic.");
+        return;
+      }
+      if (!e2dReview.patientIdentifierBasis.trim()) {
+        setReviewError("Patient criterion: document the supporting source evidence for the selected qualifying characteristic.");
+        return;
+      }
+      if (!patientEvidenceConfirmed) {
+        setReviewError("Patient criterion: attest that you verified the specific patient, qualifying characteristic, and supporting evidence against the retained source.");
+        return;
+      }
+      if (!["self_report", "first_hand_other"].includes(e2dReview.reporterRelationship)) {
+        setReviewError("Reporter criterion: confirm that the reporter experienced the event or has first-hand knowledge of it.");
+        return;
+      }
+      if (!["verified", "anonymous_verified"].includes(e2dReview.reporterExistenceStatus)) {
+        setReviewError("Reporter criterion: verify that a real reporter exists; a digital handle alone is insufficient.");
+        return;
+      }
+      if (!e2dReview.reporterVerificationEvidence.trim()) {
+        setReviewError("Reporter criterion: document evidence verifying the reporter’s existence and first-hand knowledge.");
+        return;
+      }
+      if (e2dReview.reporterExistenceStatus === "verified" && !e2dReview.reporterIdentifierBasis.trim()) {
+        setReviewError("Reporter criterion: document at least one qualifying reporter characteristic.");
+        return;
+      }
+      if (!ontologyReview.productProcedure.trim() || !ontologyReview.adverseEvent.trim()) {
+        setReviewError("Confirm the product / procedure and adverse event fields before escalating.");
+        return;
+      }
+      if (!selectedClasses.length) {
+        setReviewError("Select at least one PV classification before escalating.");
+        return;
+      }
       const minimumStatuses = [productMention, healthExperience, patientCriterion, reporterCriterion];
       if (!minimumStatuses.every((status) => status === "yes")) {
         setReviewError("Confirm the suspect product and AE/ADR or observation. The patient criterion requires one specific patient, at least one controlled ICH qualifying characteristic, and supporting evidence. The reporter criterion requires verified existence, first-hand information, and documented verification evidence. This confirmation starts Day Zero.");
@@ -676,7 +729,6 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
       <Card title={`PV Record ${record.id.slice(0, 8)}`} subtitle="Original evidence is immutable. Translations, review decisions, and workflow events are stored separately.">
         <div className="space-y-4"><div className="rounded-xl border border-white/10 bg-black/40 p-4"><div className="flex flex-wrap items-center gap-2"><ToneBadge>{sourceLabel(record)}</ToneBadge><ToneBadge>{record.original_language}</ToneBadge><ToneBadge tone={record.priority === "critical" ? "breached" : record.priority === "high" ? "approaching" : "neutral"}>{record.priority} priority</ToneBadge></div><blockquote className="mt-4 border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{record.original_verbatim}</blockquote><div className="mt-4 grid gap-3 text-xs sm:grid-cols-2"><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Original post date</p><p className="mt-1 text-white/65">{formatDate(record.posted_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.posted_at_source_column ? `CSV date column: ${record.posted_at_source_column}${record.posted_at_raw_value ? ` · Raw: ${record.posted_at_raw_value}` : ""}` : "Captured from the source record"}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Content availability</p><p className="mt-1 text-white/65">{formatDate(record.identified_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.import_batch_id ? "Server time when the CSV became available to this AskSocial tenant" : "Timestamp when AskSocial made the content available for review"}</p></div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Structured review started</p><p className="mt-1 text-cyan-100/75">{formatDate(record.review_started_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.review_started_at ? `Started by ${record.review_started_by || record.assigned_reviewer_id || "authorized reviewer"}` : "Populates when Continue to structured review is selected."}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Ingested</p><p className="mt-1 text-white/65">{formatDate(record.ingested_at)}</p>{record.import_batch_id ? <p className="mt-1 text-[10px] text-white/25">Batch {record.import_batch_id.slice(0, 8)} · CSV row {record.source_row_number}</p> : null}</div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Reportability review / Day Zero</p><p className="mt-1 text-cyan-100/75">{record.reportability_identified_at ? formatDate(record.reportability_identified_at) : "Not started"}</p><p className="mt-1 text-[10px] leading-4 text-white/25">{record.day_zero_reason || "Starts only when a qualified reviewer confirms all four minimum ICSR criteria."}</p></div></div>{String(record.source_url || "").startsWith("http") ? <a href={record.source_url} target="_blank" rel="noreferrer" className="inline-block cursor-pointer rounded-lg border border-cyan-300/20 px-3 py-2 text-xs font-semibold text-cyan-300">Open original source ↗</a> : null}<p className="mt-3 break-all text-[10px] text-white/20">Evidence hash {record.evidence_hash}</p></div>
         <div className="grid gap-3 md:grid-cols-4"><Metric label="PV detection score" value={`${record.detection_score}/100`} tooltip="AskSocial's combined screening score based on product, health-experience, context, and configured detection signals. It prioritizes the record for human review and is not an adverse-event determination." /><Metric label="Product confidence" value={`${record.product_confidence}%`} tooltip="AskSocial's confidence that the mention refers to the relevant product or procedure. A qualified reviewer must confirm the product relationship against the source evidence." /><Metric label="Health experience" value={`${record.health_experience_confidence}%`} tooltip="AskSocial's confidence that the mention describes a health experience or potential safety-relevant situation. This score supports triage and does not establish an adverse event." /><Metric label="Evidence origin" value={evidenceOriginLabel(record)} tooltip="Where the evidence entered AskSocial. Mentions ingested from CSV social-data files are labeled Social; other origins retain their governed provenance label. Origin provides provenance and does not indicate evidence quality or causality." /></div>
-        {markedRelevant && !['transferred', 'acknowledged', 'reconciled'].includes(record.status) ? <><PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /><E2dCaseAssessment value={e2dReview} onChange={setE2dReview} patientCriterion={patientCriterion} reporterCriterion={reporterCriterion} /></> : null}
         <div><p className="text-xs font-medium text-white/55">Why AskSocial surfaced this</p><div className="mt-2 space-y-2">{(record.detection_rationale || []).map((reason, index) => <p key={index} className="rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-xs leading-5 text-white/40">{reason}</p>)}</div></div>
         <div><p className="text-xs font-medium text-white/55">Matched concepts</p><div className="mt-2 flex flex-wrap gap-2">{(record.matched_concepts || []).map((match) => <ToneBadge key={`${match.conceptId}-${match.matchedTerm}`}>{label(match.category)} · {match.matchedTerm}</ToneBadge>)}</div></div></div>
       </Card>
@@ -692,23 +744,26 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
       </Card>
     ) : null}
     {markedRelevant && !["transferred", "acknowledged", "reconciled"].includes(record.status) ? (
-      <Card title="Structured human review" subtitle="AI proposes relevance; a qualified reviewer makes and documents the workflow decision.">
-        <div className="grid gap-5 xl:grid-cols-2">
-          <div className="space-y-4">
-            <DecisionSelect labelText="Does the content mention or reasonably imply a sponsor product?" value={productMention} onChange={setProductMention} />
-            <DecisionSelect labelText="Does it describe a health experience or potential special situation?" value={healthExperience} onChange={setHealthExperience} />
-            <div>
-              <p className="text-xs font-medium text-white/55"><FieldLabel labelText="Classification" /></p>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">{CLASSIFICATIONS.map((classification) => <label key={classification} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={selectedClasses.includes(classification)} onChange={() => toggleClassification(classification)} />{label(classification)}</label>)}</div>
-            </div>
+      <Card title="Structured human review" subtitle="Complete the four minimum ICSR criteria first. AskSocial starts Day Zero only when a qualified reviewer confirms and escalates a complete case.">
+        <MinimumCriteriaSummary product={productMention} event={healthExperience} patient={patientCriterion} reporter={reporterCriterion} />
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <DecisionSelect labelText="Does the content mention or reasonably imply a sponsor product?" value={productMention} onChange={setProductMention} />
+          <DecisionSelect labelText="Does it describe a health experience or potential special situation?" value={healthExperience} onChange={setHealthExperience} />
+        </div>
+        <div className="mt-5"><E2dCaseAssessment value={e2dReview} onChange={setE2dReview} patientCriterion={patientCriterion} reporterCriterion={reporterCriterion} patientEvidenceConfirmed={patientEvidenceConfirmed} onPatientEvidenceConfirmed={setPatientEvidenceConfirmed} /></div>
+        <div className="mt-5"><PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /></div>
+        <div className="mt-5 grid gap-5 xl:grid-cols-2">
+          <div>
+            <p className="text-xs font-medium text-white/55"><FieldLabel labelText="Classification" /></p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">{CLASSIFICATIONS.map((classification) => <label key={classification} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={selectedClasses.includes(classification)} onChange={() => toggleClassification(classification)} />{label(classification)}</label>)}</div>
           </div>
           <div>
             <label className="text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /></label>
-            <textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={9} placeholder="Document the evidence and reasoning supporting this decision." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" />
-            {reviewError ? <p role="alert" className="mt-2 text-xs text-amber-300">{reviewError}</p> : <p className="mt-2 text-[11px] text-white/30">A rationale is required when the decision is submitted.</p>}
+            <textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={6} placeholder="Document the source evidence and reasoning supporting the final decision." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" />
+            {reviewError ? <p role="alert" className="mt-2 text-xs text-amber-300">{reviewError}</p> : <p className="mt-2 text-[11px] text-white/30">A rationale and at least one classification are required for escalation.</p>}
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" disabled={busy.startsWith("review:")} onClick={() => review("escalate")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:escalate" ? "Saving…" : "Confirm reportability & escalate"}</button>
-              <button type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant")} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Relevant"}</button>
+              <button type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant")} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Relevant"}</button>
             </div>
           </div>
         </div>
@@ -731,6 +786,16 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
   </div>;
 }
 
+function MinimumCriteriaSummary({ product, event, patient, reporter }) {
+  const criteria = [
+    ["Suspect product", product],
+    ["AE/ADR or observation", event],
+    ["Identifiable patient", patient],
+    ["Identifiable reporter", reporter],
+  ];
+  return <section aria-label="Minimum ICSR criteria status" className="rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/75">Four minimum ICSR criteria</h3><p className="mt-1 text-xs leading-5 text-white/35">All four must be Yes before reportability can be confirmed and Day Zero can start.</p></div><ToneBadge tone={criteria.every(([, status]) => status === "yes") ? "healthy" : "approaching"}>{criteria.filter(([, status]) => status === "yes").length} of 4 confirmed</ToneBadge></div><div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{criteria.map(([criterion, status]) => <div key={criterion} className="rounded-xl border border-white/10 bg-black/30 p-3"><p className="text-[11px] text-white/40">{criterion}</p><div className="mt-2"><ToneBadge tone={status === "yes" ? "healthy" : status === "no" ? "breached" : "approaching"}>{label(status)}</ToneBadge></div></div>)}</div></section>;
+}
+
 function DecisionSelect({ labelText, value, onChange }) { return <fieldset><legend className="text-xs font-medium text-white/55"><FieldLabel labelText={labelText} /></legend><div className="mt-2 flex gap-2">{["yes", "no", "unclear"].map((option) => <label key={option} className={`cursor-pointer rounded-lg border px-3 py-2 text-xs ${value === option ? "border-white bg-white text-black" : "border-white/10 text-white/50"}`}><input className="sr-only" type="radio" value={option} checked={value === option} onChange={() => onChange(option)} />{label(option)}</label>)}</div></fieldset>; }
 
 function PvOntologyReview({ value, onChange }) {
@@ -738,10 +803,10 @@ function PvOntologyReview({ value, onChange }) {
   const causalityLanguageOptions = AE_ONTOLOGY_OPTIONS.causalityLanguage.includes(value.causalityLanguage)
     ? AE_ONTOLOGY_OPTIONS.causalityLanguage
     : [...AE_ONTOLOGY_OPTIONS.causalityLanguage, value.causalityLanguage];
-  return <section className="rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/75">Adverse-event ontology review</h3><p className="mt-1 text-xs leading-5 text-white/35">Confirm or correct every extracted field against the verbatim and applicable reference label before escalation. These reviewer-approved values become the final ontology in the sponsor package.</p><div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4"><OntologyText labelText="Product / procedure" {...field("productProcedure")} /><OntologyText labelText="Adverse event" {...field("adverseEvent")} /><OntologySelect labelText="Seriousness" options={AE_ONTOLOGY_OPTIONS.seriousness} {...field("seriousness")} /><OntologySelect labelText="Outcome" options={AE_ONTOLOGY_OPTIONS.outcome} {...field("outcome")} /><OntologySelect labelText="Time to onset" options={AE_ONTOLOGY_OPTIONS.timeToOnset} {...field("timeToOnset")} /><OntologyText labelText="Onset detail" {...field("timeToOnsetDetail")} /><OntologySelect labelText="Severity" options={AE_ONTOLOGY_OPTIONS.severity} {...field("severity")} /><OntologySelect labelText="Unexpectedness" options={AE_ONTOLOGY_OPTIONS.unexpectedness} {...field("unexpectedness")} /><OntologySelect labelText="Causality type" options={["temporal_association", "possible_attribution", "reported_attribution", "denied"]} {...field("causalityType")} /><OntologySelect labelText="Causality language" options={causalityLanguageOptions} emptyLabel="Not stated / unclear" {...field("causalityLanguage")} /></div></section>;
+  return <section className="rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/75">Adverse-event assessment</h3><p className="mt-1 text-xs leading-5 text-white/35">Confirm the sponsor-ready safety facts against the verbatim and applicable reference label. AskSocial derives the causality category from the selected source language.</p><div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4"><OntologyText labelText="Product / procedure" {...field("productProcedure")} /><OntologyText labelText="Adverse event" {...field("adverseEvent")} /><OntologySelect labelText="Seriousness" options={AE_ONTOLOGY_OPTIONS.seriousness} {...field("seriousness")} /><OntologySelect labelText="Outcome" options={AE_ONTOLOGY_OPTIONS.outcome} {...field("outcome")} /><OntologySelect labelText="Time to onset" options={AE_ONTOLOGY_OPTIONS.timeToOnset} {...field("timeToOnset")} /><OntologyText labelText="Onset detail" {...field("timeToOnsetDetail")} /><OntologySelect labelText="Severity" options={AE_ONTOLOGY_OPTIONS.severity} {...field("severity")} /><OntologySelect labelText="Unexpectedness" options={AE_ONTOLOGY_OPTIONS.unexpectedness} {...field("unexpectedness")} /><OntologySelect labelText="Causality language" options={causalityLanguageOptions} emptyLabel="Not stated / unclear" {...field("causalityLanguage")} /></div></section>;
 }
 
-function E2dCaseAssessment({ value, onChange, patientCriterion, reporterCriterion }) {
+function E2dCaseAssessment({ value, onChange, patientCriterion, reporterCriterion, patientEvidenceConfirmed, onPatientEvidenceConfirmed }) {
   const seriousnessCriteria = ["death", "life_threatening", "hospitalization", "disability_or_incapacity", "congenital_anomaly_or_birth_defect", "important_medical_event"];
   function field(key) { return { value: value[key], onChange: (event) => onChange((current) => ({ ...current, [key]: event.target.value })) }; }
   function toggleCriterion(criterion) {
@@ -761,42 +826,37 @@ function E2dCaseAssessment({ value, onChange, patientCriterion, reporterCriterio
     }));
   }
   return <section className="rounded-2xl border border-violet-400/15 bg-violet-400/[0.04] p-4">
-    <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-100/75">ICH E2D(R1) case assessment</h3>
-    <p className="mt-1 text-xs leading-5 text-white/35">Document minimum ICSR criteria, clinical narrative inputs, follow-up gaps, and duplicate assessment. Unknown information remains explicitly missing and is never inferred from a social handle or unverified post.</p>
-    <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <OntologySelect labelText="Report type" options={["undetermined", "spontaneous", "solicited"]} {...field("reportType")} />
-      <OntologySelect labelText="Primary source type" options={["unknown", "consumer", "healthcare_professional", "other"]} {...field("primarySourceType")} />
-      <OntologySelect labelText="Patient association" options={["unclear", "specific_patient", "aggregate_patients"]} {...field("patientAssociation")} />
-      <OntologySelect labelText="Patient existence status" options={["not_established", "characteristics_detected", "verified"]} {...field("patientExistenceStatus")} />
-      <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"><p className="text-xs font-medium text-white/55"><FieldLabel labelText="Identifiable patient criterion" /></p><div className="mt-2"><ToneBadge tone={patientCriterion === "yes" ? "healthy" : patientCriterion === "no" ? "breached" : "approaching"}>{label(patientCriterion)}</ToneBadge></div><p className="mt-2 text-[10px] leading-4 text-white/30">Yes requires an AE/ADR or observation associated with one specific patient, at least one controlled ICH qualifying characteristic, and documented supporting evidence. Aggregate statements and handles alone do not qualify.</p></div>
-      <OntologyText labelText="Patient identifier basis" {...field("patientIdentifierBasis")} />
-      <OntologyText labelText="Patient existence verification evidence" {...field("patientVerificationEvidence")} />
-      <OntologySelect labelText="Patient follow-up feasible" options={["unclear", "yes", "no"]} {...field("patientFollowUpFeasibility")} />
-      <OntologySelect labelText="Patient follow-up status" options={["not_started", "attempted", "response_received", "not_feasible"]} {...field("patientFollowUpStatus")} />
-      <fieldset className="md:col-span-2 xl:col-span-4"><legend className="text-xs font-medium text-white/55"><FieldLabel labelText="Patient qualifying characteristics (select every characteristic supported by the source)" /></legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{PATIENT_CHARACTERISTIC_TYPES.map((characteristic) => <label key={characteristic} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.patientCharacteristicTypes.includes(characteristic)} onChange={() => togglePatientCharacteristic(characteristic)} />{label(characteristic)}</label>)}</div></fieldset>
-      <OntologySelect labelText="Reporter relationship to event" options={["unclear", "self_report", "first_hand_other", "second_hand"]} {...field("reporterRelationship")} />
-      <OntologySelect labelText="Reporter existence status" options={["not_established", "characteristics_detected", "verified", "anonymous_verified"]} {...field("reporterExistenceStatus")} />
-      <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"><p className="text-xs font-medium text-white/55"><FieldLabel labelText="Identifiable reporter criterion" /></p><div className="mt-2"><ToneBadge tone={reporterCriterion === "yes" ? "healthy" : reporterCriterion === "no" ? "breached" : "approaching"}>{label(reporterCriterion)}</ToneBadge></div><p className="mt-2 text-[10px] leading-4 text-white/30">Yes requires a verified real reporter, or an anonymous reporter whose existence is verified, plus self-experience or first-hand knowledge and documented evidence.</p></div>
-      <OntologyText labelText="Reporter qualifying characteristics" {...field("reporterIdentifierBasis")} />
-      <OntologyText labelText="Reporter existence verification evidence" {...field("reporterVerificationEvidence")} />
-      <OntologySelect labelText="Reporter follow-up feasible" options={["unclear", "yes", "no"]} {...field("reporterFollowUpFeasibility")} />
-      <OntologySelect labelText="Reporter follow-up status" options={["not_started", "attempted", "response_received", "not_feasible"]} {...field("reporterFollowUpStatus")} />
-      <OntologySelect labelText="Follow-up needed" options={["unclear", "yes", "no"]} {...field("followUpNeeded")} />
-      <OntologySelect labelText="Duplicate assessment" options={["not_checked", "no_match", "potential_duplicate", "confirmed_duplicate"]} {...field("duplicateStatus")} />
-      <OntologyText labelText="Duplicate / linked-case reference" {...field("duplicateReference")} />
+    <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-100/75">ICH E2D(R1) identifiability gate</h3>
+    <p className="mt-1 text-xs leading-5 text-white/35">Complete the three numbered patient inputs below. The criterion becomes Yes only when the event is tied to one specific patient, at least one controlled ICH characteristic is selected, and supporting source evidence is documented.</p>
+
+    <div className="mt-4 rounded-2xl border border-violet-300/15 bg-black/20 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-semibold text-white/70">Patient identifiability · required</p><p className="mt-1 text-[11px] text-white/35">Do not use a digital handle or an aggregate patient statement as the patient identifier.</p></div><ToneBadge tone={patientCriterion === "yes" ? "healthy" : patientCriterion === "no" ? "breached" : "approaching"}>Criterion: {label(patientCriterion)}</ToneBadge></div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div><p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-violet-200/55">1 · One specific patient</p><OntologySelect labelText="Patient association (required)" options={["unclear", "specific_patient", "aggregate_patients"]} {...field("patientAssociation")} /></div>
+        <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5"><p className="text-xs font-medium text-white/55"><FieldLabel labelText="Identifiable patient criterion" /></p><div className="mt-2"><ToneBadge tone={patientCriterion === "yes" ? "healthy" : patientCriterion === "no" ? "breached" : "approaching"}>{label(patientCriterion)}</ToneBadge></div><p className="mt-2 text-[10px] leading-4 text-white/30">Yes requires all three numbered patient inputs. This is independently revalidated by the server before escalation.</p></div>
+      </div>
+      <fieldset aria-required="true" className="mt-4"><legend className="text-xs font-medium text-white/55"><span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-violet-200/55">2 · Controlled ICH characteristic</span><FieldLabel labelText="ICH qualifying patient characteristic (select at least one)" /></legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{PATIENT_CHARACTERISTIC_TYPES.map((characteristic) => <label key={characteristic} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.patientCharacteristicTypes.includes(characteristic)} onChange={() => togglePatientCharacteristic(characteristic)} />{label(characteristic)}</label>)}</div></fieldset>
+      <div className="mt-4"><p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-violet-200/55">3 · Supporting evidence</p><E2dTextArea required labelText="Patient supporting evidence (required)" {...field("patientIdentifierBasis")} placeholder="Quote the source text or precisely document the retained evidence linking the selected characteristic to this patient." /></div>
+      <label className={`mt-4 flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-xs leading-5 ${patientEvidenceConfirmed ? "border-emerald-400/25 bg-emerald-400/[0.06] text-emerald-100/75" : "border-amber-400/20 bg-amber-400/[0.04] text-white/55"}`}><input type="checkbox" checked={patientEvidenceConfirmed} onChange={(event) => onPatientEvidenceConfirmed(event.target.checked)} className="mt-0.5 size-4 cursor-pointer accent-emerald-300" /><span><span className="font-medium"><FieldLabel labelText="Reviewer patient-evidence confirmation" /></span><span className="mt-1 block text-[11px] text-white/35">I verified that the AE/ADR is tied to one specific patient, that at least one selected ICH characteristic is supported, and that the evidence above is present in the retained source.</span></span></label>
     </div>
-    <fieldset className="mt-5"><legend className="text-xs font-medium text-white/55"><FieldLabel labelText="Seriousness criteria (select every criterion supported by the source)" /></legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{seriousnessCriteria.map((criterion) => <label key={criterion} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.seriousnessCriteria.includes(criterion)} onChange={() => toggleCriterion(criterion)} />{label(criterion)}</label>)}</div></fieldset>
-    <div className="mt-5 grid gap-3 md:grid-cols-2">
-      <E2dTextArea labelText="Patient characteristics" {...field("patientCharacteristics")} placeholder="Age/category, sex, gestational age, initials or another permitted identifier, if reported." />
-      <E2dTextArea labelText="Therapy details" {...field("therapyDetails")} placeholder="Product, dose, route, indication, treatment dates, concomitant therapy, if reported." />
-      <E2dTextArea labelText="Medical history" {...field("medicalHistory")} placeholder="Relevant history reported by the source." />
-      <E2dTextArea labelText="Concurrent conditions" {...field("concurrentConditions")} placeholder="Concurrent conditions reported by the source." />
-      <E2dTextArea labelText="Clinical course" {...field("clinicalCourse")} placeholder="Chronological course, interventions and outcome; the source verbatim remains separately preserved." />
-      <E2dTextArea labelText="Diagnosis / laboratory evidence" {...field("diagnosisAndLaboratoryEvidence")} placeholder="Diagnosis, tests, laboratory findings and normal ranges, if reported." />
-      <E2dTextArea labelText="Alternative causes / confounders" {...field("alternativeCausesAndConfounders")} placeholder="Alternative explanations or confounders considered during review." />
-      <E2dTextArea labelText="Targeted follow-up questions" {...field("followUpQuestions")} placeholder="Specific missing information to request where follow-up is permissible and feasible." />
-      <E2dTextArea labelText="Regional / local reporting assessment" {...field("regionalReportingAssessment")} placeholder="Document applicable reporting conclusion or retain as pending sponsor assessment." className="md:col-span-2" />
+
+    <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-semibold text-white/70">Reporter identifiability · required</p><p className="mt-1 text-[11px] text-white/35">Confirm a real, first-hand reporter and document how that was verified.</p></div><ToneBadge tone={reporterCriterion === "yes" ? "healthy" : reporterCriterion === "no" ? "breached" : "approaching"}>Criterion: {label(reporterCriterion)}</ToneBadge></div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <OntologySelect labelText="Reporter knowledge of the event (required)" options={["unclear", "self_report", "first_hand_other", "second_hand"]} {...field("reporterRelationship")} />
+        <OntologySelect labelText="Reporter existence verification (required)" options={["not_established", "characteristics_detected", "verified", "anonymous_verified"]} {...field("reporterExistenceStatus")} />
+        <OntologyText labelText="Reporter qualifying characteristic or anonymous status" {...field("reporterIdentifierBasis")} />
+        <OntologyText labelText="Reporter verification evidence (required)" {...field("reporterVerificationEvidence")} />
+      </div>
     </div>
+
+    <details className="group mt-4 rounded-2xl border border-white/10 bg-black/20">
+      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-xs font-medium text-white/60 marker:hidden"><span>PV follow-up, seriousness, and duplicate checks</span><span aria-hidden="true" className="text-lg text-white/30 transition-transform group-open:rotate-45">+</span></summary>
+      <div className="border-t border-white/10 p-4">
+        <fieldset><legend className="text-xs font-medium text-white/55"><FieldLabel labelText="Seriousness criteria (select every criterion supported by the source)" /></legend><div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{seriousnessCriteria.map((criterion) => <label key={criterion} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={value.seriousnessCriteria.includes(criterion)} onChange={() => toggleCriterion(criterion)} />{label(criterion)}</label>)}</div></fieldset>
+        <div className="mt-4 grid gap-3 md:grid-cols-2"><OntologySelect labelText="Duplicate assessment" options={["not_checked", "no_match", "potential_duplicate", "confirmed_duplicate"]} {...field("duplicateStatus")} /><OntologyText labelText="Duplicate / linked-case reference" {...field("duplicateReference")} /><E2dTextArea labelText="Targeted follow-up questions" {...field("followUpQuestions")} placeholder="Document only the missing information that should be requested where follow-up is permissible and feasible." className="md:col-span-2" /></div>
+      </div>
+    </details>
   </section>;
 }
 
@@ -805,12 +865,24 @@ function OntologySelect({ labelText, options, value, onChange, emptyLabel = "Unc
   const choices = options.includes("not_applicable") ? options : [...options, "not_applicable"];
   return <label className="text-xs text-white/40"><FieldLabel labelText={labelText} /><select value={value} onChange={onChange} className="mt-1.5 w-full cursor-pointer rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white">{choices.map((option) => <option key={option || "empty"} value={option}>{option === "not_applicable" ? "N/A" : option ? label(option) : emptyLabel}</option>)}</select></label>;
 }
-function E2dTextArea({ labelText, value, onChange, placeholder, className = "" }) { return <label className={`text-xs text-white/40 ${className}`}><FieldLabel labelText={labelText} /><textarea value={value} onChange={onChange} rows={3} placeholder={placeholder} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
+function E2dTextArea({ labelText, value, onChange, placeholder, className = "", required = false }) { return <label className={`text-xs text-white/40 ${className}`}><FieldLabel labelText={labelText} /><textarea value={value} onChange={onChange} rows={3} placeholder={placeholder} required={required} aria-required={required || undefined} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
+
+function ReviewerWorkflowGuide() {
+  const steps = [
+    ["Inspect", "Read the full mention, provenance, timestamps, and original source."],
+    ["Relevance", "Choose Mark as Relevant only when the mention may contain an AE/ADR or special situation."],
+    ["Minimum criteria", "Confirm product and event. For the patient, enter one specific patient, select at least one controlled ICH characteristic, document supporting evidence, and attest that you verified it."],
+    ["Safety review", "Confirm reporter identifiability, sponsor-ready adverse-event facts, classification, seriousness, duplicate status, and any targeted follow-up."],
+    ["Decision", "Enter the rationale, then escalate only when all four criteria are Yes; that governed confirmation starts Day Zero."],
+  ];
+  return <Card title="Reviewer workflow" subtitle="Follow these steps in order; required fields remain hidden until the mention is marked relevant."><ol className="grid gap-3 lg:grid-cols-5">{steps.map(([title, detail], index) => <li key={title} className="rounded-xl border border-white/10 bg-black/30 p-3"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-200/55">Step {index + 1}</p><p className="mt-1 text-xs font-medium text-white/70">{title}</p><p className="mt-2 text-[11px] leading-5 text-white/35">{detail}</p></li>)}</ol></Card>;
+}
 
 function StructuredReview({ selected, busy, onMutate, onRefreshRecord, onReviewComplete, onReturnToQueue }) {
   if (!selected) return <Card title="Structured Review" subtitle="Open a mention from the Review Queue to begin a governed relevance decision."><Empty>No PV mention is currently open for structured review.</Empty></Card>;
   return <section id="pv-structured-review" className="space-y-5 scroll-mt-6">
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-4"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">Structured Review</p><p className="mt-1 text-sm text-white/45">Determine relevance first, then complete the safety ontology and ICH case assessment only when appropriate.</p></div><button type="button" onClick={onReturnToQueue} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60">Return to Review Queue</button></div>
+    <ReviewerWorkflowGuide />
     <RecordWorkbench key={selected.record.id} detail={selected} busy={busy} onMutate={onMutate} onRefresh={() => onRefreshRecord(selected.record.id)} onReviewComplete={onReviewComplete} />
   </section>;
 }

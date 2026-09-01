@@ -130,6 +130,7 @@ export type PvAdverseEventOntology = {
       qualifyingCharacteristics?: string[];
       identifierBasis?: string;
       verificationEvidence?: string;
+      reviewerConfirmed?: boolean;
       followUpFeasibility?: "yes" | "no" | "unclear";
       followUpStatus?: "not_started" | "attempted" | "response_received" | "not_feasible";
     };

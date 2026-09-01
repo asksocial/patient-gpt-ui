@@ -860,6 +860,7 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
       identifierBasis: patientAssessment?.identifierBasis || minimum?.identifiablePatient?.evidence,
       verificationEvidence: patientAssessment?.verificationEvidence,
     });
+    const patientEvidenceConfirmed = patientAssessment?.reviewerConfirmed === true;
     const reporterStatus = reporterCriterionStatus({
       relationship: reporterAssessment?.relationship,
       existenceStatus: reporterAssessment?.existenceStatus,
@@ -873,7 +874,8 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
       reporterStatus,
     ].every((status) => status === "yes")
       && minimum?.identifiablePatient?.status === patientStatus
-      && minimum?.identifiableReporter?.status === reporterStatus;
+      && minimum?.identifiableReporter?.status === reporterStatus
+      && patientEvidenceConfirmed;
     if (!criteriaMet) {
       throw new Error("Confirm all four minimum ICSR criteria before escalating. Patient identifiability requires one specific patient, at least one controlled ICH qualifying characteristic, and supporting evidence. Reporter identifiability requires verified existence, first-hand information, and documented verification evidence. Otherwise retain the assessment for follow-up without starting Day Zero.");
     }
