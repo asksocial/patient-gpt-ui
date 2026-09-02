@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePvPrincipal, pvErrorResponse } from "../../../../lib/pv/auth";
-import { appendPvAuditEvent, detectAndStorePvContent, listPvRecords } from "../../../../lib/pv/service";
+import { appendPvAuditEvent, detectAndStorePvContent, listPvRecords, listPvRecordsPage } from "../../../../lib/pv/service";
 
 export const dynamic = "force-dynamic";
 function detectionInput(body: any, defaultLibraryId?: string) {
@@ -18,6 +18,16 @@ export async function GET(request: NextRequest) {
   try {
     const status = request.nextUrl.searchParams.get("status") || undefined;
     const therapeuticArea = request.nextUrl.searchParams.get("therapeuticArea") || undefined;
+    if (request.nextUrl.searchParams.has("page")) {
+      if (!status) throw new Error("A lifecycle status is required for paginated PV records.");
+      const result = await listPvRecordsPage(await requirePvPrincipal(), {
+        status,
+        therapeuticArea,
+        page: Number(request.nextUrl.searchParams.get("page") || 1),
+        pageSize: Number(request.nextUrl.searchParams.get("pageSize") || 20),
+      });
+      return NextResponse.json({ ok: true, ...result });
+    }
     return NextResponse.json({ ok: true, records: await listPvRecords(await requirePvPrincipal(), { status, therapeuticArea }) });
   } catch (error) { const failure = pvErrorResponse(error); return NextResponse.json({ ok: false, error: failure.message }, { status: failure.status }); }
 }

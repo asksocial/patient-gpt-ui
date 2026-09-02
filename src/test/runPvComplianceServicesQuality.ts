@@ -206,6 +206,7 @@ for (const field of ["corpus_id", "therapeutic_area", "pv_records_therapeutic_ar
 for (const field of ["pv_review_lists", "pv_review_list_items", "assigned_to", "shared_emails", "record_id"]) assert(reviewListMigration.includes(field), `PV review-list migration is missing ${field}.`);
 for (const field of ["author_identifier_column", "pv_detection_libraries", "pv_import_batches", "pv_records", "therapeutic_area"]) assert(genericEnrichmentMigration.includes(field), `Therapeutic-area-agnostic PV enrichment migration is missing ${field}.`);
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
+const lifecycleSource = workbench.slice(workbench.indexOf("function LifecycleRecords"), workbench.indexOf("function ReviewQueue"));
 assert(!workbench.includes("Eight connected PV services"), "The removed PV services marketing overview must not return to Compliance Overview.");
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {
   assert(workbench.toLowerCase().includes(phrase.toLowerCase()), `PV workbench is missing required UX: ${phrase}`);
@@ -218,6 +219,12 @@ for (const phrase of ["combined screening score", "confidence that the mention r
 }
 assert(!workbench.includes('label="Sources due"') && !workbench.includes('label="Awaiting review"'), "Ambiguous PV overview stage labels must not return.");
 assert(workbench.includes('import Tooltip from "./ui/Tooltip"'), "PV Compliance Overview must use the shared accessible tooltip behavior.");
+assert(workbench.includes("onSelectLifecycle(status)") && workbench.includes("View mentions →") && workbench.includes("View mentions"), "Every PV lifecycle card must be a visible, clickable mention drill-down.");
+for (const phrase of ["PV lifecycle ·", "currently comprise this lifecycle count", "Back to Compliance Overview", "No mentions are currently in the", "PvMentionDialog"]) {
+  assert(lifecycleSource.includes(phrase), `PV lifecycle drill-down is missing ${phrase}.`);
+}
+assert(lifecycleSource.includes("const pageSize = 20") && lifecycleSource.includes("Page {currentPage} of {pageCount}") && lifecycleSource.includes("data.total"), "Lifecycle mention lists must use exact server counts and paginate at 20 records per page.");
+assert(lifecycleSource.includes("status, page: String(page), pageSize: String(pageSize)") && lifecycleSource.includes('params.set("therapeuticArea", therapeuticArea)'), "Lifecycle mention requests must retain exact status and therapeutic-area scope.");
 for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Outcome", "Time to onset", "Severity", "Unexpectedness", "Causality language", "Adverse-event assessment"]) {
   assert(workbench.includes(phrase), `PV workbench is missing ontology UX: ${phrase}`);
 }
@@ -287,7 +294,7 @@ assert(workbench.includes("PV_REVIEW_WINDOW_MS = 15 * 24 * 60 * 60 * 1000") && r
 assert(workbench.includes('record.reportability_identified_at || ""') && !workbench.includes('const identifiedAt = new Date(record.identified_at'), "The queue day-zero countdown must start exclusively from qualified reportability identification.");
 assert(workbench.includes("Opening structured review does not start this clock") && workbench.includes("does not itself start Day Zero"), "The queue timestamp guidance must separate review initiation from Day Zero.");
 assert(reviewQueueSource.includes("setInterval(() => setNowMs(Date.now()), 30_000)"), "The queue day-zero countdown must update automatically as time elapses.");
-assert(reviewQueueSource.includes("PV_SCORE_TOOLTIP") && workbench.includes("It is not an adverse-event determination"), "The queue score column must explain how the screening score should be interpreted.");
+assert(workbench.includes("PV_SCORE_TOOLTIP") && workbench.includes("It is not an adverse-event determination"), "The queue score column must explain how the screening score should be interpreted.");
 assert(reviewQueueSource.includes('const [sort, setSort] = useState({ key: "", direction: "" })') && reviewQueueSource.includes("function sortByColumn(key)"), "Every queue data column must use the shared interactive sorting control.");
 assert(reviewQueueSource.includes('key === "score" ? "desc" : "asc"') && reviewQueueSource.includes('head.key === "score" ? "highest to lowest"'), "Score must initially sort highest-to-lowest while other columns initially sort ascending.");
 assert(reviewQueueSource.includes("PV_QUEUE_HEADERS.map") && reviewQueueSource.includes("onClick={() => sortByColumn(head.key)}"), "Every governed queue header must be clickable for sorting.");
@@ -332,6 +339,7 @@ assert(reviewStartMigration.includes("review_started_at") && !reviewStartMigrati
 const recordsRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/records/route.ts"), "utf8");
 const libraryRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/library/route.ts"), "utf8");
 assert(recordsRoute.includes("therapeuticArea") && libraryRoute.includes("therapeuticArea"), "Live detection and detection-library APIs must retain therapeutic-area scope.");
+assert(recordsRoute.includes("listPvRecordsPage") && recordsRoute.includes('searchParams.has("page")') && pvService.includes('select("*", { count: "exact" })') && pvService.includes('.eq("status", input.status)') && pvService.includes(".range(from, from + pageSize - 1)"), "PV lifecycle drill-down must use an exact, status-filtered, server-paginated ledger query.");
 assert(workbench.includes("therapeuticArea, libraries") && workbench.includes("Therapeutic area: {therapeuticArea}"), "PV Detection Library configuration must visibly inherit the selected therapeutic area.");
 const moduleView = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
 assert(!moduleView.includes("Botulinum toxin") && moduleView.includes("View all evidence"), "Shared module evidence UX must remain therapeutic-area agnostic.");

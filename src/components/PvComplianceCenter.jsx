@@ -197,6 +197,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   const [libraries, setLibraries] = useState([]);
   const [concepts, setConcepts] = useState([]);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [lifecycleStatus, setLifecycleStatus] = useState("");
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -204,6 +205,12 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   function navigateTab(nextTab) {
     setTab(nextTab);
     onNavigate?.(`pv_${nextTab}`);
+  }
+
+  function openLifecycle(status) {
+    setLifecycleStatus(status);
+    setSelectedRecord(null);
+    setTab("lifecycle");
   }
 
   const loadAll = useCallback(async () => {
@@ -238,8 +245,9 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
     const response = await fetch(`/api/pv/records/${recordId}`, { cache: "no-store" });
     const data = await response.json();
     setBusy("");
-    if (!response.ok || !data.ok) return setMessage(data.error || "Unable to open the PV record.");
+    if (!response.ok || !data.ok) { setMessage(data.error || "Unable to open the PV record."); return null; }
     setSelectedRecord(data);
+    return data;
   }
 
   async function continueStructuredReview() {
@@ -287,13 +295,15 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
 
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="PV Compliance sections">
         {TABS.map(([id, text]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => navigateTab(id)} className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-medium transition ${tab === id ? "border-white bg-white text-black" : "border-white/10 bg-white/[0.03] text-white/50 hover:text-white"}`}>{text}</button>)}
+        {tab === "lifecycle" ? <button type="button" role="tab" aria-selected="true" className="shrink-0 rounded-xl border border-white bg-white px-3 py-2 text-xs font-medium text-black">Lifecycle · {label(lifecycleStatus)}</button> : null}
         {tab === "review" ? <button type="button" role="tab" aria-selected="true" className="shrink-0 rounded-xl border border-white bg-white px-3 py-2 text-xs font-medium text-black">Structured Review</button> : null}
       </div>
 
       {message ? <div className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.06] px-4 py-3 text-sm text-cyan-100/75">{message}</div> : null}
       {error ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{error}<p className="mt-1 text-xs text-rose-200/60">Apply the PV Supabase migration before using persistent workflow features.</p></div> : null}
 
-      {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} /> : null}
+      {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} onSelectLifecycle={openLifecycle} /> : null}
+      {tab === "lifecycle" ? <LifecycleRecords status={lifecycleStatus} expectedCount={overview?.statusCounts?.[lifecycleStatus] || 0} therapeuticArea={therapeuticArea} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onBack={() => setTab("overview")} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
       {tab === "review" ? <StructuredReview selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReviewComplete={completeRecordReview} onReturnToQueue={() => navigateTab("queue")} /> : null}
       {tab === "handoff" ? <SponsorHandoff therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} busy={busy} onMutate={mutate} onOpenRecord={async (recordId) => { await openRecord(recordId); setTab("review"); }} /> : null}
@@ -305,7 +315,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   );
 }
 
-function Overview({ metrics, statusCounts }) {
+function Overview({ metrics, statusCounts, onSelectLifecycle }) {
   return <div className="space-y-5">
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <Metric label="Flagged records" value={metrics.totalRecords ?? 0} detail="All potential PV records" tooltip="Every potential PV record detected within the selected therapeutic area, across all current lifecycle states. These are screening candidates and not confirmed adverse events." />
@@ -320,7 +330,68 @@ function Overview({ metrics, statusCounts }) {
       <Metric label="Reconciliation" value={`${metrics.reconciliationCompletion ?? 100}%`} detail="Objective: zero unexplained records" tooltip="The percentage of PV records accounted for through reconciliation. The operational objective is no unexplained difference between detected, reviewed, transferred, and acknowledged records." />
     </div>
     <Card title="PV record lifecycle" subtitle="Content never disappears when it is closed as not relevant.">
-      <div className="grid gap-2 sm:grid-cols-4 lg:grid-cols-7">{["new", "in_review", "not_relevant", "ready_for_transfer", "transferred", "acknowledged", "reconciled"].map((status, index) => <div key={status} className="rounded-xl border border-white/10 bg-black/30 p-3"><Tooltip content={PV_LIFECYCLE_TOOLTIPS[status]} delay={200} side="bottom" align="start"><button type="button" aria-label={`${label(status)}: ${PV_LIFECYCLE_TOOLTIPS[status]}`} className="inline-flex cursor-help items-center gap-1.5 text-left text-xs text-white/65 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{label(status)}</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip><p className="mt-2 text-xl font-semibold text-white">{statusCounts[status] || 0}</p>{index < 6 ? <p className="mt-1 text-[10px] text-white/20">Next governed state →</p> : null}</div>)}</div>
+      <div className="grid gap-2 sm:grid-cols-4 lg:grid-cols-7">{["new", "in_review", "not_relevant", "ready_for_transfer", "transferred", "acknowledged", "reconciled"].map((status, index) => <div key={status} className="relative rounded-xl border border-white/10 bg-black/30 transition-colors hover:border-cyan-300/25 hover:bg-cyan-300/[0.04] focus-within:border-cyan-300/30"><button type="button" onClick={() => onSelectLifecycle(status)} aria-label={`View ${statusCounts[status] || 0} ${label(status)} PV mentions`} className="block w-full cursor-pointer rounded-xl p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span className="pr-6 text-xs text-white/65">{label(status)}</span><p className="mt-2 text-xl font-semibold text-white">{statusCounts[status] || 0}</p>{index < 6 ? <p className="mt-1 text-[10px] text-cyan-200/35">View mentions →</p> : <p className="mt-1 text-[10px] text-cyan-200/35">View mentions</p>}</button><div className="absolute right-3 top-3"><Tooltip content={PV_LIFECYCLE_TOOLTIPS[status]} delay={200} side="bottom" align="start"><button type="button" aria-label={`About ${label(status)}: ${PV_LIFECYCLE_TOOLTIPS[status]}`} className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">?</button></Tooltip></div></div>)}</div>
+    </Card>
+  </div>;
+}
+
+function PvMentionDialog({ selected, busy, onClose, onContinueReview }) {
+  if (!selected) return null;
+  const canContinue = ["new", "in_review"].includes(selected.record.status) && typeof onContinueReview === "function";
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2></div><button type="button" onClick={onClose} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Lifecycle status" value={label(selected.record.status)} tooltip={PV_LIFECYCLE_TOOLTIPS[selected.record.status]} /><Metric label="Original post date" value={formatDate(selected.record.posted_at)} tooltip="When the author originally published the mention online." /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} tooltip="When the mention became available to authorized AskSocial reviewers." /><Metric label="Detection score" value={`${selected.record.detection_score}/100`} tooltip={PV_SCORE_TOOLTIP} /></div><IdentifiabilitySummary assessment={selected.record.identifiability_assessment} /><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}{canContinue ? <button type="button" onClick={() => { onClose(); onContinueReview(); }} disabled={busy === `review-start:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-start:${selected.record.id}` ? "Starting structured review…" : "Continue to structured review"}</button> : null}</div></div></div>;
+}
+
+function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, busy, onOpen, onContinueReview, onBack }) {
+  const pageSize = 20;
+  const [page, setPage] = useState(1);
+  const [records, setRecords] = useState([]);
+  const [total, setTotal] = useState(expectedCount);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadLifecyclePage() {
+      setLoading(true);
+      setLoadError("");
+      try {
+        const params = new URLSearchParams({ status, page: String(page), pageSize: String(pageSize) });
+        if (therapeuticArea) params.set("therapeuticArea", therapeuticArea);
+        const response = await fetch(`/api/pv/records?${params.toString()}`, { cache: "no-store", signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Unable to load lifecycle records.");
+        setRecords(data.records || []);
+        setTotal(data.total || 0);
+      } catch (error) {
+        if (error?.name !== "AbortError") setLoadError(error instanceof Error ? error.message : "Unable to load lifecycle records.");
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+    loadLifecyclePage();
+    return () => controller.abort();
+  }, [page, status, therapeuticArea]);
+
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  async function openMention(recordId) {
+    const detail = await onOpen(recordId);
+    if (detail) setPreviewOpen(true);
+  }
+
+  return <div className="space-y-5">
+    {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} onContinueReview={onContinueReview} /> : null}
+    <Card title={`PV lifecycle · ${label(status)}`} subtitle={`${total} ${total === 1 ? "mention" : "mentions"} currently comprise this lifecycle count.`} actions={<button type="button" onClick={onBack} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 transition-colors hover:text-white">← Back to Compliance Overview</button>}>
+      {loadError ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{loadError}</div> : loading ? <Empty>Loading {label(status)} mentions…</Empty> : records.length ? <>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1180px] text-left text-xs">
+            <thead className="border-b border-white/10 text-white/35"><tr><th className="px-3 py-3 font-medium">Mention</th><th className="px-3 py-3 font-medium">Product</th><th className="px-3 py-3 font-medium">Potential event</th><th className="px-3 py-3 font-medium">Source</th><th className="px-3 py-3 font-medium">Published</th><th className="px-3 py-3 font-medium">Review timestamp</th><th className="px-3 py-3 font-medium">Reviewer</th></tr></thead>
+            <tbody>{records.map((record) => <tr key={record.id} className="border-b border-white/[0.06] text-white/60"><td className="max-w-[420px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 cursor-pointer text-left leading-5 text-cyan-100/65 transition-colors hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.publication_timestamp)}</td><td className="px-3 py-3">{formatDate(record.review_timestamp)}</td><td className="px-3 py-3">{record.review_started_by || record.assigned_reviewer_id || "Unassigned"}</td></tr>)}</tbody>
+          </table>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/40"><span>Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, total)} of {total} {label(status)} mentions</span><div className="flex items-center gap-2"><button type="button" onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:cursor-not-allowed disabled:opacity-30">← Previous</button><span>Page {currentPage} of {pageCount}</span><button type="button" onClick={() => setPage(Math.min(pageCount, currentPage + 1))} disabled={currentPage >= pageCount} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:cursor-not-allowed disabled:opacity-30">Next →</button></div></div>
+      </> : <Empty>No mentions are currently in the {label(status)} lifecycle state.</Empty>}
     </Card>
   </div>;
 }
@@ -396,7 +467,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
     };
   }, []);
 
-  function openMention(recordId) { setPreviewOpen(true); onOpen(recordId); }
+  async function openMention(recordId) { const detail = await onOpen(recordId); if (detail) setPreviewOpen(true); }
   function sortByColumn(key) {
     setSort((current) => current.key === key
       ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
@@ -469,7 +540,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
       </div>
     ) : null}
 
-    {selected && previewOpen ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2></div><button type="button" onClick={() => setPreviewOpen(false)} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-3"><Metric label="Original post date" value={formatDate(selected.record.posted_at)} tooltip="When the author originally published the mention online." /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} tooltip="When the mention became available to authorized AskSocial reviewers." /><Metric label="Detection score" value={`${selected.record.detection_score}/100`} tooltip={PV_SCORE_TOOLTIP} /></div><IdentifiabilitySummary assessment={selected.record.identifiability_assessment} /><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}<button type="button" onClick={() => { setPreviewOpen(false); onContinueReview(); }} disabled={busy === `review-start:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-start:${selected.record.id}` ? "Starting structured review…" : "Continue to structured review"}</button></div></div></div> : null}
+    {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} onContinueReview={onContinueReview} /> : null}
 
     <Card title="Potential PV Review Queue" subtitle="Click any mention to view the full source text. Select multiple mentions across pages to save a governed aggregate review list.">
       {pendingRecords.length ? <>

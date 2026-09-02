@@ -565,16 +565,8 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
   return completed;
 }
 
-export async function listPvRecords(principal: PlatformPrincipal, input: { status?: string; limit?: number; therapeuticArea?: string } = {}) {
-  assertPrincipal(principal);
+async function enrichPvRecordRows(principal: PlatformPrincipal, records: any[]) {
   const supabase = getSupabaseServerClient();
-  let query = supabase.from("pv_records").select("*").eq("principal_id", principal.principalId)
-    .order("identified_at", { ascending: false }).limit(Math.max(1, Math.min(1000, input.limit || 500)));
-  if (input.status) query = query.eq("status", input.status);
-  if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
-  const { data, error } = await query;
-  if (error) throw new Error(`Failed to load PV records: ${error.message}`);
-  const records = data || [];
   const recordIds = records.map((record: any) => record.id);
   const idChunks = Array.from(
     { length: Math.ceil(recordIds.length / 200) },
@@ -605,6 +597,45 @@ export async function listPvRecords(principal: PlatformPrincipal, input: { statu
     review_timestamp: record.review_started_at || null,
     escalation_timestamp: escalationByRecord.get(record.id) || null,
   }));
+}
+
+export async function listPvRecords(principal: PlatformPrincipal, input: { status?: string; limit?: number; therapeuticArea?: string } = {}) {
+  assertPrincipal(principal);
+  const supabase = getSupabaseServerClient();
+  let query = supabase.from("pv_records").select("*").eq("principal_id", principal.principalId)
+    .order("identified_at", { ascending: false }).limit(Math.max(1, Math.min(1000, input.limit || 500)));
+  if (input.status) query = query.eq("status", input.status);
+  if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to load PV records: ${error.message}`);
+  return enrichPvRecordRows(principal, data || []);
+}
+
+export async function listPvRecordsPage(principal: PlatformPrincipal, input: {
+  status: string;
+  page?: number;
+  pageSize?: number;
+  therapeuticArea?: string;
+}) {
+  assertPrincipal(principal);
+  const lifecycleStatuses = new Set(["new", "in_review", "not_relevant", "ready_for_transfer", "transferred", "acknowledged", "reconciled"]);
+  if (!lifecycleStatuses.has(input.status)) throw new Error("Select a valid PV lifecycle status.");
+  const page = Number.isFinite(input.page) ? Math.max(1, Math.floor(input.page as number)) : 1;
+  const pageSize = Number.isFinite(input.pageSize) ? Math.max(1, Math.min(100, Math.floor(input.pageSize as number))) : 20;
+  const from = (page - 1) * pageSize;
+  const supabase = getSupabaseServerClient();
+  let query = supabase.from("pv_records").select("*", { count: "exact" })
+    .eq("principal_id", principal.principalId).eq("status", input.status)
+    .order("identified_at", { ascending: false }).range(from, from + pageSize - 1);
+  if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
+  const { data, error, count } = await query;
+  if (error) throw new Error(`Failed to load the ${input.status} PV lifecycle records: ${error.message}`);
+  return {
+    records: await enrichPvRecordRows(principal, data || []),
+    total: count || 0,
+    page,
+    pageSize,
+  };
 }
 
 export async function listPvSponsorCases(principal: PlatformPrincipal, therapeuticArea?: string) {
