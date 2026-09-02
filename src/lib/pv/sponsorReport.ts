@@ -163,15 +163,15 @@ async function createQaCaseSheetReport(input: {
 
   const cover = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   smallCaps(cover, "AskSocial PV Compliance", margin, 748, ink, 6.7);
-  smallCaps(cover, "QA Non-Reportable Export Test", margin, 737, ink, 6.7);
-  const badge = "QA TEST ONLY - NOT FOR SPONSOR SUBMISSION";
+  smallCaps(cover, "Non-Reportable Case Documentation", margin, 737, ink, 6.7);
+  const badge = "NOT FOR SPONSOR SUBMISSION";
   const badgeWidth = bold.widthOfTextAtSize(badge, 6.4) + 18;
   cover.drawRectangle({ x: PAGE_WIDTH - margin - badgeWidth, y: 733, width: badgeWidth, height: 20, color: qaRed });
   cover.drawText(badge, { x: PAGE_WIDTH - margin - badgeWidth + 9, y: 740, size: 6.4, font: bold, color: rgb(1, 1, 1) });
   cover.drawLine({ start: { x: margin, y: 721 }, end: { x: PAGE_WIDTH - margin, y: 721 }, thickness: 1.6, color: ink });
   const area = printable(input.therapeuticArea || "All permitted therapeutic areas", "All permitted therapeutic areas");
   cover.drawText(area, { x: margin, y: 682, size: 28, font: bold, color: ink });
-  cover.drawText("QA case sheets", { x: margin, y: 648, size: 28, font: bold, color: ink });
+  cover.drawText("Case documentation", { x: margin, y: 648, size: 28, font: bold, color: ink });
   drawLines(cover, clippedLines(`${input.cases.length} screened mention${input.cases.length === 1 ? "" : "s"} closed as Not Relevant, each reformatted onto a single sheet. Every record preserves its source verbatim, chronology, reviewer decision and rationale.`, regular, 8.2, width, 3), margin, 614, { size: 8.2, leading: 12 });
 
   const statY = 570;
@@ -179,7 +179,7 @@ async function createQaCaseSheetReport(input: {
   const stats = [
     ["Screened mentions", String(input.cases.length)],
     ["Review decision", "Closed as Not Relevant"],
-    ["Standard applied", "ICH E2D(R1) format QA"],
+    ["Standard applied", "ICH E2D(R1) documentation format"],
     ["Generated", compactTimestamp(input.generatedAt)],
   ];
   cover.drawLine({ start: { x: margin, y: statY + 10 }, end: { x: PAGE_WIDTH - margin, y: statY + 10 }, thickness: 1, color: ink });
@@ -193,7 +193,7 @@ async function createQaCaseSheetReport(input: {
 
   smallCaps(cover, "Regulatory-use notice", margin, 522, qaRed, 5.7);
   cover.drawLine({ start: { x: 130, y: 532 }, end: { x: 130, y: 487 }, thickness: 0.6, color: rule });
-  drawLines(cover, clippedLines("This document contains records that qualified reviewers closed as Not Relevant. It exists only to validate AskSocial export formatting and handoff mechanics. It must not be submitted to a sponsor as an ICSR package, used for regulatory reporting, or interpreted as evidence that reportability criteria were met. QA export and delivery do not start Day Zero or alter any record lifecycle status.", regular, 6.7, PAGE_WIDTH - margin - 142, 5), 138, 523, { size: 6.7, leading: 8.5 });
+  drawLines(cover, clippedLines("This document contains records that qualified reviewers closed as Not Relevant. It must not be submitted to a sponsor as an ICSR package, used for regulatory reporting, or interpreted as evidence that reportability criteria were met. Creating, exporting, or delivering this document does not start Day Zero or alter any record lifecycle status.", regular, 6.7, PAGE_WIDTH - margin - 142, 5), 138, 523, { size: 6.7, leading: 8.5 });
   cover.drawLine({ start: { x: margin, y: 482 }, end: { x: PAGE_WIDTH - margin, y: 482 }, thickness: 1.5, color: ink });
   smallCaps(cover, "Index of included assessments", margin, 463, muted, 6);
   const indexWidths = [24, 250, 110, 88, 76];
@@ -215,7 +215,7 @@ async function createQaCaseSheetReport(input: {
     cover.drawLine({ start: { x: margin, y: indexY - indexRowHeight + 7 }, end: { x: PAGE_WIDTH - margin, y: indexY - indexRowHeight + 7 }, thickness: 0.3, color: rule });
     indexY -= indexRowHeight;
   });
-  footerLabels.push("QA TEST ONLY - NOT FOR SPONSOR SUBMISSION");
+  footerLabels.push("NOT FOR SPONSOR SUBMISSION");
 
   input.cases.forEach((item, index) => {
     const { record, review, transfer } = item;
@@ -234,12 +234,8 @@ async function createQaCaseSheetReport(input: {
     const criteriaMet = [minimum.suspectProduct, minimum.adverseEventOrObservation, minimum.identifiablePatient, minimum.identifiableReporter].every((criterion) => criterion?.status === "yes");
     const page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
 
-    smallCaps(page, `AskSocial PV Compliance QA Test - ${record.therapeutic_area || area}`, margin, 748, muted, 6.2);
-    page.drawText(`QA example ${index + 1} of ${input.cases.length}`, { x: margin, y: 723, size: 19, font: bold, color: ink });
-    const statusText = "CLOSE NOT RELEVANT";
-    const statusWidth = bold.widthOfTextAtSize(statusText, 6.3) + 16;
-    page.drawRectangle({ x: PAGE_WIDTH - margin - statusWidth, y: 741, width: statusWidth, height: 17, color: qaRed });
-    page.drawText(statusText, { x: PAGE_WIDTH - margin - statusWidth + 8, y: 747, size: 6.3, font: bold, color: rgb(1, 1, 1) });
+    smallCaps(page, `AskSocial PV Compliance - ${record.therapeutic_area || area}`, margin, 748, muted, 6.2);
+    page.drawText(`Case ${index + 1} of ${input.cases.length}`, { x: margin, y: 723, size: 19, font: bold, color: ink });
     smallCaps(page, `Record ${record.id}`, PAGE_WIDTH - margin - 144, 730, muted, 5.2);
     smallCaps(page, `Review ${review.id}`, PAGE_WIDTH - margin - 144, 718, muted, 5.2);
     page.drawLine({ start: { x: margin, y: 708 }, end: { x: PAGE_WIDTH - margin, y: 708 }, thickness: 1.6, color: ink });
@@ -313,13 +309,13 @@ async function createQaCaseSheetReport(input: {
     smallCaps(page, "Clinical course", clinicalX, clinicalY - 8, muted, 5.2);
     drawLines(page, clippedLines(narrative.clinicalCourse || "Verbatim as recorded under unfiltered primary-source evidence on this sheet.", regular, 6, bottomWidth, 5), clinicalX, clinicalY - 19, { size: 6, leading: 7.2, color: muted });
     page.drawLine({ start: { x: clinicalX - 5, y: 233 }, end: { x: clinicalX - 5, y: 47 }, thickness: 0.55, color: rule });
-    footerLabels.push(`QA TEST ONLY - NOT FOR SPONSOR SUBMISSION | ${printable(ontology.ontologyVersion || record.ontology_version, "PV ontology")} / ${printable(record.classifier_version, "classifier")} / ${printable(record.library_version, "library")}`);
+    footerLabels.push(`NOT FOR SPONSOR SUBMISSION | ${printable(ontology.ontologyVersion || record.ontology_version, "PV ontology")} / ${printable(record.classifier_version, "classifier")} / ${printable(record.library_version, "library")}`);
   });
 
   const pageCount = pdf.getPageCount();
   pdf.getPages().forEach((page, index) => {
     page.drawLine({ start: { x: margin, y: 39 }, end: { x: PAGE_WIDTH - margin, y: 39 }, thickness: 1.2, color: ink });
-    const footer = footerLabels[index] || "QA TEST ONLY - NOT FOR SPONSOR SUBMISSION";
+    const footer = footerLabels[index] || "NOT FOR SPONSOR SUBMISSION";
     page.drawText(footer, { x: margin, y: 25, size: 5.1, font: regular, color: muted });
     const pageLabel = `PAGE ${index + 1} OF ${pageCount}`;
     page.drawText(pageLabel, { x: PAGE_WIDTH - margin - regular.widthOfTextAtSize(pageLabel, 5.1), y: 25, size: 5.1, font: regular, color: muted });

@@ -377,11 +377,18 @@ assert(sponsorReportRoute.includes('if (mode === "sponsor_handoff")') && sponsor
 for (const phrase of ["Share QA handoff", "Direct email is not configured", "Download PDF & open draft", "Send QA email"]) {
   assert(workbench.includes(phrase), `QA handoff delivery UX is missing ${phrase}.`);
 }
-for (const phrase of ["QA TEST - NOT FOR SPONSOR SUBMISSION", "QA Non-Reportable Export Test", "QA TEST ONLY - NOT FOR SPONSOR SUBMISSION OR REGULATORY REPORTING", "QA export and delivery do not start Day Zero or alter any record lifecycle status"]) {
-  assert(sponsorReportSource.includes(phrase), `The QA PDF is missing its non-reportable safeguard: ${phrase}.`);
+for (const phrase of ["NOT FOR SPONSOR SUBMISSION", "Non-Reportable Case Documentation", "Creating, exporting, or delivering this document does not start Day Zero or alter any record lifecycle status"]) {
+  assert(sponsorReportSource.includes(phrase), `The Not Relevant PDF is missing its non-reportable safeguard: ${phrase}.`);
 }
-for (const phrase of ["createQaCaseSheetReport", "QA case sheets", "Index of included assessments", "Case identification and source", "Governed chronology", "Reviewer-approved safety assessment", "Unfiltered primary-source evidence", "Stand-alone clinical narrative inputs"]) {
+for (const phrase of ["createQaCaseSheetReport", "Case documentation", "Index of included assessments", "Case identification and source", "Governed chronology", "Reviewer-approved safety assessment", "Unfiltered primary-source evidence", "Stand-alone clinical narrative inputs"]) {
   assert(sponsorReportSource.includes(phrase), `The QA PDF is missing its approved case-sheet format element: ${phrase}.`);
+}
+const notRelevantCaseSheetSource = sponsorReportSource.slice(
+  sponsorReportSource.indexOf("async function createQaCaseSheetReport"),
+  sponsorReportSource.indexOf("export async function createPvSponsorReport"),
+);
+for (const phrase of ["QA Non-Reportable Export Test", "QA case sheets", "QA example", "QA TEST ONLY - NOT FOR SPONSOR SUBMISSION", "CLOSE NOT RELEVANT"]) {
+  assert(!notRelevantCaseSheetSource.includes(phrase), `The Not Relevant PDF must not display the removed label: ${phrase}.`);
 }
 void (async () => {
   const sampleSponsorPdf = await createPvSponsorReport({
