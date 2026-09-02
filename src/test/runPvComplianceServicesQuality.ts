@@ -5,6 +5,7 @@ import { buildEcosystemNavigation, configurationFromEntitlements, resolveCustome
 import { resolveEntitlements } from "../lib/entitlements";
 import { createPvSponsorReport, sponsorReportFileName } from "../lib/pv/sponsorReport";
 import { assessIcsrIdentifiability, patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
+import { PDFDocument } from "pdf-lib";
 
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
 
@@ -379,6 +380,9 @@ for (const phrase of ["Share QA handoff", "Direct email is not configured", "Dow
 for (const phrase of ["QA TEST - NOT FOR SPONSOR SUBMISSION", "QA Non-Reportable Export Test", "QA TEST ONLY - NOT FOR SPONSOR SUBMISSION OR REGULATORY REPORTING", "QA export and delivery do not start Day Zero or alter any record lifecycle status"]) {
   assert(sponsorReportSource.includes(phrase), `The QA PDF is missing its non-reportable safeguard: ${phrase}.`);
 }
+for (const phrase of ["createQaCaseSheetReport", "QA case sheets", "Index of included assessments", "Case identification and source", "Governed chronology", "Reviewer-approved safety assessment", "Unfiltered primary-source evidence", "Stand-alone clinical narrative inputs"]) {
+  assert(sponsorReportSource.includes(phrase), `The QA PDF is missing its approved case-sheet format element: ${phrase}.`);
+}
 void (async () => {
   const sampleSponsorPdf = await createPvSponsorReport({
     therapeuticArea: "Test area",
@@ -405,6 +409,8 @@ void (async () => {
     }],
   });
   assert(Buffer.from(sampleQaPdf.bytes).subarray(0, 5).toString() === "%PDF-", "Not Relevant QA export must produce a valid PDF document.");
+  const parsedQaPdf = await PDFDocument.load(sampleQaPdf.bytes);
+  assert(parsedQaPdf.getPageCount() === 2, "The QA packet must contain one cover/index page followed by exactly one sheet per included mention.");
   assert(sponsorReportFileName("Test area", "qa_not_relevant") === "asksocial-test-area-qa-not-relevant-export-test.pdf", "The QA PDF filename must be unmistakably segregated from sponsor submission packages.");
   console.log("PV Compliance operational quality checks passed.");
 })().catch((error) => {
