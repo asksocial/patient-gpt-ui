@@ -3,7 +3,7 @@ import path from "node:path";
 import { calculatePvClock, classifyPvContent, derivePvOverviewMetrics, parsePvCsv, reconcilePvOperations, type PvDetectionConcept, type PvRecordStatus } from "../lib/pv";
 import { buildEcosystemNavigation, configurationFromEntitlements, resolveCustomerIntelligenceAccess } from "../lib/intelligence-platform";
 import { resolveEntitlements } from "../lib/entitlements";
-import { createPvSponsorReport } from "../lib/pv/sponsorReport";
+import { createPvSponsorReport, sponsorReportFileName } from "../lib/pv/sponsorReport";
 import { assessIcsrIdentifiability, patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
 
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
@@ -264,6 +264,9 @@ for (const removedField of ["Patient existence status", "Patient existence verif
 for (const phrase of ["Sponsor-ready assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
   assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing sponsor-report aggregation UX: ${phrase}.`);
 }
+for (const phrase of ["QA export test · Not Relevant mentions", "QA TEST ONLY", "Create QA PDF", "Internal/test recipient email", "Review QA handoff", "Confirm QA handoff", "never changes lifecycle status or starts Day Zero"]) {
+  assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing the segregated Not Relevant export safeguard: ${phrase}.`);
+}
 for (const phrase of ["Source Screening Coverage", "Log Source Screening Run", "nil return", "individual AE/ADR review status"]) {
   assert(sourceRegistrySource.includes(phrase), `Source Registry is missing source-screening operations UX: ${phrase}.`);
 }
@@ -364,6 +367,14 @@ for (const phrase of ["publication timestamp", "collection timestamp", "algorith
 assert(sponsorReportExportRoute.includes('"Content-Type": "application/pdf"') && sponsorReportExportRoute.includes("recordPvSponsorReportActivity"), "Sponsor-report export must return an audited PDF.");
 assert(sponsorReportRoute.includes("RESEND_API_KEY") && sponsorReportRoute.includes("PV_SPONSOR_FROM_EMAIL") && sponsorReportRoute.includes('transferMethod: "secure_email"'), "Sponsor-report sharing must support governed email attachment delivery and transfer provenance.");
 assert(sponsorReportRoute.includes('delivery === "provider" ? "share" : "prepare"'), "A client-email draft must be audited as prepared rather than falsely marked as sent.");
+for (const contract of ["listPvQaNotRelevantCases", 'mode === "qa_not_relevant"', 'action: mode === "qa_not_relevant" ? "qa_export" : "export"']) {
+  assert(sponsorReportExportRoute.includes(contract) || sponsorReportRoute.includes(contract) || pvService.includes(contract), `Not Relevant QA export is missing ${contract}.`);
+}
+assert(pvService.includes('.eq("decision", "close_not_relevant")') && pvService.includes('.eq("status", "not_relevant")'), "QA export examples must come only from retained Not Relevant reviews and records.");
+assert(sponsorReportRoute.includes('if (mode === "sponsor_handoff")') && sponsorReportRoute.includes('"qa_share"') && sponsorReportRoute.includes('"qa_prepare"'), "QA email delivery must be audited separately and must never call the sponsor transfer mutation path.");
+for (const phrase of ["QA TEST - NOT FOR SPONSOR SUBMISSION", "QA Non-Reportable Export Test", "QA TEST ONLY - NOT FOR SPONSOR SUBMISSION OR REGULATORY REPORTING", "QA export and delivery do not start Day Zero or alter any record lifecycle status"]) {
+  assert(sponsorReportSource.includes(phrase), `The QA PDF is missing its non-reportable safeguard: ${phrase}.`);
+}
 void (async () => {
   const sampleSponsorPdf = await createPvSponsorReport({
     therapeuticArea: "Test area",
@@ -372,11 +383,25 @@ void (async () => {
     cases: [{
       id: "review-1",
       record: { id: "record-1", status: "ready_for_transfer", therapeutic_area: "Test area", product_name: "Product A", potential_event: "Rash", source_type: "social", source_url: "https://example.test/post", original_verbatim: "I developed a rash after Product A.", original_language: "en", posted_at: "2026-08-20T10:00:00.000Z", ingested_at: "2026-08-20T11:00:00.000Z", identified_at: "2026-08-20T12:00:00.000Z", created_at: "2026-08-20T11:05:00.000Z", evidence_hash: "evidence", classifier_version: "1", library_version: 1, ontology_version: "1" },
-      review: { id: "review-1", reviewer_id: "reviewer-1", reviewed_at: "2026-08-20T12:00:00.000Z", classifications: ["adverse_event"], rationale: "Product and event supported by verbatim.", validated_ae_ontology: { productProcedures: [{ value: "Product A" }], adverseEvents: [{ value: "Rash" }], seriousness: { value: "non_serious" }, icsrAssessment: { reportType: "spontaneous", primarySourceType: "consumer", minimumCriteria: { suspectProduct: { status: "yes" }, adverseEventOrObservation: { status: "yes" }, identifiablePatient: { status: "unclear" }, identifiableReporter: { status: "unclear" } }, seriousnessCriteria: [], clinicalNarrative: {}, followUp: { needed: "yes", questions: "Obtain patient and reporter identifiers." }, duplicateAssessment: { status: "not_checked" } } } },
+      review: { id: "review-1", decision: "escalate", reviewer_id: "reviewer-1", reviewed_at: "2026-08-20T12:00:00.000Z", classifications: ["adverse_event"], rationale: "Product and event supported by verbatim.", validated_ae_ontology: { productProcedures: [{ value: "Product A" }], adverseEvents: [{ value: "Rash" }], seriousness: { value: "non_serious" }, icsrAssessment: { reportType: "spontaneous", primarySourceType: "consumer", minimumCriteria: { suspectProduct: { status: "yes" }, adverseEventOrObservation: { status: "yes" }, identifiablePatient: { status: "unclear" }, identifiableReporter: { status: "unclear" } }, seriousnessCriteria: [], clinicalNarrative: {}, followUp: { needed: "yes", questions: "Obtain patient and reporter identifiers." }, duplicateAssessment: { status: "not_checked" } } } },
       transfer: null,
     }],
   });
   assert(Buffer.from(sampleSponsorPdf.bytes).subarray(0, 5).toString() === "%PDF-", "Sponsor report generation must produce a valid PDF document.");
+  const sampleQaPdf = await createPvSponsorReport({
+    therapeuticArea: "Test area",
+    generatedBy: "reviewer-1",
+    generatedAt: "2026-08-21T12:00:00.000Z",
+    mode: "qa_not_relevant",
+    cases: [{
+      id: "review-qa-1",
+      record: { id: "record-qa-1", status: "not_relevant", therapeutic_area: "Test area", product_name: "Product A", potential_event: "Unconfirmed event", source_type: "social", source_url: "https://example.test/qa", original_verbatim: "A non-relevant QA example.", original_language: "en", posted_at: "2026-08-20T10:00:00.000Z", ingested_at: "2026-08-20T11:00:00.000Z", identified_at: "2026-08-20T12:00:00.000Z", evidence_hash: "qa-evidence", classifier_version: "1", library_version: 1, ontology_version: "1" },
+      review: { id: "review-qa-1", decision: "close_not_relevant", reviewer_id: "reviewer-1", reviewed_at: "2026-08-20T12:00:00.000Z", classifications: [], rationale: "No supported AE/ADR.", validated_ae_ontology: { icsrAssessment: { minimumCriteria: {} } } },
+      transfer: null,
+    }],
+  });
+  assert(Buffer.from(sampleQaPdf.bytes).subarray(0, 5).toString() === "%PDF-", "Not Relevant QA export must produce a valid PDF document.");
+  assert(sponsorReportFileName("Test area", "qa_not_relevant") === "asksocial-test-area-qa-not-relevant-export-test.pdf", "The QA PDF filename must be unmistakably segregated from sponsor submission packages.");
   console.log("PV Compliance operational quality checks passed.");
 })().catch((error) => {
   console.error(error);

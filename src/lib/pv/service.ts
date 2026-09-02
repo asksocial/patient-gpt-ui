@@ -685,9 +685,53 @@ export async function listPvSponsorCases(principal: PlatformPrincipal, therapeut
   });
 }
 
+export async function listPvQaNotRelevantCases(principal: PlatformPrincipal, therapeuticArea?: string, limit = 20) {
+  assertPrincipal(principal);
+  const supabase = getSupabaseServerClient();
+  const { data: reviews, error: reviewError } = await supabase.from("pv_reviews").select("*")
+    .eq("principal_id", principal.principalId).eq("decision", "close_not_relevant")
+    .order("reviewed_at", { ascending: false }).limit(Math.max(100, Math.min(1000, limit * 20)));
+  if (reviewError) throw new Error(`Failed to load Not Relevant QA reviews: ${reviewError.message}`);
+  const recordIds = [...new Set((reviews || []).map((review: any) => String(review.record_id)))];
+  if (!recordIds.length) return [];
+  const idChunks = Array.from({ length: Math.ceil(recordIds.length / 200) }, (_, index) => recordIds.slice(index * 200, (index + 1) * 200));
+  const recordResults = await Promise.all(idChunks.map((ids) => {
+    let query = supabase.from("pv_records").select("*")
+      .eq("principal_id", principal.principalId).eq("status", "not_relevant").in("id", ids);
+    if (therapeuticArea) query = query.eq("therapeutic_area", therapeuticArea);
+    return query;
+  }));
+  const recordError = recordResults.find((result) => result.error)?.error;
+  if (recordError) throw new Error(`Failed to assemble Not Relevant QA cases: ${recordError.message}`);
+  const recordById = new Map(recordResults.flatMap((result) => result.data || []).map((record: any) => [String(record.id), record]));
+  const retainedRecordIds = new Set<string>();
+  const cases: any[] = [];
+  for (const review of reviews || []) {
+    const recordId = String(review.record_id);
+    const record: any = recordById.get(recordId);
+    if (!record || retainedRecordIds.has(recordId)) continue;
+    retainedRecordIds.add(recordId);
+    cases.push({
+      id: review.id,
+      record: {
+        ...record,
+        identifiability_assessment: assessIcsrIdentifiability(record),
+        publication_timestamp: record.posted_at,
+        collection_timestamp: record.ingested_at,
+        review_timestamp: record.review_started_at || null,
+        escalation_timestamp: null,
+      },
+      review,
+      transfer: null,
+    });
+    if (cases.length >= limit) break;
+  }
+  return cases;
+}
+
 export async function recordPvSponsorReportActivity(
   principal: PlatformPrincipal,
-  input: { action: "export" | "prepare" | "share"; therapeuticArea?: string; caseIds: string[]; recipientEmail?: string; reportHash?: string }
+  input: { action: "export" | "prepare" | "share" | "qa_export" | "qa_prepare" | "qa_share"; therapeuticArea?: string; caseIds: string[]; recipientEmail?: string; reportHash?: string }
 ) {
   assertPrincipal(principal);
   const recipientEmail = input.recipientEmail?.trim().toLowerCase();

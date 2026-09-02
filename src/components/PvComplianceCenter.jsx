@@ -192,6 +192,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   const [screenings, setScreenings] = useState([]);
   const [reviewLists, setReviewLists] = useState([]);
   const [sponsorCases, setSponsorCases] = useState([]);
+  const [qaNotRelevantCases, setQaNotRelevantCases] = useState([]);
   const [transfers, setTransfers] = useState([]);
   const [reconciliations, setReconciliations] = useState([]);
   const [libraries, setLibraries] = useState([]);
@@ -233,6 +234,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
       setConcepts(payloads[6].concepts || []);
       setReviewLists(payloads[7].lists || []);
       setSponsorCases(payloads[8].cases || []);
+      setQaNotRelevantCases(payloads[8].qaCases || []);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "PV Compliance could not be loaded.");
     }
@@ -306,7 +308,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
       {tab === "lifecycle" ? <LifecycleRecords status={lifecycleStatus} expectedCount={overview?.statusCounts?.[lifecycleStatus] || 0} therapeuticArea={therapeuticArea} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onBack={() => setTab("overview")} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
       {tab === "review" ? <StructuredReview selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReviewComplete={completeRecordReview} onReturnToQueue={() => navigateTab("queue")} /> : null}
-      {tab === "handoff" ? <SponsorHandoff therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} busy={busy} onMutate={mutate} onOpenRecord={async (recordId) => { await openRecord(recordId); setTab("review"); }} /> : null}
+      {tab === "handoff" ? <SponsorHandoff therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} qaNotRelevantCases={qaNotRelevantCases} busy={busy} onMutate={mutate} onOpenRecord={async (recordId) => { await openRecord(recordId); setTab("review"); }} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
       {tab === "reconciliation" ? <Reconciliation runs={reconciliations} busy={busy} onMutate={mutate} /> : null}
       {tab === "sources" ? <SourceRegistry sources={sources} screenings={screenings} busy={busy} onMutate={mutate} /> : null}
@@ -958,7 +960,7 @@ function StructuredReview({ selected, busy, onMutate, onRefreshRecord, onReviewC
   </section>;
 }
 
-function SponsorHandoff({ therapeuticArea, sponsorCases, busy, onMutate, onOpenRecord }) {
+function SponsorHandoff({ therapeuticArea, sponsorCases, qaNotRelevantCases, busy, onMutate, onOpenRecord }) {
   const [sponsorEmail, setSponsorEmail] = useState("");
   const [shareConfirmOpen, setShareConfirmOpen] = useState(false);
   const sponsorReportScope = therapeuticArea ? `?therapeuticArea=${encodeURIComponent(therapeuticArea)}` : "";
@@ -995,7 +997,52 @@ function SponsorHandoff({ therapeuticArea, sponsorCases, busy, onMutate, onOpenR
         <p className="text-[11px] leading-5 text-white/30">If a governed email provider is configured, AskSocial sends the PDF as an attachment. Otherwise, the PDF downloads and your email client opens with a prepared message so you can attach and send it.</p>
       </div> : <Empty>Escalated structured reviews will appear here as sponsor-ready assessments.</Empty>}
     </Card>
+    <QaNotRelevantHandoff therapeuticArea={therapeuticArea} cases={qaNotRelevantCases} busy={busy} onMutate={onMutate} />
   </div>;
+}
+
+function QaNotRelevantHandoff({ therapeuticArea, cases, busy, onMutate }) {
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [testRecipientConfirmed, setTestRecipientConfirmed] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const params = new URLSearchParams({ mode: "qa_not_relevant" });
+  if (therapeuticArea) params.set("therapeuticArea", therapeuticArea);
+  const exportHref = `/api/pv/sponsor-reports/export?${params.toString()}`;
+
+  async function shareQaReport() {
+    const email = recipientEmail.trim();
+    const data = await onMutate(
+      "/api/pv/sponsor-reports",
+      { payload: { therapeuticArea, recipientEmail: email, mode: "qa_not_relevant" } },
+      "sponsor-report:qa-share",
+      "QA-only Not Relevant export activity recorded. No PV lifecycle status or Day Zero timestamp was changed."
+    );
+    setConfirmOpen(false);
+    if (!data || data.delivery === "provider") return;
+    const download = document.createElement("a");
+    download.href = exportHref;
+    download.download = data.fileName || "asksocial-pv-qa-not-relevant-export-test.pdf";
+    document.body.appendChild(download);
+    download.click();
+    download.remove();
+    const subject = encodeURIComponent(`[QA TEST - NOT FOR SUBMISSION] AskSocial PV export - ${therapeuticArea || "All therapeutic areas"}`);
+    const body = encodeURIComponent(`QA TEST ONLY - NOT FOR SPONSOR SUBMISSION OR REGULATORY REPORTING.\n\nThe attached AskSocial PDF contains ${data.caseCount} mention${data.caseCount === 1 ? "" : "s"} closed as Not Relevant and is being used only to validate export and handoff mechanics. The PDF has been downloaded to this device; attach it before sending.`);
+    window.location.href = `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
+  }
+
+  return <Card title="QA export test · Not Relevant mentions" subtitle="Use recently closed records to validate PDF rendering and email mechanics when no four-criteria ICSR case is available. QA activity is segregated from sponsor submission and never changes lifecycle status or starts Day Zero." actions={<ToneBadge tone="approaching">QA TEST ONLY</ToneBadge>}>
+    {confirmOpen ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Confirm Not Relevant QA handoff"><div className="w-full max-w-lg rounded-3xl border border-rose-400/25 bg-[#080808] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-300">QA test · not for submission</p><h2 className="mt-2 text-xl font-semibold text-white">Send {cases.length} Not Relevant QA example{cases.length === 1 ? "" : "s"}?</h2><p className="mt-3 text-sm leading-6 text-white/45">This sends or prepares a prominently labeled QA PDF for <span className="font-medium text-white/75">{recipientEmail.trim()}</span>. It will not create a sponsor transfer, change record status, or start Day Zero.</p><div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setConfirmOpen(false)} disabled={busy === "sponsor-report:qa-share"} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-40">Cancel</button><button type="button" onClick={shareQaReport} disabled={busy === "sponsor-report:qa-share"} className="cursor-pointer rounded-xl bg-rose-100 px-4 py-2.5 text-sm font-semibold text-rose-950 disabled:opacity-40">{busy === "sponsor-report:qa-share" ? "Preparing…" : "Confirm QA handoff"}</button></div></div></div> : null}
+    {cases.length ? <div className="space-y-4">
+      <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.06] px-4 py-3 text-xs leading-5 text-rose-100/75"><strong>Non-reportable test population:</strong> the {cases.length} most recent permitted mentions closed as Not Relevant. The PDF and email are marked QA TEST ONLY and must be sent only to an internal or controlled test mailbox.</div>
+      <div className="max-h-80 overflow-auto rounded-xl border border-white/10"><table className="w-full min-w-[880px] text-left text-xs"><thead className="sticky top-0 bg-[#090909] text-white/35"><tr>{["Product / procedure", "Potential event", "Reviewer", "Review rationale", "Lifecycle status"].map((item) => <th key={item} className="px-3 py-3">{item}</th>)}</tr></thead><tbody>{cases.map((item) => <tr key={item.id} className="border-t border-white/[0.06] text-white/55"><td className="px-3 py-3 text-white/75">{item.record.product_name || "Unspecified"}</td><td className="px-3 py-3">{item.record.potential_event || "Unspecified"}</td><td className="px-3 py-3">{item.review.reviewer_id}</td><td className="max-w-[360px] px-3 py-3"><p className="line-clamp-3 leading-5">{item.review.rationale || "No rationale retained"}</p></td><td className="px-3 py-3"><ToneBadge>{label(item.record.status)}</ToneBadge></td></tr>)}</tbody></table></div>
+      <div className="grid gap-3 rounded-xl border border-rose-400/15 bg-rose-400/[0.04] p-4 lg:grid-cols-[auto_1fr_auto] lg:items-end">
+        <a href={exportHref} download className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black">Create QA PDF</a>
+        <label className="text-xs text-white/40">Internal/test recipient email<input type="email" value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} placeholder="pv-qa@company.com" className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" /></label>
+        <button type="button" onClick={() => setConfirmOpen(true)} disabled={!recipientEmail.trim() || !testRecipientConfirmed || busy === "sponsor-report:qa-share"} className="cursor-pointer rounded-xl border border-rose-300/30 px-4 py-2.5 text-sm font-semibold text-rose-200 disabled:cursor-not-allowed disabled:opacity-40">Review QA handoff</button>
+      </div>
+      <label className="flex cursor-pointer items-start gap-2 text-xs leading-5 text-white/45"><input type="checkbox" checked={testRecipientConfirmed} onChange={(event) => setTestRecipientConfirmed(event.target.checked)} className="mt-1" /><span>I confirm the recipient is an internal or controlled test mailbox and this QA package will not be used for sponsor submission or regulatory reporting.</span></label>
+    </div> : <Empty>No Not Relevant reviews are available for QA export in the selected therapeutic area.</Empty>}
+  </Card>;
 }
 
 function Transfers({ transfers, busy, onMutate }) {
