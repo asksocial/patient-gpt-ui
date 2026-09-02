@@ -14,7 +14,14 @@ export async function GET(request: NextRequest) {
       listPvSponsorCases(principal, therapeuticArea),
       listPvQaNotRelevantCases(principal, therapeuticArea),
     ]);
-    return NextResponse.json({ ok: true, cases, qaCases });
+    return NextResponse.json({
+      ok: true,
+      cases,
+      qaCases,
+      emailDelivery: {
+        configured: Boolean(process.env.RESEND_API_KEY && process.env.PV_SPONSOR_FROM_EMAIL),
+      },
+    });
   } catch (error) {
     const failure = pvErrorResponse(error);
     return NextResponse.json({ ok: false, error: failure.message }, { status: failure.status });
@@ -73,7 +80,16 @@ export async function POST(request: NextRequest) {
       recipientEmail,
       reportHash: report.hash,
     });
-    return NextResponse.json({ ok: true, delivery, fileName, caseCount: cases.length, qaMode: mode === "qa_not_relevant" });
+    return NextResponse.json({
+      ok: true,
+      delivery,
+      fileName,
+      caseCount: cases.length,
+      qaMode: mode === "qa_not_relevant",
+      message: delivery === "provider"
+        ? "Email sent by the governed AskSocial delivery provider."
+        : "No email was sent by AskSocial because governed email delivery is not configured. The PDF was prepared for a manual email draft.",
+    });
   } catch (error) {
     const failure = pvErrorResponse(error);
     return NextResponse.json({ ok: false, error: failure.message }, { status: failure.status });

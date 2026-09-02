@@ -264,7 +264,7 @@ for (const removedField of ["Patient existence status", "Patient existence verif
 for (const phrase of ["Sponsor-ready assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
   assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing sponsor-report aggregation UX: ${phrase}.`);
 }
-for (const phrase of ["QA export test · Not Relevant mentions", "QA TEST ONLY", "Create QA PDF", "Internal/test recipient email", "Review QA handoff", "Confirm QA handoff", "never changes lifecycle status or starts Day Zero"]) {
+for (const phrase of ["QA export test · Not Relevant mentions", "QA TEST ONLY", "Create QA PDF", "Internal/test recipient email", "Share QA handoff", "Send QA email", "never changes lifecycle status or starts Day Zero"]) {
   assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing the segregated Not Relevant export safeguard: ${phrase}.`);
 }
 for (const phrase of ["Source Screening Coverage", "Log Source Screening Run", "nil return", "individual AE/ADR review status"]) {
@@ -367,11 +367,15 @@ for (const phrase of ["publication timestamp", "collection timestamp", "algorith
 assert(sponsorReportExportRoute.includes('"Content-Type": "application/pdf"') && sponsorReportExportRoute.includes("recordPvSponsorReportActivity"), "Sponsor-report export must return an audited PDF.");
 assert(sponsorReportRoute.includes("RESEND_API_KEY") && sponsorReportRoute.includes("PV_SPONSOR_FROM_EMAIL") && sponsorReportRoute.includes('transferMethod: "secure_email"'), "Sponsor-report sharing must support governed email attachment delivery and transfer provenance.");
 assert(sponsorReportRoute.includes('delivery === "provider" ? "share" : "prepare"'), "A client-email draft must be audited as prepared rather than falsely marked as sent.");
+assert(sponsorReportRoute.includes("emailDelivery") && sponsorReportRoute.includes("No email was sent by AskSocial"), "The sponsor-report API must disclose whether direct email is configured and must not imply that a client draft was sent.");
 for (const contract of ["listPvQaNotRelevantCases", 'mode === "qa_not_relevant"', 'action: mode === "qa_not_relevant" ? "qa_export" : "export"']) {
   assert(sponsorReportExportRoute.includes(contract) || sponsorReportRoute.includes(contract) || pvService.includes(contract), `Not Relevant QA export is missing ${contract}.`);
 }
 assert(pvService.includes('.eq("decision", "close_not_relevant")') && pvService.includes('.eq("status", "not_relevant")'), "QA export examples must come only from retained Not Relevant reviews and records.");
 assert(sponsorReportRoute.includes('if (mode === "sponsor_handoff")') && sponsorReportRoute.includes('"qa_share"') && sponsorReportRoute.includes('"qa_prepare"'), "QA email delivery must be audited separately and must never call the sponsor transfer mutation path.");
+for (const phrase of ["Share QA handoff", "Direct email is not configured", "Download PDF & open draft", "Send QA email"]) {
+  assert(workbench.includes(phrase), `QA handoff delivery UX is missing ${phrase}.`);
+}
 for (const phrase of ["QA TEST - NOT FOR SPONSOR SUBMISSION", "QA Non-Reportable Export Test", "QA TEST ONLY - NOT FOR SPONSOR SUBMISSION OR REGULATORY REPORTING", "QA export and delivery do not start Day Zero or alter any record lifecycle status"]) {
   assert(sponsorReportSource.includes(phrase), `The QA PDF is missing its non-reportable safeguard: ${phrase}.`);
 }
