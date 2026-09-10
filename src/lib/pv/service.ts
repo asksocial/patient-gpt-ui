@@ -641,6 +641,36 @@ async function enrichPvRecordRows(principal: PlatformPrincipal, records: any[]) 
   }));
 }
 
+function compactPvRecordListItem(record: any) {
+  return {
+    id: record.id,
+    therapeutic_area: record.therapeutic_area,
+    status: record.status,
+    product_name: record.product_name,
+    potential_event: record.potential_event,
+    source_type: record.source_type,
+    source_url: record.source_url,
+    original_verbatim: String(record.original_verbatim || "").slice(0, 1_600),
+    import_batch_id: record.import_batch_id,
+    data_origin: record.data_origin,
+    posted_at: record.posted_at,
+    ingested_at: record.ingested_at,
+    identified_at: record.identified_at,
+    review_started_at: record.review_started_at,
+    review_started_by: record.review_started_by,
+    reportability_identified_at: record.reportability_identified_at,
+    assigned_reviewer_id: record.assigned_reviewer_id,
+    detection_score: record.detection_score,
+    health_experience_confidence: record.health_experience_confidence,
+    detection_segment: record.detection_segment,
+    health_experience_tags: record.health_experience_tags,
+    publication_timestamp: record.publication_timestamp,
+    collection_timestamp: record.collection_timestamp,
+    review_timestamp: record.review_timestamp,
+    escalation_timestamp: record.escalation_timestamp,
+  };
+}
+
 export async function listPvRecords(principal: PlatformPrincipal, input: { status?: string; limit?: number; therapeuticArea?: string } = {}) {
   assertPrincipal(principal);
   const supabase = getSupabaseServerClient();
@@ -650,7 +680,8 @@ export async function listPvRecords(principal: PlatformPrincipal, input: { statu
   if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load PV records: ${error.message}`);
-  return enrichPvRecordRows(principal, data || []);
+  const records = await enrichPvRecordRows(principal, data || []);
+  return records.map(compactPvRecordListItem);
 }
 
 export async function listPvRecordsPage(principal: PlatformPrincipal, input: {
