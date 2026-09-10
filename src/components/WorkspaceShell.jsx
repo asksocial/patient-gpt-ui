@@ -2022,20 +2022,32 @@ export default function WorkspaceShell() {
                 </p>
               </div>
 
-              <div
-                data-testid="active-workspace-indicator"
-                aria-label={activeWorkspace ? `Current workspace: ${activeWorkspace.name}` : "Save current session as workspace"}
-                className="shrink-0 self-end text-right xl:ml-auto xl:self-start"
-              >
-                {activeWorkspace ? <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">{availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}</select> : <button type="button" onClick={openWorkspaceSaveDialog} className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">Save current session as workspace</button>}
-                {activeWorkspace ? (
-                  <p
-                    aria-live="polite"
-                    className={`mt-1 text-[9px] font-medium uppercase tracking-[0.14em] ${workspaceSaveStatus === "error" ? "text-rose-300/80" : "text-cyan-200/45"}`}
+              <div className="flex shrink-0 flex-wrap items-start justify-end gap-2 self-end xl:ml-auto xl:self-start">
+                {activeModule ? (
+                  <div
+                    data-testid="active-module-indicator"
+                    aria-label={`Current module: ${activeModule.name}`}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300"
                   >
-                    {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
-                  </p>
+                    <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
+                    <span>Module: {activeModule.name}</span>
+                  </div>
                 ) : null}
+                <div
+                  data-testid="active-workspace-indicator"
+                  aria-label={activeWorkspace ? `Current workspace: ${activeWorkspace.name}` : "Save current session as workspace"}
+                  className="text-right"
+                >
+                  {activeWorkspace ? <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">{availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}</select> : <button type="button" onClick={openWorkspaceSaveDialog} className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">Save current session as workspace</button>}
+                  {activeWorkspace ? (
+                    <p
+                      aria-live="polite"
+                      className={`mt-1 text-[9px] font-medium uppercase tracking-[0.14em] ${workspaceSaveStatus === "error" ? "text-rose-300/80" : "text-cyan-200/45"}`}
+                    >
+                      {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             </div>
 

@@ -132,6 +132,16 @@ if (
   );
 }
 
+if (
+  !navigationComponent.includes('item.kind === "module" && active') ||
+  !navigationComponent.includes('aria-label="Selected module"') ||
+  navigationComponent.includes('aria-label="Licensed"')
+) {
+  throw new Error(
+    "The Modules dropdown must show one green status dot only beside the selected module."
+  );
+}
+
 const workspaceShell = readFileSync(
   join(
     process.cwd(),

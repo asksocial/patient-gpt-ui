@@ -44,14 +44,10 @@ function NavigationItem({
       <span className="truncate">
         {item.label}
       </span>
-      {item.kind === "module" ? (
+      {item.kind === "module" && active ? (
         <span
-          className={`ml-3 h-1.5 w-1.5 shrink-0 rounded-full ${
-            active
-              ? "bg-black/60"
-              : "bg-emerald-400/70"
-          }`}
-          aria-label="Licensed"
+          className="ml-3 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
+          aria-label="Selected module"
         />
       ) : null}
     </button>
