@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { calculatePvClock, classifyPvContent, derivePvOverviewMetrics, parsePvCsv, reconcilePvOperations, type PvDetectionConcept, type PvRecordStatus } from "../lib/pv";
+import { calculatePvClock, classifyPvContent, derivePvDetectionSegment, derivePvHealthExperienceTags, derivePvOverviewMetrics, parsePvCsv, reconcilePvOperations, type PvDetectionConcept, type PvRecordStatus } from "../lib/pv";
 import { buildEcosystemNavigation, configurationFromEntitlements, resolveCustomerIntelligenceAccess } from "../lib/intelligence-platform";
 import { resolveEntitlements } from "../lib/entitlements";
 import { createPvSponsorReport, sponsorReportFileName } from "../lib/pv/sponsorReport";
@@ -13,6 +13,7 @@ const concepts: PvDetectionConcept[] = [
   { id: "product", category: "product", canonicalTerm: "Product A", terms: ["product a", "prodct a"], language: "en", weight: 100, version: 3, active: true },
   { id: "rash", category: "adverse_experience", canonicalTerm: "rash", terms: ["rash", "hives"], exclusions: ["commercial says"], language: "en", weight: 100, version: 3, active: true },
   { id: "severe", category: "severity", canonicalTerm: "severe", terms: ["terrible", "emergency"], language: "en", weight: 80, version: 3, active: true },
+  { id: "medication-error", category: "medication_error", canonicalTerm: "Medication error", terms: ["wrong dose"], language: "en", weight: 100, version: 3, active: true },
 ];
 
 const patientResult = classifyPvContent({
@@ -21,7 +22,19 @@ const patientResult = classifyPvContent({
 }, concepts);
 assert(patientResult.shouldCreateRecord, "A product-linked health experience must route to human PV review.");
 assert(patientResult.classifications.includes("adverse_event"), "Potential adverse-event classification should be proposed.");
+assert(patientResult.detectionSegment === "ae_adr", "An adverse-experience match must enter the AE/ADR detection pathway.");
 assert(patientResult.rationale.some((item) => item.includes("not an adverse-event determination")), "Detection must explicitly preserve human determination.");
+
+const healthExperienceResult = classifyPvContent({
+  externalId: "post-health-1", sourceType: "reddit", sourceUrl: "https://example.test/post-health-1",
+  verbatim: "I accidentally used the wrong dose of Product A.", language: "en", postedAt: "2026-08-06T09:00:00.000Z",
+}, concepts);
+assert(healthExperienceResult.shouldCreateRecord, "A product-linked special situation must be retained for PV surveillance.");
+assert(healthExperienceResult.detectionSegment === "health_experience", "A medication error without an adverse-experience match must remain outside the AE/ADR pathway.");
+assert(healthExperienceResult.healthExperienceTags.includes("medication_error"), "Health experience detection must tag a medication error explicitly.");
+assert(healthExperienceResult.rationale.some((item) => item.includes("Health Experience Detection") && item.includes("separate from the AE/ADR Review Queue")), "Health-experience-only detections must explain their separate PV workflow destination.");
+assert(derivePvDetectionSegment({ proposed_classifications: healthExperienceResult.classifications, matched_concepts: healthExperienceResult.matches }) === "health_experience", "Persisted detection metadata must reproduce the health-experience segment.");
+assert(derivePvHealthExperienceTags({ proposed_classifications: ["pregnancy", "misuse_abuse"] }).join(",") === "pregnancy_exposure,misuse_abuse", "Health experience tagging must retain distinct special-situation categories.");
 
 const supportedIdentifiability = assessIcsrIdentifiability({ original_verbatim: "I am a 42-year-old woman and developed a rash after Product A.", author_identifier: "Jane Smith" });
 assert(supportedIdentifiability.patient.status === "characteristics_detected" && supportedIdentifiability.patient.characteristicTypes.includes("age_or_age_category") && supportedIdentifiability.patient.criterionStatus === "yes" && supportedIdentifiability.reporter.status === "characteristics_detected", "One qualifying characteristic associated with a specific patient must satisfy the patient criterion while a named first-hand reporter remains verification-pending.");
@@ -150,6 +163,14 @@ const postReviewMetrics = derivePvOverviewMetrics({
   reviewLists: [{ assigned_to: "reviewer-2", items: [{ record_id: "list-assigned" }] }], now: new Date("2026-08-16T21:00:00.000Z"),
 }).metrics;
 assert(postReviewMetrics.unassignedActiveClock === 0 && postReviewMetrics.awaitingReview === 2 && postReviewMetrics.reviewedRecords === 6 && postReviewMetrics.screeningCompliance === 100, "Completing review must immediately reconcile every affected overview card.");
+const segmentedMetrics = derivePvOverviewMetrics({
+  records: [
+    { ...overviewRecord("ae", "new"), proposed_classifications: ["adverse_event"] },
+    { ...overviewRecord("health", "new"), proposed_classifications: ["medication_error"] },
+  ],
+}).metrics;
+assert(segmentedMetrics.aeAdrDetections === 1 && segmentedMetrics.healthExperienceDetections === 1, "PV overview must present AE/ADR and broader health-experience detections as separate peer counts.");
+assert(segmentedMetrics.awaitingReview === 1, "Health-experience-only content must not inflate the AE/ADR Review Queue count.");
 
 const parsedCsv = parsePvCsv(new TextEncoder().encode([
   "Date,Text,URL,ID",
@@ -183,7 +204,7 @@ const pvAccess = resolveCustomerIntelligenceAccess(configurationFromEntitlements
   userId: "pv-reviewer", organizationId: "pv-sponsor", organizationMetadata: { grants: ["module_medical_affairs", "agent_pharmacovigilance_assistant"] },
 })));
 const pvNavigation = buildEcosystemNavigation(pvAccess).find((group) => group.id === "pv_compliance");
-assert(pvNavigation?.items.length === 7, "Licensed PV users must receive the dedicated PV Compliance navigation workspace.");
+assert(pvNavigation?.items.length === 8 && pvNavigation.items.some((item) => item.id === "pv_health"), "Licensed PV users must receive the segmented Health Experience Detection workspace beside the Review Queue.");
 const noPvNavigation = buildEcosystemNavigation({ modules: [], agents: [] });
 assert(!noPvNavigation.some((group) => group.id === "pv_compliance"), "PV Compliance navigation must remain entitlement-gated.");
 
@@ -208,13 +229,19 @@ for (const field of ["pv_review_lists", "pv_review_list_items", "assigned_to", "
 for (const field of ["author_identifier_column", "pv_detection_libraries", "pv_import_batches", "pv_records", "therapeutic_area"]) assert(genericEnrichmentMigration.includes(field), `Therapeutic-area-agnostic PV enrichment migration is missing ${field}.`);
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
 const lifecycleSource = workbench.slice(workbench.indexOf("function LifecycleRecords"), workbench.indexOf("function ReviewQueue"));
+const healthExperienceSource = workbench.slice(workbench.indexOf("function HealthExperienceDetection"), workbench.indexOf("function ReviewQueue"));
+const reviewQueueSource = workbench.slice(workbench.indexOf("function ReviewQueue"), workbench.indexOf("function RecordWorkbench"));
 assert(!workbench.includes("Eight connected PV services"), "The removed PV services marketing overview must not return to Compliance Overview.");
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {
   assert(workbench.toLowerCase().includes(phrase.toLowerCase()), `PV workbench is missing required UX: ${phrase}`);
 }
-for (const phrase of ["Flagged records", "Human review completed", "Unassigned records with active clocks", "Potential records awaiting human review", "Not reviewed or assigned", "PV_LIFECYCLE_TOOLTIPS"]) {
+for (const phrase of ["AE/ADR Detection", "Health Experience Detection", "Human review completed", "Unassigned records with active clocks", "Potential records awaiting human review", "Not reviewed or assigned", "PV_LIFECYCLE_TOOLTIPS"]) {
   assert(workbench.includes(phrase), `PV Compliance Overview is missing clarified stage guidance: ${phrase}`);
 }
+for (const phrase of ["medication errors", "overdose", "misuse or abuse", "pregnancy exposure", "lack of efficacy", "product-quality complaints", "other safety-relevant observations", "Search health experiences by keyword or tag"] ) {
+  assert(healthExperienceSource.includes(phrase), `Health Experience Detection is missing its differentiated safety-surveillance UX: ${phrase}.`);
+}
+assert(reviewQueueSource.includes('record.detection_segment !== "health_experience"'), "The Review Queue must exclude the separately segmented health-experience-only records.");
 for (const phrase of ["combined screening score", "confidence that the mention refers", "potential safety-relevant situation", "Origin provides provenance"]) {
   assert(workbench.includes(phrase), `PV Screening Status is missing metric tooltip guidance: ${phrase}`);
 }
@@ -238,7 +265,6 @@ for (const option of ["non_serious", "permanent_injury", "immediate", "moderate"
 assert(workbench.includes('OntologySelect labelText="Causality language"'), "Causality Language must use a controlled dropdown instead of free text.");
 assert(!workbench.includes("Proposed adverse-event ontology"), "The machine-proposed ontology panel must not render in Screening Status.");
 assert(workbench.includes('record.import_batch_id ? "Social"'), "CSV-ingested mentions must display Social as their evidence origin.");
-const reviewQueueSource = workbench.slice(workbench.indexOf("function ReviewQueue"), workbench.indexOf("function RecordWorkbench"));
 assert(!reviewQueueSource.includes("PvOntologyReview") && !reviewQueueSource.includes("Adverse-event ontology review"), "Adverse-event ontology review must not render inside Review Queue.");
 const structuredReviewSource = workbench.slice(workbench.indexOf("function StructuredReview"), workbench.indexOf("function SponsorHandoff"));
 const sponsorHandoffSource = workbench.slice(workbench.indexOf("function SponsorHandoff"), workbench.indexOf("function Transfers"));
@@ -321,9 +347,12 @@ assert(!importRoute.includes('form.get("identifiedAt")'), "The client must not c
 assert(importRoute.includes("authorIdentifierColumn"), "PV CSV ingestion must preserve an available author/reporter identifier for ICH identifiability review.");
 assert(importRoute.includes('form.get("therapeuticArea")'), "PV CSV ingestion must preserve the user-selected therapeutic area for every corpus.");
 const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
-assert(pvService.includes("Math.min(1000, input.limit || 500)"), "The PV review queue must expose complete therapeutic-area evidence sets instead of silently capping them at 100.");
+assert(pvService.includes("Math.min(1000, input.limit || 1000)"), "PV detection views must expose the complete retained therapeutic-area evidence set up to the governed API ceiling.");
 for (const contract of ["enrichPvRecordsWithAvailableMetadata", "repeat_csv_import", "record.available_metadata_enrich", "enrichedAvailableFields", "library.therapeutic_area", "author_identifier_column"]) {
   assert(pvService.includes(contract), `Generic PV ingestion is missing the shared metadata-enrichment contract ${contract}.`);
+}
+for (const contract of ["detectionSegment", "healthExperienceTags", "csv_import.reclassify", "newlyDetectedCount"]) {
+  assert(pvService.includes(contract), `PV persistence and reprocessing must retain the detection-segmentation contract ${contract}.`);
 }
 assert(pvService.includes("overwriteExistingValues: false"), "Reporter enrichment must preserve existing governed identifiers rather than overwrite them.");
 for (const field of ["publication_timestamp", "collection_timestamp", "algorithm_timestamp", "review_timestamp", "escalation_timestamp"]) {

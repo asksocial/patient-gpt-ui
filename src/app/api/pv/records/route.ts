@@ -56,6 +56,8 @@ export async function POST(request: NextRequest) {
         ok: true,
         screened: detections.length,
         routed: detections.filter((item) => item.ok && item.record).length,
+        aeAdrDetections: detections.filter((item) => item.ok && item.record && item.result?.detectionSegment === "ae_adr").length,
+        healthExperienceDetections: detections.filter((item) => item.ok && item.record && item.result?.detectionSegment === "health_experience").length,
         duplicates: detections.filter((item) => item.ok && item.duplicate).length,
         failed: detections.filter((item) => !item.ok).length,
         detections,

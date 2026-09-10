@@ -7,6 +7,7 @@ import Tooltip from "./ui/Tooltip";
 const TABS = [
   ["overview", "Compliance Overview"],
   ["queue", "Review Queue"],
+  ["health", "Health Experience Detection"],
   ["handoff", "QA & Sponsor Handoff"],
   ["transfers", "Transfers"],
   ["reconciliation", "Reconciliation"],
@@ -117,6 +118,14 @@ function sourceLabel(record) {
     : label(record.source_type || "unknown");
 }
 
+function detectionSegmentLabel(record) {
+  return record.detection_segment === "health_experience" ? "Health Experience" : "AE/ADR";
+}
+
+function healthExperienceTags(record) {
+  return record.health_experience_tags?.length ? record.health_experience_tags : ["other_observation"];
+}
+
 function reviewCountdown(record, nowMs) {
   if (typeof nowMs !== "number") return { label: "Calculating…", tone: "neutral" };
   const dayZeroTimestamp = new Date(record.reportability_identified_at || "").getTime();
@@ -163,9 +172,9 @@ function Card({ title, subtitle, children, actions }) {
   );
 }
 
-function Metric({ label: metricLabel, value, detail, tooltip, tone = "neutral" }) {
+function Metric({ label: metricLabel, value, detail, tooltip, tone = "neutral", actionLabel, onAction }) {
   const border = tone === "warning" ? "border-amber-400/20 bg-amber-400/[0.05]" : tone === "danger" ? "border-rose-400/20 bg-rose-400/[0.05]" : "border-white/10 bg-black/30";
-  return <div className={`rounded-2xl border p-4 ${border}`}><div className="text-xs text-white/40">{tooltip ? <Tooltip content={tooltip} delay={200} side="bottom" align="start"><button type="button" aria-label={`${metricLabel}: ${tooltip}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{metricLabel}</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip> : metricLabel}</div><p className="mt-2 text-2xl font-semibold text-white">{value}</p>{detail ? <p className="mt-1 text-xs text-white/30">{detail}</p> : null}</div>;
+  return <div className={`rounded-2xl border p-4 ${border}`}><div className="text-xs text-white/40">{tooltip ? <Tooltip content={tooltip} delay={200} side="bottom" align="start"><button type="button" aria-label={`${metricLabel}: ${tooltip}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{metricLabel}</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip> : metricLabel}</div><p className="mt-2 text-2xl font-semibold text-white">{value}</p>{detail ? <p className="mt-1 text-xs text-white/30">{detail}</p> : null}{onAction ? <button type="button" onClick={onAction} className="mt-3 cursor-pointer text-xs font-semibold text-cyan-300 transition-colors hover:text-cyan-200">{actionLabel || "View records"} →</button> : null}</div>;
 }
 
 function IdentifiabilitySummary({ assessment }) {
@@ -306,9 +315,10 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
       {message ? <div className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.06] px-4 py-3 text-sm text-cyan-100/75">{message}</div> : null}
       {error ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{error}<p className="mt-1 text-xs text-rose-200/60">Apply the PV Supabase migration before using persistent workflow features.</p></div> : null}
 
-      {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} onSelectLifecycle={openLifecycle} /> : null}
+      {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} onSelectLifecycle={openLifecycle} onNavigate={navigateTab} /> : null}
       {tab === "lifecycle" ? <LifecycleRecords status={lifecycleStatus} expectedCount={overview?.statusCounts?.[lifecycleStatus] || 0} therapeuticArea={therapeuticArea} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onBack={() => setTab("overview")} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
+      {tab === "health" ? <HealthExperienceDetection records={records} selected={selectedRecord} busy={busy} onOpen={openRecord} /> : null}
       {tab === "review" ? <StructuredReview selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReviewComplete={completeRecordReview} onReturnToQueue={() => navigateTab("queue")} /> : null}
       {tab === "handoff" ? <SponsorHandoff therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} qaNotRelevantCases={qaNotRelevantCases} emailDeliveryConfigured={sponsorEmailDeliveryConfigured} busy={busy} onMutate={mutate} onOpenRecord={async (recordId) => { await openRecord(recordId); setTab("review"); }} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
@@ -319,10 +329,11 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   );
 }
 
-function Overview({ metrics, statusCounts, onSelectLifecycle }) {
+function Overview({ metrics, statusCounts, onSelectLifecycle, onNavigate }) {
   return <div className="space-y-5">
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <Metric label="Flagged records" value={metrics.totalRecords ?? 0} detail="All potential PV records" tooltip="Every potential PV record detected within the selected therapeutic area, across all current lifecycle states. These are screening candidates and not confirmed adverse events." />
+      <Metric label="AE/ADR Detection" value={metrics.aeAdrDetections ?? 0} detail="Potential AE/ADR records routed to review" tooltip="Product-linked content containing an adverse-experience signal. These records enter the governed Review Queue for qualified human assessment; detection is not an AE/ADR determination." actionLabel="Open Review Queue" onAction={() => onNavigate("queue")} />
+      <Metric label="Health Experience Detection" value={metrics.healthExperienceDetections ?? 0} detail="Broader safety observations kept separate" tooltip="Product-linked health experiences and special situations—including medication errors, overdose, misuse or abuse, pregnancy exposure, lack of efficacy, product-quality complaints, and other observations—that do not also contain an AE/ADR signal." actionLabel="View Health Experiences" onAction={() => onNavigate("health")} />
       <Metric label="Human review completed" value={metrics.reviewedRecords ?? 0} detail="Escalated or closed records" tooltip="Unique records with a retained human-review decision, including records escalated for sponsor transfer and records closed as not relevant." />
       <Metric label="Screening compliance" value={`${metrics.screeningCompliance ?? 100}%`} detail="Records assigned or reviewed" tooltip="The percentage of all flagged records that have either been assigned for qualified human review or already received a retained human-review decision." />
       <Metric label="Unassigned records with active clocks" value={metrics.unassignedActiveClock ?? 0} detail="Not reviewed or assigned" tooltip="Potential adverse-event records whose day-zero review clock is still active and that have neither received a human-review decision nor been assigned through a governed review list." tone={metrics.unassignedActiveClock ? "warning" : "neutral"} />
@@ -342,7 +353,8 @@ function Overview({ metrics, statusCounts, onSelectLifecycle }) {
 function PvMentionDialog({ selected, busy, onClose, onContinueReview }) {
   if (!selected) return null;
   const canContinue = ["new", "in_review"].includes(selected.record.status) && typeof onContinueReview === "function";
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2></div><button type="button" onClick={onClose} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Lifecycle status" value={label(selected.record.status)} tooltip={PV_LIFECYCLE_TOOLTIPS[selected.record.status]} /><Metric label="Original post date" value={formatDate(selected.record.posted_at)} tooltip="When the author originally published the mention online." /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} tooltip="When the mention became available to authorized AskSocial reviewers." /><Metric label="Detection score" value={`${selected.record.detection_score}/100`} tooltip={PV_SCORE_TOOLTIP} /></div><IdentifiabilitySummary assessment={selected.record.identifiability_assessment} /><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}{canContinue ? <button type="button" onClick={() => { onClose(); onContinueReview(); }} disabled={busy === `review-start:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-start:${selected.record.id}` ? "Starting structured review…" : "Continue to structured review"}</button> : null}</div></div></div>;
+  const isHealthExperience = selected.record.detection_segment === "health_experience";
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><ToneBadge tone={isHealthExperience ? "healthy" : "approaching"}>{detectionSegmentLabel(selected.record)} Detection</ToneBadge></div><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2>{isHealthExperience ? <div className="mt-3 flex flex-wrap gap-2">{healthExperienceTags(selected.record).map((tag) => <ToneBadge key={tag}>{label(tag)}</ToneBadge>)}</div> : null}</div><button type="button" onClick={onClose} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Detection pathway" value={detectionSegmentLabel(selected.record)} tooltip="The mutually exclusive PV screening segment assigned from retained classifications and matched concepts. Health Experience records remain separate from the AE/ADR Review Queue." /><Metric label="Original post date" value={formatDate(selected.record.posted_at)} tooltip="When the author originally published the mention online." /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} tooltip="When the mention became available to authorized AskSocial reviewers." /><Metric label={isHealthExperience ? "Health experience confidence" : "Detection score"} value={`${isHealthExperience ? selected.record.health_experience_confidence : selected.record.detection_score}/100`} tooltip={isHealthExperience ? "AskSocial’s confidence that the source contains a safety-relevant medical experience or special situation. It is not an AE/ADR determination." : PV_SCORE_TOOLTIP} /></div><IdentifiabilitySummary assessment={selected.record.identifiability_assessment} /><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}{canContinue ? <button type="button" onClick={() => { onClose(); onContinueReview(); }} disabled={busy === `review-start:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-start:${selected.record.id}` ? "Starting structured review…" : "Continue to structured review"}</button> : null}</div></div></div>;
 }
 
 function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, busy, onOpen, onContinueReview, onBack }) {
@@ -389,9 +401,9 @@ function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, bu
     <Card title={`PV lifecycle · ${label(status)}`} subtitle={`${total} ${total === 1 ? "mention" : "mentions"} currently comprise this lifecycle count.`} actions={<button type="button" onClick={onBack} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 transition-colors hover:text-white">← Back to Compliance Overview</button>}>
       {loadError ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{loadError}</div> : loading ? <Empty>Loading {label(status)} mentions…</Empty> : records.length ? <>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1180px] text-left text-xs">
-            <thead className="border-b border-white/10 text-white/35"><tr><th className="px-3 py-3 font-medium">Mention</th><th className="px-3 py-3 font-medium">Product</th><th className="px-3 py-3 font-medium">Potential event</th><th className="px-3 py-3 font-medium">Source</th><th className="px-3 py-3 font-medium">Published</th><th className="px-3 py-3 font-medium">Review timestamp</th><th className="px-3 py-3 font-medium">Reviewer</th></tr></thead>
-            <tbody>{records.map((record) => <tr key={record.id} className="border-b border-white/[0.06] text-white/60"><td className="max-w-[420px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 cursor-pointer text-left leading-5 text-cyan-100/65 transition-colors hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Review required"}</td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.publication_timestamp)}</td><td className="px-3 py-3">{formatDate(record.review_timestamp)}</td><td className="px-3 py-3">{record.review_started_by || record.assigned_reviewer_id || "Unassigned"}</td></tr>)}</tbody>
+          <table className="w-full min-w-[1320px] text-left text-xs">
+            <thead className="border-b border-white/10 text-white/35"><tr><th className="px-3 py-3 font-medium">Detection pathway</th><th className="px-3 py-3 font-medium">Mention</th><th className="px-3 py-3 font-medium">Product</th><th className="px-3 py-3 font-medium">Potential event / observation</th><th className="px-3 py-3 font-medium">Source</th><th className="px-3 py-3 font-medium">Published</th><th className="px-3 py-3 font-medium">Review timestamp</th><th className="px-3 py-3 font-medium">Reviewer</th></tr></thead>
+            <tbody>{records.map((record) => <tr key={record.id} className="border-b border-white/[0.06] text-white/60"><td className="px-3 py-3"><ToneBadge tone={record.detection_segment === "health_experience" ? "healthy" : "approaching"}>{detectionSegmentLabel(record)}</ToneBadge></td><td className="max-w-[420px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 cursor-pointer text-left leading-5 text-cyan-100/65 transition-colors hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Other observation"}</td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.publication_timestamp)}</td><td className="px-3 py-3">{formatDate(record.review_timestamp)}</td><td className="px-3 py-3">{record.review_started_by || record.assigned_reviewer_id || "Unassigned"}</td></tr>)}</tbody>
           </table>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/40"><span>Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, total)} of {total} {label(status)} mentions</span><div className="flex items-center gap-2"><button type="button" onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:cursor-not-allowed disabled:opacity-30">← Previous</button><span>Page {currentPage} of {pageCount}</span><button type="button" onClick={() => setPage(Math.min(pageCount, currentPage + 1))} disabled={currentPage >= pageCount} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:cursor-not-allowed disabled:opacity-30">Next →</button></div></div>
@@ -400,9 +412,62 @@ function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, bu
   </div>;
 }
 
+function HealthExperienceDetection({ records, selected, busy, onOpen }) {
+  const pageSize = 20;
+  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const healthExperienceRecords = useMemo(
+    () => records.filter((record) => record.detection_segment === "health_experience"),
+    [records]
+  );
+  const filteredRecords = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return healthExperienceRecords;
+    return healthExperienceRecords.filter((record) => [
+      record.product_name,
+      record.potential_event,
+      record.original_verbatim,
+      sourceLabel(record),
+      ...healthExperienceTags(record).map(label),
+    ].filter(Boolean).join(" ").toLowerCase().includes(normalizedQuery));
+  }, [healthExperienceRecords, query]);
+  const pageCount = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageRecords = filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  async function openMention(recordId) {
+    const detail = await onOpen(recordId);
+    if (detail) setPreviewOpen(true);
+  }
+
+  return <div className="space-y-5">
+    {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} /> : null}
+    <Card title="Health Experience Detection" subtitle="Broader product-linked medical experiences and special situations are retained here separately from potential AE/ADR records in the Review Queue.">
+      <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] p-4 text-xs leading-5 text-cyan-100/65">
+        This segment includes medication errors, overdose, misuse or abuse, pregnancy exposure, lack of efficacy, product-quality complaints, and other safety-relevant observations. Slang, misspellings, and variable patient language are normalized through the configured detection concepts. These records are safety signals for surveillance—not confirmed adverse reactions.
+      </div>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <label className="sr-only" htmlFor="health-experience-search">Search health experience detections</label>
+        <input id="health-experience-search" type="search" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Search health experiences by keyword or tag…" className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-cyan-300/40 sm:max-w-xl" />
+        <p className="text-xs text-white/35">{filteredRecords.length.toLocaleString()} of {healthExperienceRecords.length.toLocaleString()} detected health experience{healthExperienceRecords.length === 1 ? "" : "s"}</p>
+      </div>
+      {pageRecords.length ? <>
+        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10">
+          <table className="w-full min-w-[1280px] text-left text-xs">
+            <thead className="border-b border-white/10 bg-black/30 text-white/35"><tr><th className="px-3 py-3 font-medium">Health-experience tags</th><th className="px-3 py-3 font-medium">Product / procedure</th><th className="px-3 py-3 font-medium">Detected observation</th><th className="px-3 py-3 font-medium">Full mention</th><th className="px-3 py-3 font-medium">Confidence</th><th className="px-3 py-3 font-medium">Source</th><th className="px-3 py-3 font-medium">Published</th></tr></thead>
+            <tbody>{pageRecords.map((record) => <tr key={record.id} className="border-b border-white/[0.06] align-top text-white/60"><td className="px-3 py-3"><div className="flex max-w-[260px] flex-wrap gap-1.5">{healthExperienceTags(record).map((tag) => <ToneBadge key={tag}>{label(tag)}</ToneBadge>)}</div></td><td className="px-3 py-3 text-white/80">{record.product_name || "Unresolved"}</td><td className="px-3 py-3">{record.potential_event || "Other observation"}</td><td className="max-w-[420px] px-3 py-3"><button type="button" onClick={() => openMention(record.id)} disabled={busy === `record:${record.id}`} className="line-clamp-3 cursor-pointer text-left leading-5 text-cyan-100/65 transition-colors hover:text-cyan-200 disabled:opacity-40">{busy === `record:${record.id}` ? "Opening full mention…" : record.original_verbatim}</button></td><td className="px-3 py-3">{record.health_experience_confidence}/100</td><td className="px-3 py-3">{sourceLabel(record)}</td><td className="px-3 py-3">{formatDate(record.publication_timestamp)}</td></tr>)}</tbody>
+          </table>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-white/40"><span>Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredRecords.length)} of {filteredRecords.length} health experiences</span><div className="flex items-center gap-2"><button type="button" onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:cursor-not-allowed disabled:opacity-30">← Previous</button><span>Page {currentPage} of {pageCount}</span><button type="button" onClick={() => setPage(Math.min(pageCount, currentPage + 1))} disabled={currentPage >= pageCount} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-white/55 disabled:cursor-not-allowed disabled:opacity-30">Next →</button></div></div>
+      </> : <div className="mt-4"><Empty>{query ? "No health experience detections match this search." : "No health-experience-only records were detected for this therapeutic area."}</Empty></div>}
+    </Card>
+  </div>;
+}
+
 function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorkspaces, records, reviewLists, selected, busy, onOpen, onContinueReview, onMutate }) {
   const pageSize = 20;
-  const pendingRecords = useMemo(() => records.filter((record) => ["new", "in_review"].includes(record.status)), [records]);
+  const pendingRecords = useMemo(() => records.filter((record) => record.detection_segment !== "health_experience" && ["new", "in_review"].includes(record.status)), [records]);
   const writableWorkspaces = useMemo(
     () => workspaces.filter((workspace) => !workspace.archivedAt && workspace.role !== "viewer"),
     [workspaces]
@@ -546,7 +611,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
 
     {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} onContinueReview={onContinueReview} /> : null}
 
-    <Card title="Potential PV Review Queue" subtitle="Click any mention to view the full source text. Select multiple mentions across pages to save a governed aggregate review list.">
+    <Card title="Potential AE/ADR Review Queue" subtitle="Only product-linked records with an adverse-experience signal appear here. Broader health experiences and special situations remain available in Health Experience Detection. Click any mention to view the full source text.">
       {pendingRecords.length ? <>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1900px] text-left text-xs">

@@ -1,5 +1,6 @@
 import { calculatePvClock } from "./clock";
-import type { PvRecordStatus, PvSlaPolicy } from "./types";
+import type { PvClassification, PvConceptMatch, PvRecordStatus, PvSlaPolicy } from "./types";
+import { derivePvDetectionSegment } from "./segmentation";
 
 export const DEFAULT_PV_SLA: PvSlaPolicy = {
   reviewMinutes: 15 * 24 * 60,
@@ -19,6 +20,9 @@ type OverviewRecord = {
   ingested_at: string;
   identified_at: string;
   reportability_identified_at?: string | null;
+  proposed_classifications?: PvClassification[] | null;
+  matched_concepts?: PvConceptMatch[] | null;
+  ae_ontology?: { adverseEvents?: unknown[] } | null;
 };
 
 type OverviewReview = { record_id: string; reviewed_at: string };
@@ -65,6 +69,9 @@ export function derivePvOverviewMetrics(input: {
   now?: Date;
 }) {
   const records = input.records || [];
+  const aeAdrRecords = records.filter((record) => derivePvDetectionSegment(record) === "ae_adr");
+  const healthExperienceRecords = records.filter((record) => derivePvDetectionSegment(record) === "health_experience");
+  const aeAdrRecordIds = new Set(aeAdrRecords.map((record) => record.id));
   const reviews = input.reviews || [];
   const transfers = input.transfers || [];
   const reviewLists = input.reviewLists || [];
@@ -90,23 +97,27 @@ export function derivePvOverviewMetrics(input: {
     counts[record.status] = (counts[record.status] || 0) + 1;
     return counts;
   }, {});
+  const aeAdrStatusCounts = aeAdrRecords.reduce((counts: Record<string, number>, record) => {
+    counts[record.status] = (counts[record.status] || 0) + 1;
+    return counts;
+  }, {});
   const reviewedRecordIds = new Set(
-    records
+    aeAdrRecords
       .filter((record) => latestReviews.has(record.id) || reviewedStatuses.has(record.status))
       .map((record) => record.id)
   );
   const assignedRecordIds = new Set(
-    records
+    aeAdrRecords
       .filter((record) => Boolean(record.assigned_reviewer_id?.trim()) || assignedThroughLists.has(record.id))
       .map((record) => record.id)
   );
-  const awaitingReview = records.filter(
+  const awaitingReview = aeAdrRecords.filter(
     (record) => awaitingStatuses.has(record.status) && !reviewedRecordIds.has(record.id)
   );
 
   let approachingSla = 0;
   let unassignedActiveClock = 0;
-  for (const record of records) {
+  for (const record of aeAdrRecords) {
     if (terminalStatuses.has(record.status)) continue;
     const review = latestReviews.get(record.id);
     const transfer = latestTransfers.get(record.id);
@@ -144,17 +155,18 @@ export function derivePvOverviewMetrics(input: {
   }
 
   const transferredRecordIds = new Set(
-    records
+    aeAdrRecords
       .filter((record) => ["transferred", "acknowledged", "reconciled"].includes(record.status))
       .map((record) => record.id)
   );
   for (const transfer of transfers) {
-    if (["delivered", "acknowledged"].includes(transfer.status)) transferredRecordIds.add(transfer.record_id);
+    if (aeAdrRecordIds.has(transfer.record_id) && ["delivered", "acknowledged"].includes(transfer.status)) transferredRecordIds.add(transfer.record_id);
   }
   const unacknowledgedRecordIds = new Set(
-    records.filter((record) => record.status === "transferred").map((record) => record.id)
+    aeAdrRecords.filter((record) => record.status === "transferred").map((record) => record.id)
   );
   for (const transfer of latestTransfers.values()) {
+    if (!aeAdrRecordIds.has(transfer.record_id)) continue;
     if (transfer.status === "delivered" && !transfer.acknowledged_at) unacknowledgedRecordIds.add(transfer.record_id);
     if (transfer.status === "acknowledged" || transfer.acknowledged_at) unacknowledgedRecordIds.delete(transfer.record_id);
   }
@@ -163,15 +175,17 @@ export function derivePvOverviewMetrics(input: {
   return {
     metrics: {
       totalRecords: records.length,
+      aeAdrDetections: aeAdrRecords.length,
+      healthExperienceDetections: healthExperienceRecords.length,
       reviewedRecords: reviewedRecordIds.size,
-      screeningCompliance: records.length ? Math.round((triagedRecordIds.size / records.length) * 1000) / 10 : 100,
+      screeningCompliance: aeAdrRecords.length ? Math.round((triagedRecordIds.size / aeAdrRecords.length) * 1000) / 10 : 100,
       unassignedActiveClock,
       awaitingReview: awaitingReview.length,
       approachingSla,
       transferred: transferredRecordIds.size,
       unacknowledged: unacknowledgedRecordIds.size,
       nilReturns: (input.screeningRuns || []).filter((run) => run.status === "completed" && run.nil_return).length,
-      reconciliationCompletion: records.length ? Math.round(((statusCounts.reconciled || 0) / records.length) * 100) : 100,
+      reconciliationCompletion: aeAdrRecords.length ? Math.round(((aeAdrStatusCounts.reconciled || 0) / aeAdrRecords.length) * 100) : 100,
     },
     statusCounts,
   };

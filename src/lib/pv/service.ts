@@ -2,10 +2,11 @@ import { createHash } from "node:crypto";
 import { getSupabaseServerClient } from "../supabase/server";
 import type { PlatformPrincipal } from "../intelligence-platform/persistence";
 import { calculatePvClock } from "./clock";
-import { classifyPvContent } from "./detection";
+import { classifyPvContent, PV_CLASSIFIER_VERSION } from "./detection";
 import { DEFAULT_PV_SLA, derivePvOverviewMetrics } from "./overview";
 import { reconcilePvOperations } from "./reconciliation";
 import { assessIcsrIdentifiability, patientCriterionStatus, reporterCriterionStatus } from "./identifiability";
+import { derivePvDetectionSegment, derivePvHealthExperienceTags } from "./segmentation";
 import type {
   PvContentInput,
   PvDetectionConcept,
@@ -267,7 +268,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
   const therapeuticArea = input.therapeuticArea?.trim() || String(library.therapeutic_area || "").trim() || null;
 
   if (!result.shouldCreateRecord) {
-    await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, evidenceHash, classifierVersion: result.classifierVersion, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber, postedAtSourceColumn: input.postedAtSourceColumn, postedAtRawValue: input.postedAtRawValue } });
+    await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, detectionSegment: result.detectionSegment, healthExperienceTags: result.healthExperienceTags, evidenceHash, classifierVersion: result.classifierVersion, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber, postedAtSourceColumn: input.postedAtSourceColumn, postedAtRawValue: input.postedAtRawValue } });
     return { result, record: null };
   }
 
@@ -292,7 +293,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
       resourceType: "pv_record",
       resourceId: String(existingRecord.id),
       outcome: "completed",
-      metadata: { externalId: input.externalId, evidenceHash, retainedExistingRecord: true, enrichedAvailableFields: Object.keys(duplicateUpdates), postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber },
+      metadata: { externalId: input.externalId, detectionSegment: result.detectionSegment, healthExperienceTags: result.healthExperienceTags, evidenceHash, retainedExistingRecord: true, enrichedAvailableFields: Object.keys(duplicateUpdates), postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber },
     });
     return { result, record: retainedRecord, duplicate: true };
   }
@@ -318,7 +319,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
     day_zero_basis: input.dayZeroBasis || "posted_at", day_zero_reason: input.dayZeroReason || null,
   }).select("*").single();
   if (recordError || !record) throw new Error(`Failed to create potential PV record: ${recordError?.message || "missing row"}`);
-  await appendPvAuditEvent(principal, { action: "record.create_from_detection", resourceType: "pv_record", resourceId: String(record.id), outcome: "completed", metadata: { score: result.score, evidenceHash, humanReviewRequired: true, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber } });
+  await appendPvAuditEvent(principal, { action: "record.create_from_detection", resourceType: "pv_record", resourceId: String(record.id), outcome: "completed", metadata: { score: result.score, detectionSegment: result.detectionSegment, healthExperienceTags: result.healthExperienceTags, evidenceHash, humanReviewRequired: result.detectionSegment === "ae_adr", postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber } });
   return { result, record, duplicate: false };
 }
 
@@ -478,6 +479,39 @@ async function ensureBotulinumPvLibrary(principal: PlatformPrincipal) {
   return library;
 }
 
+function buildBundledBotulinumPvRecord(
+  principal: PlatformPrincipal,
+  row: PvCsvImportRow,
+  library: any,
+  importBatchId: string,
+  availableAt: string,
+  postedAtSourceColumn: string,
+  dayZeroBasis: "identified_at" | "reportability_identified_at"
+) {
+  const result = classifyPvContent({ externalId: row.externalId, sourceType: "curated_csv", sourceUrl: row.sourceUrl, verbatim: row.verbatim, postedAt: row.postedAt, dataOrigin: "curated" }, BOTULINUM_PV_CONCEPTS, { threshold: 55, libraryVersion: Number(library.version), expectedEvents: library.expected_event_terms || [] });
+  const productMatch = result.matches.find((match) => match.category === "product");
+  const eventMatch = result.matches.find((match) => !["product", "severity", "treatment_change"].includes(match.category));
+  return {
+    principal_id: principal.principalId, external_id: row.externalId, therapeutic_area: BOTULINUM_PV_THERAPEUTIC_AREA,
+    library_id: library.id, status: "new", priority: result.contextConfidence >= 70 ? "critical" : result.score >= 80 ? "high" : "standard",
+    product_name: productMatch?.canonicalTerm || null, potential_event: eventMatch?.canonicalTerm || null,
+    source_type: "curated_csv", source_url: row.sourceUrl, author_identifier: availableReporterIdentifier(row.authorIdentifier), original_verbatim: row.verbatim, original_language: "en",
+    thread_context: [], evidence_hash: hashPayload({ verbatim: row.verbatim, url: row.sourceUrl, postedAt: row.postedAt }),
+    posted_at: row.postedAt, ingested_at: availableAt, identified_at: availableAt,
+    detection_score: result.score, product_confidence: result.productConfidence,
+    health_experience_confidence: result.healthExperienceConfidence, context_confidence: result.contextConfidence,
+    matched_concepts: result.matches, proposed_classifications: result.classifications,
+    classifier_version: result.classifierVersion, library_version: result.detectionLibraryVersion,
+    detection_rationale: result.rationale, data_origin: "curated", ae_ontology: result.ontologyExtraction,
+    ontology_version: result.ontologyExtraction.ontologyVersion, import_batch_id: importBatchId,
+    source_row_number: row.rowNumber, posted_at_source_column: postedAtSourceColumn,
+    posted_at_raw_value: row.postedAtRawValue, day_zero_basis: dayZeroBasis,
+    day_zero_reason: dayZeroBasis === "reportability_identified_at"
+      ? "Day Zero starts only when a qualified reviewer confirms the minimum ICSR criteria."
+      : "This retained import uses the governed clock basis configured on its original batch.",
+  };
+}
+
 export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipal) {
   assertPrincipal(principal);
   const corpus = loadBotulinumPvCorpus();
@@ -487,13 +521,34 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     .eq("principal_id", principal.principalId).eq("file_hash", corpus.fileHash).maybeSingle();
   if (existingBatchError) throw new Error(`Failed to check the bundled PV corpus: ${existingBatchError.message}`);
   if (existingBatch) {
+    const candidateIds = corpus.candidates.map((row) => row.externalId);
+    const existingIds = new Set<string>();
+    for (let index = 0; index < candidateIds.length; index += 200) {
+      const { data, error } = await supabase.from("pv_records").select("external_id")
+        .eq("principal_id", principal.principalId).in("external_id", candidateIds.slice(index, index + 200));
+      if (error) throw new Error(`Failed to reconcile updated health-experience detections: ${error.message}`);
+      for (const item of data || []) existingIds.add(String(item.external_id));
+    }
+    const reclassifiedAt = new Date().toISOString();
+    const retainedDayZeroBasis = existingBatch.day_zero_basis === "reportability_identified_at" ? "reportability_identified_at" : "identified_at";
+    const newlyDetected = corpus.candidates
+      .filter((row) => !existingIds.has(row.externalId))
+      .map((row) => buildBundledBotulinumPvRecord(principal, row, library, String(existingBatch.id), reclassifiedAt, corpus.dateColumn, retainedDayZeroBasis));
+    for (let index = 0; index < newlyDetected.length; index += 100) {
+      const { error } = await supabase.from("pv_records").insert(newlyDetected.slice(index, index + 100));
+      if (error) throw new Error(`Failed to retain updated health-experience detections: ${error.message}`);
+    }
     const enrichment = await enrichPvRecordsWithAvailableMetadata(principal, corpus.candidates, {
       therapeuticArea: corpus.therapeuticArea, resourceId: String(existingBatch.id), source: "bundled_corpus_reactivation",
     });
     const batchUpdates: Record<string, unknown> = {};
     if (!existingBatch.therapeutic_area) batchUpdates.therapeutic_area = corpus.therapeuticArea;
-    if (!existingBatch.author_identifier_column && corpus.authorIdentifierColumn) batchUpdates.author_identifier_column = corpus.authorIdentifierColumn;
+    if ("author_identifier_column" in existingBatch && !existingBatch.author_identifier_column && corpus.authorIdentifierColumn) batchUpdates.author_identifier_column = corpus.authorIdentifierColumn;
     let retainedBatch = existingBatch;
+    if (newlyDetected.length || Number(existingBatch.routed_count || 0) < existingIds.size) {
+      batchUpdates.routed_count = Math.max(Number(existingBatch.routed_count || 0), existingIds.size + newlyDetected.length);
+      batchUpdates.screened_count = corpus.rows.length;
+    }
     if (Object.keys(batchUpdates).length) {
       const { data: enrichedBatch, error: batchEnrichmentError } = await supabase.from("pv_import_batches")
         .update({ ...batchUpdates, updated_at: new Date().toISOString() })
@@ -501,7 +556,11 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
       if (batchEnrichmentError || !enrichedBatch) throw new Error(`Failed to enrich the bundled PV import provenance: ${batchEnrichmentError?.message || "missing row"}`);
       retainedBatch = enrichedBatch;
     }
-    return { ...retainedBatch, alreadyImported: true, ...enrichment };
+    if (newlyDetected.length) await appendPvAuditEvent(principal, {
+      action: "csv_import.reclassify", resourceType: "pv_import_batch", resourceId: String(existingBatch.id), outcome: "completed",
+      metadata: { therapeuticArea: corpus.therapeuticArea, classifierVersion: PV_CLASSIFIER_VERSION, newlyDetectedCount: newlyDetected.length, detectionSegmentation: ["ae_adr", "health_experience"] },
+    });
+    return { ...retainedBatch, alreadyImported: true, newlyDetectedCount: newlyDetected.length, ...enrichment };
   }
 
   const availableAt = new Date().toISOString();
@@ -525,28 +584,9 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     if (error) throw new Error(`Failed to deduplicate the bundled PV corpus: ${error.message}`);
     for (const item of data || []) existingIds.add(String(item.external_id));
   }
-  const records = corpus.candidates.filter((row) => !existingIds.has(row.externalId)).map((row) => {
-    const result = classifyPvContent({ externalId: row.externalId, sourceType: "curated_csv", sourceUrl: row.sourceUrl, verbatim: row.verbatim, postedAt: row.postedAt, dataOrigin: "curated" }, BOTULINUM_PV_CONCEPTS, { threshold: 55, libraryVersion: Number(library.version), expectedEvents: library.expected_event_terms || [] });
-    const productMatch = result.matches.find((match) => match.category === "product");
-    const eventMatch = result.matches.find((match) => !["product", "severity", "treatment_change"].includes(match.category));
-    return {
-      principal_id: principal.principalId, external_id: row.externalId, therapeutic_area: corpus.therapeuticArea,
-      library_id: library.id, status: "new", priority: result.contextConfidence >= 70 ? "critical" : result.score >= 80 ? "high" : "standard",
-      product_name: productMatch?.canonicalTerm || null, potential_event: eventMatch?.canonicalTerm || null,
-      source_type: "curated_csv", source_url: row.sourceUrl, author_identifier: availableReporterIdentifier(row.authorIdentifier), original_verbatim: row.verbatim, original_language: "en",
-      thread_context: [], evidence_hash: hashPayload({ verbatim: row.verbatim, url: row.sourceUrl, postedAt: row.postedAt }),
-      posted_at: row.postedAt, ingested_at: availableAt, identified_at: availableAt,
-      detection_score: result.score, product_confidence: result.productConfidence,
-      health_experience_confidence: result.healthExperienceConfidence, context_confidence: result.contextConfidence,
-      matched_concepts: result.matches, proposed_classifications: result.classifications,
-      classifier_version: result.classifierVersion, library_version: result.detectionLibraryVersion,
-      detection_rationale: result.rationale, data_origin: "curated", ae_ontology: result.ontologyExtraction,
-      ontology_version: result.ontologyExtraction.ontologyVersion, import_batch_id: batch.id,
-      source_row_number: row.rowNumber, posted_at_source_column: corpus.dateColumn,
-      posted_at_raw_value: row.postedAtRawValue, day_zero_basis: "reportability_identified_at",
-      day_zero_reason: "Day Zero starts only when a qualified reviewer confirms the minimum ICSR criteria.",
-    };
-  });
+  const records = corpus.candidates
+    .filter((row) => !existingIds.has(row.externalId))
+    .map((row) => buildBundledBotulinumPvRecord(principal, row, library, String(batch.id), availableAt, corpus.dateColumn, "reportability_identified_at"));
   let routedCount = 0;
   for (let index = 0; index < records.length; index += 100) {
     const chunk = records.slice(index, index + 100);
@@ -590,6 +630,8 @@ async function enrichPvRecordRows(principal: PlatformPrincipal, records: any[]) 
   }
   return records.map((record: any) => ({
     ...record,
+    detection_segment: derivePvDetectionSegment(record),
+    health_experience_tags: derivePvHealthExperienceTags(record),
     identifiability_assessment: assessIcsrIdentifiability(record),
     publication_timestamp: record.posted_at,
     collection_timestamp: record.ingested_at,
@@ -603,7 +645,7 @@ export async function listPvRecords(principal: PlatformPrincipal, input: { statu
   assertPrincipal(principal);
   const supabase = getSupabaseServerClient();
   let query = supabase.from("pv_records").select("*").eq("principal_id", principal.principalId)
-    .order("identified_at", { ascending: false }).limit(Math.max(1, Math.min(1000, input.limit || 500)));
+    .order("identified_at", { ascending: false }).limit(Math.max(1, Math.min(1000, input.limit || 1000)));
   if (input.status) query = query.eq("status", input.status);
   if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
   const { data, error } = await query;
@@ -875,7 +917,15 @@ export async function getPvRecord(principal: PlatformPrincipal, recordId: string
     reportabilityIdentifiedAt: record.reportability_identified_at || undefined,
     reviewedAt: latestReview?.reviewed_at, transferredAt: latestTransfer?.transferred_at, acknowledgedAt: latestTransfer?.acknowledged_at,
   }, effectiveSla);
-  return { record: { ...record, identifiability_assessment: assessIcsrIdentifiability(record) }, reviews: reviews || [], transfers: transfers || [], audit: audit || [], clock, sla: effectiveSla };
+  return {
+    record: {
+      ...record,
+      detection_segment: derivePvDetectionSegment(record),
+      health_experience_tags: derivePvHealthExperienceTags(record),
+      identifiability_assessment: assessIcsrIdentifiability(record),
+    },
+    reviews: reviews || [], transfers: transfers || [], audit: audit || [], clock, sla: effectiveSla,
+  };
 }
 
 export async function startPvRecordReview(principal: PlatformPrincipal, recordId: string) {

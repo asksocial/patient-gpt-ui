@@ -182,6 +182,11 @@ export function buildEcosystemNavigation(
                 kind: "destination" as const,
               },
               {
+                id: "pv_health",
+                label: "Health Experience Detection",
+                kind: "destination" as const,
+              },
+              {
                 id: "pv_handoff",
                 label: "QA & Sponsor Handoff",
                 kind: "destination" as const,

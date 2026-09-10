@@ -6,8 +6,9 @@ import type {
   PvDetectionResult,
 } from "./types";
 import { extractPvAdverseEventOntology } from "./ontology";
+import { derivePvDetectionSegment, derivePvHealthExperienceTags } from "./segmentation";
 
-export const PV_CLASSIFIER_VERSION = "pv-context-rules-1.1.0";
+export const PV_CLASSIFIER_VERSION = "pv-context-rules-1.2.0";
 
 function normalize(value: string) {
   return value.toLocaleLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, " ").trim();
@@ -91,16 +92,24 @@ export function classifyPvContent(
   );
   const threshold = Math.max(1, Math.min(100, options.threshold ?? 55));
   const classifications = [...new Set(healthMatches.map((match) => classificationFor(match.category)).filter(Boolean))] as PvClassification[];
+  const detectionSegment = derivePvDetectionSegment({ classifications, matches, ontologyExtraction });
+  const healthExperienceTags = derivePvHealthExperienceTags({ classifications, matches, ontologyExtraction });
   const shouldCreateRecord = productConfidence > 0 && healthExperienceConfidence > 0 && score >= threshold;
   const rationale = [
     productConfidence > 0 ? `Product reference supported by ${productMatches.length} configured concept match(es).` : "No configured product reference was detected.",
     healthExperienceConfidence > 0 ? `Potential health experience or special situation supported by ${healthMatches.length} match(es).` : "No health experience or special situation was detected.",
     contextConfidence > 0 ? `Seriousness, severity, outcome, or treatment-change context increased priority by ${contextConfidence} confidence points.` : "No additional seriousness, severity, outcome, or treatment-change context was detected.",
-    shouldCreateRecord ? "Content requires human PV review; this is not an adverse-event determination." : "Content remains retained as a detection audit result and is not routed to the review queue.",
+    shouldCreateRecord
+      ? detectionSegment === "ae_adr"
+        ? "Content requires human PV review; this is not an adverse-event determination."
+        : "Content is retained in Health Experience Detection and remains separate from the AE/ADR Review Queue."
+      : "Content remains retained as a detection audit result and is not routed to the review queue.",
   ];
 
   return {
     shouldCreateRecord,
+    detectionSegment,
+    healthExperienceTags,
     score,
     productConfidence,
     healthExperienceConfidence,

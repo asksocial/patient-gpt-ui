@@ -96,6 +96,11 @@ const DESTINATION_COPY = {
     title: "Review Queue",
     description: "Review potential PV-relevant records through a structured human workflow.",
   },
+  pv_health: {
+    eyebrow: "PV Compliance",
+    title: "Health Experience Detection",
+    description: "Inspect broader safety-relevant medical experiences and special situations separately from the AE/ADR Review Queue.",
+  },
   pv_handoff: {
     eyebrow: "PV Compliance",
     title: "QA & Sponsor Handoff",

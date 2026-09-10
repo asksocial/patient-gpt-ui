@@ -175,6 +175,11 @@ export type PvConceptMatch = {
 
 export type PvDetectionResult = {
   shouldCreateRecord: boolean;
+  detectionSegment: "ae_adr" | "health_experience";
+  healthExperienceTags: Array<
+    "medication_error" | "overdose" | "misuse_abuse" | "pregnancy_exposure" |
+    "lack_of_efficacy" | "product_quality_complaint" | "other_observation"
+  >;
   score: number;
   productConfidence: number;
   healthExperienceConfidence: number;

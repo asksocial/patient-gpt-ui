@@ -35,6 +35,9 @@ export const BOTULINUM_PV_CONCEPTS: PvDetectionConcept[] = [
   concept("btx-ineffective", "lack_of_efficacy", "Lack of effect", ["didn't work", "did not work", "no effect", "wore off immediately", "stopped working", "immune to botox", "botox resistance"], 85),
   concept("btx-dose", "medication_error", "Dose or administration concern", ["wrong dose", "too many units", "too much botox", "injected in the wrong", "wrong injection site"], 90),
   concept("btx-overdose", "overdose", "Potential overdose", ["overdose", "overdosed", "excessive dose"], 100),
+  concept("btx-pregnancy", "pregnancy", "Pregnancy or breastfeeding exposure", ["pregnant", "pregnancy", "breastfeeding", "breast feeding", "trying to conceive", "embryo transfer"], 90),
+  concept("btx-misuse", "misuse_abuse", "Potential misuse or unlicensed administration", ["diy botox", "self-injecting", "injecting botox between your eyebrows yourself", "botox party", "black market botox", "unlicensed botox"], 90),
+  concept("btx-quality", "product_quality", "Potential counterfeit or product-quality concern", ["counterfeit botox", "fake botox", "counterfeit vial", "contaminated vial", "broken vial", "unlicensed botox"], 90),
   concept("btx-severe", "severity", "Severe", ["severe", "emergency room", "er visit", "hospitalized", "hospitalised", "permanent injury", "life threatening"], 90),
   concept("btx-change", "treatment_change", "Treatment change", ["stopped botox", "won't get botox again", "never getting botox again", "needed treatment", "went to the er"], 65),
 ];
