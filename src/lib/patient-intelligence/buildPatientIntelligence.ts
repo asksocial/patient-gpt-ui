@@ -11,6 +11,42 @@ export type PatientSignal = {
   evidenceIds: string[];
 };
 
+export type PatientEvidenceDimension =
+  | "journey"
+  | "treatment_barriers"
+  | "emotional_burden"
+  | "unmet_needs";
+
+export type PatientEvidenceItem = {
+  id: string;
+  findingId: string;
+  quote: string;
+  fullMention: string;
+  mentionTitle?: string;
+  author?: string;
+  publishedAt?: string;
+  sourceLabel: string;
+  url?: string;
+  platform?: string;
+  country?: string;
+  voice: string;
+  qualityScore: number;
+  matchedSignalIds: string[];
+  matchedSignalLabels: string[];
+};
+
+export type PatientEvidenceCatalogResult = {
+  therapeuticArea: string;
+  dimension: PatientEvidenceDimension;
+  dimensionLabel: string;
+  query: string;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  total: number;
+  items: PatientEvidenceItem[];
+};
+
 export type PatientIntelligenceResult = {
   schemaVersion: "patient_intelligence_v1";
   therapeuticArea: string;
@@ -30,6 +66,11 @@ export type PatientIntelligenceResult = {
   emotionalBurden: PatientSignal[];
   treatmentSignals: PatientSignal[];
   unmetNeeds: PatientSignal[];
+  evidenceDimensions: Array<{
+    id: PatientEvidenceDimension;
+    label: string;
+    findingCount: number;
+  }>;
   recommendations: string[];
   evidence: Array<{
     id: string;
@@ -77,6 +118,19 @@ const UNMET_NEED_PATTERNS = [
   ["recovery_support", "Recovery and complication support", /recovery|swelling|bruising|pain|complication|healing/i],
   ["comparison_support", "Treatment comparison and reversibility support", /versus|compare|switch|revers|dissolv|alternative/i],
 ] as const;
+
+const PATIENT_EVIDENCE_DIMENSIONS: Record<
+  PatientEvidenceDimension,
+  {
+    label: string;
+    patterns: readonly (readonly [string, string, RegExp])[];
+  }
+> = {
+  journey: { label: "Patient journey", patterns: JOURNEY_PATTERNS },
+  treatment_barriers: { label: "Treatment barriers", patterns: BARRIER_PATTERNS },
+  emotional_burden: { label: "Emotional burden", patterns: EMOTION_PATTERNS },
+  unmet_needs: { label: "Unmet needs", patterns: UNMET_NEED_PATTERNS },
+};
 
 function findingText(finding: CanonicalFinding) {
   const raw = finding as any;
@@ -141,28 +195,161 @@ function bestEvidence(finding: CanonicalFinding): EvidenceRef | undefined {
   };
 }
 
+function metadataString(finding: CanonicalFinding, ...keys: string[]) {
+  const value = keys
+    .map((key) => finding.rawMetadata?.normalizedFields?.[key])
+    .find((candidate) =>
+      Array.isArray(candidate)
+        ? candidate.some((item) => String(item || "").trim())
+        : String(candidate || "").trim()
+    );
+  if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean).join("\n");
+  return String(value || "").trim();
+}
+
+function fullMention(finding: CanonicalFinding, source?: EvidenceRef) {
+  const raw = finding as CanonicalFinding & Record<string, unknown>;
+  const candidates = [
+    metadataString(finding, "full_text", "document_text", "article_body", "body", "content", "post_text", "opening_text", "text", "caption"),
+    raw.text,
+    raw.description,
+    metadataString(finding, "description", "summary"),
+    source?.excerpt,
+    raw.excerpt,
+    finding.summary,
+    finding.canonicalClaim,
+    metadataString(finding, "headline", "title"),
+    raw.title,
+  ].map((value) => String(value || "").trim()).filter(Boolean);
+  return candidates.sort((left, right) => right.length - left.length)[0] || "Patient evidence mention unavailable";
+}
+
+function originalSourceUrl(finding: CanonicalFinding, source?: EvidenceRef) {
+  const raw = finding as CanonicalFinding & Record<string, unknown>;
+  const candidate = String(
+    source?.url || raw.url || metadataString(finding, "url", "source_url", "source_link", "permalink", "link") || ""
+  ).trim();
+  if (!candidate) return undefined;
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function patientEvidenceSubset(findings: CanonicalFinding[]) {
+  const silverLabels = buildMedicalAestheticsEvidenceLabels(findings);
+  const labelById = new Map(silverLabels.map((label) => [label.document_id.replace(/^"+|"+$/g, ""), label]));
+  return findings
+    .map((finding) => ({
+      finding,
+      intelligence: analyzeEvidence(finding),
+      label: labelById.get(findingId(finding)),
+    }))
+    .filter(({ intelligence, label }) =>
+      label?.is_promotional_silver !== "yes" &&
+      label?.medical_aesthetics_relevance_silver !== "not_relevant" && (
+        label?.source_group_silver === "patient" ||
+        intelligence.voice === "patient" ||
+        intelligence.voice === "caregiver" ||
+        intelligence.evidenceClass === "patient_conversation" ||
+        intelligence.evidenceClass === "caregiver_conversation"
+      )
+    );
+}
+
+function matchedPatientSignals(
+  finding: CanonicalFinding,
+  dimension: PatientEvidenceDimension
+) {
+  const text = findingText(finding);
+  return PATIENT_EVIDENCE_DIMENSIONS[dimension].patterns
+    .filter(([, , pattern]) => pattern.test(text))
+    .map(([id, label]) => ({ id, label }));
+}
+
+function buildPatientEvidenceItem(
+  finding: CanonicalFinding,
+  intelligence: ReturnType<typeof analyzeEvidence>,
+  dimension: PatientEvidenceDimension
+): PatientEvidenceItem {
+  const source = bestEvidence(finding);
+  const matchedSignals = matchedPatientSignals(finding, dimension);
+  return {
+    id: `patient:${findingId(finding)}`,
+    findingId: findingId(finding),
+    quote: source?.excerpt || finding.summary || finding.canonicalClaim,
+    fullMention: fullMention(finding, source),
+    mentionTitle: metadataString(finding, "headline", "title") || undefined,
+    author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,
+    publishedAt: metadataString(finding, "date", "published_at", "published_date", "alternate_date_format") || undefined,
+    sourceLabel: source?.platform || intelligence.sourceType || intelligence.platform || "Source metadata unavailable",
+    url: originalSourceUrl(finding, source),
+    platform: source?.platform,
+    country: source?.country,
+    voice: intelligence.voice,
+    qualityScore: intelligence.qualityScore,
+    matchedSignalIds: matchedSignals.map((signal) => signal.id),
+    matchedSignalLabels: matchedSignals.map((signal) => signal.label),
+  };
+}
+
+export function isPatientEvidenceDimension(value: unknown): value is PatientEvidenceDimension {
+  return typeof value === "string" && value in PATIENT_EVIDENCE_DIMENSIONS;
+}
+
+export function buildPatientEvidenceCatalog(
+  therapeuticArea: string,
+  findings: CanonicalFinding[],
+  dimension: PatientEvidenceDimension,
+  params: { query?: string; page?: number; pageSize?: number } = {}
+): PatientEvidenceCatalogResult {
+  const query = String(params.query || "").trim();
+  const normalizedQuery = query.toLowerCase();
+  const pageSize = Math.min(50, Math.max(10, Math.floor(Number(params.pageSize) || 20)));
+  const seen = new Set<string>();
+  const matching = patientEvidenceSubset(findings)
+    .filter(({ finding }) => matchedPatientSignals(finding, dimension).length > 0)
+    .filter(({ finding }) => {
+      if (normalizedQuery && ![
+        findingText(finding),
+        metadataString(finding, "headline", "title", "author", "source", "publication", "country"),
+      ].filter(Boolean).join(" ").toLowerCase().includes(normalizedQuery)) return false;
+      const id = findingId(finding);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .sort((left, right) =>
+      right.intelligence.qualityScore - left.intelligence.qualityScore ||
+      matchedPatientSignals(right.finding, dimension).length - matchedPatientSignals(left.finding, dimension).length ||
+      findingId(left.finding).localeCompare(findingId(right.finding))
+    );
+  const pageCount = Math.max(1, Math.ceil(matching.length / pageSize));
+  const page = Math.min(pageCount, Math.max(1, Math.floor(Number(params.page) || 1)));
+  const offset = (page - 1) * pageSize;
+  return {
+    therapeuticArea,
+    dimension,
+    dimensionLabel: PATIENT_EVIDENCE_DIMENSIONS[dimension].label,
+    query,
+    page,
+    pageSize,
+    pageCount,
+    total: matching.length,
+    items: matching
+      .slice(offset, offset + pageSize)
+      .map(({ finding, intelligence }) => buildPatientEvidenceItem(finding, intelligence, dimension)),
+  };
+}
+
 export function buildPatientIntelligence(
   therapeuticArea: string,
   findings: CanonicalFinding[],
   generatedAt = new Date().toISOString()
 ): PatientIntelligenceResult {
-  const silverLabels = buildMedicalAestheticsEvidenceLabels(findings);
-  const labelById = new Map(silverLabels.map((label) => [label.document_id.replace(/^"+|"+$/g, ""), label]));
-  const analyzed = findings.map((finding) => ({
-    finding,
-    intelligence: analyzeEvidence(finding),
-    label: labelById.get(findingId(finding)),
-  }));
-  const patient = analyzed.filter(({ intelligence, label }) => {
-    return label?.is_promotional_silver !== "yes" &&
-      label?.medical_aesthetics_relevance_silver !== "not_relevant" && (
-      label?.source_group_silver === "patient" ||
-      intelligence.voice === "patient" ||
-      intelligence.voice === "caregiver" ||
-      intelligence.evidenceClass === "patient_conversation" ||
-      intelligence.evidenceClass === "caregiver_conversation"
-    );
-  });
+  const patient = patientEvidenceSubset(findings);
   const patientFindings = patient.map(({ finding }) => finding);
   const caregiverCount = patient.filter(({ intelligence }) => intelligence.voice === "caregiver" || intelligence.evidenceClass === "caregiver_conversation").length;
   const coverage = findings.length ? (patientFindings.length / findings.length) * 100 : 0;
@@ -171,6 +358,16 @@ export function buildPatientIntelligence(
   const treatmentBarriers = buildSignals(patientFindings, BARRIER_PATTERNS);
   const emotionalBurden = buildSignals(patientFindings, EMOTION_PATTERNS);
   const unmetNeeds = buildSignals(patientFindings, UNMET_NEED_PATTERNS);
+  const evidenceDimensions = (Object.keys(PATIENT_EVIDENCE_DIMENSIONS) as PatientEvidenceDimension[])
+    .map((dimension) => ({
+      id: dimension,
+      label: PATIENT_EVIDENCE_DIMENSIONS[dimension].label,
+      findingCount: new Set(
+        patientFindings
+          .filter((finding) => matchedPatientSignals(finding, dimension).length > 0)
+          .map(findingId)
+      ).size,
+    }));
 
   const treatmentCounts = new Map<string, string[]>();
   for (const finding of patientFindings) {
@@ -229,6 +426,7 @@ export function buildPatientIntelligence(
     emotionalBurden,
     treatmentSignals,
     unmetNeeds,
+    evidenceDimensions,
     recommendations: [
       `Develop plain-language content addressing ${topBarrier.toLowerCase()} with explicit evidence and limitations.`,
       `Create decision support for ${topNeed.toLowerCase()} across consultation and follow-up touchpoints.`,
