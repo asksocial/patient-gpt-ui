@@ -12,6 +12,8 @@ export type PvHealthExperienceTag =
   | "other_observation";
 
 type SegmentablePvRecord = {
+  reviewer_detection_segment?: PvDetectionSegment | null;
+  reviewer_health_experience_tags?: PvHealthExperienceTag[] | null;
   proposed_classifications?: PvClassification[] | null;
   classifications?: PvClassification[] | null;
   matched_concepts?: PvConceptMatch[] | null;
@@ -48,6 +50,8 @@ function matchesOf(record: SegmentablePvRecord) {
 }
 
 export function derivePvDetectionSegment(record: SegmentablePvRecord): PvDetectionSegment {
+  if (record.reviewer_detection_segment === "health_experience") return "health_experience";
+  if (record.reviewer_detection_segment === "ae_adr") return "ae_adr";
   const classifications = classificationsOf(record);
   const matches = matchesOf(record);
   const ontology = record.ae_ontology || record.ontologyExtraction;
@@ -62,6 +66,9 @@ export function derivePvDetectionSegment(record: SegmentablePvRecord): PvDetecti
 }
 
 export function derivePvHealthExperienceTags(record: SegmentablePvRecord): PvHealthExperienceTag[] {
+  if (record.reviewer_detection_segment === "health_experience" && record.reviewer_health_experience_tags?.length) {
+    return [...new Set(record.reviewer_health_experience_tags)];
+  }
   const tags = new Set<PvHealthExperienceTag>();
   for (const classification of classificationsOf(record)) {
     const tag = HEALTH_TAG_BY_CLASSIFICATION[classification];

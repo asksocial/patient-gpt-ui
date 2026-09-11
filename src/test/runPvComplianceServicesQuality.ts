@@ -35,6 +35,8 @@ assert(healthExperienceResult.healthExperienceTags.includes("medication_error"),
 assert(healthExperienceResult.rationale.some((item) => item.includes("Health Experience Detection") && item.includes("separate from the AE/ADR Review Queue")), "Health-experience-only detections must explain their separate PV workflow destination.");
 assert(derivePvDetectionSegment({ proposed_classifications: healthExperienceResult.classifications, matched_concepts: healthExperienceResult.matches }) === "health_experience", "Persisted detection metadata must reproduce the health-experience segment.");
 assert(derivePvHealthExperienceTags({ proposed_classifications: ["pregnancy", "misuse_abuse"] }).join(",") === "pregnancy_exposure,misuse_abuse", "Health experience tagging must retain distinct special-situation categories.");
+assert(derivePvDetectionSegment({ proposed_classifications: ["adverse_event"], reviewer_detection_segment: "health_experience" }) === "health_experience", "A governed reviewer override must reclassify the effective segment without deleting the original AE/ADR proposal.");
+assert(derivePvHealthExperienceTags({ proposed_classifications: ["adverse_event"], reviewer_detection_segment: "health_experience", reviewer_health_experience_tags: ["product_quality_complaint"] }).join(",") === "product_quality_complaint", "Reviewer-confirmed Health Experience tags must override machine-proposed AE/ADR labels.");
 
 const supportedIdentifiability = assessIcsrIdentifiability({ original_verbatim: "I am a 42-year-old woman and developed a rash after Product A.", author_identifier: "Jane Smith" });
 assert(supportedIdentifiability.patient.status === "characteristics_detected" && supportedIdentifiability.patient.characteristicTypes.includes("age_or_age_category") && supportedIdentifiability.patient.criterionStatus === "yes" && supportedIdentifiability.reporter.status === "characteristics_detected", "One qualifying characteristic associated with a specific patient must satisfy the patient criterion while a named first-hand reporter remains verification-pending.");
@@ -171,6 +173,12 @@ const segmentedMetrics = derivePvOverviewMetrics({
 }).metrics;
 assert(segmentedMetrics.aeAdrDetections === 1 && segmentedMetrics.healthExperienceDetections === 1, "PV overview must present AE/ADR and broader health-experience detections as separate peer counts.");
 assert(segmentedMetrics.awaitingReview === 1, "Health-experience-only content must not inflate the AE/ADR Review Queue count.");
+const reviewerReclassifiedOverview = derivePvOverviewMetrics({
+  records: [{ ...overviewRecord("reviewer-reclassified", "health_experience"), proposed_classifications: ["adverse_event"], reviewer_detection_segment: "health_experience", reviewer_health_experience_tags: ["other_observation"] }],
+  reviews: [{ record_id: "reviewer-reclassified", reviewed_at: "2026-08-16T00:00:00.000Z" }],
+});
+assert(reviewerReclassifiedOverview.metrics.aeAdrDetections === 0 && reviewerReclassifiedOverview.metrics.healthExperienceDetections === 1 && reviewerReclassifiedOverview.metrics.reviewedRecords === 1, "Reviewer reclassification must move the record into Health Experience Detection while retaining the completed human review.");
+assert((reviewerReclassifiedOverview.statusCounts.new || 0) === 0 && (reviewerReclassifiedOverview.statusCounts.health_experience || 0) === 0, "Health Experience records must not inflate the AE/ADR lifecycle drill-down counts.");
 
 const parsedCsv = parsePvCsv(new TextEncoder().encode([
   "Date,Text,URL,ID",
@@ -335,6 +343,10 @@ assert(workbench.includes("Enter a reviewer rationale before saving this PV deci
 assert(workbench.includes('title="Initial relevance decision"') && workbench.includes("Mark as Relevant") && workbench.includes('review("close_not_relevant", false)'), "The structured-review workflow must require an explicit relevance decision before revealing the detailed assessment.");
 assert(workbench.includes('markedRelevant && !["transferred"') && workbench.includes("setMarkedRelevant(true)"), "Ontology and ICH case fields must remain hidden until the reviewer marks the mention relevant.");
 assert(workbench.includes('onReviewComplete?.(decision)') && workbench.includes('navigateTab("overview")'), "Either Close as Not Relevant action must return the reviewer to Compliance Overview after the retained decision succeeds.");
+for (const phrase of ["Reclassify as Health Experience", "Health Experience classification", "Save Health Experience reclassification", "Update reviewed mention", "Reviewer reclassified"]) {
+  assert(workbench.includes(phrase), `The governed Health Experience reclassification UX is missing ${phrase}.`);
+}
+assert(workbench.includes('navigateTab("health")') && workbench.includes('payload: { action: "reopen_review" }'), "A completed review must reopen through a governed action and a saved Health Experience reclassification must route to its destination view.");
 assert(workbench.includes('onNavigate?.(`pv_${nextTab}`)') && workbench.includes('navigateTab("overview")'), "PV section navigation must keep the page heading synchronized when a closed record returns to Compliance Overview.");
 assert(workbench.includes('option === "not_applicable" ? "N/A"') && workbench.includes('const choices = options.includes("not_applicable")'), "Every structured assessment dropdown must include an explicit N/A option.");
 assert(workbench.includes("PV_REVIEW_FIELD_TOOLTIPS") && workbench.includes("<FieldLabel labelText={labelText}"), "Structured-review fields must render contextual tooltips through the shared field-label control.");
@@ -367,12 +379,19 @@ assert(pvService.includes("patientCriterionStatus") && pvService.includes("contr
 assert(pvService.includes("reporterCriterionStatus") && pvService.includes("reporterAssessment?.relationship") && pvService.includes("reporterAssessment?.existenceStatus") && pvService.includes("verificationEvidence"), "Server-side escalation must independently enforce ICH-aligned reporter existence, first-hand knowledge, and verification evidence.");
 assert(pvService.includes("reportabilityIdentifiedAt: record.reportability_identified_at || undefined"), "A saved review decision must never substitute for the qualified reportability-identification timestamp that starts Day Zero.");
 assert(pvService.includes("startPvRecordReview") && pvService.includes('action: "review.start"') && pvService.includes("review_started_at"), "Continue to structured review must retain its own immutable human-review start timestamp.");
+for (const contract of ["reopenPvRecordReview", 'action: "review.reopen"', 'decision.action === "reclassify_health_experience"', "reviewer_detection_segment", "segment_reclassified_at", "originalDetectionSegment"]) {
+  assert(pvService.includes(contract), `The governed Health Experience reclassification service is missing ${contract}.`);
+}
 const reviewStartMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608230002_add_pv_review_start.sql"), "utf8");
 assert(reviewStartMigration.includes("review_started_at") && !reviewStartMigration.includes("update public.pv_records"), "Historical records must remain blank rather than inferring a structured-review timestamp from a different workflow event.");
+const healthReclassificationMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202609110001_add_pv_health_experience_reclassification.sql"), "utf8");
+for (const contract of ["reviewer_detection_segment", "reviewer_health_experience_tags", "segment_reclassified_at", "segment_reclassified_by", "reclassify_health_experience"]) {
+  assert(healthReclassificationMigration.includes(contract), `The Health Experience reclassification migration is missing ${contract}.`);
+}
 const recordsRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/records/route.ts"), "utf8");
 const libraryRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/library/route.ts"), "utf8");
 assert(recordsRoute.includes("therapeuticArea") && libraryRoute.includes("therapeuticArea"), "Live detection and detection-library APIs must retain therapeutic-area scope.");
-assert(recordsRoute.includes("listPvRecordsPage") && recordsRoute.includes('searchParams.has("page")') && pvService.includes('select("*", { count: "exact" })') && pvService.includes('.eq("status", input.status)') && pvService.includes(".range(from, from + pageSize - 1)"), "PV lifecycle drill-down must use an exact, status-filtered, server-paginated ledger query.");
+assert(recordsRoute.includes("listPvRecordsPage") && recordsRoute.includes('searchParams.has("page")') && pvService.includes('.eq("status", input.status)') && pvService.includes('record.detection_segment === "ae_adr"') && pvService.includes("aeAdrRecords.slice(from, from + pageSize)"), "PV lifecycle drill-down must use an exact, status-filtered, AE/ADR-only server-paginated ledger query.");
 assert(workbench.includes("therapeuticArea, libraries") && workbench.includes("Therapeutic area: {therapeuticArea}"), "PV Detection Library configuration must visibly inherit the selected therapeutic area.");
 const moduleView = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
 assert(!moduleView.includes("Botulinum toxin") && moduleView.includes("View all evidence"), "Shared module evidence UX must remain therapeutic-area agnostic.");

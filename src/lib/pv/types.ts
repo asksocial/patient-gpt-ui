@@ -13,6 +13,7 @@ export type PvClassification = (typeof PV_CLASSIFICATIONS)[number];
 export type PvRecordStatus =
   | "new"
   | "in_review"
+  | "health_experience"
   | "not_relevant"
   | "ready_for_transfer"
   | "transferred"
@@ -218,7 +219,7 @@ export type PvReviewDecision = {
   healthExperience: "yes" | "no" | "unclear";
   classifications: PvClassification[];
   rationale: string;
-  action: "escalate" | "close_not_relevant";
+  action: "escalate" | "close_not_relevant" | "reclassify_health_experience";
   ontologyReview?: PvAdverseEventOntology;
 };
 

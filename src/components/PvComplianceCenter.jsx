@@ -19,6 +19,7 @@ const CLASSIFICATIONS = [
   "adverse_event", "product_quality_complaint", "pregnancy", "medication_error",
   "lack_of_efficacy", "overdose", "misuse_abuse", "other",
 ];
+const HEALTH_EXPERIENCE_CLASSIFICATIONS = CLASSIFICATIONS.filter((classification) => classification !== "adverse_event");
 
 const PATIENT_CHARACTERISTIC_TYPES = [
   "age_or_age_category", "gestational_age", "sex_or_gender", "initials",
@@ -89,6 +90,7 @@ const PV_REVIEW_FIELD_TOOLTIPS = {
   "Targeted follow-up questions": "Specific questions needed to resolve missing or unclear case information where follow-up is permissible and feasible.",
   Classification: "Select every safety classification supported by the source. At least one is required for sponsor escalation.",
   "Reviewer rationale": "Document the evidence and reasoning supporting the relevance or non-relevance decision.",
+  "Health Experience classification": "Select every non-AE safety category supported by the source. At least one category is required to reclassify the mention into Health Experience Detection.",
 };
 
 function formatDate(value) {
@@ -273,10 +275,23 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
     window.setTimeout(() => document.getElementById("pv-structured-review")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
 
+  async function updateStructuredReview() {
+    const recordId = selectedRecord?.record?.id;
+    if (!recordId) return;
+    const reopened = await mutate(`/api/pv/records/${recordId}`, { method: "PATCH", payload: { action: "reopen_review" } }, `review-reopen:${recordId}`, "The completed review is open for a governed update; the original decision remains in record history.");
+    if (!reopened) return;
+    await openRecord(recordId);
+    setTab("review");
+    window.setTimeout(() => document.getElementById("pv-structured-review")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  }
+
   function completeRecordReview(decision) {
     if (decision === "close_not_relevant") {
       setSelectedRecord(null);
       navigateTab("overview");
+    } else if (decision === "reclassify_health_experience") {
+      setSelectedRecord(null);
+      navigateTab("health");
     }
   }
 
@@ -316,9 +331,9 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
       {error ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{error}<p className="mt-1 text-xs text-rose-200/60">Apply the PV Supabase migration before using persistent workflow features.</p></div> : null}
 
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} onSelectLifecycle={openLifecycle} onNavigate={navigateTab} /> : null}
-      {tab === "lifecycle" ? <LifecycleRecords status={lifecycleStatus} expectedCount={overview?.statusCounts?.[lifecycleStatus] || 0} therapeuticArea={therapeuticArea} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onBack={() => setTab("overview")} /> : null}
+      {tab === "lifecycle" ? <LifecycleRecords status={lifecycleStatus} expectedCount={overview?.statusCounts?.[lifecycleStatus] || 0} therapeuticArea={therapeuticArea} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onUpdateReview={updateStructuredReview} onBack={() => setTab("overview")} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
-      {tab === "health" ? <HealthExperienceDetection records={records} selected={selectedRecord} busy={busy} onOpen={openRecord} /> : null}
+      {tab === "health" ? <HealthExperienceDetection records={records} selected={selectedRecord} busy={busy} onOpen={openRecord} onUpdateReview={updateStructuredReview} /> : null}
       {tab === "review" ? <StructuredReview selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReviewComplete={completeRecordReview} onReturnToQueue={() => navigateTab("queue")} /> : null}
       {tab === "handoff" ? <SponsorHandoff therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} qaNotRelevantCases={qaNotRelevantCases} emailDeliveryConfigured={sponsorEmailDeliveryConfigured} busy={busy} onMutate={mutate} onOpenRecord={async (recordId) => { await openRecord(recordId); setTab("review"); }} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
@@ -350,14 +365,27 @@ function Overview({ metrics, statusCounts, onSelectLifecycle, onNavigate }) {
   </div>;
 }
 
-function PvMentionDialog({ selected, busy, onClose, onContinueReview }) {
+function PvMentionDialog({ selected, busy, onClose, onContinueReview, onUpdateReview }) {
   if (!selected) return null;
   const canContinue = ["new", "in_review"].includes(selected.record.status) && typeof onContinueReview === "function";
+  const canUpdate = ["not_relevant", "health_experience"].includes(selected.record.status) && typeof onUpdateReview === "function";
   const isHealthExperience = selected.record.detection_segment === "health_experience";
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention"><div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><ToneBadge tone={isHealthExperience ? "healthy" : "approaching"}>{detectionSegmentLabel(selected.record)} Detection</ToneBadge></div><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2>{isHealthExperience ? <div className="mt-3 flex flex-wrap gap-2">{healthExperienceTags(selected.record).map((tag) => <ToneBadge key={tag}>{label(tag)}</ToneBadge>)}</div> : null}</div><button type="button" onClick={onClose} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div><blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Detection pathway" value={detectionSegmentLabel(selected.record)} tooltip="The mutually exclusive PV screening segment assigned from retained classifications and matched concepts. Health Experience records remain separate from the AE/ADR Review Queue." /><Metric label="Original post date" value={formatDate(selected.record.posted_at)} tooltip="When the author originally published the mention online." /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} tooltip="When the mention became available to authorized AskSocial reviewers." /><Metric label={isHealthExperience ? "Health experience confidence" : "Detection score"} value={`${isHealthExperience ? selected.record.health_experience_confidence : selected.record.detection_score}/100`} tooltip={isHealthExperience ? "AskSocial’s confidence that the source contains a safety-relevant medical experience or special situation. It is not an AE/ADR determination." : PV_SCORE_TOOLTIP} /></div><IdentifiabilitySummary assessment={selected.record.identifiability_assessment} /><div className="mt-5 flex flex-wrap gap-3">{String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}{canContinue ? <button type="button" onClick={() => { onClose(); onContinueReview(); }} disabled={busy === `review-start:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-start:${selected.record.id}` ? "Starting structured review…" : "Continue to structured review"}</button> : null}</div></div></div>;
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full PV mention">
+    <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl">
+      <div className="flex items-start justify-between gap-4"><div><div className="flex flex-wrap items-center gap-2"><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><ToneBadge tone={isHealthExperience ? "healthy" : "approaching"}>{detectionSegmentLabel(selected.record)} Detection</ToneBadge>{selected.record.reviewer_detection_segment ? <ToneBadge tone="complete">Reviewer reclassified</ToneBadge> : null}</div><h2 className="mt-2 text-xl font-semibold text-white">{selected.record.product_name || "Potential PV record"} · {selected.record.potential_event || "Review required"}</h2>{isHealthExperience ? <div className="mt-3 flex flex-wrap gap-2">{healthExperienceTags(selected.record).map((tag) => <ToneBadge key={tag}>{label(tag)}</ToneBadge>)}</div> : null}</div><button type="button" onClick={onClose} className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Close</button></div>
+      <blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{selected.record.original_verbatim}</blockquote>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Detection pathway" value={detectionSegmentLabel(selected.record)} tooltip="The effective PV screening segment. A governed reviewer reclassification overrides the displayed pathway without changing the original automated detection evidence." /><Metric label="Original post date" value={formatDate(selected.record.posted_at)} tooltip="When the author originally published the mention online." /><Metric label="Content available to AskSocial" value={formatDate(selected.record.identified_at)} tooltip="When the mention became available to authorized AskSocial reviewers." /><Metric label={isHealthExperience ? "Health experience confidence" : "Detection score"} value={`${isHealthExperience ? selected.record.health_experience_confidence : selected.record.detection_score}/100`} tooltip={isHealthExperience ? "AskSocial’s confidence that the source contains a safety-relevant medical experience or special situation. It is not an AE/ADR determination." : PV_SCORE_TOOLTIP} /></div>
+      <IdentifiabilitySummary assessment={selected.record.identifiability_assessment} />
+      <div className="mt-5 flex flex-wrap gap-3">
+        {String(selected.record.source_url || "").startsWith("http") ? <a href={selected.record.source_url} target="_blank" rel="noreferrer" className="cursor-pointer rounded-xl border border-cyan-300/25 bg-cyan-300/[0.06] px-4 py-2.5 text-sm font-semibold text-cyan-300">Open original source ↗</a> : null}
+        {canContinue ? <button type="button" onClick={() => { onClose(); onContinueReview(); }} disabled={busy === `review-start:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-start:${selected.record.id}` ? "Starting structured review…" : "Continue to structured review"}</button> : null}
+        {canUpdate ? <button type="button" onClick={() => { onClose(); onUpdateReview(); }} disabled={busy === `review-reopen:${selected.record.id}`} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === `review-reopen:${selected.record.id}` ? "Opening review…" : "Update reviewed mention"}</button> : null}
+      </div>
+    </div>
+  </div>;
 }
 
-function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, busy, onOpen, onContinueReview, onBack }) {
+function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, busy, onOpen, onContinueReview, onUpdateReview, onBack }) {
   const pageSize = 20;
   const [page, setPage] = useState(1);
   const [records, setRecords] = useState([]);
@@ -397,7 +425,7 @@ function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, bu
   }
 
   return <div className="space-y-5">
-    {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} onContinueReview={onContinueReview} /> : null}
+    {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} onContinueReview={onContinueReview} onUpdateReview={onUpdateReview} /> : null}
     <Card title={`PV lifecycle · ${label(status)}`} subtitle={`${total} ${total === 1 ? "mention" : "mentions"} currently comprise this lifecycle count.`} actions={<button type="button" onClick={onBack} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 transition-colors hover:text-white">← Back to Compliance Overview</button>}>
       {loadError ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{loadError}</div> : loading ? <Empty>Loading {label(status)} mentions…</Empty> : records.length ? <>
         <div className="overflow-x-auto">
@@ -412,7 +440,7 @@ function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, bu
   </div>;
 }
 
-function HealthExperienceDetection({ records, selected, busy, onOpen }) {
+function HealthExperienceDetection({ records, selected, busy, onOpen, onUpdateReview }) {
   const pageSize = 20;
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
@@ -442,7 +470,7 @@ function HealthExperienceDetection({ records, selected, busy, onOpen }) {
   }
 
   return <div className="space-y-5">
-    {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} /> : null}
+    {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} onUpdateReview={onUpdateReview} /> : null}
     <Card title="Health Experience Detection" subtitle="Broader product-linked medical experiences and special situations are retained here separately from potential AE/ADR records in the Review Queue.">
       <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] p-4 text-xs leading-5 text-cyan-100/65">
         This segment includes medication errors, overdose, misuse or abuse, pregnancy exposure, lack of efficacy, product-quality complaints, and other safety-relevant observations. Slang, misspellings, and variable patient language are normalized through the configured detection concepts. These records are safety signals for surveillance—not confirmed adverse reactions.
@@ -652,6 +680,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
   const { record, clock, reviews, transfers, audit } = detail;
   const retainedOntology = reviews.find((review) => review.decision === "escalate")?.validated_ae_ontology;
   const [markedRelevant, setMarkedRelevant] = useState(["ready_for_transfer", "transferred", "acknowledged", "reconciled"].includes(record.status));
+  const [reclassifyingHealth, setReclassifyingHealth] = useState(false);
   const [productMention, setProductMention] = useState("unclear");
   const [healthExperience, setHealthExperience] = useState("unclear");
   const [selectedClasses, setSelectedClasses] = useState(record.proposed_classifications || []);
@@ -798,6 +827,13 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
       setReviewError("Enter a reviewer rationale before saving this PV decision.");
       return;
     }
+    if (decision === "reclassify_health_experience") {
+      const retainedHealthClasses = selectedClasses.filter((classification) => classification !== "adverse_event");
+      if (!retainedHealthClasses.length) {
+        setReviewError("Select at least one Health Experience classification before saving the reclassification.");
+        return;
+      }
+    }
     if (decision === "escalate") {
       if (productMention !== "yes") {
         setReviewError("Confirm that the source mentions or reasonably implies the sponsor product before escalating.");
@@ -854,9 +890,13 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
       }
     }
     setReviewError("");
-    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention, healthExperience, classifications: includeStructuredAssessment ? selectedClasses : [], rationale, decision, ontologyReview: includeStructuredAssessment ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : "Record retained and closed as not PV relevant.");
+    const reclassifying = decision === "reclassify_health_experience";
+    const classifications = reclassifying
+      ? selectedClasses.filter((classification) => classification !== "adverse_event")
+      : includeStructuredAssessment ? selectedClasses : [];
+    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention: reclassifying ? "yes" : productMention, healthExperience: reclassifying ? "yes" : healthExperience, classifications, rationale, decision, ontologyReview: includeStructuredAssessment && !reclassifying ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : reclassifying ? "Record reclassified and moved to Health Experience Detection." : "Record retained and closed as not PV relevant.");
     if (data) {
-      if (decision === "close_not_relevant") onReviewComplete?.(decision);
+      if (["close_not_relevant", "reclassify_health_experience"].includes(decision)) onReviewComplete?.(decision);
       else onRefresh();
     }
   }
@@ -874,12 +914,17 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
       </Card>
       <Card title="Compliance clock" subtitle={`Clock stage: ${label(clock.stage)}`}><div className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex flex-col items-start gap-2"><ToneBadge tone={clock.state}>{label(clock.state)}</ToneBadge><span className="text-[11px] leading-4 text-white/35">{clock.state === "not_started" ? "Awaiting reportability determination" : `${clock.percentConsumed}% consumed`}</span></div><div className="mt-3 rounded-lg border border-cyan-400/15 bg-cyan-400/[0.05] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Governing clock</p><p className="mt-1 text-xs font-medium text-cyan-100/75">{clock.governingClock === "reportability_identified_at" ? "Qualified reportability review" : clock.governingClock === "identified_at" ? "Reviewer identification" : label(clock.governingClock)}</p><p className="mt-1 text-[11px] text-white/35">Day zero: {formatDate(clock.governingTimestamp)}</p></div>{clock.state === "not_started" ? <p className="mt-3 text-xs leading-5 text-white/45">Confirm all four minimum ICSR criteria and escalate the record to start Day Zero.</p> : <><p className="mt-4 text-2xl font-semibold text-white">{Math.floor(clock.elapsedMinutes / 60)}h {clock.elapsedMinutes % 60}m</p><p className="mt-1 text-[11px] text-white/35">Elapsed in current stage</p><div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full ${clock.state === "breached" ? "bg-rose-400" : clock.state === "approaching" ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${Math.min(100, clock.percentConsumed)}%` }} /></div><dl className="mt-4 space-y-2 text-[11px]"><div className="flex justify-between gap-2"><dt className="text-white/35">Started</dt><dd className="text-right text-white/65">{formatDate(clock.startedAt)}</dd></div><div className="flex justify-between gap-2"><dt className="text-white/35">Due</dt><dd className="text-right text-white/65">{formatDate(clock.dueAt)}</dd></div><div className="flex justify-between gap-2"><dt className="text-white/35">Remaining</dt><dd className="text-right text-white/65">{clock.remainingMinutes ?? 0} min</dd></div></dl></>}</div></Card>
     </div>
-    {!markedRelevant && !["not_relevant", "transferred", "acknowledged", "reconciled"].includes(record.status) ? (
+    {!markedRelevant && !["not_relevant", "health_experience", "transferred", "acknowledged", "reconciled"].includes(record.status) ? (
       <Card title="Initial relevance decision" subtitle="Determine whether the mention contains a potential AE/ADR before opening the complete ontology and ICH case assessment.">
-        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-          <label className="text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /><textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={3} placeholder="Required when closing the mention as not relevant." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" /></label>
-          <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setMarkedRelevant(true); setReviewError(""); }} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black">Mark as Relevant</button><button type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant", false)} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Relevant"}</button></div>
-        </div>
+        {reclassifyingHealth ? <div className="space-y-4">
+          <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/[0.05] p-4"><p className="text-sm font-medium text-cyan-100/80">Reclassify as Health Experience</p><p className="mt-1 text-xs leading-5 text-white/45">Use this outcome when the mention is product-linked and safety-relevant but does not contain an AE/ADR signal. The original automated detection and prior review remain preserved in History &amp; Audit.</p></div>
+          <div><p className="text-xs font-medium text-white/55"><FieldLabel labelText="Health Experience classification" /></p><div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{HEALTH_EXPERIENCE_CLASSIFICATIONS.map((classification) => <label key={classification} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={selectedClasses.includes(classification)} onChange={() => toggleClassification(classification)} />{label(classification)}</label>)}</div></div>
+          <label className="block text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /><textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={4} placeholder="Document why the mention is a safety-relevant Health Experience rather than an AE/ADR." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" /></label>
+          <div className="flex flex-wrap gap-2"><button type="button" disabled={busy.startsWith("review:")} onClick={() => review("reclassify_health_experience", false)} className="cursor-pointer rounded-xl bg-cyan-200 px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:reclassify_health_experience" ? "Saving…" : "Save Health Experience reclassification"}</button><button type="button" onClick={() => { setReclassifyingHealth(false); setReviewError(""); }} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60">Cancel</button></div>
+        </div> : <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+          <label className="text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /><textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={3} placeholder="Required when closing or reclassifying the mention." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" /></label>
+          <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setMarkedRelevant(true); setReviewError(""); }} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black">Mark as Relevant</button><button type="button" onClick={() => { setSelectedClasses((current) => current.filter((classification) => classification !== "adverse_event")); setReclassifyingHealth(true); setReviewError(""); }} className="cursor-pointer rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-medium text-cyan-200">Reclassify as Health Experience</button><button type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant", false)} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Relevant"}</button></div>
+        </div>}
         {reviewError ? <p role="alert" className="mt-3 text-xs text-amber-300">{reviewError}</p> : null}
       </Card>
     ) : null}
@@ -1010,7 +1055,7 @@ function E2dTextArea({ labelText, value, onChange, placeholder, className = "", 
 function ReviewerWorkflowGuide() {
   const steps = [
     ["Inspect", "Read the full mention, provenance, timestamps, and original source."],
-    ["Relevance", "Choose Mark as Relevant only when the mention may contain an AE/ADR or special situation."],
+    ["Relevance", "Choose Mark as Relevant for a potential AE/ADR, Reclassify as Health Experience for a non-AE safety observation, or close the mention as not relevant."],
     ["Minimum criteria", "Confirm product and event. For the patient, enter one specific patient, select at least one controlled ICH characteristic, document supporting evidence, and attest that you verified it."],
     ["Safety review", "Confirm reporter identifiability, sponsor-ready adverse-event facts, classification, seriousness, duplicate status, and any targeted follow-up."],
     ["Decision", "Enter the rationale, then escalate only when all four criteria are Yes; that governed confirmation starts Day Zero."],

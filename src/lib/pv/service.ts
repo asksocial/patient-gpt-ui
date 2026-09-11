@@ -664,6 +664,10 @@ function compactPvRecordListItem(record: any) {
     health_experience_confidence: record.health_experience_confidence,
     detection_segment: record.detection_segment,
     health_experience_tags: record.health_experience_tags,
+    reviewer_detection_segment: record.reviewer_detection_segment,
+    reviewer_health_experience_tags: record.reviewer_health_experience_tags,
+    segment_reclassified_at: record.segment_reclassified_at,
+    segment_reclassified_by: record.segment_reclassified_by,
     publication_timestamp: record.publication_timestamp,
     collection_timestamp: record.collection_timestamp,
     review_timestamp: record.review_timestamp,
@@ -697,15 +701,23 @@ export async function listPvRecordsPage(principal: PlatformPrincipal, input: {
   const pageSize = Number.isFinite(input.pageSize) ? Math.max(1, Math.min(100, Math.floor(input.pageSize as number))) : 20;
   const from = (page - 1) * pageSize;
   const supabase = getSupabaseServerClient();
-  let query = supabase.from("pv_records").select("*", { count: "exact" })
-    .eq("principal_id", principal.principalId).eq("status", input.status)
-    .order("identified_at", { ascending: false }).range(from, from + pageSize - 1);
-  if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
-  const { data, error, count } = await query;
-  if (error) throw new Error(`Failed to load the ${input.status} PV lifecycle records: ${error.message}`);
+  const rows: any[] = [];
+  const databasePageSize = 1000;
+  for (let databaseFrom = 0; ; databaseFrom += databasePageSize) {
+    let query = supabase.from("pv_records").select("*")
+      .eq("principal_id", principal.principalId).eq("status", input.status)
+      .order("identified_at", { ascending: false }).range(databaseFrom, databaseFrom + databasePageSize - 1);
+    if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
+    const { data, error } = await query;
+    if (error) throw new Error(`Failed to load the ${input.status} PV lifecycle records: ${error.message}`);
+    rows.push(...(data || []));
+    if ((data || []).length < databasePageSize) break;
+  }
+  const aeAdrRecords = (await enrichPvRecordRows(principal, rows))
+    .filter((record: any) => record.detection_segment === "ae_adr");
   return {
-    records: await enrichPvRecordRows(principal, data || []),
-    total: count || 0,
+    records: aeAdrRecords.slice(from, from + pageSize),
+    total: aeAdrRecords.length,
     page,
     pageSize,
   };
@@ -999,9 +1011,46 @@ export async function startPvRecordReview(principal: PlatformPrincipal, recordId
   return { status: updated.status, reviewStartedAt: updated.review_started_at, reviewStartedBy: updated.review_started_by, alreadyStarted: false };
 }
 
+export async function reopenPvRecordReview(principal: PlatformPrincipal, recordId: string) {
+  assertPrincipal(principal);
+  const supabase = getSupabaseServerClient();
+  const { data: record, error } = await supabase.from("pv_records")
+    .select("id,status,review_started_at,review_started_by")
+    .eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
+  if (error || !record) throw new Error("PV record not found.");
+  if (!["not_relevant", "health_experience"].includes(record.status)) {
+    throw new Error("Only completed Not Relevant or Health Experience reviews can be updated through this workflow.");
+  }
+  const reopenedAt = new Date().toISOString();
+  const { data: updated, error: updateError } = await supabase.from("pv_records").update({
+    status: "in_review",
+    assigned_reviewer_id: principal.actorId,
+    updated_at: reopenedAt,
+  }).eq("id", recordId).eq("principal_id", principal.principalId)
+    .select("id,status,review_started_at,review_started_by").single();
+  if (updateError || !updated) throw new Error(`Failed to reopen the PV review: ${updateError?.message || "missing row"}`);
+  await appendPvAuditEvent(principal, {
+    action: "review.reopen",
+    resourceType: "pv_record",
+    resourceId: recordId,
+    outcome: "completed",
+    metadata: { previousStatus: record.status, reopenedAt, reviewer: principal.actorId, originalReviewStartedAt: record.review_started_at },
+  });
+  return { status: updated.status, previousStatus: record.status, reopenedAt };
+}
+
 export async function reviewPvRecord(principal: PlatformPrincipal, recordId: string, decision: PvReviewDecision) {
   assertPrincipal(principal);
   if (!decision.rationale.trim()) throw new Error("Reviewer rationale is required.");
+  const healthExperienceClassifications = decision.classifications.filter((classification) => classification !== "adverse_event");
+  if (decision.action === "reclassify_health_experience" && (
+    decision.productMention !== "yes" ||
+    decision.healthExperience !== "yes" ||
+    !healthExperienceClassifications.length ||
+    healthExperienceClassifications.length !== decision.classifications.length
+  )) {
+    throw new Error("Health Experience reclassification requires confirmed product relevance, a safety-relevant observation, and at least one non-AE Health Experience classification.");
+  }
   if (decision.action === "escalate" && (decision.productMention === "no" || decision.healthExperience === "no" || !decision.classifications.length)) {
     throw new Error("Escalation requires product relevance, a health experience or special situation, and at least one classification.");
   }
@@ -1037,9 +1086,11 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     }
   }
   const supabase = getSupabaseServerClient();
-  const { data: record } = await supabase.from("pv_records").select("id,status,reportability_identified_at").eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
+  const { data: record } = await supabase.from("pv_records")
+    .select("id,status,reportability_identified_at,reviewer_detection_segment,reviewer_health_experience_tags,proposed_classifications,matched_concepts,ae_ontology")
+    .eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
   if (!record) throw new Error("PV record not found.");
-  if (["transferred", "acknowledged", "reconciled"].includes(record.status)) throw new Error("Transferred PV records cannot be reclassified without a governed correction workflow.");
+  if (["transferred", "acknowledged", "reconciled", "ready_for_transfer"].includes(record.status)) throw new Error("Sponsor-ready or transferred PV records cannot be reclassified without a governed correction workflow.");
   const reviewedAt = new Date().toISOString();
   const { data: review, error: reviewError } = await supabase.from("pv_reviews").insert({
     principal_id: principal.principalId, record_id: recordId, reviewer_id: principal.actorId,
@@ -1048,7 +1099,9 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     validated_ae_ontology: decision.ontologyReview || {},
   }).select("*").single();
   if (reviewError || !review) throw new Error(`Failed to save PV review: ${reviewError?.message || "missing row"}`);
-  const nextStatus = decision.action === "escalate" ? "ready_for_transfer" : "not_relevant";
+  const nextStatus = decision.action === "escalate"
+    ? "ready_for_transfer"
+    : decision.action === "reclassify_health_experience" ? "health_experience" : "not_relevant";
   const recordUpdates: Record<string, unknown> = { status: nextStatus, assigned_reviewer_id: principal.actorId, updated_at: reviewedAt };
   const reportabilityIdentifiedAt = record.reportability_identified_at || reviewedAt;
   if (decision.action === "escalate") {
@@ -1056,10 +1109,21 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     recordUpdates.day_zero_basis = "reportability_identified_at";
     recordUpdates.day_zero_reason = "Day Zero began when the qualified reviewer confirmed the minimum ICSR criteria and escalated the AE/ADR for sponsor handoff.";
   }
+  if (decision.action === "reclassify_health_experience") {
+    recordUpdates.reviewer_detection_segment = "health_experience";
+    recordUpdates.reviewer_health_experience_tags = derivePvHealthExperienceTags({ classifications: healthExperienceClassifications });
+    recordUpdates.segment_reclassified_at = reviewedAt;
+    recordUpdates.segment_reclassified_by = principal.actorId;
+  } else {
+    recordUpdates.reviewer_detection_segment = null;
+    recordUpdates.reviewer_health_experience_tags = null;
+    recordUpdates.segment_reclassified_at = null;
+    recordUpdates.segment_reclassified_by = null;
+  }
   const { error: updateError } = await supabase.from("pv_records").update(recordUpdates)
     .eq("id", recordId).eq("principal_id", principal.principalId);
   if (updateError) throw new Error(`Failed to update PV record status: ${updateError.message}`);
-  await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, ontologyReviewed: Boolean(decision.ontologyReview), retained: true, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null, dayZeroStarted: decision.action === "escalate" && !record.reportability_identified_at } });
+  await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, originalDetectionSegment: derivePvDetectionSegment(record), reviewerDetectionSegment: decision.action === "reclassify_health_experience" ? "health_experience" : null, ontologyReviewed: Boolean(decision.ontologyReview), retained: true, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null, dayZeroStarted: decision.action === "escalate" && !record.reportability_identified_at } });
   return { review, status: nextStatus, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null };
 }
 

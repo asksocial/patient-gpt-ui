@@ -1,6 +1,7 @@
 import { calculatePvClock } from "./clock";
 import type { PvClassification, PvConceptMatch, PvRecordStatus, PvSlaPolicy } from "./types";
 import { derivePvDetectionSegment } from "./segmentation";
+import type { PvDetectionSegment, PvHealthExperienceTag } from "./segmentation";
 
 export const DEFAULT_PV_SLA: PvSlaPolicy = {
   reviewMinutes: 15 * 24 * 60,
@@ -23,6 +24,8 @@ type OverviewRecord = {
   proposed_classifications?: PvClassification[] | null;
   matched_concepts?: PvConceptMatch[] | null;
   ae_ontology?: { adverseEvents?: unknown[] } | null;
+  reviewer_detection_segment?: PvDetectionSegment | null;
+  reviewer_health_experience_tags?: PvHealthExperienceTag[] | null;
 };
 
 type OverviewReview = { record_id: string; reviewed_at: string };
@@ -84,6 +87,7 @@ export function derivePvOverviewMetrics(input: {
       .flatMap((list) => (list.items || []).map((item) => item.record_id))
   );
   const reviewedStatuses = new Set<PvRecordStatus>([
+    "health_experience",
     "not_relevant",
     "ready_for_transfer",
     "transferred",
@@ -93,16 +97,17 @@ export function derivePvOverviewMetrics(input: {
   const awaitingStatuses = new Set<PvRecordStatus>(["new", "in_review"]);
   const terminalStatuses = new Set<PvRecordStatus>(["not_relevant", "acknowledged", "reconciled"]);
 
-  const statusCounts = records.reduce((counts: Record<string, number>, record) => {
-    counts[record.status] = (counts[record.status] || 0) + 1;
-    return counts;
-  }, {});
   const aeAdrStatusCounts = aeAdrRecords.reduce((counts: Record<string, number>, record) => {
     counts[record.status] = (counts[record.status] || 0) + 1;
     return counts;
   }, {});
   const reviewedRecordIds = new Set(
     aeAdrRecords
+      .filter((record) => latestReviews.has(record.id) || reviewedStatuses.has(record.status))
+      .map((record) => record.id)
+  );
+  const completedReviewRecordIds = new Set(
+    records
       .filter((record) => latestReviews.has(record.id) || reviewedStatuses.has(record.status))
       .map((record) => record.id)
   );
@@ -177,7 +182,7 @@ export function derivePvOverviewMetrics(input: {
       totalRecords: records.length,
       aeAdrDetections: aeAdrRecords.length,
       healthExperienceDetections: healthExperienceRecords.length,
-      reviewedRecords: reviewedRecordIds.size,
+      reviewedRecords: completedReviewRecordIds.size,
       screeningCompliance: aeAdrRecords.length ? Math.round((triagedRecordIds.size / aeAdrRecords.length) * 1000) / 10 : 100,
       unassignedActiveClock,
       awaitingReview: awaitingReview.length,
@@ -187,6 +192,6 @@ export function derivePvOverviewMetrics(input: {
       nilReturns: (input.screeningRuns || []).filter((run) => run.status === "completed" && run.nil_return).length,
       reconciliationCompletion: aeAdrRecords.length ? Math.round(((aeAdrStatusCounts.reconciled || 0) / aeAdrRecords.length) * 100) : 100,
     },
-    statusCounts,
+    statusCounts: aeAdrStatusCounts,
   };
 }

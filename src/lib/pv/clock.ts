@@ -57,7 +57,7 @@ export function calculatePvClock(
     limit = policy.acknowledgmentMinutes;
     completedAt = validTime(input.acknowledgedAt);
   }
-  if (["not_relevant", "acknowledged", "reconciled"].includes(input.status)) {
+  if (["health_experience", "not_relevant", "acknowledged", "reconciled"].includes(input.status)) {
     stage = "complete";
     completedAt = completedAt || validTime(input.acknowledgedAt) || validTime(input.reviewedAt) || now.getTime();
   }

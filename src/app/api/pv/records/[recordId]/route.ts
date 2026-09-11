@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePvPrincipal, pvErrorResponse } from "../../../../../lib/pv/auth";
-import { getPvRecord, reviewPvRecord, startPvRecordReview, transferPvRecord } from "../../../../../lib/pv/service";
+import { getPvRecord, reopenPvRecordReview, reviewPvRecord, startPvRecordReview, transferPvRecord } from "../../../../../lib/pv/service";
 
 export const dynamic = "force-dynamic";
 export async function GET(_request: NextRequest, context: { params: Promise<{ recordId: string }> }) {
@@ -14,6 +14,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ r
     const body = await request.json();
     if (body?.action === "start_review") {
       return NextResponse.json({ ok: true, ...(await startPvRecordReview(principal, recordId)) });
+    }
+    if (body?.action === "reopen_review") {
+      return NextResponse.json({ ok: true, ...(await reopenPvRecordReview(principal, recordId)) });
     }
     if (body?.action === "transfer") {
       return NextResponse.json({ ok: true, transfer: await transferPvRecord(principal, recordId, { destination: String(body.destination || ""), transferMethod: body.transferMethod || "manual_export" }) });
