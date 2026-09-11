@@ -1,6 +1,9 @@
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
-import { analyzeEvidence } from "../../answering/evidence/analyzeEvidence";
-import { buildMedicalAestheticsEvidenceLabels } from "../evaluation/medicalAestheticsEvidenceLabels";
+import {
+  classifyPatientEvidence,
+  patientEvidenceTierLabel,
+  type PatientEvidenceTier,
+} from "./classifyPatientEvidence";
 
 export type PatientSignal = {
   id: string;
@@ -30,6 +33,11 @@ export type PatientEvidenceItem = {
   platform?: string;
   country?: string;
   voice: string;
+  audienceLabel: string;
+  evidenceTier: PatientEvidenceTier;
+  evidenceTierLabel: string;
+  classificationConfidence: number;
+  classificationRationale: string;
   qualityScore: number;
   matchedSignalIds: string[];
   matchedSignalLabels: string[];
@@ -57,6 +65,11 @@ export type PatientIntelligenceResult = {
     corpusFindingCount: number;
     patientVoiceFindingCount: number;
     caregiverVoiceFindingCount: number;
+    confirmedPatientFindingCount: number;
+    confirmedCaregiverFindingCount: number;
+    likelyPatientFindingCount: number;
+    likelyCaregiverFindingCount: number;
+    resolvedAudienceCounts: Record<string, number>;
     patientVoiceCoveragePercent: number;
     assessment: "adequate" | "limited" | "insufficient";
     limitations: string[];
@@ -81,6 +94,10 @@ export type PatientIntelligenceResult = {
     platform?: string;
     country?: string;
     voice: string;
+    audienceLabel: string;
+    evidenceTier: PatientEvidenceTier;
+    evidenceTierLabel: string;
+    classificationConfidence: number;
     qualityScore: number;
   }>;
 };
@@ -238,25 +255,22 @@ function originalSourceUrl(finding: CanonicalFinding, source?: EvidenceRef) {
   }
 }
 
-function patientEvidenceSubset(findings: CanonicalFinding[]) {
-  const silverLabels = buildMedicalAestheticsEvidenceLabels(findings);
-  const labelById = new Map(silverLabels.map((label) => [label.document_id.replace(/^"+|"+$/g, ""), label]));
+function classifyPatientCorpus(findings: CanonicalFinding[]) {
   return findings
     .map((finding) => ({
       finding,
-      intelligence: analyzeEvidence(finding),
-      label: labelById.get(findingId(finding)),
+      classification: classifyPatientEvidence(finding),
     }))
-    .filter(({ intelligence, label }) =>
-      label?.is_promotional_silver !== "yes" &&
-      label?.medical_aesthetics_relevance_silver !== "not_relevant" && (
-        label?.source_group_silver === "patient" ||
-        intelligence.voice === "patient" ||
-        intelligence.voice === "caregiver" ||
-        intelligence.evidenceClass === "patient_conversation" ||
-        intelligence.evidenceClass === "caregiver_conversation"
-      )
-    );
+    .map(({ finding, classification }) => ({
+      finding,
+      classification,
+      intelligence: classification.intelligence,
+    }));
+}
+
+function patientEvidenceSubset(findings: CanonicalFinding[]) {
+  return classifyPatientCorpus(findings)
+    .filter(({ classification }) => classification.eligible);
 }
 
 function matchedPatientSignals(
@@ -271,9 +285,10 @@ function matchedPatientSignals(
 
 function buildPatientEvidenceItem(
   finding: CanonicalFinding,
-  intelligence: ReturnType<typeof analyzeEvidence>,
+  classification: ReturnType<typeof classifyPatientEvidence>,
   dimension: PatientEvidenceDimension
 ): PatientEvidenceItem {
+  const intelligence = classification.intelligence;
   const source = bestEvidence(finding);
   const matchedSignals = matchedPatientSignals(finding, dimension);
   return {
@@ -289,6 +304,11 @@ function buildPatientEvidenceItem(
     platform: source?.platform,
     country: source?.country,
     voice: intelligence.voice,
+    audienceLabel: classification.resolvedAudience,
+    evidenceTier: classification.tier,
+    evidenceTierLabel: patientEvidenceTierLabel(classification.tier),
+    classificationConfidence: classification.confidence,
+    classificationRationale: classification.rationale,
     qualityScore: intelligence.qualityScore,
     matchedSignalIds: matchedSignals.map((signal) => signal.id),
     matchedSignalLabels: matchedSignals.map((signal) => signal.label),
@@ -322,6 +342,8 @@ export function buildPatientEvidenceCatalog(
       return true;
     })
     .sort((left, right) =>
+      Number(right.classification.tier.startsWith("confirmed_")) - Number(left.classification.tier.startsWith("confirmed_")) ||
+      right.classification.confidence - left.classification.confidence ||
       right.intelligence.qualityScore - left.intelligence.qualityScore ||
       matchedPatientSignals(right.finding, dimension).length - matchedPatientSignals(left.finding, dimension).length ||
       findingId(left.finding).localeCompare(findingId(right.finding))
@@ -340,7 +362,7 @@ export function buildPatientEvidenceCatalog(
     total: matching.length,
     items: matching
       .slice(offset, offset + pageSize)
-      .map(({ finding, intelligence }) => buildPatientEvidenceItem(finding, intelligence, dimension)),
+      .map(({ finding, classification }) => buildPatientEvidenceItem(finding, classification, dimension)),
   };
 }
 
@@ -349,9 +371,20 @@ export function buildPatientIntelligence(
   findings: CanonicalFinding[],
   generatedAt = new Date().toISOString()
 ): PatientIntelligenceResult {
-  const patient = patientEvidenceSubset(findings);
+  const classifiedCorpus = classifyPatientCorpus(findings);
+  const patient = classifiedCorpus.filter(({ classification }) => classification.eligible);
   const patientFindings = patient.map(({ finding }) => finding);
-  const caregiverCount = patient.filter(({ intelligence }) => intelligence.voice === "caregiver" || intelligence.evidenceClass === "caregiver_conversation").length;
+  const tierCount = (tier: PatientEvidenceTier) => patient.filter(({ classification }) => classification.tier === tier).length;
+  const confirmedPatientCount = tierCount("confirmed_patient");
+  const confirmedCaregiverCount = tierCount("confirmed_caregiver");
+  const likelyPatientCount = tierCount("likely_patient");
+  const likelyCaregiverCount = tierCount("likely_caregiver");
+  const caregiverCount = confirmedCaregiverCount + likelyCaregiverCount;
+  const resolvedAudienceCounts = classifiedCorpus.reduce<Record<string, number>>((counts, { classification }) => {
+    const audience = classification.resolvedAudience;
+    counts[audience] = (counts[audience] || 0) + 1;
+    return counts;
+  }, {});
   const coverage = findings.length ? (patientFindings.length / findings.length) * 100 : 0;
   const assessment = patientFindings.length >= 30 ? "adequate" : patientFindings.length >= 5 ? "limited" : "insufficient";
   const journeyStages = buildSignals(patientFindings, JOURNEY_PATTERNS);
@@ -386,7 +419,14 @@ export function buildPatientIntelligence(
     .sort((left, right) => right.count - left.count)
     .slice(0, 8);
 
-  const evidence = patient.slice(0, 20).map(({ finding, intelligence }) => {
+  const evidence = patient
+    .sort((left, right) =>
+      Number(right.classification.tier.startsWith("confirmed_")) - Number(left.classification.tier.startsWith("confirmed_")) ||
+      right.classification.confidence - left.classification.confidence ||
+      right.intelligence.qualityScore - left.intelligence.qualityScore
+    )
+    .slice(0, 20)
+    .map(({ finding, intelligence, classification }) => {
     const source = bestEvidence(finding);
     return {
       id: `patient:${findingId(finding)}`,
@@ -397,6 +437,10 @@ export function buildPatientIntelligence(
       platform: source?.platform,
       country: source?.country,
       voice: intelligence.voice,
+      audienceLabel: classification.resolvedAudience,
+      evidenceTier: classification.tier,
+      evidenceTierLabel: patientEvidenceTierLabel(classification.tier),
+      classificationConfidence: classification.confidence,
       qualityScore: intelligence.qualityScore,
     };
   });
@@ -413,10 +457,15 @@ export function buildPatientIntelligence(
       corpusFindingCount: findings.length,
       patientVoiceFindingCount: patientFindings.length,
       caregiverVoiceFindingCount: caregiverCount,
+      confirmedPatientFindingCount: confirmedPatientCount,
+      confirmedCaregiverFindingCount: confirmedCaregiverCount,
+      likelyPatientFindingCount: likelyPatientCount,
+      likelyCaregiverFindingCount: likelyCaregiverCount,
+      resolvedAudienceCounts,
       patientVoiceCoveragePercent: Math.round(coverage * 10) / 10,
       assessment,
       limitations: [
-        "Audience labels are machine-derived silver labels pending human adjudication.",
+        "Direct labels come from the evidence ontology; likely patient and caregiver labels are machine-derived from personal-experience signals and require human validation.",
         `The current ${therapeuticArea} corpus is not a statistically representative patient panel.`,
         caregiverCount ? "Caregiver findings are reported separately where present." : "No confidently classified caregiver evidence was available.",
       ],

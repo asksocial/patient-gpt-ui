@@ -48,6 +48,11 @@ function patientEvidenceTitle(item) {
   return item.mentionTitle || item.matchedSignalLabels?.[0] || "Patient evidence";
 }
 
+function readableLabel(value, fallback = "Not available") {
+  const normalized = String(value || "").trim();
+  return normalized ? normalized.replaceAll("_", " ") : fallback;
+}
+
 function PatientEvidenceDialog({ evidence, onClose }) {
   if (!evidence) return null;
   return (
@@ -58,12 +63,14 @@ function PatientEvidenceDialog({ evidence, onClose }) {
           <button type="button" onClick={onClose} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.06]">Close</button>
         </div>
         <blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{evidence.fullMention || evidence.quote}</blockquote>
-        <div className="mt-5 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-5 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-5">
           <div><p className="text-white/30">Source</p><p className="mt-1 text-white/65">{evidence.sourceLabel}</p></div>
-          <div><p className="text-white/30">Audience</p><p className="mt-1 capitalize text-white/65">{evidence.voice.replaceAll("_", " ")}</p></div>
+          <div><p className="text-white/30">Resolved audience</p><p className="mt-1 capitalize text-white/65">{readableLabel(evidence.audienceLabel || evidence.voice)}</p></div>
+          <div><p className="text-white/30">Patient-evidence tier</p><p className="mt-1 text-cyan-200/80">{evidence.evidenceTierLabel || "Direct patient evidence"}</p></div>
           <div><p className="text-white/30">Supporting signals</p><p className="mt-1 text-white/65">{evidence.matchedSignalLabels.join(", ")}</p></div>
           <div><p className="text-white/30">Published</p><p className="mt-1 text-white/65">{evidence.publishedAt || "Not available"}</p></div>
         </div>
+        {evidence.classificationRationale ? <p className="mt-4 text-xs leading-5 text-white/40">Classification rationale: <span className="text-white/65">{evidence.classificationRationale}</span> · {Math.round((evidence.classificationConfidence || 0) * 100)}% confidence</p> : null}
         {evidence.author ? <p className="mt-4 text-xs text-white/40">Author or account: <span className="text-white/65">{evidence.author}</span></p> : null}
         {evidence.url ? <a href={evidence.url} target="_blank" rel="noreferrer noopener" className="mt-6 inline-flex items-center rounded-xl border border-cyan-300/35 bg-cyan-300/[0.10] px-5 py-3 text-sm font-semibold text-cyan-200 transition hover:border-cyan-200/60 hover:bg-cyan-300/[0.16]">Open original source ↗</a> : null}
       </div>
@@ -206,9 +213,9 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
             <>
               <div className="mt-6 text-xs text-white/40">{evidenceCatalog.total.toLocaleString()} supporting mention{evidenceCatalog.total === 1 ? "" : "s"} · Page {evidenceCatalog.page} of {evidenceCatalog.pageCount}</div>
               <div className="mt-3 overflow-x-auto rounded-2xl border border-white/10">
-                <table className="w-full min-w-[1040px] table-fixed text-left text-sm">
+                <table className="w-full min-w-[1120px] table-fixed text-left text-sm">
                   <thead className="border-b border-white/10 bg-black/35 text-xs uppercase tracking-[0.12em] text-white/40">
-                    <tr><th className="w-[24%] px-4 py-3 font-semibold">Label</th><th className="w-[31%] px-4 py-3 font-semibold">Mention</th><th className="w-[13%] px-4 py-3 font-semibold">Source</th><th className="w-[10%] px-4 py-3 font-semibold">Audience</th><th className="w-[14%] px-4 py-3 font-semibold">Supporting Signals</th><th className="w-[8%] px-4 py-3 font-semibold">Quality</th></tr>
+                    <tr><th className="w-[20%] px-4 py-3 font-semibold">Label</th><th className="w-[27%] px-4 py-3 font-semibold">Mention</th><th className="w-[12%] px-4 py-3 font-semibold">Source</th><th className="w-[9%] px-4 py-3 font-semibold">Audience</th><th className="w-[14%] px-4 py-3 font-semibold">Evidence tier</th><th className="w-[12%] px-4 py-3 font-semibold">Supporting Signals</th><th className="w-[6%] px-4 py-3 font-semibold">Quality</th></tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.07]">
                     {evidenceCatalog.items.map((item) => (
@@ -216,7 +223,8 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
                         <td className="px-4 py-4"><button type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left font-semibold leading-5 text-white/80 hover:text-cyan-200">{patientEvidenceTitle(item)}</button></td>
                         <td className="px-4 py-4"><button type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75">{item.quote}</button></td>
                         <td className="px-4 py-4">{item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="font-medium text-cyan-300/85 underline decoration-cyan-300/30 underline-offset-4 hover:text-cyan-200">{item.sourceLabel} ↗</a> : <span className="text-white/35">{item.sourceLabel}</span>}</td>
-                        <td className="px-4 py-4 capitalize">{item.voice.replaceAll("_", " ")}</td>
+                        <td className="px-4 py-4 capitalize">{readableLabel(item.audienceLabel || item.voice)}</td>
+                        <td className="px-4 py-4 text-xs leading-5 text-cyan-200/75">{item.evidenceTierLabel || "Direct patient evidence"}<span className="mt-1 block text-white/30">{Math.round((item.classificationConfidence || 0) * 100)}% confidence</span></td>
                         <td className="px-4 py-4 text-xs leading-5">{item.matchedSignalLabels.join(", ")}</td>
                         <td className="px-4 py-4">{Math.round(item.qualityScore)}</td>
                       </tr>
@@ -242,7 +250,9 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-200/70">
           <span className="rounded-full border border-cyan-300/20 px-2 py-1">{result.dataQuality.assessment} coverage</span>
-          <span>{result.dataQuality.patientVoiceFindingCount} patient records</span>
+          <span>{result.dataQuality.patientVoiceFindingCount} patient/caregiver records</span>
+          <span>{(Number(result.dataQuality.confirmedPatientFindingCount || 0) + Number(result.dataQuality.confirmedCaregiverFindingCount || 0)).toLocaleString()} direct</span>
+          <span>{(Number(result.dataQuality.likelyPatientFindingCount || 0) + Number(result.dataQuality.likelyCaregiverFindingCount || 0)).toLocaleString()} likely</span>
           <span>{result.dataQuality.patientVoiceCoveragePercent}% of corpus</span>
         </div>
         <h2 className="mt-4 text-xl font-semibold text-white">{result.headline}</h2>
@@ -273,7 +283,10 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
               <blockquote className="text-sm leading-6 text-white/65">“{item.quote}”</blockquote>
               <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-white/35">
                 {item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="text-cyan-300 underline">{item.sourceLabel}</a> : <span>{item.sourceLabel}</span>}
-                <span>{item.voice} voice</span><span>quality {Math.round(item.qualityScore)}</span>
+                <span className="capitalize">{readableLabel(item.audienceLabel || item.voice)}</span>
+                <span className="text-cyan-200/70">{item.evidenceTierLabel || "Direct patient evidence"}</span>
+                <span>classification {Math.round((item.classificationConfidence || 0) * 100)}%</span>
+                <span>quality {Math.round(item.qualityScore)}</span>
               </div>
             </article>
           ))}

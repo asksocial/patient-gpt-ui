@@ -60,6 +60,10 @@ assert(clinicalTrials?.dataQuality.selectedFindingCount === clinicalTrialsCorpus
 assert(clinicalTrials.evidence.some((item) => item.evidenceClass === "clinical_study"), "Clinical Trials evidence must include directly classified study records.");
 const patient = buildPatientIntelligence("Botulinum toxin", corpus.findings, "2026-08-11T16:00:00.000Z");
 assert(patient.therapeuticArea === "Botulinum toxin" && patient.dataQuality.corpusFindingCount === corpus.findings.length && patient.dataQuality.patientVoiceFindingCount > 0, "Patient Intelligence must run against patient voice in the Botulinum toxin corpus.");
+assert(patient.dataQuality.patientVoiceFindingCount > 23, "The broader patient classifier must recover supported Botulinum toxin patient evidence beyond the legacy 23-record subset.");
+assert(patient.dataQuality.likelyPatientFindingCount > 0, "Botulinum toxin Patient Intelligence must expose a lower-confidence likely-patient tier.");
+assert(Object.values(patient.dataQuality.resolvedAudienceCounts).reduce((sum, count) => sum + count, 0) === corpus.findings.length, "Every Botulinum toxin finding must receive a meaningful Patient Intelligence audience resolution.");
+assert(!("unknown" in patient.dataQuality.resolvedAudienceCounts) && !("other" in patient.dataQuality.resolvedAudienceCounts), "Patient Intelligence must not leave unknown or other audience buckets unresolved.");
 
 const migration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608110001_register_botulinum_toxin.sql"), "utf8");
 assert(migration.includes("'Botulinum toxin'") && migration.includes("user_therapeutic_access"), "Staging migration must register and assign Botulinum toxin access.");
@@ -70,6 +74,9 @@ console.log(JSON.stringify({
   themes: intelligence.themeSummary.map((theme) => theme.themeId),
   modules,
   patientVoiceFindings: patient.dataQuality.patientVoiceFindingCount,
+  confirmedPatientOrCaregiverFindings: patient.dataQuality.confirmedPatientFindingCount + patient.dataQuality.confirmedCaregiverFindingCount,
+  likelyPatientOrCaregiverFindings: patient.dataQuality.likelyPatientFindingCount + patient.dataQuality.likelyCaregiverFindingCount,
+  resolvedPatientAudienceCounts: patient.dataQuality.resolvedAudienceCounts,
   knowledgeGraph: true,
   executiveBrief: true,
   longitudinalTracking: true,
