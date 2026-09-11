@@ -20,6 +20,30 @@ const corpus = loadCanonicalFindingsForAsk("Botulinum toxin");
 assert(corpus.status === "available", "Botulinum toxin canonical corpus must load.");
 assert(corpus.findings.length >= 1_000, "Botulinum toxin corpus must retain a substantive evidence set after quality filtering.");
 assert(corpus.findings.every((finding) => finding.therapeuticArea === "Botulinum toxin"), "Every Botulinum toxin finding must retain the canonical therapeutic-area label.");
+const rawCoreExport = fs.readFileSync(path.resolve(process.cwd(), "data/botulinum-toxin.csv"));
+assert(rawCoreExport[0] === 0xff && rawCoreExport[1] === 0xfe, "The Botulinum toxin core export must preserve its UTF-16LE BOM.");
+const coreExportLines = rawCoreExport
+  .toString("utf16le")
+  .replace(/^\uFEFF/, "")
+  .split(/\r?\n/)
+  .filter(Boolean);
+const coreExportHeaders = coreExportLines[0].split("\t");
+const coreExportUrlIndex = coreExportHeaders.indexOf("URL");
+const coreExportSourceIndex = coreExportHeaders.indexOf("Source");
+const coreExportHitSentenceIndex = coreExportHeaders.indexOf("Hit Sentence");
+assert(coreExportUrlIndex >= 0 && coreExportSourceIndex >= 0 && coreExportHitSentenceIndex >= 0, "The Botulinum toxin core export must retain URL, Source, and Hit Sentence columns.");
+const coreExportRows = coreExportLines.slice(1).map((line) => line.split("\t"));
+assert(coreExportRows.length === 5_000, "The Botulinum toxin core export must retain all 5,000 source rows.");
+assert(coreExportRows.every((row) => row.length === coreExportHeaders.length), "Every Botulinum toxin core-export row must retain the complete tab-delimited schema.");
+const redditRows = coreExportRows.filter((row) => {
+  const source = (row[coreExportSourceIndex] || "").toLowerCase();
+  const url = row[coreExportUrlIndex] || "";
+  return source.includes("reddit") || /^https:\/\/(?:[^/]+\.)?reddit\.com\//i.test(url);
+});
+const enrichedRedditRows = redditRows.filter((row) => Boolean(row[coreExportHitSentenceIndex]?.trim()));
+assert(redditRows.length === 1_133, "The Botulinum toxin core export must retain all 1,133 Reddit source records.");
+assert(enrichedRedditRows.length >= 800, "At least 800 Reddit records must retain URL-matched verbatim Hit Sentence text.");
+assert(enrichedRedditRows.every((row) => !/^\[\s*(deleted|removed|removed by moderator)\s*\]/i.test(row[coreExportHitSentenceIndex])), "Deleted or removed Reddit placeholders must not be treated as verbatim evidence.");
 const liveFindings = corpus.findings as Array<any>;
 assert(liveFindings.some((finding) => finding.title), "Headline aliases must populate finding titles.");
 assert(liveFindings.some((finding) => finding.platform), "Source aliases must populate evidence platforms.");
@@ -71,6 +95,8 @@ assert(migration.includes("'Botulinum toxin'") && migration.includes("user_thera
 console.log(JSON.stringify({
   therapeuticArea: coverage.therapeuticArea,
   corpusFindings: corpus.findings.length,
+  redditSourceRows: redditRows.length,
+  redditRowsWithVerbatimHitSentence: enrichedRedditRows.length,
   themes: intelligence.themeSummary.map((theme) => theme.themeId),
   modules,
   patientVoiceFindings: patient.dataQuality.patientVoiceFindingCount,
