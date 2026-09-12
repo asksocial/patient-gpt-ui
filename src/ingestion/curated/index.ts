@@ -1,5 +1,9 @@
 import fs from "fs";
 import path from "path";
+import geneTherapyRecords from "./gene_therapy.json";
+import geneTherapySocialRecords from "./gene_therapy_social.json";
+import hepatitisBRecords from "./hepatitis_B.json";
+import hepatitisBReportRecords from "./hepatitis_b_part1.json";
 
 export type CuratedFindingRecord = {
   id: string;
@@ -127,7 +131,21 @@ function getCuratedFilePath(profileId: string): string {
   return path.resolve(__dirname, `${profileId}.json`);
 }
 
+const BUNDLED_CURATED_RECORDS: Record<string, unknown[]> = {
+  gene_therapy: geneTherapyRecords,
+  gene_therapy_social: geneTherapySocialRecords,
+  hepatitis_b: hepatitisBRecords,
+  hepatitis_b_part1: hepatitisBReportRecords,
+};
+
 export function ingestCurated(profileId: string): CuratedFindingRecord[] {
+  const bundledRecords = BUNDLED_CURATED_RECORDS[profileId];
+  if (bundledRecords) {
+    return bundledRecords.map((record) =>
+      normalizeCuratedRecord(record as CuratedFindingRecord)
+    );
+  }
+
   const filePath = getCuratedFilePath(profileId);
 
   if (!fs.existsSync(filePath)) {
