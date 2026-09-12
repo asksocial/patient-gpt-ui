@@ -404,7 +404,7 @@ const recordsRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv
 const libraryRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/library/route.ts"), "utf8");
 assert(recordsRoute.includes("therapeuticArea") && libraryRoute.includes("therapeuticArea"), "Live detection and detection-library APIs must retain therapeutic-area scope.");
 assert(recordsRoute.includes("listPvRecordsPage") && recordsRoute.includes('searchParams.has("page")') && pvService.includes('.eq("status", input.status)') && pvService.includes('record.detection_segment === "ae_adr"') && pvService.includes("aeAdrRecords.slice(from, from + pageSize)"), "PV lifecycle drill-down must use an exact, status-filtered, AE/ADR-only server-paginated ledger query.");
-assert(workbench.includes("therapeuticArea, libraries") && workbench.includes("Therapeutic area: {therapeuticArea}"), "PV Detection Library configuration must visibly inherit the selected therapeutic area.");
+assert(workbench.includes("therapeuticArea, libraries") && workbench.includes("Topic: {therapeuticArea}"), "PV Detection Library configuration must visibly inherit the selected topic.");
 const moduleView = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
 assert(!moduleView.includes("Botulinum toxin") && moduleView.includes("View all evidence"), "Shared module evidence UX must remain therapeutic-area agnostic.");
 assert(!pvService.includes("proposedAdverseEventOntology") && !pvService.includes("validatedAdverseEventOntology"), "Sponsor transfers must not expose parallel proposed and validated ontology fields.");

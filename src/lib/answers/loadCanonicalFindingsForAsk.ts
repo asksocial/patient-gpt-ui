@@ -289,7 +289,7 @@ export function loadCanonicalFindingsForAsk(
       status: "unavailable",
       therapeuticAreaId,
       reason:
-        "No validated canonical finding corpus is configured for this therapeutic area.",
+        "No validated canonical finding corpus is configured for this topic.",
       findings: [],
     };
   }

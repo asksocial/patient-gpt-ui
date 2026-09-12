@@ -429,7 +429,7 @@ function buildNoEvidenceAnswer(
       emergingNarratives: [],
     },
     whatThisMeans:
-      "This is a source-coverage gap, not evidence that relevant conversation is absent. Load and validate the therapeutic-area dataset before drawing a strategic conclusion.",
+      "This is a source-coverage gap, not evidence that relevant conversation is absent. Load and validate the topic dataset before drawing a strategic conclusion.",
     recommendedActions: [
       `Load or approve a curated or social intelligence dataset for ${therapeuticArea}.`,
       "Rerun the question after ingestion and coverage validation complete.",
@@ -597,7 +597,7 @@ You must return valid JSON only.
 QUESTION:
 ${question}
 
-THERAPEUTIC AREA:
+TOPIC:
 ${therapeuticArea}
 
 ${modeInstructions}

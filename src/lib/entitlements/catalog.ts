@@ -86,7 +86,7 @@ export const ENTITLEMENT_CATALOG: EntitlementDefinition[] = [
     key: "admin_console",
     label: "Admin Console",
     description:
-      "Therapeutic-area and entitlement administration.",
+      "Topic and entitlement administration.",
     defaultGranted: false,
   },
   {

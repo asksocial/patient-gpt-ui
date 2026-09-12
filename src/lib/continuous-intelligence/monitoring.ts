@@ -34,7 +34,7 @@ export async function createMonitoringProfile(
   }
 ) {
   if (!input.workspaceId || !input.name.trim() || !input.query.trim() || !input.therapeuticArea.trim()) {
-    throw new Error("Workspace, name, therapeutic area, and query are required.");
+    throw new Error("Workspace, name, topic, and query are required.");
   }
   const { data: workspace } = await getSupabaseServerClient().from("intelligence_workspaces").select("id")
     .eq("id", input.workspaceId).eq("principal_id", principal.principalId).maybeSingle();

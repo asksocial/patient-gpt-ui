@@ -44,7 +44,7 @@ export async function getActiveTherapeuticAreas(): Promise<
 
   if (error) {
     throw new Error(
-      `Failed to load therapeutic areas: ${error.message}`
+      `Failed to load topics: ${error.message}`
     );
   }
 
@@ -85,7 +85,7 @@ export async function getUserTherapeuticAreas(
 
   if (error) {
     throw new Error(
-      `Failed to load user therapeutic-area access: ${error.message}`
+      `Failed to load user topic access: ${error.message}`
     );
   }
 
@@ -118,7 +118,7 @@ export function validateTherapeuticAreaAssignments(
 
   if (invalid.length) {
     throw new Error(
-      `Unknown or inactive therapeutic areas: ${invalid.join(
+      `Unknown or inactive topics: ${invalid.join(
         ", "
       )}`
     );
@@ -203,7 +203,7 @@ export async function replaceUserTherapeuticAreas(
 
     if (error) {
       throw new Error(
-        `Failed to assign therapeutic areas: ${error.message}`
+        `Failed to assign topics: ${error.message}`
       );
     }
   }
@@ -242,7 +242,7 @@ export async function replaceUserTherapeuticAreas(
       }
 
       throw new Error(
-        `Failed to remove therapeutic areas: ${error.message}`
+        `Failed to remove topics: ${error.message}`
       );
     }
   }

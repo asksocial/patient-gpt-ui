@@ -262,7 +262,7 @@ export const PATCH = withAdmin(
           {
             ok: false,
             error:
-              "Therapeutic areas can only be assigned to users",
+              "Topics can only be assigned to users",
           },
           { status: 400 }
         );

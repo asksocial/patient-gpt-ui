@@ -82,7 +82,7 @@ const COVERAGE: TherapeuticAreaCoverage[] = [
     longitudinalIntelligenceAvailable:
       false,
     reason:
-      "A validated finding-level canonical corpus has not yet been approved for this therapeutic area.",
+      "A validated finding-level canonical corpus has not yet been approved for this topic.",
   },
 ];
 
@@ -129,7 +129,7 @@ export function getTherapeuticAreaCoverage(
     longitudinalIntelligenceAvailable:
       false,
     reason:
-      "This therapeutic area is not present in the validated analytical coverage registry.",
+      "This topic is not present in the validated analytical coverage registry.",
   };
 }
 

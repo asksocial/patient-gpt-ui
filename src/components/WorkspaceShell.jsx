@@ -1040,7 +1040,7 @@ export default function WorkspaceShell() {
         const data = await res.json();
 
         if (!res.ok || !data.ok) {
-          throw new Error(data.error || "Failed to load therapeutic areas");
+          throw new Error(data.error || "Failed to load topics");
         }
 
         const areas = sortTherapeuticAreas(
@@ -1056,7 +1056,7 @@ export default function WorkspaceShell() {
           });
         }
       } catch (err) {
-        setError(err?.message || "Failed to load therapeutic areas");
+        setError(err?.message || "Failed to load topics");
       } finally {
         setLoadingAreas(false);
       }
@@ -1818,7 +1818,7 @@ export default function WorkspaceShell() {
 
             <div className="mt-8">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                Therapeutic area
+                Topic
               </label>
 
               <select
@@ -1830,7 +1830,7 @@ export default function WorkspaceShell() {
                 {loadingAreas ? (
                   <option>Loading...</option>
                 ) : therapeuticAreas.length === 0 ? (
-                  <option>No therapeutic areas found</option>
+                  <option>No topics found</option>
                 ) : (
                   therapeuticAreas.map((area) => (
                     <option key={area} value={area}>

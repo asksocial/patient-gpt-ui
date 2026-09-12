@@ -274,7 +274,7 @@ export default function AskSocialChat() {
 
             <div className="w-full max-w-sm">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                Therapeutic area
+                Topic
               </label>
               <select
                 value={therapeuticArea}

@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           from: fromEmail,
           to: [recipientEmail],
-          subject: mode === "qa_not_relevant" ? `[QA TEST - NOT FOR SUBMISSION] AskSocial PV export - ${therapeuticArea || "All therapeutic areas"}` : `AskSocial PV sponsor screening report - ${therapeuticArea || "All therapeutic areas"}`,
+          subject: mode === "qa_not_relevant" ? `[QA TEST - NOT FOR SUBMISSION] AskSocial PV export - ${therapeuticArea || "All topics"}` : `AskSocial PV sponsor screening report - ${therapeuticArea || "All topics"}`,
           html: mode === "qa_not_relevant"
             ? `<p><strong>QA TEST ONLY - NOT FOR SPONSOR SUBMISSION OR REGULATORY REPORTING.</strong></p><p>The attached AskSocial PDF contains ${cases.length} mention${cases.length === 1 ? "" : "s"} closed as Not Relevant and is provided only to validate export and handoff mechanics.</p>`
             : `<p>Please find attached the governed AskSocial PV sponsor screening report containing ${cases.length} escalated mention${cases.length === 1 ? "" : "s"}.</p><p>This working document supports ICH E2D(R1) intake and does not replace qualified medical review or regional reporting requirements.</p>`,

@@ -42,7 +42,7 @@ export function compareThemeKnowledgeSnapshots(
     current.therapeuticArea
   ) {
     throw new Error(
-      "Knowledge snapshots must belong to the same therapeutic area."
+      "Knowledge snapshots must belong to the same topic."
     );
   }
 

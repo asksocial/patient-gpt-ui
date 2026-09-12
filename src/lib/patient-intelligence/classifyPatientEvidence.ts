@@ -265,7 +265,7 @@ export function classifyPatientEvidence(
 
   if (qualifiesAsLikelyPatient) {
     const signals = ["Personal or community-compatible publication", "Treatment or health-experience context"];
-    if (therapeuticProfileContext) signals.push("Active therapeutic-area profile term");
+    if (therapeuticProfileContext) signals.push("Active topic profile term");
     if (firstPerson) signals.push("First-person language");
     if (directExperience) signals.push("Direct treatment-experience language");
     if (livedOutcome) signals.push("Personal outcome or recovery language");

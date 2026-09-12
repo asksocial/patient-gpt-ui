@@ -75,7 +75,7 @@ function EmptyState({ therapeuticArea }) {
           Knowledge graph not available yet
         </h2>
         <p className="mt-3 text-sm leading-6 text-white/50">
-          Ask a question about {therapeuticArea || "the selected therapeutic area"} first. AskSocial will map evidence-qualified themes and their supported relationships here.
+          Ask a question about {therapeuticArea || "the selected topic"} first. AskSocial will map evidence-qualified themes and their supported relationships here.
         </p>
         <p className="mt-3 text-xs leading-5 text-white/35">
           Relationships are shown only when supported by the analyzed evidence; missing links are not inferred.

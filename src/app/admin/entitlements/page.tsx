@@ -431,7 +431,7 @@ export default function EntitlementsAdminPage() {
       );
       setMessage(
         subjectType === "user"
-          ? "Therapeutic areas, modules, PV Compliance, and access capabilities saved."
+          ? "Topics, modules, PV Compliance, and access capabilities saved."
           : "Organization access capabilities saved."
       );
     } catch (error) {
@@ -457,7 +457,7 @@ export default function EntitlementsAdminPage() {
           User Access Administration
         </h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-white/55">
-          Select a user, then assign their therapeutic areas, licensed modules, and PV Compliance access from one governed screen. User settings take precedence over organization settings and platform defaults.
+          Select a user, then assign their topics, licensed modules, and PV Compliance access from one governed screen. User settings take precedence over organization settings and platform defaults.
         </p>
 
         <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
@@ -594,13 +594,13 @@ export default function EntitlementsAdminPage() {
           {subjectType === "user" ? (
             <div className="mt-6 border-b border-white/10 pb-6">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-300">
-                1 · Therapeutic Areas
+                1 · Topics
               </p>
               <h3 className="mt-1 text-lg font-semibold">
-                Assign Therapeutic Areas by user
+                Assign Topics by user
               </h3>
               <p className="mt-1 text-sm leading-6 text-white/45">
-                Select every therapeutic area whose corpus and intelligence this user may access.
+                Select every topic whose corpus and intelligence this user may access.
               </p>
               <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {therapeuticAreaCatalog.length ? (
@@ -640,7 +640,7 @@ export default function EntitlementsAdminPage() {
                   })
                 ) : (
                   <p className="text-sm text-white/45">
-                    No active therapeutic areas are available.
+                    No active topics are available.
                   </p>
                 )}
               </div>

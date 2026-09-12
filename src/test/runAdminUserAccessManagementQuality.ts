@@ -276,7 +276,7 @@ const contracts = [
   ],
   [
     files.entitlementAdminPage,
-    "Assign Therapeutic Areas by user",
+    "Assign Topics by user",
   ],
   [
     files.entitlementAdminPage,
@@ -338,6 +338,16 @@ for (const [file, contract] of contracts) {
       `User-access backend is missing the required contract: ${contract}`
     );
   }
+}
+
+if (
+  files.workspaceShell.includes("Therapeutic area") ||
+  files.entitlementAdminPage.includes("Therapeutic area") ||
+  files.entitlementAdminPage.includes("Therapeutic Areas")
+) {
+  throw new Error(
+    "User-facing workspace and administration controls must label the selection as Topic."
+  );
 }
 
 console.log(

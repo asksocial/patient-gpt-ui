@@ -37,7 +37,7 @@ export async function extractCuratedThemes(
   const prompt = `
 You are extracting curated intelligence themes from a social intelligence report.
 
-Therapeutic area: ${therapeuticArea}
+Topic: ${therapeuticArea}
 Quarter: ${quarter ?? "Unknown"}
 
 Task:

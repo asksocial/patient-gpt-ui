@@ -74,7 +74,7 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: false,
-        error: error?.message || "Failed to load therapeutic areas",
+        error: error?.message || "Failed to load topics",
         therapeuticAreas: [],
       },
       { status: 500 }

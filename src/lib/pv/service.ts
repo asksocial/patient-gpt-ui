@@ -263,7 +263,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
   const evidenceHash = hashPayload({ verbatim: input.verbatim, url: input.sourceUrl, postedAt: input.postedAt, parentContext: input.parentContext, threadContext: input.threadContext });
   const identificationTimestamp = input.identifiedAt || new Date().toISOString();
   if (input.therapeuticArea?.trim() && library.therapeutic_area && input.therapeuticArea.trim() !== library.therapeutic_area) {
-    throw new Error("The selected PV Detection Library belongs to a different therapeutic area.");
+    throw new Error("The selected PV Detection Library belongs to a different topic.");
   }
   const therapeuticArea = input.therapeuticArea?.trim() || String(library.therapeutic_area || "").trim() || null;
 
@@ -357,7 +357,7 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
   if (libraryError || !library) throw new Error("Select an active PV Detection Library owned by this tenant.");
   const therapeuticArea = input.therapeuticArea?.trim() || String(library.therapeutic_area || "").trim() || null;
   if (input.therapeuticArea?.trim() && library.therapeutic_area && input.therapeuticArea.trim() !== library.therapeutic_area) {
-    throw new Error("The selected PV Detection Library belongs to a different therapeutic area.");
+    throw new Error("The selected PV Detection Library belongs to a different topic.");
   }
   if (input.sourceId) {
     const { data: source, error: sourceError } = await supabase.from("pv_sources").select("id")
@@ -368,7 +368,7 @@ export async function importPvCsvBatch(principal: PlatformPrincipal, input: {
     .eq("principal_id", principal.principalId).eq("file_hash", input.fileHash).maybeSingle();
   if (existing) {
     if (existing.therapeutic_area && therapeuticArea && existing.therapeutic_area !== therapeuticArea) {
-      throw new Error("This CSV is already governed under a different therapeutic area.");
+      throw new Error("This CSV is already governed under a different topic.");
     }
     const enrichment = await enrichPvRecordsWithAvailableMetadata(principal, input.rows, {
       therapeuticArea, resourceId: String(existing.id), source: "repeat_csv_import",
@@ -876,13 +876,13 @@ export async function createPvReviewList(principal: PlatformPrincipal, input: {
   const name = input.name.trim();
   const therapeuticArea = input.therapeuticArea.trim();
   const recordIds = [...new Set(input.recordIds.map((id) => id.trim()).filter(Boolean))];
-  if (!name || !therapeuticArea || !recordIds.length) throw new Error("List name, therapeutic area, and at least one PV mention are required.");
+  if (!name || !therapeuticArea || !recordIds.length) throw new Error("List name, topic, and at least one PV mention are required.");
   if (recordIds.length > 1000) throw new Error("A PV review list can contain at most 1,000 mentions.");
   const supabase = getSupabaseServerClient();
   const { data: records, error: recordError } = await supabase.from("pv_records").select("id")
     .eq("principal_id", principal.principalId).eq("therapeutic_area", therapeuticArea).in("id", recordIds);
   if (recordError) throw new Error(`Failed to validate selected PV mentions: ${recordError.message}`);
-  if ((records || []).length !== recordIds.length) throw new Error("One or more selected PV mentions are outside the permitted tenant or therapeutic area.");
+  if ((records || []).length !== recordIds.length) throw new Error("One or more selected PV mentions are outside the permitted tenant or topic.");
   const now = new Date().toISOString();
   const { data: list, error: listError } = await supabase.from("pv_review_lists").insert({
     principal_id: principal.principalId, therapeutic_area: therapeuticArea, name,
