@@ -474,7 +474,7 @@ async function ensureBotulinumPvLibrary(principal: PlatformPrincipal) {
     }).eq("id", library.id).eq("principal_id", principal.principalId).select("*").single();
     if (error || !data) throw new Error(`Failed to activate the Botulinum toxin PV library: ${error?.message || "missing row"}`);
     library = data;
-    await appendPvAuditEvent(principal, { action: "detection_library.bootstrap", resourceType: "detection_library", resourceId: String(library.id), outcome: "completed", metadata: { corpusId: BOTULINUM_PV_CORPUS_ID, therapeuticArea: BOTULINUM_PV_THERAPEUTIC_AREA, conceptCount: BOTULINUM_PV_CONCEPTS.length } });
+    await appendPvAuditEvent(principal, { action: "detection_library.bootstrap", resourceType: "detection_library", resourceId: String(library.id), outcome: "completed", metadata: { corpusId: BOTULINUM_PV_CORPUS_ID, therapeuticArea: BOTULINUM_PV_THERAPEUTIC_AREA, conceptCount: BOTULINUM_PV_CONCEPTS.length, classifierVersion: PV_CLASSIFIER_VERSION } });
   }
   return library;
 }
@@ -558,7 +558,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     }
     if (newlyDetected.length) await appendPvAuditEvent(principal, {
       action: "csv_import.reclassify", resourceType: "pv_import_batch", resourceId: String(existingBatch.id), outcome: "completed",
-      metadata: { therapeuticArea: corpus.therapeuticArea, classifierVersion: PV_CLASSIFIER_VERSION, newlyDetectedCount: newlyDetected.length, detectionSegmentation: ["ae_adr", "health_experience"] },
+      metadata: { therapeuticArea: corpus.therapeuticArea, classifierVersion: PV_CLASSIFIER_VERSION, sourceFiles: corpus.sourceFiles, newlyDetectedCount: newlyDetected.length, detectionSegmentation: ["ae_adr", "health_experience"] },
     });
     return { ...retainedBatch, alreadyImported: true, newlyDetectedCount: newlyDetected.length, ...enrichment };
   }
@@ -574,7 +574,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     day_zero_basis: "reportability_identified_at", row_count: corpus.rowCount, status: "processing",
   }).select("*").single();
   if (batchError || !batch) throw new Error(`Failed to register the bundled PV corpus: ${batchError?.message || "missing batch"}`);
-  await appendPvAuditEvent(principal, { action: "csv_import.available", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, fileHash: corpus.fileHash, availableAt, contentAvailabilityDate: availableAt, dayZeroBasis: "reportability_identified_at", rowCount: corpus.rowCount } });
+  await appendPvAuditEvent(principal, { action: "csv_import.available", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, fileHash: corpus.fileHash, sourceFiles: corpus.sourceFiles, availableAt, contentAvailabilityDate: availableAt, dayZeroBasis: "reportability_identified_at", rowCount: corpus.rowCount } });
 
   const candidateIds = corpus.candidates.map((row) => row.externalId);
   const existingIds = new Set<string>();
@@ -601,7 +601,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     failed_count: failedCount, status, error_summary: corpus.errors.slice(0, 100), updated_at: new Date().toISOString(),
   }).eq("id", batch.id).eq("principal_id", principal.principalId).select("*").single();
   if (updateError || !completed) throw new Error(`Failed to finalize the bundled PV corpus: ${updateError?.message || "missing batch"}`);
-  await appendPvAuditEvent(principal, { action: "csv_import.complete", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, screenedCount: corpus.rows.length, candidateCount: corpus.candidates.length, routedCount, duplicateCount: existingIds.size, failedCount, availableAt, dayZeroBasis: "reportability_identified_at", screeningMethod: "botulinum-pv-context-rules" } });
+  await appendPvAuditEvent(principal, { action: "csv_import.complete", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, sourceFiles: corpus.sourceFiles, screenedCount: corpus.rows.length, candidateCount: corpus.candidates.length, routedCount, duplicateCount: existingIds.size, failedCount, availableAt, dayZeroBasis: "reportability_identified_at", screeningMethod: PV_CLASSIFIER_VERSION } });
   return completed;
 }
 

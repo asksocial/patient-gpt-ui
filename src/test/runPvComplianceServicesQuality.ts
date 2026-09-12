@@ -114,6 +114,11 @@ const commercialResult = classifyPvContent({
   verbatim: "The commercial says Product A may cause rash.", language: "en", postedAt: "2026-08-06T09:00:00.000Z",
 }, concepts);
 assert(!commercialResult.shouldCreateRecord, "Configured exclusions must prevent a commercial mention from becoming a review record.");
+const substringResult = classifyPvContent({
+  externalId: "post-substring", sourceType: "reddit", sourceUrl: "https://example.test/post-substring",
+  verbatim: "I threw Product A in the trash.", language: "en", postedAt: "2026-08-06T09:00:00.000Z",
+}, concepts);
+assert(!substringResult.classifications.includes("adverse_event") && !substringResult.shouldCreateRecord, "PV concept terms must match complete words or phrases; rash must not match inside trash.");
 
 const clock = calculatePvClock({
   status: "new", postedAt: "2026-08-06T00:00:00.000Z", ingestedAt: "2026-08-06T00:10:00.000Z", identifiedAt: "2026-08-06T00:15:00.000Z",
@@ -188,6 +193,13 @@ assert(parsedCsv.dateColumn === "Date", "PV CSV intake must detect the date colu
 assert(parsedCsv.rows[0]?.postedAt === "2026-08-01T12:00:00.000Z", "PV CSV intake must normalize the original post date from the CSV date column.");
 assert(parsedCsv.rows[0]?.postedAtRawValue === "2026-08-01T12:00:00Z", "PV CSV intake must preserve the raw post-date value for provenance.");
 assert(parsedCsv.rows[0]?.verbatim.includes("rash, then hives"), "PV CSV intake must preserve quoted content containing delimiters.");
+const parsedSocialTsv = parsePvCsv(new TextEncoder().encode([
+  "Date\tHit Sentence\tURL\tDocument ID",
+  '2026-08-01\tI said "this happened after treatment" yesterday.\thttps://example.test/post-2\t"""social-2"""',
+  "2026-08-02\tA second social mention.\thttps://example.test/post-3\tsocial-3",
+].join("\n")), "social-data.tsv");
+assert(parsedSocialTsv.rowCount === 2 && parsedSocialTsv.rows.length === 2, "Ordinary quotation marks inside social TSV verbatims must not merge subsequent records.");
+assert(parsedSocialTsv.rows[0]?.verbatim.includes('"this happened after treatment"') && parsedSocialTsv.rows[0]?.externalId === "social-2", "PV TSV intake must preserve ordinary verbatim quotes and decode quoted identifiers.");
 const sparseCsv = parsePvCsv(new TextEncoder().encode("Date,Text\n2026-08-01,Product A rash\n2026-08-02,"), "sparse.csv");
 assert(sparseCsv.rowCount === 2 && sparseCsv.rows.length === 1 && sparseCsv.errors[0]?.rowNumber === 3, "PV CSV intake must retain row-level failures without discarding valid social data.");
 for (const [therapeuticArea, reporterHeader, reporterValue] of [

@@ -62,7 +62,13 @@ function parseDelimited(text: string, delimiter: string) {
     const character = text[index];
     if (character === '"') {
       if (quoted && text[index + 1] === '"') { field += '"'; index += 1; }
-      else quoted = !quoted;
+      else if (quoted) quoted = false;
+      // A quote only opens a quoted field at the field boundary. Social
+      // verbatims frequently contain ordinary, unescaped quotation marks;
+      // treating those as delimiters can merge hundreds of subsequent TSV
+      // rows into one record.
+      else if (!field.length) quoted = true;
+      else field += character;
     } else if (character === delimiter && !quoted) {
       row.push(field); field = "";
     } else if ((character === "\n" || character === "\r") && !quoted) {

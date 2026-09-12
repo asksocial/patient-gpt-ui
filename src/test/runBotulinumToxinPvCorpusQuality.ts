@@ -3,7 +3,9 @@ import path from "node:path";
 import {
   BOTULINUM_PV_CONCEPTS,
   BOTULINUM_PV_CORPUS_ID,
+  BOTULINUM_PV_CORPUS_FILES,
   BOTULINUM_PV_THERAPEUTIC_AREA,
+  classifyPvContent,
   isBotulinumPvCandidate,
   loadBotulinumPvCorpus,
   parseCsvPostDate,
@@ -13,9 +15,20 @@ function assert(condition: unknown, message: string): asserts condition { if (!c
 
 const corpus = loadBotulinumPvCorpus();
 assert(corpus.corpusId === BOTULINUM_PV_CORPUS_ID && corpus.therapeuticArea === BOTULINUM_PV_THERAPEUTIC_AREA, "Bundled PV corpus must retain its stable identity and therapeutic-area scope.");
-assert(corpus.rowCount === 3716, "Botulinum toxin PV corpus row count changed unexpectedly.");
-assert(corpus.rows.length === 1425 && corpus.errors.length === 2291, "Corpus must distinguish source verbatims from rows that contain only derived keyword metadata.");
-assert(corpus.candidates.length >= 200 && corpus.candidates.length < 500, "Contextual PV rules must produce a bounded human-review candidate set.");
+assert(corpus.rowCount === 8716, "The combined Botulinum toxin PV corpus must include both governed source exports.");
+assert(corpus.rows.length === 6248 && corpus.errors.length === 2447, "Corpus must deduplicate screenable source verbatims and retain row-level parsing limitations.");
+assert(corpus.sourceFiles.map((source) => source.fileName).join("|") === BOTULINUM_PV_CORPUS_FILES.join("|"), "PV synchronization must inspect the dedicated PV export and the enriched core social export.");
+assert(corpus.candidates.length >= 100 && corpus.candidates.length < 300, "Contextual PV rules must produce a bounded, evidence-linked compliance set.");
+const candidateSegments = corpus.candidates.map((candidate) => classifyPvContent({
+  externalId: candidate.externalId,
+  sourceType: "curated_csv",
+  sourceUrl: candidate.sourceUrl,
+  verbatim: candidate.verbatim,
+  postedAt: candidate.postedAt,
+  dataOrigin: "curated",
+}, BOTULINUM_PV_CONCEPTS, { threshold: 55, libraryVersion: 1 }).detectionSegment);
+assert(candidateSegments.filter((segment) => segment === "ae_adr").length >= 75, "Potential case-level AE/ADR mentions must populate the governed Review Queue.");
+assert(candidateSegments.filter((segment) => segment === "health_experience").length >= 25, "Non-AE special situations must populate Health Experience Detection separately.");
 assert(corpus.contentColumns.join("|") === "Headline|Opening Text|Hit Sentence", "Keywords and key phrases must not be treated as original post verbatim.");
 assert(parseCsvPostDate("11-Aug-2026 10:58AM") === "2026-08-11T10:58:00.000Z", "Meltwater post timestamps must normalize deterministically.");
 assert(BOTULINUM_PV_CONCEPTS.some((item) => item.canonicalTerm === "Dysphagia") && BOTULINUM_PV_CONCEPTS.some((item) => item.canonicalTerm === "Eyelid or brow ptosis"), "Botulinum toxin detection concepts must cover benchmark safety events.");
@@ -31,6 +44,12 @@ assert(isBotulinumPvCandidate(row("Following Dysport, my eyelid started drooping
 assert(!isBotulinumPvCandidate(row("Natural Botox face yoga is my favorite beauty routine.")), "Metaphorical beauty content must not route to PV review.");
 assert(!isBotulinumPvCandidate(row("My migraine started this morning and I have a Botox appointment next week.")), "A pre-existing symptom plus future appointment must not imply product-event association.");
 assert(!isBotulinumPvCandidate(row("Important safety information: Botox may cause headache and bruising.")), "Promotional label language must not be treated as a reporter experience.");
+assert(!isBotulinumPvCandidate(row("Adverse reactions following Botox injection were headache and eyelid ptosis.")), "Aggregate label-style adverse-reaction language must not enter the individual AE/ADR Review Queue.");
+assert(!isBotulinumPvCandidate(row("I receive Botox every three months for migraine and it helps my headaches.")), "A treated indication and beneficial outcome must not be mistaken for an adverse event.");
+assert(isBotulinumPvCandidate(row("I stopped Botox because it gave me a severe headache for three days.")), "A headache explicitly attributed to Botulinum toxin must remain eligible for AE/ADR review.");
+assert(!isBotulinumPvCandidate(row("Ptosis can happen after Botox; follow for more educational content.")), "Generic safety education without an asserted individual case must not enter the AE/ADR Review Queue.");
+assert(isBotulinumPvCandidate(row("My migraine Botox left a painful bump between my eyebrows.")), "Colloquial first-person injection-site experiences must route to AE/ADR review.");
+assert(isBotulinumPvCandidate(row("After Botox, I had a frozen face and could not smile for weeks.")), "Colloquial facial-movement experiences must route to AE/ADR review.");
 assert(isBotulinumPvCandidate(row("I found out I was pregnant after receiving Botox.")), "Pregnancy exposure must be retained as a health-experience special situation.");
 assert(isBotulinumPvCandidate(row("I tried DIY Botox and injected it myself.")), "Potential misuse must be retained as a health-experience special situation.");
 
@@ -41,4 +60,4 @@ assert(route.includes("importBundledBotulinumPvCorpus") && route.includes("maxDu
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
 assert(!workbench.includes("Botulinum toxin PV corpus"), "The corpus activation section must remain removed from Screening Status after ingestion.");
 
-console.log(JSON.stringify({ therapeuticArea: corpus.therapeuticArea, sourceRows: corpus.rowCount, screenableVerbatims: corpus.rows.length, candidateRecords: corpus.candidates.length, rowsWithoutVerbatim: corpus.errors.length }, null, 2));
+console.log(JSON.stringify({ therapeuticArea: corpus.therapeuticArea, sourceRows: corpus.rowCount, screenableVerbatims: corpus.rows.length, candidateRecords: corpus.candidates.length, aeAdrReviewCandidates: candidateSegments.filter((segment) => segment === "ae_adr").length, healthExperienceDetections: candidateSegments.filter((segment) => segment === "health_experience").length, rowsWithoutVerbatim: corpus.errors.length }, null, 2));

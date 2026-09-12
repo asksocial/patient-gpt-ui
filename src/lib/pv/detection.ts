@@ -8,7 +8,7 @@ import type {
 import { extractPvAdverseEventOntology } from "./ontology";
 import { derivePvDetectionSegment, derivePvHealthExperienceTags } from "./segmentation";
 
-export const PV_CLASSIFIER_VERSION = "pv-context-rules-1.2.0";
+export const PV_CLASSIFIER_VERSION = "pv-context-rules-1.3.0";
 
 function normalize(value: string) {
   return value.toLocaleLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, " ").trim();
@@ -19,6 +19,17 @@ function activeOn(concept: PvDetectionConcept, at: string) {
   if (concept.activeFrom && time < new Date(concept.activeFrom).getTime()) return false;
   if (concept.activeUntil && time > new Date(concept.activeUntil).getTime()) return false;
   return true;
+}
+
+function conceptTermPattern(term: string) {
+  const escaped = normalize(term)
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/\s+/g, "\\s+");
+  return new RegExp(`(?:^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, "iu");
+}
+
+function containsConceptTerm(text: string, term: string) {
+  return conceptTermPattern(term).test(text);
 }
 
 function classificationFor(category: PvDetectionConcept["category"]): PvClassification | undefined {
@@ -43,12 +54,12 @@ function findMatches(content: PvContentInput, concepts: PvDetectionConcept[]) {
     if (!activeOn(concept, content.postedAt)) continue;
     if (concept.language && content.language && concept.language !== content.language) continue;
     if (concept.market && content.market && concept.market !== content.market) continue;
-    const exclusion = (concept.exclusions || []).find((term) => text.includes(normalize(term)));
+    const exclusion = (concept.exclusions || []).find((term) => containsConceptTerm(text, term));
     if (exclusion) {
       exclusions.add(exclusion);
       continue;
     }
-    const matchedTerm = concept.terms.find((term) => text.includes(normalize(term)));
+    const matchedTerm = concept.terms.find((term) => containsConceptTerm(text, term));
     if (matchedTerm) {
       matches.push({
         conceptId: concept.id,
