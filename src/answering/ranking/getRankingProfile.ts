@@ -2,6 +2,7 @@ import { genericRankingProfile } from "./genericRankingProfile";
 import { RankingProfile } from "./types";
 import { regenerativeAestheticsRankingProfile } from "./profiles/regenerativeAesthetics";
 import { botulinumToxinRankingProfile } from "./profiles/botulinumToxin";
+import { normalizeTherapeuticAreaId } from "../../lib/analytics/coverage";
 
 const RANKING_PROFILES: Record<string, RankingProfile> = {
   regenerative_aesthetics:
@@ -19,7 +20,7 @@ export function getRankingProfile(
     return genericRankingProfile;
   }
 
-  const normalized = therapeuticArea.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const normalized = normalizeTherapeuticAreaId(therapeuticArea);
   return (
     RANKING_PROFILES[normalized] ||
     genericRankingProfile

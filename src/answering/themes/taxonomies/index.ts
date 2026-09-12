@@ -1,6 +1,8 @@
 import { ThemeTaxonomy } from "../themeModels";
 import { regenerativeAestheticsThemeTaxonomy } from "./regenerativeAesthetics";
 import { botulinumToxinThemeTaxonomy } from "./botulinumToxin";
+import { createGenericThemeTaxonomy } from "./genericTherapeuticArea";
+import { normalizeTherapeuticAreaId } from "../../../lib/analytics/coverage";
 
 const medicalAestheticsThemeTaxonomy: ThemeTaxonomy = {
   ...regenerativeAestheticsThemeTaxonomy,
@@ -16,12 +18,10 @@ export const THEME_TAXONOMIES: Record<string, ThemeTaxonomy> = {
 export function getThemeTaxonomy(therapeuticArea?: string): ThemeTaxonomy | null {
   if (!therapeuticArea) return null;
 
-  const normalizedTherapeuticArea =
-    therapeuticArea
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "");
+  const normalizedTherapeuticArea = normalizeTherapeuticAreaId(therapeuticArea);
 
-  return THEME_TAXONOMIES[normalizedTherapeuticArea] || null;
+  return (
+    THEME_TAXONOMIES[normalizedTherapeuticArea] ||
+    createGenericThemeTaxonomy(normalizedTherapeuticArea)
+  );
 }

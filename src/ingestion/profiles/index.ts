@@ -6,6 +6,7 @@ import { geneTherapyProfile } from "./geneTherapyProfile";
 import { regenerativeAestheticsProfile } from "./regenerativeAestheticsProfile";
 import { medicalAestheticsProfile } from "./medicalAestheticsProfile";
 import { botulinumToxinProfile } from "./botulinumToxinProfile";
+import { createGenericTherapeuticAreaProfile } from "./genericTherapeuticAreaProfile";
 
 export const DISEASE_PROFILES: Record<string, DiseaseProfile> = {
   hepatitis_b: hepatitisBProfile,
@@ -16,16 +17,13 @@ export const DISEASE_PROFILES: Record<string, DiseaseProfile> = {
   botulinum_toxin: botulinumToxinProfile,
 };
 
-export function getDiseaseProfile(profileId: string): DiseaseProfile {
+export function getDiseaseProfile(
+  profileId: string,
+  therapeuticArea?: string
+): DiseaseProfile {
   const profile = DISEASE_PROFILES[profileId];
 
-  if (!profile) {
-    throw new Error(
-      `Unknown disease profile: ${profileId}. Add it to src/ingestion/profiles/index.ts`
-    );
-  }
-
-  return profile;
+  return profile || createGenericTherapeuticAreaProfile(profileId, therapeuticArea);
 }
 
 export type { DiseaseProfile } from "./types";

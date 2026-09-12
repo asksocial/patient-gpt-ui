@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
-  getTherapeuticAreaCoverage,
-} from "../../../lib/analytics/coverage";
+  getEffectiveTherapeuticAreaCoverage,
+} from "../../../lib/answers/loadCanonicalFindingsForAsk";
 import {
   getCurrentEntitlements,
 } from "../../../lib/entitlements/server";
@@ -12,6 +12,7 @@ import {
 import {
   sortTherapeuticAreas,
 } from "../../../lib/therapeuticAreas";
+import { getTherapeuticAreaCapabilityContract } from "../../../lib/therapeuticAreaCapabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -54,15 +55,17 @@ export async function GET() {
             )
         )
       );
+    const analyticalCoverage = therapeuticAreas.map((area) =>
+      getEffectiveTherapeuticAreaCoverage(area)
+    );
 
     return NextResponse.json({
       ok: true,
       therapeuticAreas,
-      analyticalCoverage:
-        therapeuticAreas.map((area) =>
-          getTherapeuticAreaCoverage(
-            area
-          )
+      analyticalCoverage,
+      capabilityContracts:
+        therapeuticAreas.map((area, index) =>
+          getTherapeuticAreaCapabilityContract(area, analyticalCoverage[index])
         ),
     });
   } catch (error) {

@@ -11,6 +11,7 @@ import {
   getTherapeuticAreaCoverage,
   normalizeTherapeuticAreaId,
 } from "../analytics/coverage";
+import type { TherapeuticAreaCoverage } from "../analytics/coverage";
 
 export type AskAnalyticsSource =
   | "meltwater_csv"
@@ -43,6 +44,52 @@ const cachedCorpora = new Map<
   string,
   CanonicalFinding[]
 >();
+
+export function getCanonicalCorpusFileCandidates(
+  therapeuticAreaId: string,
+  moduleId?: string
+) {
+  const areaNames = Array.from(new Set([
+    therapeuticAreaId,
+    therapeuticAreaId.replace(/_/g, "-"),
+  ]));
+  const moduleNames = moduleId
+    ? Array.from(new Set([moduleId, moduleId.replace(/_/g, "-")]))
+    : [];
+
+  return moduleId
+    ? areaNames.flatMap((area) =>
+        moduleNames.map((module) => `data/${area}-${module}.csv`)
+      )
+    : areaNames.map((area) => `data/${area}.csv`);
+}
+
+function discoverMeltwaterCorpus(
+  therapeuticArea: string,
+  therapeuticAreaId: string,
+  moduleId?: string
+): CorpusDefinition | undefined {
+  const relativePath = getCanonicalCorpusFileCandidates(therapeuticAreaId, moduleId)
+    .find((candidate) => fs.existsSync(path.resolve(process.cwd(), candidate)));
+
+  if (!relativePath) return undefined;
+
+  const moduleLabel = moduleId
+    ? ` ${moduleId.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}`
+    : "";
+
+  return {
+    source: "meltwater_csv",
+    sourceLabel: `${therapeuticArea}${moduleLabel} Meltwater canonical corpus`,
+    load: () =>
+      ingestMeltwaterCsv(requireFile(relativePath), {
+        sourceType: "meltwater",
+        therapeuticArea,
+        profileId: therapeuticAreaId,
+        includeCurated: moduleId ? false : undefined,
+      }) as CanonicalFinding[],
+  };
+}
 
 function requireFile(
   relativePath: string
@@ -166,6 +213,46 @@ const MODULE_CORPORA: Record<
   },
 };
 
+function resolveCoreCorpus(therapeuticArea: string) {
+  const therapeuticAreaId = normalizeTherapeuticAreaId(therapeuticArea);
+  return {
+    therapeuticAreaId,
+    corpus:
+      CORPORA[therapeuticAreaId] ||
+      discoverMeltwaterCorpus(therapeuticArea, therapeuticAreaId),
+  };
+}
+
+export function getCanonicalCorpusAvailability(therapeuticArea: string) {
+  const { therapeuticAreaId, corpus } = resolveCoreCorpus(therapeuticArea);
+  return {
+    therapeuticAreaId,
+    available: Boolean(corpus),
+    source: corpus?.source || null,
+    sourceLabel: corpus?.sourceLabel || null,
+    relevancePolicy: corpus?.relevancePolicy || "standard",
+  };
+}
+
+export function getEffectiveTherapeuticAreaCoverage(
+  therapeuticArea: string
+): TherapeuticAreaCoverage {
+  const configured = getTherapeuticAreaCoverage(therapeuticArea);
+  const corpus = getCanonicalCorpusAvailability(therapeuticArea);
+  if (!corpus.available) return configured;
+
+  return {
+    ...configured,
+    therapeuticArea,
+    therapeuticAreaId: corpus.therapeuticAreaId,
+    status: "validated",
+    executiveIntelligenceAvailable: true,
+    longitudinalIntelligenceAvailable: true,
+    sourceLabel: corpus.sourceLabel || configured.sourceLabel,
+    reason: undefined,
+  };
+}
+
 function cloneFindings(
   findings: CanonicalFinding[]
 ): CanonicalFinding[] {
@@ -179,12 +266,10 @@ export function loadCanonicalFindingsForAsk(
     normalizeTherapeuticAreaId(
       therapeuticArea
     );
-  const coverage =
-    getTherapeuticAreaCoverage(
-      therapeuticArea
-    );
+  const coverage = getEffectiveTherapeuticAreaCoverage(therapeuticArea);
+  const { corpus } = resolveCoreCorpus(therapeuticArea);
 
-  if (coverage.status !== "validated") {
+  if (!corpus && coverage.status !== "validated") {
     return {
       status: "unavailable",
       therapeuticAreaId,
@@ -194,9 +279,6 @@ export function loadCanonicalFindingsForAsk(
       findings: [],
     };
   }
-
-  const corpus =
-    CORPORA[therapeuticAreaId];
 
   if (!corpus) {
     return {
@@ -267,20 +349,16 @@ export function loadCanonicalFindingsForModule(
   moduleId: string
 ): CanonicalFindingsLoadResult {
   const therapeuticAreaId = normalizeTherapeuticAreaId(therapeuticArea);
-  const moduleCorpus = MODULE_CORPORA[therapeuticAreaId]?.[moduleId];
+  const moduleCorpus =
+    MODULE_CORPORA[therapeuticAreaId]?.[moduleId] ||
+    discoverMeltwaterCorpus(
+      therapeuticArea,
+      therapeuticAreaId,
+      moduleId
+    );
 
   if (!moduleCorpus) {
     return loadCanonicalFindingsForAsk(therapeuticArea);
-  }
-
-  const coverage = getTherapeuticAreaCoverage(therapeuticArea);
-  if (coverage.status !== "validated") {
-    return {
-      status: "unavailable",
-      therapeuticAreaId,
-      reason: coverage.reason || "Validated analytical coverage is unavailable.",
-      findings: [],
-    };
   }
 
   const cacheKey = `${therapeuticAreaId}:module:${moduleId}`;
