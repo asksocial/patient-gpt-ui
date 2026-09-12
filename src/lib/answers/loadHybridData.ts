@@ -20,7 +20,7 @@ export async function loadHybridData(therapeuticArea: string) {
     .order("created_at", { ascending: true });
 
   if (liveError) {
-    throw new Error(`Failed to load live themes: ${liveError.message}`);
+    throw new Error(`Failed to load social themes: ${liveError.message}`);
   }
 
   const { data: matches, error: matchesError } = await supabase

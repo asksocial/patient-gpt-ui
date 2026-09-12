@@ -157,7 +157,7 @@ function formatMatchesForPrompt(matches: ThemeMatch[]) {
   return matches
     .map((match, index) => {
       const parts = [
-        `${index + 1}. Live theme: ${match.live_theme_name}`,
+        `${index + 1}. Social theme: ${match.live_theme_name}`,
         `   - Curated theme: ${match.curated_theme_name || "None / unmatched"}`,
       ];
 
@@ -324,7 +324,7 @@ function deriveRecommendedActions({
 
   if (emergingThemes.length) {
     actions.push(
-      `Pressure-test existing messaging against emerging live narratives such as ${emergingThemes
+      `Pressure-test existing messaging against emerging social narratives such as ${emergingThemes
         .slice(0, 2)
         .map((theme) => theme.name)
         .join(" and ")}.`
@@ -376,15 +376,15 @@ function buildFallbackAnswer({
         topCuratedThemes.length
           ? topCuratedThemes.map((theme) => theme.name).join(", ")
           : "no major baseline themes were available"
-      }. Live conversation adds or reinforces ${
+      }. Social intelligence adds or reinforces ${
         topLiveThemes.length
           ? topLiveThemes.map((theme) => theme.name).join(", ")
-          : "no strong live themes were available"
+          : "no strong social themes were available"
       }.`;
 
   const whatThisMeans = topCuratedInsights.length
     ? "This suggests strategy should be tailored to the country-, persona-, and platform-specific signals present in the curated intelligence, rather than relying on generic category messaging alone."
-    : "This suggests the most useful strategy is to anchor on the baseline report themes while using live data to identify where new narratives are emerging, intensifying, or changing in tone.";
+    : "This suggests the most useful strategy is to anchor on the baseline report themes while using social intelligence to identify where new narratives are emerging, intensifying, or changing in tone.";
 
   const recommendedActions = deriveRecommendedActions({
     question,
@@ -420,7 +420,7 @@ function buildNoEvidenceAnswer(
 ): HybridAnswer {
   return {
     directAnswer:
-      `AskSocial does not currently have curated or live social intelligence loaded for ${therapeuticArea}, so it cannot provide a source-grounded answer yet.`,
+      `AskSocial does not currently have curated or social intelligence loaded for ${therapeuticArea}, so it cannot provide a source-grounded answer yet.`,
     curatedIntelligence: {
       themes: [],
     },
@@ -431,7 +431,7 @@ function buildNoEvidenceAnswer(
     whatThisMeans:
       "This is a source-coverage gap, not evidence that relevant conversation is absent. Load and validate the therapeutic-area dataset before drawing a strategic conclusion.",
     recommendedActions: [
-      `Load or approve a curated or live social dataset for ${therapeuticArea}.`,
+      `Load or approve a curated or social intelligence dataset for ${therapeuticArea}.`,
       "Rerun the question after ingestion and coverage validation complete.",
     ],
   };
@@ -502,7 +502,7 @@ function normalizeAnswerShape(
     },
     liveData: {
       themes: liveThemes.map((theme: any) => ({
-        name: compactText(theme?.name) || "Unnamed live theme",
+        name: compactText(theme?.name) || "Unnamed social theme",
         description: compactText(theme?.description) || "",
         sourceType: compactText(theme?.sourceType) || undefined,
         relationship: compactText(theme?.relationship) || undefined,
@@ -587,7 +587,7 @@ Your writing style:
 - Concise but not robotic
 - Product-like, not academic
 - Synthesized, not just listed
-- Grounded in the supplied baseline themes, curated insights, and live themes
+- Grounded in the supplied baseline themes, curated insights, and social themes
 - Faithful to the supplied Intelligence Mode instructions, evidence boundaries, taxonomy, and output contract
 
 You must return valid JSON only.
@@ -608,7 +608,7 @@ ${curatedThemesBlock}
 RELEVANT CURATED INSIGHTS:
 ${curatedInsightsBlock}
 
-LIVE THEMES:
+SOCIAL INTELLIGENCE THEMES:
 ${liveThemesBlock}
 
 THEME MATCHES:
@@ -648,7 +648,7 @@ Rules:
 - The directAnswer MUST explicitly reference relevant countries, personas, or patterns from curatedInsights when applicable.
 - curatedIntelligence.themes should preserve the most relevant baseline themes.
 - If baseline themes are unavailable, derive curatedIntelligence.themes from the curated insights.
-- liveData.themes should preserve the most relevant live themes.
+- liveData.themes should preserve the most relevant social intelligence themes.
 - Use relevant curated insights when they add country, persona, platform, trust, barrier, or information-need specificity.
 - If relevant curated insights are geography- or persona-specific, reflect that explicitly in directAnswer or whatThisMeans.
 - recommendedActions should be 2 to 4 concise, practical next steps.
@@ -657,7 +657,7 @@ Rules:
 - Respect the mode safety boundary and distinguish observation, evidence, inference, and required human review.
 - Favor synthesis over repetition.
 - Do not invent facts not present in the provided inputs.
-- emergingNarratives should include live themes that are clearly emerging.
+- emergingNarratives should include social themes that are clearly emerging.
 - Output only JSON.
 `;
 

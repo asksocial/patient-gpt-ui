@@ -62,6 +62,9 @@ next-env.d.ts
 # generated ingestion intermediates; retain only validated production corpora
 /src/ingestion/curated/*.json
 !/src/ingestion/curated/gene_therapy.json
+!/src/ingestion/curated/gene_therapy_social.json
+!/src/ingestion/curated/hepatitis_B.json
+!/src/ingestion/curated/hepatitis_b_part1.json
 /data/*
 !/data/regen-aesthetics.csv
 !/data/botulinum-toxin.csv

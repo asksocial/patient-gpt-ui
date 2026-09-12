@@ -44,7 +44,7 @@ if (
   workspaceShell.includes('title="What’s Emerging In Live Data"')
 ) {
   throw new Error(
-    "Search must hide the Live Data Check panel and label emerging intelligence as social data."
+    "Search must hide the legacy data-check panel and label emerging intelligence as social data."
   );
 }
 
@@ -59,9 +59,7 @@ if (
 }
 
 if (
-  !askRoute.includes(
-    "curatedThemes.length > 0 || curatedInsights.length > 0"
-  ) ||
+  !askRoute.includes("sourceIntelligence.curatedMentions.length > 0") ||
   !askRoute.includes("curatedIntelligenceAvailable,")
 ) {
   throw new Error(
@@ -76,7 +74,7 @@ const analyticalComposition =
 
 if (!analyticalComposition) {
   throw new Error(
-    "Analytical answers must compose the validated analytical view with the curated/live intelligence context instead of replacing it."
+    "Analytical answers must compose the validated analytical view with the curated/social intelligence context instead of replacing it."
   );
 }
 
@@ -85,7 +83,7 @@ console.log(
     {
       analyticalAnswer: true,
       curatedIntelligence: true,
-      liveIntelligence: true,
+      socialIntelligence: true,
       insightTags: true,
       whatThisMeans: true,
       recommendedActions: true,

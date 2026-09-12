@@ -15,7 +15,13 @@ export type CuratedFindingRecord = {
     | "lexicon"
     | "recommendation"
     | "evidence_quote"
-    | "burden";
+    | "burden"
+    | "quality_of_life"
+    | "persona_pattern"
+    | "platform_preference"
+    | "treatment_concern"
+    | "education_barrier"
+    | "other";
 
   title: string;
   summary: string;
@@ -50,7 +56,7 @@ export type CuratedFindingRecord = {
   whyItMatters?: string;
   linkedThemes?: string[];
 
-  sourceType?: "curated";
+  sourceType?: "curated" | "live";
   sourceFormat?: "pptx" | "pdf" | "docx" | "manual";
   sourceDocument?: string;
   sourceSlideOrPage?: string;
@@ -67,11 +73,32 @@ function normalizeStringArray(values?: string[]): string[] {
   );
 }
 
+function normalizeFindingType(
+  findingType: CuratedFindingRecord["findingType"]
+): CuratedFindingRecord["findingType"] {
+  const canonicalTypeByCuratedType: Partial<
+    Record<CuratedFindingRecord["findingType"], CuratedFindingRecord["findingType"]>
+  > = {
+    treatment_decision: "treatment_concern",
+    burden: "quality_of_life",
+    persona: "persona_pattern",
+    unmet_need: "education_barrier",
+    channel_insight: "platform_preference",
+    theme: "other",
+    lexicon: "other",
+    recommendation: "other",
+    evidence_quote: "other",
+  };
+
+  return canonicalTypeByCuratedType[findingType] || findingType;
+}
+
 function normalizeCuratedRecord(
   record: CuratedFindingRecord
 ): CuratedFindingRecord {
   return {
     ...record,
+    findingType: normalizeFindingType(record.findingType),
     labels: normalizeStringArray(record.labels),
     symptoms: normalizeStringArray(record.symptoms),
     treatments: normalizeStringArray(record.treatments),
@@ -85,10 +112,12 @@ function normalizeCuratedRecord(
     lexiconExamples: normalizeStringArray(record.lexiconExamples),
     evidenceQuotes: normalizeStringArray(record.evidenceQuotes),
     linkedThemes: normalizeStringArray(record.linkedThemes),
-    sourceType: "curated",
+    sourceType: record.sourceType === "live" ? "live" : "curated",
     persona: record.persona || "unknown",
     country: record.country || "",
-    platform: record.platform || "curated",
+    platform:
+      record.platform ||
+      (record.sourceType === "live" ? "social" : "curated"),
     url: record.url || "",
     confidence: record.confidence ?? 0.9,
   };

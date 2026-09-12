@@ -26,6 +26,7 @@ import {
   resolveCustomerIntelligenceAccess,
 } from "../../../lib/intelligence-platform";
 import { buildCitationManifest } from "../../../lib/intelligence-platform/citations";
+import { buildSourceIntelligence } from "../../../lib/answers/buildSourceIntelligence";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,7 @@ function normalizeCuratedThemes(items: any[] = []) {
 
 function normalizeLiveThemes(items: any[] = []) {
   return items.map((item) => ({
-    name: item?.name ?? item?.theme_name ?? "Unnamed live theme",
+    name: item?.name ?? item?.theme_name ?? "Unnamed social theme",
     description:
       item?.description ??
       item?.theme_description ??
@@ -231,6 +232,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const canonicalData =
+      loadCanonicalFindingsForAsk(
+        therapeuticArea
+      );
+    const sourceIntelligence = buildSourceIntelligence(
+      canonicalData.status === "available" ? canonicalData.findings : []
+    );
+
     const [
       hybridData,
       curatedInsights,
@@ -244,16 +253,19 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    const curatedThemes = normalizeCuratedThemes(hybridData?.curatedThemes || []);
-    const liveThemes = normalizeLiveThemes(hybridData?.liveThemes || []);
+    const loadedCuratedThemes = normalizeCuratedThemes(hybridData?.curatedThemes || []);
+    const loadedSocialThemes = normalizeLiveThemes(hybridData?.liveThemes || []);
+    const curatedThemes = loadedCuratedThemes.length
+      ? loadedCuratedThemes
+      : sourceIntelligence.curatedThemes;
+    const liveThemes = loadedSocialThemes.length
+      ? loadedSocialThemes
+      : sourceIntelligence.socialThemes;
     const matches = hybridData?.matches || [];
     const curatedIntelligenceAvailable =
-      curatedThemes.length > 0 || curatedInsights.length > 0;
-
-    const canonicalData =
-      loadCanonicalFindingsForAsk(
-        therapeuticArea
-      );
+      curatedThemes.length > 0 ||
+      curatedInsights.length > 0 ||
+      sourceIntelligence.curatedMentions.length > 0;
     const analyticalCoverage =
       getTherapeuticAreaCoverage(
         therapeuticArea
@@ -364,6 +376,7 @@ export async function POST(req: NextRequest) {
       citationManifest,
       relevantCuratedInsights: curatedInsights,
       curatedIntelligenceAvailable,
+      sourceIntelligence,
       analyticalStatus:
         !themeIntelligenceGranted
           ? "forbidden"
@@ -426,6 +439,7 @@ export async function POST(req: NextRequest) {
       debug: {
         curatedThemesCount: curatedThemes.length,
         liveThemesCount: liveThemes.length,
+        socialThemesCount: liveThemes.length,
         matchesCount: matches.length,
         curatedInsightsCount: curatedInsights.length,
         intelligenceMode,

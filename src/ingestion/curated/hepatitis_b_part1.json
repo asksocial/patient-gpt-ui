@@ -1,0 +1,618 @@
+[
+  {
+    "id": "hepatitis_b_3_2_mention_trends_overall_activity_trend_of_the_5",
+    "findingType": "channel_insight",
+    "title": "Mention Trends Overall activity trend of the ~5",
+    "summary": "Mention Trends Overall activity trend of the ~5.5k Hepatitis B-related mentions occurring in 2025 and the top geographic locations of those mentions across all online sources. 4 69.9% 14.2% 4% 3.8% 2.9% 1.8% 1.2% 0.7% 0.7% 0.7% September 2025 Access Failures and Delayed Diagnosis Drive Renewed Hep B Conversations December 2025 Hep B Volume Spikes as Vaccine Debates and Institutional Distrust Intensify 374414 384 307 308 697 425 323 963 267 257 865 1 2 1 2 0 10 20 30 40 50 60 70 X (Twitter) Reddit Bluesky Forums LinkedIn Other* Blogs News YouTube 5 Top SourcesOver 90% of all conversation is concentrated on X and Reddit, underscoring that hepatitis B patient and caregiver discourse is overwhelmingly peer-driven and social-native, with minimal reliance on traditional media or long-form content channels. *Low-volume, individually named publishers and sites (e.g., ClinicalTrials.gov, Nairaland, GhanaWebbers, regional news sites) 67% 23% 4% 4% 1% >1% >1% >1% >1% Key ThemesTaken together, the social data reveals a patient and caregiver community navigating hepatitis B through incomplete clinical clarity, significant emotional and family impact, and a strong reliance on peer-driven informa",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Clinical uncertainty and care pathway confusion",
+    "persona": "caregiver",
+    "personaTraits": [
+      "confused",
+      "distrustful"
+    ],
+    "lifecycleStage": "monitoring",
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "access",
+      "clinical_uncertainty",
+      "trust_gap",
+      "family_impact",
+      "safety_uncertainty",
+      "treatment_burden"
+    ],
+    "emotions": [
+      "confused",
+      "distrustful"
+    ],
+    "unmetNeeds": [
+      "access",
+      "clinical_uncertainty",
+      "trust_gap",
+      "family_impact",
+      "safety_uncertainty",
+      "treatment_burden"
+    ],
+    "channels": [
+      "x_twitter",
+      "reddit",
+      "bluesky",
+      "forums",
+      "linkedin",
+      "youtube",
+      "blogs",
+      "news"
+    ],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "channel_insight",
+      "Clinical uncertainty and care pathway confusion",
+      "access",
+      "clinical_uncertainty",
+      "trust_gap",
+      "family_impact",
+      "safety_uncertainty",
+      "treatment_burden",
+      "x_twitter",
+      "reddit",
+      "bluesky",
+      "forums",
+      "linkedin",
+      "youtube",
+      "blogs",
+      "news",
+      "confused",
+      "distrustful"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [],
+    "linkedThemes": [
+      "Clinical uncertainty and care pathway confusion"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_3_block_2",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  },
+  {
+    "id": "hepatitis_b_4_3_what_this_signals",
+    "findingType": "unmet_need",
+    "title": "What this signals",
+    "summary": "What this signals: There is a clear opportunity to strengthen patient education and continuity of care through simpler, more consistent explanations that translate clinical data into actionable understanding across the disease lifecycle. 6 Clinical Uncertainty and Care Pathway Confusion 21 Conversation repeatedly centers on fear, guilt, and grief tied to family transmission, intergenerational risk, and loss of loved ones. Caregivers and patients frame hepatitis B not as an individual diagnosis, but as a condition that reshapes family dynamics, reproductive decisions, and long-term emotional wellbeing.",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Clinical uncertainty and care pathway confusion",
+    "persona": "caregiver",
+    "personaTraits": [
+      "anxious",
+      "confused",
+      "grief",
+      "guilt",
+      "uncertain"
+    ],
+    "lifecycleStage": "diagnosis",
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "clinical_uncertainty",
+      "family_impact",
+      "safety_uncertainty"
+    ],
+    "emotions": [
+      "anxious",
+      "confused",
+      "grief",
+      "guilt",
+      "uncertain"
+    ],
+    "unmetNeeds": [
+      "clinical_uncertainty",
+      "family_impact",
+      "safety_uncertainty"
+    ],
+    "channels": [],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "unmet_need",
+      "Clinical uncertainty and care pathway confusion",
+      "clinical_uncertainty",
+      "family_impact",
+      "safety_uncertainty",
+      "anxious",
+      "confused",
+      "grief",
+      "guilt",
+      "uncertain"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [],
+    "linkedThemes": [
+      "Clinical uncertainty and care pathway confusion"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_4_block_3",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  },
+  {
+    "id": "hepatitis_b_5_4_what_this_signals",
+    "findingType": "unmet_need",
+    "title": "What this signals",
+    "summary": "What this signals: Effective engagement must acknowledge hepatitis B as a shared family experience, integrating emotional support, stigma reduction, and family-focused resources alongside clinical messaging. Emotional Burden and Family-Centered Impact of Hepatitis B 2 2 Online mentions show strong reliance on peer forums and social platforms to validate symptoms, interpret medical advice, and compare lived experiences. Patients frequently seek reassurance from others with similar journeys, indicating unmet needs for practical, experience-based guidance.",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Emotional burden and family impact",
+    "persona": "patient",
+    "personaTraits": [],
+    "lifecycleStage": "family",
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "family_impact"
+    ],
+    "emotions": [],
+    "unmetNeeds": [
+      "family_impact"
+    ],
+    "channels": [],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "unmet_need",
+      "Emotional burden and family impact",
+      "family_impact"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [],
+    "linkedThemes": [
+      "Emotional burden and family impact"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_5_block_4",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  },
+  {
+    "id": "hepatitis_b_6_5_what_this_signals",
+    "findingType": "persona",
+    "title": "What this signals",
+    "summary": "What this signals: Social and community channels are functioning as an informal extension of care, highlighting the need for trusted, credible voices to meet patients where they already seek validation and real-world insight. Peer Validation and Community Interpretation 2 3 Forums 33.7% X (Twitter) 28.1% Reddit 24.6% Bluesky 5.3% Instagram 2.4% Forums 33.9% Reddit 28.8% X (Twitter) 20.4% Instagram 5.5% Blogs 4.8%Reddit 35.4% Forums 33.8% X (Twitter) 16.6% Blogs 5.2% Comments 2.8% Where Hepatitis B Conversations Concentrate by Theme and Channel Across all three themes, conversation volume concentrates most heavily in Forums and Reddit, underscoring these channels as the primary environments where patients and caregivers seek clarity, share emotional experiences, and validate one another outside traditional healthcare settings. 7 Clinical Uncertainty and Care Pathway Confusion Emotional Burden and Family-Centered Impact Peer Validation and Community Interpretation Questions about diagnosis, labs, vaccines, and monitoring are often embedded in personal stories rather than framed as direct medical questions—especially in Forums and Reddit. Family references, fear, grief, and guilt are ",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Clinical uncertainty and care pathway confusion",
+    "persona": "caregiver",
+    "personaTraits": [
+      "anxious",
+      "confused",
+      "grief",
+      "guilt",
+      "uncertain"
+    ],
+    "lifecycleStage": "monitoring",
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "clinical_uncertainty",
+      "family_impact",
+      "treatment_burden"
+    ],
+    "emotions": [
+      "anxious",
+      "confused",
+      "grief",
+      "guilt",
+      "uncertain"
+    ],
+    "unmetNeeds": [
+      "clinical_uncertainty",
+      "family_impact",
+      "treatment_burden"
+    ],
+    "channels": [],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "persona",
+      "Clinical uncertainty and care pathway confusion",
+      "clinical_uncertainty",
+      "family_impact",
+      "treatment_burden",
+      "anxious",
+      "confused",
+      "grief",
+      "guilt",
+      "uncertain"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [],
+    "linkedThemes": [
+      "Clinical uncertainty and care pathway confusion"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_6_block_5",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  },
+  {
+    "id": "hepatitis_b_7_6_sample_mentions_of_the_online_discussion_around_this_theme_this_new_year_please_ask_your_doctor_to_check_your_blood_titers_for_hepatitis_b_antibodies_even_if",
+    "findingType": "recommendation",
+    "title": "Sample mentions of the online discussion around this theme “This new year, please ask your doctor to check your blood titers for Hepatitis B antibodies, even if",
+    "summary": "Sample mentions of the online discussion around this theme “This new year, please ask your doctor to check your blood titers for Hepatitis B antibodies, even if you already got the infancy vaccination. I had to redo mine, and my father died of liver cancer. You wouldn't want to be a potential transmitter of Hepatitis B to a kid either.\" — Bluesky “Where does the CDC deny this on their website? My child goes to daycare, and I don’t know whether or not to vaccinate… supposedly Hep B is an STI, but some doctors say it can come from bites or just from surfaces.. I’m very confused.” — X (Twitter) “They test both parents before delivery. Literally just did it with my wife. How else would a newborn contract Hep B if the hospital doesn’t fuck up?” — X (Twitter) “Hepatitis B can live outside the body for days. A lot of people don’t realize how easily it can spread through blood exposure.” — Bluesky Patients frequently use social platforms to interpret hepatitis B transmission risks and vaccination guidance, revealing persistent gaps between clinical recommendations and public understanding. 8 9 Emotional Burden and Family-Centered Impact Family references, fear, grief, and guilt are frequen",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Emotional burden and family impact",
+    "persona": "caregiver",
+    "personaTraits": [
+      "anxious",
+      "confused",
+      "grief",
+      "guilt"
+    ],
+    "lifecycleStage": "family",
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "family_impact",
+      "safety_uncertainty"
+    ],
+    "emotions": [
+      "anxious",
+      "confused",
+      "grief",
+      "guilt"
+    ],
+    "unmetNeeds": [
+      "family_impact",
+      "safety_uncertainty"
+    ],
+    "channels": [],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "recommendation",
+      "Emotional burden and family impact",
+      "family_impact",
+      "safety_uncertainty",
+      "anxious",
+      "confused",
+      "grief",
+      "guilt"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [
+      "This new year, please ask your doctor to check your blood titers for Hepatitis B antibodies, even if you already got the infancy vaccination. I had to redo mine, and my father died of liver cancer. You wouldn't want to be a potential transmitter of Hepatitis B to a kid either. — Bluesky Where does the CDC deny this on their website? My child goes to daycare, and I don’t know whether or not to vaccinate… supposedly Hep B is an STI, but some doctors say it can come from bites or just from surfaces.. I’m very confused.",
+      "They test both parents before delivery. Literally just did it with my wife. How else would a newborn contract Hep B if the hospital doesn’t fuck up?",
+      "Hepatitis B can live outside the body for days. A lot of people don’t realize how easily it can spread through blood exposure."
+    ],
+    "rationale": "",
+    "action": "",
+    "whyItMatters": "",
+    "linkedThemes": [
+      "Emotional burden and family impact"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_7_block_6",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  },
+  {
+    "id": "hepatitis_b_8_7_sample_mentions_of_the_online_discussion_around_this_theme_hepatitis_b_is_often_discussed_through_deeply_personal_stories_of_family_transmission_loss_and_prev",
+    "findingType": "evidence_quote",
+    "title": "Sample mentions of the online discussion around this theme Hepatitis B is often discussed through deeply personal stories of family transmission, loss, and prev",
+    "summary": "Sample mentions of the online discussion around this theme Hepatitis B is often discussed through deeply personal stories of family transmission, loss, and prevention, underscoring the disease’s intergenerational impact and the emotional weight it carries for affected families. “What about hep B? Am I allowed to have reservations about that when my wife tests negative for it at the time of birth?” — X (Twitter) “I really talked through my depression with my mother about the news about RFK Jr's dismantling of the Hepatitis B vaccinations for infants. She's widowed because my father died of liver cancer, infected with Hepatitis B he may have carried for years.” — Bluesky “I have a cousin who got Hep B because his mother was infected when she gave birth to him. He now has chronic Hep B that could have been prevented if he'd been vaccinated at birth like his younger sister.” — Bluesky “No. Goldie. Getting cancer does not make you stronger. HPV vaccine fights many cancers. Gardasil 9. Fights against 9 viruses with vaccine. Hepatitis B vaccine prevents liver cancer. I contacted hep b through my mother at birth. Vaccine wasn't available then.” — X (Twitter) 10 Peer Validation and Communit",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Emotional burden and family impact",
+    "persona": "patient",
+    "personaTraits": [
+      "grief"
+    ],
+    "lifecycleStage": "family",
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "family_impact"
+    ],
+    "emotions": [
+      "grief"
+    ],
+    "unmetNeeds": [
+      "family_impact"
+    ],
+    "channels": [
+      "x_twitter",
+      "reddit",
+      "bluesky",
+      "forums",
+      "news"
+    ],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "evidence_quote",
+      "Emotional burden and family impact",
+      "family_impact",
+      "x_twitter",
+      "reddit",
+      "bluesky",
+      "forums",
+      "news",
+      "grief"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [
+      "What about hep B? Am I allowed to have reservations about that when my wife tests negative for it at the time of birth?",
+      "I really talked through my depression with my mother about the news about RFK Jr's dismantling of the Hepatitis B vaccinations for infants. She's widowed because my father died of liver cancer, infected with Hepatitis B he may have carried for years.",
+      "I have a cousin who got Hep B because his mother was infected when she gave birth to him. He now has chronic Hep B that could have been prevented if he'd been vaccinated at birth like his younger sister.",
+      "No. Goldie. Getting cancer does not make you stronger. HPV vaccine fights many cancers. Gardasil 9. Fights against 9 viruses with vaccine. Hepatitis B vaccine prevents liver cancer. I contacted hep b through my mother at birth. Vaccine wasn't available then."
+    ],
+    "linkedThemes": [
+      "Emotional burden and family impact"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_8_block_7",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  },
+  {
+    "id": "hepatitis_b_9_8_sample_mentions_of_the_online_discussion_around_this_theme_newborn_didn_t_need_a_hep_b_shot_because_my_husband_and_i_don_t_have_hep_b",
+    "findingType": "evidence_quote",
+    "title": "Sample mentions of the online discussion around this theme “Newborn didn’t need a Hep B shot because my husband and I don’t have Hep B",
+    "summary": "Sample mentions of the online discussion around this theme “Newborn didn’t need a Hep B shot because my husband and I don’t have Hep B. I’m not anti-vaccine. I’m pro common sense.” — Twitter Just a reminder, HepB is a disease you get from contact with contaminated fluids, not even close to just from having sex. I have my HepB vaccines because I'm on the first aid team at work, & say it with me, HepB is transferred from contaminated body fluids! Protect your children! — X (Twitter) “Living with hepatitis B is something most people don’t understand. The fear of liver cancer never really leaves you.” — Bluesky “Hep B is a silent killer. My father contracted Hepatitis B when young and when he got older it progressed into liver cancer. My daughter was vaccinated when she was a baby and when tested later she had very low immunity. She got vaccinated again. It is an easy prevention form of liver cancer.” — Bluesky Social platforms often function as informal spaces where individuals compare experiences, debate vaccine decisions, and interpret health information through peer conversations rather than clinical authority.",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Emotional burden and family impact",
+    "persona": "caregiver",
+    "personaTraits": [
+      "anxious"
+    ],
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "family_impact"
+    ],
+    "emotions": [
+      "anxious"
+    ],
+    "unmetNeeds": [
+      "family_impact"
+    ],
+    "channels": [
+      "x_twitter",
+      "bluesky"
+    ],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "evidence_quote",
+      "Emotional burden and family impact",
+      "family_impact",
+      "x_twitter",
+      "bluesky",
+      "anxious"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [
+      "Newborn didn’t need a Hep B shot because my husband and I don’t have Hep B. I’m not anti-vaccine. I’m pro common sense.",
+      "Living with hepatitis B is something most people don’t understand. The fear of liver cancer never really leaves you.",
+      "Hep B is a silent killer. My father contracted Hepatitis B when young and when he got older it progressed into liver cancer. My daughter was vaccinated when she was a baby and when tested later she had very low immunity. She got vaccinated again. It is an easy prevention form of liver cancer."
+    ],
+    "linkedThemes": [
+      "Emotional burden and family impact"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_9_block_8",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  },
+  {
+    "id": "hepatitis_b_10_9_recommendations_11_create_clear_plain_language_educational_content_on_transmission_and_vaccination_01_rationale",
+    "findingType": "recommendation",
+    "title": "Recommendations 11 Create Clear, Plain-Language Educational Content on Transmission and Vaccination 01 Rationale",
+    "summary": "Recommendations 11 Create Clear, Plain-Language Educational Content on Transmission and Vaccination 01 Rationale: Social conversations show persistent confusion about transmission pathways, vaccine necessity, and immunity levels—even among individuals actively seeking information. Action: Develop short, patient-friendly explainers (videos, infographics, and social posts) that clarify how hepatitis B spreads, why newborn vaccination matters, and what antibody testing means. Why it matters: When clinical guidance is unclear or inaccessible, patients turn to peer discussions, where misinformation can spread quickly. Providing clear, digestible education helps close this gap. Theme Alignment: Clinical Uncertainty & Care Pathway Confusion Provide Step-by-Step Guidance for Navigating Testing and Monitoring 02 Rationale: Many online discussions reveal confusion about antibody titers, viral markers, and when additional testing is needed. Action: Develop patient guides explaining when to get tested, what hepatitis B lab markers mean, and how to interpret common test results with physicians. Why it matters: Patients who understand their lab results are more likely to stay engaged with care a",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Clinical uncertainty and care pathway confusion",
+    "persona": "patient",
+    "personaTraits": [
+      "confused",
+      "uncertain"
+    ],
+    "lifecycleStage": "monitoring",
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "access",
+      "clinical_uncertainty",
+      "misinformation",
+      "treatment_burden"
+    ],
+    "emotions": [
+      "confused",
+      "uncertain"
+    ],
+    "unmetNeeds": [
+      "access",
+      "clinical_uncertainty",
+      "misinformation",
+      "treatment_burden"
+    ],
+    "channels": [],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "recommendation",
+      "Clinical uncertainty and care pathway confusion",
+      "access",
+      "clinical_uncertainty",
+      "misinformation",
+      "treatment_burden",
+      "confused",
+      "uncertain"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [],
+    "rationale": "Social conversations show persistent confusion about transmission pathways, vaccine necessity, and immunity levels—even among individuals actively seeking information.",
+    "action": "Develop short, patient-friendly explainers (videos, infographics, and social posts) that clarify how hepatitis B spreads, why newborn vaccination matters, and what antibody testing means.",
+    "whyItMatters": "When clinical guidance is unclear or inaccessible, patients turn to peer discussions, where misinformation can spread quickly. Providing clear, digestible education helps close this gap.",
+    "linkedThemes": [
+      "Clinical Uncertainty & Care Pathway Confusion Provide Step-by-Step Guidance for Navigating Testing and Monitoring"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_10_block_9",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  },
+  {
+    "id": "hepatitis_b_11_10_recommendations_11_amplify_real_patient_stories_to_humanize_the_disease_03_rationale",
+    "findingType": "recommendation",
+    "title": "Recommendations 11 Amplify Real Patient Stories to Humanize the Disease 03 Rationale",
+    "summary": "Recommendations 11 Amplify Real Patient Stories to Humanize the Disease 03 Rationale: The most impactful conversations online involve personal stories of family transmission, late diagnosis, and liver cancer. Action: Highlight authentic patient and caregiver experiences through video testimonials, social campaigns, and advocacy partnerships. Why it matters: Narratives help individuals understand the real-world consequences of hepatitis B and motivate screening, vaccination, and treatment adherence. Theme Alignment: Emotional Burden & Family Impact Develop Resources Focused on Family and Intergenerational Risk 04 Rationale: Many discussions center on family members—parents, children, and partners— highlighting the disease’s intergenerational implications. Action: Create educational materials addressing family screening, mother-to-child transmission, and protecting loved ones. Why it matters: Framing hepatitis B education around protecting family members resonates strongly with patients and caregivers. Theme Alignment: Emotional Burden & Family Impact The hepatitis B community is actively seeking information and support online. Pharma companies that provide clear education, elevate a",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Clinical uncertainty and care pathway confusion",
+    "persona": "caregiver",
+    "personaTraits": [],
+    "lifecycleStage": "diagnosis",
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "clinical_uncertainty",
+      "misinformation",
+      "family_impact",
+      "safety_uncertainty"
+    ],
+    "emotions": [],
+    "unmetNeeds": [
+      "clinical_uncertainty",
+      "misinformation",
+      "family_impact",
+      "safety_uncertainty"
+    ],
+    "channels": [],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "recommendation",
+      "Clinical uncertainty and care pathway confusion",
+      "clinical_uncertainty",
+      "misinformation",
+      "family_impact",
+      "safety_uncertainty"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [],
+    "rationale": "The most impactful conversations online involve personal stories of family transmission, late diagnosis, and liver cancer.",
+    "action": "Highlight authentic patient and caregiver experiences through video testimonials, social campaigns, and advocacy partnerships.",
+    "whyItMatters": "Narratives help individuals understand the real-world consequences of hepatitis B and motivate screening, vaccination, and treatment adherence.",
+    "linkedThemes": [
+      "Emotional Burden & Family Impact Develop Resources Focused on Family and Intergenerational Risk"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_11_block_10",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  },
+  {
+    "id": "hepatitis_b_12_11_recommendations_the_hepatitis_b_community_is_actively_seeking_information_and_support_online",
+    "findingType": "recommendation",
+    "title": "Recommendations The hepatitis B community is actively seeking information and support online",
+    "summary": "Recommendations The hepatitis B community is actively seeking information and support online. Pharma companies that provide clear education, elevate authentic patient stories, and engage directly in patient conversations can help close knowledge gaps while building trust with affected communities. 11 Engage Directly in Online Communities Where Patients Seek Information 05 Rationale: Patients frequently turn to peer communities to interpret medical information and validate personal decisions. Action: Partner with patient advocacy groups and credible clinicians to participate in discussions on platforms like Reddit, X, and forums. Why it matters: Providing credible voices within these spaces helps counter misinformation while meeting patients where conversations are already happening. Theme Alignment: Peer Validation & Community Interpretation Develop Myth-Busting Content that Addresses Common Online Misconceptions 06 Rationale: Social listening reveals repeated debates and misunderstandings that persist across platforms. Action: Publish myth-versus-fact resources addressing recurring misconceptions around hepatitis B vaccines, transmission, and disease severity. Why it matters: Addr",
+    "therapeuticArea": "hepatitis_b",
+    "diseaseArea": "hepatitis_b",
+    "profileId": "hepatitis_b",
+    "theme": "Clinical uncertainty and care pathway confusion",
+    "persona": "patient",
+    "personaTraits": [
+      "confused"
+    ],
+    "symptoms": [],
+    "treatments": [],
+    "barriers": [
+      "clinical_uncertainty",
+      "misinformation"
+    ],
+    "emotions": [
+      "confused"
+    ],
+    "unmetNeeds": [
+      "clinical_uncertainty",
+      "misinformation"
+    ],
+    "channels": [],
+    "markets": [],
+    "countries": [],
+    "labels": [
+      "recommendation",
+      "Clinical uncertainty and care pathway confusion",
+      "clinical_uncertainty",
+      "misinformation",
+      "confused"
+    ],
+    "lexiconExamples": [],
+    "evidenceQuotes": [],
+    "rationale": "Patients frequently turn to peer communities to interpret medical information and validate personal decisions.",
+    "action": "Partner with patient advocacy groups and credible clinicians to participate in discussions on platforms like Reddit, X, and forums.",
+    "whyItMatters": "Providing credible voices within these spaces helps counter misinformation while meeting patients where conversations are already happening.",
+    "linkedThemes": [
+      "Peer Validation & Community Interpretation Develop Myth-Busting Content that Addresses Common Online Misconceptions"
+    ],
+    "sourceType": "curated",
+    "sourceFormat": "pdf",
+    "sourceDocument": "Hepatitis B - Social Intel_Patients 2025.pdf",
+    "sourceSlideOrPage": "page_12_block_11",
+    "platform": "curated_pdf",
+    "country": "",
+    "url": "",
+    "confidence": 0.9
+  }
+]

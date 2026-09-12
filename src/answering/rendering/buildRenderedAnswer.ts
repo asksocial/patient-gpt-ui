@@ -626,7 +626,7 @@ function buildLiveDataSection(
         "live_data_check",
 
       title:
-        "Live Data Check",
+        "Social Data Check",
 
       text:
         "This answer is based on a limited sample and should be treated as directional.",
@@ -645,10 +645,10 @@ function buildLiveDataSection(
         "live_data_check",
 
       title:
-        "Live Data Check",
+        "Social Data Check",
 
       text:
-        "No live themes were retrieved for this response.",
+        "No social themes were retrieved for this response.",
 
       findings: [],
     };
@@ -662,10 +662,10 @@ function buildLiveDataSection(
         "live_data_check",
 
       title:
-        "Live Data Check",
+        "Social Data Check",
 
       text:
-        "This answer is based entirely on live social signals from the ingested dataset.",
+        "This answer is based entirely on social intelligence signals from the ingested dataset.",
 
       findings:
         findings.slice(0, 3),
@@ -677,10 +677,10 @@ function buildLiveDataSection(
       "live_data_check",
 
     title:
-      "Live Data Check",
+      "Social Data Check",
 
     text:
-      "Live social signals were retrieved and used to extend the available intelligence.",
+      "Social intelligence signals were retrieved and used to extend the available intelligence.",
 
     findings:
       findings.slice(0, 3),

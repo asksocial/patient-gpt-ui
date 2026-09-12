@@ -53,7 +53,7 @@ function AssistantAnswer({ answer }) {
     <div className="space-y-4">
       <Card
         title="Direct Answer"
-        subtitle="Report-backed, live-enhanced summary"
+        subtitle="Report-backed, social-enhanced summary"
       >
         <p className="text-[15px] leading-7 text-white/80">
           {answer?.directAnswer}
@@ -83,11 +83,11 @@ function AssistantAnswer({ answer }) {
         </Card>
 
         <Card
-          title="What’s Emerging in Live Data"
+          title="What’s Emerging in Social Data"
           subtitle={
             emergingNarratives.length
               ? `${emergingNarratives.length} emerging narrative${emergingNarratives.length > 1 ? "s" : ""} detected`
-              : "Live themes aligned to the baseline"
+              : "Social themes aligned to the baseline"
           }
         >
           <div className="space-y-4">
@@ -120,7 +120,7 @@ function AssistantAnswer({ answer }) {
                   >
                     {theme.sourceType === "noise_llm"
                       ? "Emerging narrative"
-                      : "Structured live theme"}
+                      : "Structured social theme"}
                   </Badge>
                 </div>
 
@@ -267,7 +267,7 @@ export default function AskSocialChat() {
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-white/60">
                 Ask natural-language questions and get a baseline report view
-                enriched with live emerging narratives, trust signals, and
+                enriched with emerging social narratives, trust signals, and
                 strategic synthesis.
               </p>
             </div>
@@ -355,7 +355,7 @@ export default function AskSocialChat() {
 
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-white/40">
-                Report-backed insights + live narrative discovery
+                Report-backed insights + social narrative discovery
               </p>
               <button
                 type="submit"

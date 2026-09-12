@@ -78,7 +78,7 @@ async function adjudicateMatch(
   confidence: number;
 }> {
   const prompt = `
-You are comparing a live social-listening theme to a curated report theme.
+You are comparing a social-intelligence theme to a curated report theme.
 
 Return JSON only in this exact format:
 {
@@ -88,11 +88,11 @@ Return JSON only in this exact format:
 }
 
 Definitions:
-- covered: the curated theme clearly already includes the live theme
-- partial: the curated theme overlaps but does not fully capture the live theme
-- emerging: the live theme adds materially new context not clearly represented in the curated theme
+- covered: the curated theme clearly already includes the social theme
+- partial: the curated theme overlaps but does not fully capture the social theme
+- emerging: the social theme adds materially new context not clearly represented in the curated theme
 
-Live theme:
+Social theme:
 Name: ${liveTheme.theme_name}
 Description: ${liveTheme.theme_description}
 Source type: ${liveTheme.source_type}
@@ -107,7 +107,7 @@ Similarity score: ${similarityScore}
 Rules:
 - Prefer "covered" only when overlap is strong.
 - Use "partial" when the curated theme is adjacent but broader or less specific.
-- Use "emerging" when the live theme introduces distinct narrative meaning.
+- Use "emerging" when the social theme introduces distinct narrative meaning.
 - Return valid JSON only.
   `.trim();
 

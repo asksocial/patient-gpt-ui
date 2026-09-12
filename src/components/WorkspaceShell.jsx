@@ -30,7 +30,7 @@ const DESTINATION_COPY = {
     eyebrow: "Ask AskSocial",
     title: "Conversational social intelligence",
     description:
-      "Ask questions across report themes and live narrative signals to understand what is changing and what it means.",
+      "Ask questions across report themes and social narrative signals to understand what is changing and what it means.",
   },
   intelligence_search: {
     eyebrow: "Intelligence",
@@ -377,7 +377,7 @@ function RecommendedActions({ actions = [] }) {
             <div className="flex items-start gap-3">
               <Badge
                 tone="action"
-                tooltip="A practical next step derived from the strongest curated and live signals."
+                tooltip="A practical next step derived from the strongest curated and social signals."
               >
                 <span className="whitespace-nowrap">
                   Action {idx + 1}
@@ -392,6 +392,51 @@ function RecommendedActions({ actions = [] }) {
   );
 }
 
+function SourceMentionList({ title, mentions = [] }) {
+  if (!mentions.length) return null;
+
+  return (
+    <div className="mt-5 border-t border-white/10 pt-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300/80">
+        {title}
+      </p>
+      <div className="mt-3 space-y-3">
+        {mentions.map((mention) => (
+          <article
+            key={mention.id}
+            className="rounded-xl border border-white/10 bg-black/30 p-4"
+          >
+            <h5 className="text-sm font-semibold text-white">
+              {mention.title}
+            </h5>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              {mention.excerpt}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/40">
+              {mention.platform ? <span>{mention.platform}</span> : null}
+              {mention.persona ? <span>· {mention.persona}</span> : null}
+              {mention.country ? <span>· {mention.country}</span> : null}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs text-white/35">{mention.sourceLabel}</span>
+              {mention.url ? (
+                <a
+                  href={mention.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex cursor-pointer items-center rounded-lg border border-cyan-400/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-400/20"
+                >
+                  Open original source ↗
+                </a>
+              ) : null}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AssistantAnswer({
   responsePayload,
   showDirectAnswer = true,
@@ -403,6 +448,8 @@ function AssistantAnswer({
   const liveThemes = answer?.liveData?.themes || [];
   const emergingNarratives = answer?.liveData?.emergingNarratives || [];
   const recommendedActions = answer?.recommendedActions || [];
+  const curatedMentions = responsePayload?.sourceIntelligence?.curatedMentions || [];
+  const socialMentions = responsePayload?.sourceIntelligence?.socialMentions || [];
   const curatedIntelligenceAvailable =
     typeof responsePayload?.curatedIntelligenceAvailable === "boolean"
       ? responsePayload.curatedIntelligenceAvailable
@@ -415,7 +462,7 @@ function AssistantAnswer({
       {showDirectAnswer ? (
         <Panel
           title="Direct Answer"
-          subtitle="Report-backed, live-enhanced summary"
+          subtitle="Report-backed, social-enhanced summary"
         >
           <p className="text-[15px] leading-7 text-white/80">
             {answer.directAnswer}
@@ -452,6 +499,10 @@ function AssistantAnswer({
                 </div>
               ))}
             </div>
+            <SourceMentionList
+              title="Representative curated mentions"
+              mentions={curatedMentions}
+            />
           </Panel>
         ) : null}
 
@@ -460,7 +511,7 @@ function AssistantAnswer({
           subtitle={
             emergingNarratives.length
               ? `${emergingNarratives.length} emerging narrative${emergingNarratives.length > 1 ? "s" : ""} detected`
-              : "Live themes aligned to baseline"
+              : "Social themes aligned to baseline"
           }
         >
           <div className="space-y-4">
@@ -487,12 +538,12 @@ function AssistantAnswer({
                       }
                       tooltip={
                         theme.relationship === "emerging"
-                          ? "This live theme adds materially new context that is not clearly represented in the baseline report."
+                          ? "This social theme adds materially new context that is not clearly represented in the baseline report."
                           : theme.relationship === "partial"
-                            ? "This live theme overlaps with the baseline report, but adds more specificity or a distinct angle."
+                            ? "This social theme overlaps with the baseline report, but adds more specificity or a distinct angle."
                             : theme.relationship === "live"
-                              ? "This theme was derived directly from the validated live social corpus; no curated baseline relationship is implied."
-                            : "This live theme is already well represented in the baseline report."
+                              ? "This theme was derived directly from the validated social corpus; no curated baseline relationship is implied."
+                            : "This social theme is already well represented in the baseline report."
                       }
                     >
                       {theme.relationship === "emerging"
@@ -500,7 +551,7 @@ function AssistantAnswer({
                         : theme.relationship === "partial"
                           ? "Partial"
                           : theme.relationship === "live"
-                            ? "Live Signal"
+                            ? "Social Signal"
                           : "Covered"}
                     </Badge>
 
@@ -510,13 +561,13 @@ function AssistantAnswer({
                       }
                       tooltip={
                         theme.sourceType === "noise_llm"
-                          ? "An inferred live narrative pulled from noisier, lower-density conversation patterns that still appear strategically meaningful."
-                          : "A structured live theme identified from clustered conversation data with clearer pattern consistency."
+                          ? "An inferred social narrative pulled from noisier, lower-density conversation patterns that still appear strategically meaningful."
+                          : "A structured social theme identified from clustered conversation data with clearer pattern consistency."
                       }
                     >
                       {theme.sourceType === "noise_llm"
                         ? "Emerging Narrative"
-                        : "Structured Live Theme"}
+                        : "Structured Social Theme"}
                     </Badge>
 
                     {theme.confidenceLabel ? (
@@ -535,7 +586,7 @@ function AssistantAnswer({
                       <Badge
                         key={`persona-${persona}`}
                         tone="persona"
-                        tooltip="Leading audience or persona represented in this live theme."
+                        tooltip="Leading audience or persona represented in this social theme."
                       >
                         {persona}
                       </Badge>
@@ -545,7 +596,7 @@ function AssistantAnswer({
                       <Badge
                         key={`platform-${platform}`}
                         tone="platform"
-                        tooltip="Leading platform represented in this live theme."
+                        tooltip="Leading platform represented in this social theme."
                       >
                         {platform}
                       </Badge>
@@ -555,7 +606,7 @@ function AssistantAnswer({
                       <Badge
                         key={`country-${country}`}
                         tone="country"
-                        tooltip="Leading market represented in this live theme."
+                        tooltip="Leading market represented in this social theme."
                       >
                         {country}
                       </Badge>
@@ -569,7 +620,7 @@ function AssistantAnswer({
               ))
             ) : (
               <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-white/40">
-                No live themes were returned for this response.
+                No social themes were returned for this response.
               </div>
             )}
           </div>
@@ -584,7 +635,7 @@ function AssistantAnswer({
                   <Badge
                     key={`${item}-${idx}`}
                     tone="emerging"
-                    tooltip="A live narrative identified as materially new relative to the baseline report."
+                    tooltip="A social narrative identified as materially new relative to the baseline report."
                   >
                     {item}
                   </Badge>
@@ -592,6 +643,10 @@ function AssistantAnswer({
               </div>
             </div>
           ) : null}
+          <SourceMentionList
+            title="Representative social mentions"
+            mentions={socialMentions}
+          />
         </Panel>
       </div>
 
@@ -1303,6 +1358,8 @@ export default function WorkspaceShell() {
                   [],
                 curatedIntelligenceAvailable:
                   message.content.curatedIntelligenceAvailable,
+                sourceIntelligence:
+                  message.content.sourceIntelligence || null,
                 executiveIntelligence:
                   message.content.executiveIntelligence || null,
                 analyticalStatus:
@@ -1577,6 +1634,8 @@ export default function WorkspaceShell() {
         relevantCuratedInsights: data.relevantCuratedInsights || [],
         curatedIntelligenceAvailable:
           data.curatedIntelligenceAvailable === true,
+        sourceIntelligence:
+          data.sourceIntelligence || null,
         debug: data.debug || {},
         executiveIntelligence:
           data.executiveIntelligence ||
@@ -1622,6 +1681,8 @@ export default function WorkspaceShell() {
             relevantCuratedInsights: data.relevantCuratedInsights || [],
             curatedIntelligenceAvailable:
               responsePayload.curatedIntelligenceAvailable,
+            sourceIntelligence:
+              responsePayload.sourceIntelligence,
             executiveIntelligence:
               responsePayload.executiveIntelligence,
             analyticalStatus:
@@ -2242,7 +2303,7 @@ export default function WorkspaceShell() {
               className="order-4 border-t border-white/10 px-6 py-4"
             >
               <p className="text-xs text-white/40">
-                Report-backed insights + structured curated intelligence + live
+                Report-backed insights + structured curated intelligence + social
                 narrative discovery
               </p>
             </footer>

@@ -50,12 +50,12 @@ function computeLiveStatus(sections: PlannedSections): "confirmed" | "not_found"
 
 function renderLiveStatus(status: "confirmed" | "not_found" | "extends"): string {
   if (status === "not_found") {
-    return "No live themes were retrieved for this response, so the answer reflects curated intelligence only.";
+    return "No social themes were retrieved for this response, so the answer reflects curated intelligence only.";
   }
   if (status === "extends") {
-    return "Live social signals were retrieved and used to extend the curated intelligence.";
+    return "Social intelligence signals were retrieved and used to extend the curated intelligence.";
   }
-  return "Live social signals were retrieved and used to validate the curated intelligence.";
+  return "Social intelligence signals were retrieved and used to validate the curated intelligence.";
 }
 
 function normalizePersonaLabel(label: string): string {
@@ -255,7 +255,7 @@ export function buildRenderedAnswer(
 
   renderedSections.push({
     key: "live_data_check",
-    title: "Live Data Check",
+    title: "Social Data Check",
     text: renderLiveStatus(liveStatus),
     findings: sections.liveDataCheck,
   });

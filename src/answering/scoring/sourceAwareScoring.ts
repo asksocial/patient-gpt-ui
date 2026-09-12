@@ -83,7 +83,7 @@ export function getSourceAwareScore(
     hasLive ? 0.05 + liveRatio * 0.05 : 0;
 
   // Mixed-source findings are especially valuable because they bridge
-  // curated intelligence and live conversation.
+  // curated intelligence and social conversation.
   const mixedSourceBoost =
     hasCurated && hasLive ? 0.06 : 0;
 

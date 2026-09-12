@@ -53,7 +53,7 @@ export default async function Home() {
         <div className="mx-auto max-w-7xl px-6 py-20">
           <div className="max-w-3xl">
             <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">
-              Report-backed intelligence + live emerging narratives
+              Report-backed intelligence + emerging social narratives
             </div>
 
             <h1 className="mt-6 text-5xl font-semibold leading-tight tracking-tight text-white md:text-6xl">
@@ -62,7 +62,7 @@ export default async function Home() {
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-white/70">
               AskSocial helps teams move beyond dashboards and static reports
-              by combining curated intelligence with live narrative discovery
+              by combining curated intelligence with social narrative discovery
               in one conversational experience.
             </p>
 
@@ -93,8 +93,8 @@ export default async function Home() {
             text="Understand barriers, motivations, concerns, misconceptions, and unmet needs through plain-language questions."
           />
           <FeatureCard
-            title="Blend baseline and live context"
-            text="Start from expert-curated report themes, then layer in what is emerging right now from live conversation."
+            title="Blend baseline and social context"
+            text="Start from expert-curated report themes, then layer in what is emerging in social conversation."
           />
           <FeatureCard
             title="Surface narratives, not just volume"
@@ -115,7 +115,7 @@ export default async function Home() {
             </h2>
 
             <p className="mt-4 text-base leading-7 text-white/70">
-              AskSocial combines curated intelligence with live narrative
+              AskSocial combines curated intelligence with social narrative
               detection so teams can understand both the baseline and what is
               changing now.
             </p>
@@ -130,12 +130,12 @@ export default async function Home() {
             <StepCard
               number="02"
               title="Detect"
-              text="Analyze live conversation to surface structured topics and lower-density emerging narratives."
+              text="Analyze social conversation to surface structured topics and lower-density emerging narratives."
             />
             <StepCard
               number="03"
               title="Compare"
-              text="Align live themes to baseline themes as covered, partial, or emerging."
+              text="Align social themes to baseline themes as covered, partial, or emerging."
             />
             <StepCard
               number="04"
@@ -154,7 +154,7 @@ export default async function Home() {
             </h3>
 
             <p className="mt-4 max-w-2xl text-base leading-7 text-white/70">
-              AskSocial gives teams a report-backed, live-enhanced intelligence
+              AskSocial gives teams a report-backed, social-enhanced intelligence
               layer that helps them understand what people are saying, what is
               changing, and what it means.
             </p>

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     console.error("POST /api/themes/live error:", error);
 
     const message =
-      error instanceof Error ? error.message : "Failed to extract live themes";
+      error instanceof Error ? error.message : "Failed to extract social themes";
 
     return NextResponse.json(
       { ok: false, error: message },

@@ -58,11 +58,11 @@ function analyticalLiveThemes(themes: AnalyticalTheme[] = []) {
         compactText(theme.description) ||
         compactText(theme.representativeClaims?.[0]) ||
         (typeof percent === "number"
-          ? `${theme.label} appears in approximately ${percent}% of the validated live finding set.`
-          : "Validated theme detected in the live social corpus.");
+          ? `${theme.label} appears in approximately ${percent}% of the validated social finding set.`
+          : "Validated theme detected in the social intelligence corpus.");
 
       return {
-        name: compactText(theme.label) || "Unnamed live theme",
+        name: compactText(theme.label) || "Unnamed social theme",
         description,
         sourceType: "analytical_corpus",
         relationship: "live",

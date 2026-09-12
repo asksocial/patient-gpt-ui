@@ -1037,7 +1037,7 @@ export function askSocial(
 
   const liveDataStatus =
     determineLiveDataStatus(
-      rankedCards
+      themedCards
     );
 
   const ontologyUnknownCounts =

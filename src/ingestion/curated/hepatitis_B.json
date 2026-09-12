@@ -1,0 +1,26 @@
+[
+  {
+    "id": "hbv_001",
+    "findingType": "symptom_burden",
+    "title": "Pain and fatigue shape day-to-day burden",
+    "summary": "Patients frequently describe pain and fatigue as the most disruptive day-to-day burdens.",
+    "labels": ["pain", "fatigue"],
+    "symptoms": ["pain", "fatigue"],
+    "treatments": [],
+    "therapeuticArea": "hepatitis_b",
+    "persona": "patient",
+    "sourceType": "curated"
+  },
+  {
+    "id": "hbv_002",
+    "findingType": "treatment_decision",
+    "title": "Monitoring burden influences treatment experience",
+    "summary": "Ongoing monitoring and uncertainty about progression contribute to emotional and practical burden.",
+    "labels": ["monitoring", "uncertainty"],
+    "symptoms": ["fatigue"],
+    "treatments": [],
+    "therapeuticArea": "hepatitis_b",
+    "persona": "patient",
+    "sourceType": "curated"
+  }
+]

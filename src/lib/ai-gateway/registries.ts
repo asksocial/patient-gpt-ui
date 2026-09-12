@@ -53,7 +53,7 @@ export const AI_PROMPT_REGISTRY:
     id: "compose_hybrid_answer",
     version: "1.0.0",
     description:
-      "Synthesize curated and live intelligence into an AskSocial answer.",
+      "Synthesize curated and social intelligence into an AskSocial answer.",
     instructions:
       "Return grounded, decision-useful intelligence using only the supplied evidence and the requested JSON shape.",
     routeId:

@@ -116,8 +116,10 @@ const CORPORA: Record<
     source: "meltwater_csv",
     sourceLabel:
       "Hepatitis B Meltwater canonical corpus",
-    load: () =>
-      ingestMeltwaterCsv(
+    load: () => [
+      ...ingestCurated("hepatitis_b"),
+      ...ingestCurated("hepatitis_b_part1"),
+      ...ingestMeltwaterCsv(
         requireFile(
           "data/HepB_-_Patients__Caregivers - Mar 11, 2026 - 11 47 15 AM.csv"
         ),
@@ -126,8 +128,10 @@ const CORPORA: Record<
           therapeuticArea:
             "hepatitis_b",
           profileId: "hepatitis_b",
+          includeCurated: false,
         }
-      ) as CanonicalFinding[],
+      ),
+    ] as unknown as CanonicalFinding[],
   },
   regenerative_aesthetics: {
     source: "meltwater_csv",
@@ -181,11 +185,11 @@ const CORPORA: Record<
   gene_therapy: {
     source: "curated_findings",
     sourceLabel:
-      "Gene Therapy curated canonical corpus",
-    load: () =>
-      ingestCurated(
-        "gene_therapy"
-      ) as unknown as CanonicalFinding[],
+      "Gene Therapy curated and social canonical corpus",
+    load: () => [
+      ...ingestCurated("gene_therapy"),
+      ...ingestCurated("gene_therapy_social"),
+    ] as unknown as CanonicalFinding[],
   },
 };
 
