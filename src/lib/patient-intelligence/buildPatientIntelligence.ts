@@ -89,6 +89,10 @@ export type PatientIntelligenceResult = {
     id: string;
     findingId: string;
     quote: string;
+    fullMention: string;
+    mentionTitle?: string;
+    author?: string;
+    publishedAt?: string;
     sourceLabel: string;
     url?: string;
     platform?: string;
@@ -98,7 +102,9 @@ export type PatientIntelligenceResult = {
     evidenceTier: PatientEvidenceTier;
     evidenceTierLabel: string;
     classificationConfidence: number;
+    classificationRationale: string;
     qualityScore: number;
+    matchedSignalLabels: string[];
   }>;
 };
 
@@ -283,6 +289,12 @@ function matchedPatientSignals(
     .map(([id, label]) => ({ id, label }));
 }
 
+function allMatchedPatientSignals(finding: CanonicalFinding) {
+  const signals = (Object.keys(PATIENT_EVIDENCE_DIMENSIONS) as PatientEvidenceDimension[])
+    .flatMap((dimension) => matchedPatientSignals(finding, dimension));
+  return [...new Map(signals.map((signal) => [signal.id, signal])).values()];
+}
+
 function buildPatientEvidenceItem(
   finding: CanonicalFinding,
   classification: ReturnType<typeof classifyPatientEvidence>,
@@ -428,12 +440,17 @@ export function buildPatientIntelligence(
     .slice(0, 20)
     .map(({ finding, intelligence, classification }) => {
     const source = bestEvidence(finding);
+    const matchedSignals = allMatchedPatientSignals(finding);
     return {
       id: `patient:${findingId(finding)}`,
       findingId: findingId(finding),
       quote: source?.excerpt || finding.summary || finding.canonicalClaim,
+      fullMention: fullMention(finding, source),
+      mentionTitle: metadataString(finding, "headline", "title") || undefined,
+      author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,
+      publishedAt: metadataString(finding, "date", "published_at", "published_date", "alternate_date_format") || undefined,
       sourceLabel: source?.platform || intelligence.sourceType || intelligence.platform || "Source metadata unavailable",
-      url: source?.url,
+      url: originalSourceUrl(finding, source),
       platform: source?.platform,
       country: source?.country,
       voice: intelligence.voice,
@@ -441,7 +458,9 @@ export function buildPatientIntelligence(
       evidenceTier: classification.tier,
       evidenceTierLabel: patientEvidenceTierLabel(classification.tier),
       classificationConfidence: classification.confidence,
+      classificationRationale: classification.rationale,
       qualityScore: intelligence.qualityScore,
+      matchedSignalLabels: matchedSignals.map((signal) => signal.label),
     };
   });
 

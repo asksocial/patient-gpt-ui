@@ -24,7 +24,9 @@ const result = buildPatientIntelligence("Medical Aesthetics", [
 if (result.schemaVersion !== "patient_intelligence_v1") throw new Error("Patient Intelligence schema is missing.");
 if (!result.treatmentBarriers.some((item) => item.id === "trust_safety")) throw new Error("Safety barriers were not detected.");
 if (!result.journeyStages.some((item) => item.id === "consideration")) throw new Error("Journey consideration was not detected.");
-if (!result.evidence.every((item) => item.findingId)) throw new Error("Patient outputs must retain evidence provenance.");
+if (!result.evidence.every((item) => item.findingId && item.fullMention && item.matchedSignalLabels.length)) {
+  throw new Error("Representative patient outputs must retain provenance and full-mention context.");
+}
 if (!result.dataQuality.limitations.length) throw new Error("Data limitations must be disclosed.");
 
 const dimensions: PatientEvidenceDimension[] = [

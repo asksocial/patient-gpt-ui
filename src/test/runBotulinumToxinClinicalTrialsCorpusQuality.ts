@@ -56,11 +56,13 @@ assert(firstPage.filters.evidenceClasses.some((item) => item.label === "clinical
 const route = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/route.ts"), "utf8");
 const evidenceRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/evidence/route.ts"), "utf8");
 const view = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
+const evidenceCard = fs.readFileSync(path.resolve(process.cwd(), "src/components/EvidenceMentionCard.jsx"), "utf8");
 assert(route.includes("loadCanonicalFindingsForModule(therapeuticArea, moduleId)"), "The module API must route through module-specific corpus resolution.");
 assert(evidenceRoute.includes("buildModuleEvidenceCatalog") && evidenceRoute.includes("pageSize"), "The evidence API must provide governed server-side search and pagination.");
-for (const phrase of ["Representative module evidence", "View all evidence", "Search mentions by keyword", "Pre-qualified relevance · quality-ranked", 'module.id === "clinical_trials"', "evidenceDisplayTitle(item, module.name)"]) {
+for (const phrase of ["Representative module evidence", "View all evidence", "Search mentions by keyword", "Pre-qualified relevance · quality-ranked", "evidenceDisplayTitle(item, module.name)"]) {
   assert(view.includes(phrase), `The Clinical Trials evidence browser is missing: ${phrase}`);
 }
+assert(view.includes("<EvidenceMentionCard"), "Clinical Trials must use the shared all-module evidence-card layout.");
 for (const column of ["Label", "Mention", "Source", "Audience", "Evidence Class", "Published"]) {
   assert(view.includes(`>${column}</th>`), `The Clinical Trials evidence table is missing its ${column} column.`);
 }
@@ -70,7 +72,8 @@ assert(view.includes('className="line-clamp-2 text-left leading-5 text-white/55 
 assert(view.includes('href={item.url}') && view.includes("{item.sourceLabel} ↗"), "Every available table source must be an actionable original-source link.");
 assert(view.includes("Suggested next moves based on the strongest current signals"), "Module Recommended Actions must match the Search-screen presentation.");
 assert(view.includes("Action {idx + 1}"), "Module recommendations must use the same numbered action badges as Search.");
-assert(view.includes('className="line-clamp-2 text-sm font-semibold leading-6 text-white/80"'), "Representative Clinical Trials evidence titles must never exceed two lines.");
+assert(evidenceCard.includes('className="mt-3 line-clamp-2 text-sm font-semibold leading-5 text-white/85"'), "Representative Clinical Trials evidence titles must never exceed two lines.");
+assert(evidenceCard.includes("line-clamp-4"), "Representative module evidence previews must never exceed four lines.");
 assert(view.lastIndexOf("Data-quality limitations") > view.lastIndexOf("View all evidence"), "Data-quality limitations must appear at the bottom of the module page.");
 
 console.log(JSON.stringify({

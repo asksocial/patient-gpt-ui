@@ -108,6 +108,7 @@ if (!commercial.dataQuality.limitations.some((item) => item.includes("labeled co
 const workspaceSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/WorkspaceShell.jsx"), "utf8");
 const viewSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
 const patientViewSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/PatientIntelligenceView.jsx"), "utf8");
+const evidenceCardSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/EvidenceMentionCard.jsx"), "utf8");
 const globalStyles = fs.readFileSync(path.resolve(process.cwd(), "src/app/globals.css"), "utf8");
 const routeSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/route.ts"), "utf8");
 const evidenceRouteSource = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/evidence/route.ts"), "utf8");
@@ -121,12 +122,12 @@ if (
   viewSource.includes('{therapeuticArea} {module.name.toLowerCase()} intelligence') ||
   !patientViewSource.includes('>{therapeuticArea}</h2>') ||
   patientViewSource.includes('{therapeuticArea} patient experience') ||
-  !patientViewSource.includes('className="mt-4 line-clamp-4 whitespace-pre-wrap border-l-2 border-cyan-300/40') ||
-  !patientViewSource.includes("<PatientEvidenceCard") ||
-  !patientViewSource.includes("View full patient evidence mention:") ||
-  !patientViewSource.includes("View full mention") ||
+  !evidenceCardSource.includes('className="mt-4 line-clamp-4 whitespace-pre-wrap border-l-2 border-cyan-300/40') ||
+  !patientViewSource.includes("<EvidenceMentionCard") ||
+  !viewSource.includes("<EvidenceMentionCard") ||
+  !evidenceCardSource.includes("View full evidence mention:") ||
+  !evidenceCardSource.includes("View full mention") ||
   !viewSource.includes('aria-label="Full module evidence mention"') ||
-  !viewSource.includes("View full mention") ||
   !viewSource.includes("evidence.fullMention || evidence.quote") ||
   !viewSource.includes("Open original source ↗") ||
   !viewSource.includes("border-cyan-300/35 bg-cyan-300/[0.10]") ||

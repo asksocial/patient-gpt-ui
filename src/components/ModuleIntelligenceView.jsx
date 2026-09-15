@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import EvidenceMentionCard from "./EvidenceMentionCard";
 import ModuleShell from "./ModuleShell";
 import Tooltip from "./ui/Tooltip";
 
@@ -103,9 +104,9 @@ function FullMentionDialog({ evidence, moduleName, onClose }) {
           {evidence.fullMention || evidence.quote}
         </blockquote>
         <div className="mt-5 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
-          <div><p className="text-white/30">Source</p><p className="mt-1 text-white/65">{evidence.sourceLabel}</p></div>
-          <div><p className="text-white/30">Audience</p><p className="mt-1 text-white/65">{evidence.voice.replaceAll("_", " ")}</p></div>
-          <div><p className="text-white/30">Evidence class</p><p className="mt-1 text-white/65">{evidence.evidenceClass.replaceAll("_", " ")}</p></div>
+          <div><p className="text-white/30">Source</p><p className="mt-1 text-white/65">{evidence.sourceLabel || "Not available"}</p></div>
+          <div><p className="text-white/30">Audience</p><p className="mt-1 text-white/65">{String(evidence.voice || "Not available").replaceAll("_", " ")}</p></div>
+          <div><p className="text-white/30">Evidence class</p><p className="mt-1 text-white/65">{String(evidence.evidenceClass || "Not available").replaceAll("_", " ")}</p></div>
           <div><p className="text-white/30">Published</p><p className="mt-1 text-white/65">{evidence.publishedAt || "Not available"}</p></div>
         </div>
         {evidence.author ? <p className="mt-4 text-xs text-white/40">Author or account: <span className="text-white/65">{evidence.author}</span></p> : null}
@@ -386,38 +387,22 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
         </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {result.evidence.map((item) => (
-            <article key={item.id} className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <button
-                type="button"
-                onClick={() => setSelectedEvidence(item)}
-                aria-label={`View full mention from ${item.sourceLabel}`}
-                className="block w-full rounded-lg text-left hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
-              >
-                {module.id === "clinical_trials" ? (
-                  <p className="line-clamp-2 text-sm font-semibold leading-6 text-white/80" title={evidenceDisplayTitle(item, module.name)}>
-                    {evidenceDisplayTitle(item, module.name)}
-                  </p>
-                ) : (
-                  <blockquote className="text-sm leading-6 text-cyan-100/65">“{item.quote}”</blockquote>
-                )}
-                <span className="mt-2 inline-block text-[11px] font-medium text-cyan-300/70">View full mention</span>
-              </button>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {item.matchedSectionLabels.map((label) => (
-                  <span key={label} className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-2 py-1 text-[10px] text-cyan-200/65">
-                    {label}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-white/35">
-                <span>{item.sourceLabel}</span>
-                <span>{item.voice} voice</span>
-                <span>{item.evidenceClass.replaceAll("_", " ")}</span>
-                <span>{item.qualityBand.replaceAll("_", " ")} quality · {Math.round(item.qualityScore)}</span>
-                {item.promotionalContext ? <span className="text-amber-200/65">promotional context</span> : null}
-              </div>
-              {item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="mt-4 inline-flex rounded-lg border border-cyan-300/25 bg-cyan-300/[0.07] px-3 py-2 text-[11px] font-semibold text-cyan-200/85 transition hover:border-cyan-200/50 hover:bg-cyan-300/[0.12]">Open original source ↗</a> : null}
-            </article>
+            <EvidenceMentionCard
+              key={item.id}
+              eyebrow={`${module.name} evidence`}
+              badge={`${String(item.qualityBand || "unrated").replaceAll("_", " ")} quality`}
+              title={evidenceDisplayTitle(item, module.name)}
+              preview={item.fullMention || item.quote}
+              tags={item.matchedSectionLabels || []}
+              metrics={[
+                { label: "Source", value: item.sourceLabel },
+                { label: "Audience", value: String(item.voice || "Not available").replaceAll("_", " "), capitalize: true },
+                { label: "Evidence class", value: String(item.evidenceClass || "Not available").replaceAll("_", " "), capitalize: true },
+                { label: "Evidence quality", value: `${Math.round(Number(item.qualityScore) || 0)} / 100` },
+              ]}
+              url={item.url}
+              onOpen={() => setSelectedEvidence(item)}
+            />
           ))}
         </div>
       </section>
