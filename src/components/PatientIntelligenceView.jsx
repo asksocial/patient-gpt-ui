@@ -78,6 +78,41 @@ function PatientEvidenceDialog({ evidence, onClose }) {
   );
 }
 
+function PatientEvidenceCard({ evidence, onOpen }) {
+  const audience = readableLabel(evidence.audienceLabel || evidence.voice);
+  const evidenceTier = evidence.evidenceTierLabel || "Direct patient evidence";
+
+  return (
+    <article className="rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-cyan-300/20 hover:bg-cyan-300/[0.025]">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`View full patient evidence mention: ${patientEvidenceTitle(evidence)}`}
+        className="block w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-300/70">Patient evidence</p>
+          <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] px-2.5 py-1 text-[10px] font-medium text-cyan-200/75">{evidenceTier}</span>
+        </div>
+        <h4 className="mt-3 line-clamp-2 text-sm font-semibold leading-5 text-white/85">{patientEvidenceTitle(evidence)}</h4>
+        <blockquote className="mt-4 line-clamp-4 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-6 text-white/65">{evidence.fullMention || evidence.quote}</blockquote>
+      </button>
+
+      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/30">Source</p><p className="mt-1 truncate text-white/65" title={evidence.sourceLabel}>{evidence.sourceLabel}</p></div>
+        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/30">Audience</p><p className="mt-1 truncate capitalize text-white/65" title={audience}>{audience}</p></div>
+        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/30">Classification</p><p className="mt-1 text-white/65">{Math.round((evidence.classificationConfidence || 0) * 100)}% confidence</p></div>
+        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/30">Evidence quality</p><p className="mt-1 text-white/65">{Math.round(evidence.qualityScore)}</p></div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={onOpen} className="rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black">View full mention</button>
+        {evidence.url ? <a href={evidence.url} target="_blank" rel="noreferrer noopener" className="inline-flex items-center rounded-xl border border-cyan-300/35 bg-cyan-300/[0.10] px-4 py-2.5 text-xs font-semibold text-cyan-200 transition hover:border-cyan-200/60 hover:bg-cyan-300/[0.16]">Open original source ↗</a> : null}
+      </div>
+    </article>
+  );
+}
+
 export default function PatientIntelligenceView({ therapeuticArea, workspaceId }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -247,6 +282,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
 
   return (
     <div className="space-y-4">
+      <PatientEvidenceDialog evidence={selectedEvidence} onClose={() => setSelectedEvidence(null)} />
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-200/70">
           <span className="rounded-full border border-cyan-300/20 px-2 py-1">{result.dataQuality.assessment} coverage</span>
@@ -279,16 +315,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Patient evidence</h3>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {result.evidence.slice(0, 12).map((item) => (
-            <article key={item.id} className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <blockquote className="text-sm leading-6 text-white/65">“{item.quote}”</blockquote>
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-white/35">
-                {item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="text-cyan-300 underline">{item.sourceLabel}</a> : <span>{item.sourceLabel}</span>}
-                <span className="capitalize">{readableLabel(item.audienceLabel || item.voice)}</span>
-                <span className="text-cyan-200/70">{item.evidenceTierLabel || "Direct patient evidence"}</span>
-                <span>classification {Math.round((item.classificationConfidence || 0) * 100)}%</span>
-                <span>quality {Math.round(item.qualityScore)}</span>
-              </div>
-            </article>
+            <PatientEvidenceCard key={item.id} evidence={item} onOpen={() => setSelectedEvidence(item)} />
           ))}
         </div>
       </section>

@@ -121,6 +121,10 @@ if (
   viewSource.includes('{therapeuticArea} {module.name.toLowerCase()} intelligence') ||
   !patientViewSource.includes('>{therapeuticArea}</h2>') ||
   patientViewSource.includes('{therapeuticArea} patient experience') ||
+  !patientViewSource.includes('className="mt-4 line-clamp-4 whitespace-pre-wrap border-l-2 border-cyan-300/40') ||
+  !patientViewSource.includes("<PatientEvidenceCard") ||
+  !patientViewSource.includes("View full patient evidence mention:") ||
+  !patientViewSource.includes("View full mention") ||
   !viewSource.includes('aria-label="Full module evidence mention"') ||
   !viewSource.includes("View full mention") ||
   !viewSource.includes("evidence.fullMention || evidence.quote") ||
