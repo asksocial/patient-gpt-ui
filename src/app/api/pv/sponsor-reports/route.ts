@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePvPrincipal, pvErrorResponse } from "../../../../lib/pv/auth";
 import { listPvQaNotRelevantCases, listPvSponsorCases, recordPvSponsorReportActivity, transferPvRecord } from "../../../../lib/pv/service";
 import { createPvSponsorReport, sponsorReportFileName } from "../../../../lib/pv/sponsorReport";
+import { buildPvClientNotification, buildPvE2bAlignedCase, renderPvClientNotificationHtml } from "../../../../lib/pv/e2b";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -48,6 +49,15 @@ export async function POST(request: NextRequest) {
     const fromEmail = process.env.PV_SPONSOR_FROM_EMAIL;
     let delivery: "provider" | "client_email" = "client_email";
     if (resendKey && fromEmail) {
+      const notificationHtml = mode === "sponsor_handoff"
+        ? renderPvClientNotificationHtml(cases.map((item: any) => buildPvClientNotification(buildPvE2bAlignedCase({
+          record: item.record,
+          review: item.review,
+          transfer: item.transfer,
+          ontology: item.review?.validated_ae_ontology,
+          classifications: item.review?.classifications,
+        }))))
+        : null;
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
@@ -57,7 +67,7 @@ export async function POST(request: NextRequest) {
           subject: mode === "qa_not_relevant" ? `[QA TEST - NOT FOR SUBMISSION] AskSocial PV export - ${therapeuticArea || "All topics"}` : `AskSocial PV sponsor screening report - ${therapeuticArea || "All topics"}`,
           html: mode === "qa_not_relevant"
             ? `<p><strong>QA TEST ONLY - NOT FOR SPONSOR SUBMISSION OR REGULATORY REPORTING.</strong></p><p>The attached AskSocial PDF contains ${cases.length} mention${cases.length === 1 ? "" : "s"} closed as Not Reportable and is provided only to validate export and handoff mechanics.</p>`
-            : `<p>Please find attached the governed AskSocial PV sponsor screening report containing ${cases.length} escalated mention${cases.length === 1 ? "" : "s"}.</p><p>This working document supports ICH E2D(R1) intake and does not replace qualified medical review or regional reporting requirements.</p>`,
+            : `<p>Please find attached the governed AskSocial PV sponsor screening report containing ${cases.length} escalated mention${cases.length === 1 ? "" : "s"}.</p>${notificationHtml}`,
           attachments: [{ filename: fileName, content: Buffer.from(report.bytes).toString("base64") }],
         }),
       });

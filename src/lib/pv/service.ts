@@ -7,6 +7,8 @@ import { DEFAULT_PV_SLA, derivePvOverviewMetrics } from "./overview";
 import { reconcilePvOperations } from "./reconciliation";
 import { assessIcsrIdentifiability, patientCriterionStatus, reporterCriterionStatus } from "./identifiability";
 import { derivePvDetectionSegment, derivePvHealthExperienceTags } from "./segmentation";
+import { buildPvE2bAlignedCase, buildPvClientNotification, getActivePvE2bMapping, pvE2bVersionSnapshot } from "./e2b";
+import type { PvCaseRelationshipType } from "./e2b";
 import type {
   PvContentInput,
   PvDetectionConcept,
@@ -312,6 +314,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
     product_confidence: result.productConfidence, health_experience_confidence: result.healthExperienceConfidence,
     context_confidence: result.contextConfidence, matched_concepts: result.matches, proposed_classifications: result.classifications,
     classifier_version: result.classifierVersion, library_version: result.detectionLibraryVersion, detection_rationale: result.rationale,
+    algorithm_assessed_at: now,
     data_origin: input.dataOrigin || "unknown", ae_ontology: result.ontologyExtraction,
     ontology_version: result.ontologyExtraction.ontologyVersion,
     import_batch_id: input.importBatchId || null, source_row_number: input.sourceRowNumber || null,
@@ -497,7 +500,7 @@ function buildBundledBotulinumPvRecord(
     product_name: productMatch?.canonicalTerm || null, potential_event: eventMatch?.canonicalTerm || null,
     source_type: "curated_csv", source_url: row.sourceUrl, author_identifier: availableReporterIdentifier(row.authorIdentifier), original_verbatim: row.verbatim, original_language: "en",
     thread_context: [], evidence_hash: hashPayload({ verbatim: row.verbatim, url: row.sourceUrl, postedAt: row.postedAt }),
-    posted_at: row.postedAt, ingested_at: availableAt, identified_at: availableAt,
+    posted_at: row.postedAt, ingested_at: availableAt, identified_at: availableAt, algorithm_assessed_at: availableAt,
     detection_score: result.score, product_confidence: result.productConfidence,
     health_experience_confidence: result.healthExperienceConfidence, context_confidence: result.contextConfidence,
     matched_concepts: result.matches, proposed_classifications: result.classifications,
@@ -760,7 +763,7 @@ export async function listPvSponsorCases(principal: PlatformPrincipal, therapeut
         identifiability_assessment: assessIcsrIdentifiability(record),
         publication_timestamp: record.posted_at,
         collection_timestamp: record.ingested_at,
-        algorithm_timestamp: record.created_at || record.identified_at,
+        algorithm_timestamp: record.algorithm_assessed_at || record.created_at || record.identified_at,
         review_timestamp: record.review_started_at || null,
         escalation_timestamp: review.reviewed_at,
       },
@@ -1092,11 +1095,13 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
   if (!record) throw new Error("PV record not found.");
   if (["transferred", "acknowledged", "reconciled", "ready_for_transfer"].includes(record.status)) throw new Error("Sponsor-ready or transferred PV records cannot be reclassified without a governed correction workflow.");
   const reviewedAt = new Date().toISOString();
+  const regulatoryVersions = pvE2bVersionSnapshot();
   const { data: review, error: reviewError } = await supabase.from("pv_reviews").insert({
     principal_id: principal.principalId, record_id: recordId, reviewer_id: principal.actorId,
     product_mention: decision.productMention, health_experience: decision.healthExperience, classifications: decision.classifications,
     rationale: decision.rationale.trim(), decision: decision.action, reviewed_at: reviewedAt,
     validated_ae_ontology: decision.ontologyReview || {},
+    e2b_mapping_version: regulatoryVersions.mappingVersion,
   }).select("*").single();
   if (reviewError || !review) throw new Error(`Failed to save PV review: ${reviewError?.message || "missing row"}`);
   const nextStatus = decision.action === "escalate"
@@ -1106,6 +1111,7 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
   const reportabilityIdentifiedAt = record.reportability_identified_at || reviewedAt;
   if (decision.action === "escalate") {
     recordUpdates.reportability_identified_at = reportabilityIdentifiedAt;
+    recordUpdates.escalated_at = reviewedAt;
     recordUpdates.day_zero_basis = "reportability_identified_at";
     recordUpdates.day_zero_reason = "Day Zero began when the qualified reviewer confirmed the minimum ICSR criteria and escalated the AE/ADR for sponsor handoff.";
   }
@@ -1136,6 +1142,15 @@ export async function transferPvRecord(principal: PlatformPrincipal, recordId: s
   const { data: review } = await supabase.from("pv_reviews").select("*").eq("record_id", recordId).eq("principal_id", principal.principalId)
     .eq("decision", "escalate").order("reviewed_at", { ascending: false }).limit(1).maybeSingle();
   if (!review) throw new Error("An escalation review is required before transfer.");
+  const transferredAt = new Date().toISOString();
+  const e2bAlignedCase = buildPvE2bAlignedCase({
+    record,
+    review,
+    transfer: input.transferMethod === "secure_email" ? { client_notified_at: transferredAt } : null,
+    ontology: review.validated_ae_ontology,
+    classifications: review.classifications,
+    now: new Date().toISOString(),
+  });
   const payload = {
     recordId: record.id, product: record.product_name, originalVerbatim: record.original_verbatim, source: record.source_type,
     sourceUrl: record.source_url, originalPostTimestamp: record.posted_at, identificationTimestamp: record.identified_at,
@@ -1145,18 +1160,29 @@ export async function transferPvRecord(principal: PlatformPrincipal, recordId: s
     reviewer: review.reviewer_id, classifications: review.classifications, reviewerRationale: review.rationale,
     adverseEventOntology: review.validated_ae_ontology, ontologyStatus: "reviewer_validated",
     evidenceHash: record.evidence_hash, classifierVersion: record.classifier_version, libraryVersion: record.library_version,
+    e2bAlignment: e2bAlignedCase,
+    clientNotification: buildPvClientNotification(e2bAlignedCase),
+    regulatoryVersions: pvE2bVersionSnapshot(),
+    regulatoryClaim: "E2B(R3)-aligned intake for downstream transformation; not a regulatory-submission-ready ICSR.",
   };
   const payloadHash = hashPayload(payload);
-  const transferredAt = new Date().toISOString();
   const { data: transfer, error } = await supabase.from("pv_transfers").insert({
     principal_id: principal.principalId, record_id: recordId, destination: input.destination.trim(), transfer_method: input.transferMethod,
     payload, payload_hash: payloadHash, status: input.transferMethod === "manual_export" ? "queued" : "delivered",
     transferred_by: principal.actorId, transferred_at: transferredAt,
+    e2b_mapping_version: e2bAlignedCase.e2bMappingVersion,
+    email_mapping_version: e2bAlignedCase.emailMappingVersion,
+    ich_package_version: e2bAlignedCase.ichPackageVersion,
+    controlled_terminology_version: e2bAlignedCase.controlledTerminologyVersion,
   }).select("*").single();
   if (error || !transfer) throw new Error(`Failed to create sponsor transfer: ${error?.message || "missing row"}`);
   const status = transfer.status === "delivered" ? "transferred" : "ready_for_transfer";
-  await supabase.from("pv_records").update({ status, updated_at: transferredAt }).eq("id", recordId).eq("principal_id", principal.principalId);
-  await appendPvAuditEvent(principal, { action: "transfer.create", resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { transferId: transfer.id, destination: input.destination, method: input.transferMethod, payloadHash } });
+  await supabase.from("pv_records").update({
+    status,
+    updated_at: transferredAt,
+    client_notified_at: input.transferMethod === "secure_email" && transfer.status === "delivered" ? transferredAt : record.client_notified_at,
+  }).eq("id", recordId).eq("principal_id", principal.principalId);
+  await appendPvAuditEvent(principal, { action: "transfer.create", resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { transferId: transfer.id, destination: input.destination, method: input.transferMethod, payloadHash, regulatoryVersions: pvE2bVersionSnapshot(), validation: e2bAlignedCase.validation } });
   return transfer;
 }
 
@@ -1182,6 +1208,59 @@ export async function listPvTransfers(principal: PlatformPrincipal, limit = 100)
     .eq("principal_id", principal.principalId).order("created_at", { ascending: false }).limit(Math.max(1, Math.min(200, limit)));
   if (error) throw new Error(`Failed to load PV transfers: ${error.message}`);
   return data || [];
+}
+
+export async function listPvCaseRelationships(principal: PlatformPrincipal, recordId: string) {
+  assertPrincipal(principal);
+  const { data, error } = await getSupabaseServerClient().from("pv_case_relationships").select("*")
+    .eq("principal_id", principal.principalId)
+    .or(`source_record_id.eq.${recordId},target_record_id.eq.${recordId}`)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`Failed to load PV case relationships: ${error.message}`);
+  return data || [];
+}
+
+export async function proposePvCaseRelationship(principal: PlatformPrincipal, input: {
+  sourceRecordId: string;
+  targetRecordId: string;
+  relationshipType: PvCaseRelationshipType;
+  matchConfidence?: number;
+  rationale: string[];
+  evidenceSnapshot?: Record<string, unknown>;
+}) {
+  assertPrincipal(principal);
+  if (input.sourceRecordId === input.targetRecordId) throw new Error("A PV record cannot be related to itself.");
+  if (!getActivePvE2bMapping().relationshipTypes.includes(input.relationshipType)) throw new Error("Unsupported PV case relationship type.");
+  if (!input.rationale.some((value) => value.trim())) throw new Error("Relationship matching rationale is required.");
+  if (input.matchConfidence !== undefined && (input.matchConfidence < 0 || input.matchConfidence > 1)) throw new Error("Relationship confidence must be between 0 and 1.");
+  const { data, error } = await getSupabaseServerClient().from("pv_case_relationships").insert({
+    principal_id: principal.principalId,
+    source_record_id: input.sourceRecordId,
+    target_record_id: input.targetRecordId,
+    relationship_type: input.relationshipType,
+    status: "proposed",
+    match_confidence: input.matchConfidence ?? null,
+    rationale: input.rationale.map((value) => value.trim()).filter(Boolean),
+    evidence_snapshot: input.evidenceSnapshot || {},
+    proposed_by: principal.actorId,
+  }).select("*").single();
+  if (error || !data) throw new Error(`Failed to propose PV case relationship: ${error?.message || "missing row"}`);
+  await appendPvAuditEvent(principal, { action: "case_relationship.propose", resourceType: "pv_case_relationship", resourceId: String(data.id), outcome: "completed", metadata: { sourceRecordId: input.sourceRecordId, targetRecordId: input.targetRecordId, relationshipType: input.relationshipType, matchConfidence: input.matchConfidence ?? null, rationale: input.rationale } });
+  return data;
+}
+
+export async function reviewPvCaseRelationship(principal: PlatformPrincipal, relationshipId: string, status: "human_confirmed" | "rejected") {
+  assertPrincipal(principal);
+  const reviewedAt = new Date().toISOString();
+  const { data, error } = await getSupabaseServerClient().from("pv_case_relationships").update({
+    status,
+    reviewed_by: principal.actorId,
+    reviewed_at: reviewedAt,
+    updated_at: reviewedAt,
+  }).eq("id", relationshipId).eq("principal_id", principal.principalId).select("*").single();
+  if (error || !data) throw new Error(`Failed to review PV case relationship: ${error?.message || "missing row"}`);
+  await appendPvAuditEvent(principal, { action: `case_relationship.${status}`, resourceType: "pv_case_relationship", resourceId: relationshipId, outcome: "completed", metadata: { relationshipType: data.relationship_type, sourceRecordId: data.source_record_id, targetRecordId: data.target_record_id } });
+  return data;
 }
 
 export async function getPvOperationsOverview(principal: PlatformPrincipal, therapeuticArea?: string) {

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "packageVersion": "2.11",
+  "publishedAt": "2026-01-12",
+  "sourcePackageVersion": "1.11",
+  "sourceFile": "IG_Complete_Package_v1_11_1.zip",
+  "codeLists": {
+    "CL2": { "name": "ich-type-of-report", "version": "2", "oid": "2.16.840.1.113883.3.989.2.1.1.2", "values": [{"code":"1","label":"Spontaneous Report"},{"code":"2","label":"Report from Study"},{"code":"3","label":"Other"},{"code":"4","label":"Not Available to Sender (Unknown)"}] },
+    "CL3": { "name": "ich-first-sender-of-this-case", "version": "2", "oid": "2.16.840.1.113883.3.989.2.1.1.3", "values": [{"code":"1","label":"Regulator"},{"code":"2","label":"Other"}] },
+    "CL6": { "name": "ich-qualification", "version": "2", "oid": "2.16.840.1.113883.3.989.2.1.1.6", "values": [{"code":"1","label":"Physician"},{"code":"2","label":"Pharmacist"},{"code":"3","label":"Other Health Professional"},{"code":"4","label":"Lawyer"},{"code":"5","label":"Consumer or other Non-Health Professional"}] },
+    "CL8": { "name": "ich-study-type", "version": "2.1", "oid": "2.16.840.1.113883.3.989.2.1.1.8", "values": [{"code":"1","label":"Clinical Trials"},{"code":"2","label":"Individual Patient Use"},{"code":"3","label":"Other Studies"},{"code":"4","label":"Patient Support Program"},{"code":"5","label":"Market Research Program"},{"code":"6","label":"Organised Data Collection System with source data from a digital platform"}] },
+    "CL9": { "name": "ich-patient-age-group", "version": "2.1", "oid": "2.16.840.1.113883.3.989.2.1.1.9", "values": [{"code":"0","label":"Foetus"},{"code":"1","label":"Neonate (Preterm and Term Newborns)"},{"code":"2","label":"Infant"},{"code":"3","label":"Child"},{"code":"4","label":"Adolescent"},{"code":"5","label":"Adult"},{"code":"6","label":"Elderly"}] },
+    "CL11": { "name": "ich-outcome-of-reaction-event", "version": "2", "oid": "2.16.840.1.113883.3.989.2.1.1.11", "values": [{"code":"1","label":"Recovered / Resolved"},{"code":"2","label":"Recovering / Resolving"},{"code":"3","label":"Not Recovered / Not Resolved / Ongoing"},{"code":"4","label":"Recovered / Resolved with Sequelae"},{"code":"5","label":"Fatal"},{"code":"0","label":"Unknown"}] },
+    "CL13": { "name": "ich-characterisation-of-drug-role", "version": "2", "oid": "2.16.840.1.113883.3.989.2.1.1.13", "values": [{"code":"1","label":"Suspect"},{"code":"2","label":"Concomitant"},{"code":"3","label":"Interacting"},{"code":"4","label":"Drug Not Administered"}] },
+    "CL15": { "name": "ich-action-taken-with-drug", "version": "2", "oid": "2.16.840.1.113883.3.989.2.1.1.15", "values": [{"code":"1","label":"Drug Withdrawn"},{"code":"2","label":"Dose Reduced"},{"code":"3","label":"Dose Increased"},{"code":"4","label":"Dose not Changed"},{"code":"0","label":"Unknown"},{"code":"9","label":"Not Applicable"}] },
+    "CL16": { "name": "ich-recur-on-readministration", "version": "2", "oid": "2.16.840.1.113883.3.989.2.1.1.16", "values": [{"code":"1","label":"YES -- YES (rechallenge was done, reaction recurred)"},{"code":"2","label":"YES -- NO (rechallenge was done, reaction did not recur)"},{"code":"3","label":"YES -- UNK (rechallenge was done, outcome unknown)"},{"code":"4","label":"NO -- N/A (no rechallenge was done, recurrence is not applicable)"}] },
+    "CL17": { "name": "ich-addional-info-on-drug-code", "version": "2", "oid": "2.16.840.1.113883.3.989.2.1.1.17", "values": [{"code":"1","label":"Counterfeit"},{"code":"2","label":"Overdose"},{"code":"3","label":"Drug Taken by the Father"},{"code":"4","label":"Drug Taken Beyond Expiry Date"},{"code":"5","label":"Batch and Lot Tested and Found Within Specifications"},{"code":"6","label":"Batch and Lot Tested and Found Not Within Specifications"},{"code":"7","label":"Medication Error"},{"code":"8","label":"Misuse"},{"code":"9","label":"Abuse"},{"code":"10","label":"Occupational Exposure"},{"code":"11","label":"Off-Label Use"}] }
+  }
+}

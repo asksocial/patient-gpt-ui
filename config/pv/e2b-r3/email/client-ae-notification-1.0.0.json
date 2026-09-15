@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0.0",
+  "emailMappingVersion": "1.0.0",
+  "status": "active",
+  "fields": [
+    { "field": "administrative.askSocialCaseId", "label": "AskSocial Case ID", "section": "Case Identification", "include": "always", "order": 10 },
+    { "field": "administrative.clientAccount", "label": "Client account", "section": "Case Identification", "include": "when_present", "order": 20 },
+    { "field": "drugs.0.productNameReported", "label": "Product / brand", "section": "Case Identification", "include": "when_present", "order": 30 },
+    { "field": "audit.sourcePublishedAt", "label": "Original post date / time", "section": "Case Identification", "include": "always", "displayUnknown": true, "order": 40 },
+    { "field": "audit.collectedAt", "label": "AskSocial collection date / time", "section": "Case Identification", "include": "always", "displayUnknown": true, "order": 50 },
+    { "field": "source.platform", "label": "Platform / source", "section": "Case Identification", "include": "always", "displayUnknown": true, "order": 60 },
+    { "field": "source.url", "label": "Source URL", "section": "Case Identification", "include": "always", "displayUnknown": true, "order": 70 },
+    { "field": "source.country", "label": "Country / location", "section": "Case Identification", "include": "when_present", "order": 80 },
+
+    { "field": "reporter.type", "label": "Reporter type", "section": "Source / Reporter", "include": "always", "displayUnknown": true, "order": 110 },
+    { "field": "reporter.identifiabilityStatus", "label": "Reporter identifiability status", "section": "Source / Reporter", "include": "always", "displayUnknown": true, "order": 120 },
+    { "field": "patient.identifiabilityStatus", "label": "Patient identifiability status", "section": "Source / Reporter", "include": "always", "displayUnknown": true, "order": 130 },
+    { "field": "reporter.hcpStatus", "label": "HCP status", "section": "Source / Reporter", "include": "when_present", "order": 140 },
+
+    { "field": "patient.age", "label": "Age", "section": "Patient", "include": "when_present", "order": 210 },
+    { "field": "patient.ageGroup", "label": "Age group", "section": "Patient", "include": "when_present", "order": 220 },
+    { "field": "patient.sex", "label": "Sex", "section": "Patient", "include": "when_present", "order": 230 },
+    { "field": "patient.medicalHistory", "label": "Relevant medical history", "section": "Patient", "include": "when_present", "order": 240 },
+    { "field": "patient.otherCharacteristics", "label": "Other relevant characteristics", "section": "Patient", "include": "when_present", "order": 250 },
+
+    { "field": "drugs", "label": "Suspected product(s)", "section": "Suspected Product(s)", "include": "when_present", "order": 310 },
+    { "field": "reactions", "label": "Reaction / event(s)", "section": "Reaction / Event(s)", "include": "when_present", "order": 410 },
+    { "field": "specialSituations", "label": "Detected special situations", "section": "Special Situations", "include": "when_flagged", "order": 510 },
+    { "field": "narrative.caseNarrative", "label": "Factual case narrative", "section": "Case Narrative", "include": "always", "displayUnknown": true, "order": 610 },
+
+    { "field": "source.verbatim", "label": "Relevant verbatim text", "section": "Original Source Evidence", "include": "always", "displayUnknown": true, "order": 710 },
+    { "field": "source.url", "label": "URL / reference", "section": "Original Source Evidence", "include": "always", "displayUnknown": true, "order": 720 },
+    { "field": "source.platform", "label": "Platform", "section": "Original Source Evidence", "include": "always", "displayUnknown": true, "order": 730 },
+    { "field": "audit.sourcePublishedAt", "label": "Original post timestamp", "section": "Original Source Evidence", "include": "always", "displayUnknown": true, "order": 740 },
+
+    { "field": "classification", "label": "Potential PV classification", "section": "PV Assessment", "include": "always", "order": 810 },
+    { "field": "review.minimumCriteriaDetected", "label": "Minimum ICSR elements detected", "section": "PV Assessment", "include": "always", "order": 820 },
+    { "field": "review.minimumCriteriaMissing", "label": "Missing minimum ICSR elements", "section": "PV Assessment", "include": "always", "order": 830 },
+    { "field": "review.seriousnessFlag", "label": "Seriousness flag", "section": "PV Assessment", "include": "when_flagged", "order": 840 },
+    { "field": "review.specialSituationFlag", "label": "Special situation flag", "section": "PV Assessment", "include": "when_flagged", "order": 850 },
+    { "field": "review.causalityStatementPresent", "label": "Causality statement present", "section": "PV Assessment", "include": "always", "order": 860 },
+    { "field": "review.status", "label": "Human-review status", "section": "PV Assessment", "include": "always", "order": 870 },
+
+    { "field": "audit.collectedAt", "label": "Collection timestamp", "section": "Audit Trail", "include": "always", "displayUnknown": true, "order": 910 },
+    { "field": "audit.algorithmAssessedAt", "label": "Algorithm assessment timestamp", "section": "Audit Trail", "include": "always", "displayUnknown": true, "order": 920 },
+    { "field": "audit.humanReviewedAt", "label": "Human review timestamp", "section": "Audit Trail", "include": "when_present", "order": 930 },
+    { "field": "audit.escalatedAt", "label": "Escalation timestamp", "section": "Audit Trail", "include": "when_present", "order": 940 }
+  ],
+  "displayRules": [
+    "Do not expose prompts or internal model instructions.",
+    "Do not expose confidence scores unless client configuration explicitly enables them.",
+    "Do not render empty sections.",
+    "Use Not reported only when displayUnknown is enabled.",
+    "Label machine-suggested coding as not human validated.",
+    "Distinguish source facts, AskSocial classifications, and human PV assessments.",
+    "Preserve the original URL and verbatim evidence.",
+    "Escape HTML and sanitize all user-generated content."
+  ],
+  "disclaimer": "This notification contains information identified through social-listening surveillance and is intended to support pharmacovigilance review. AskSocial does not independently determine regulatory reportability, medical causality, or final ICSR classification. Final assessment, case processing, follow-up, and regulatory reporting decisions remain with the responsible pharmacovigilance organization."
+}

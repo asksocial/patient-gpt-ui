@@ -8,6 +8,7 @@
    - `202607310001_create_platform_persistence.sql`
    - `202607310002_create_saved_intelligence_library.sql`
    - `202607310003_create_continuous_intelligence.sql`
+   - `202609150001_add_versioned_e2b_alignment.sql`
 3. Configure all variables in `.env.example`, including a unique `ASKSOCIAL_CRON_SECRET`.
 4. Grant the staging user `platform_core`, `module_patient`, `agent_patient_journey_advisor`, and the required intelligence capabilities.
 5. Keep `ASKSOCIAL_KNOWLEDGE_MODE=stateless` until Knowledge Store persistence is explicitly validated, then switch staging to `persistent` for snapshot testing.

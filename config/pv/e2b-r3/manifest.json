@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "activeMappingVersion": "2026.01.0",
+  "activeMappingFile": "mappings/asksocial-e2b-r3-2026.01.0.json",
+  "activeEmailMappingVersion": "1.0.0",
+  "activeEmailMappingFile": "email/client-ae-notification-1.0.0.json",
+  "ichPackageVersion": "1.11",
+  "ichImplementationGuideVersion": "5.03",
+  "ichControlledTerminologyVersion": "2.11",
+  "activeCodeListFile": "code-lists/ich-2.11.json",
+  "fdaRegionalGuideVersion": "April 2024",
+  "fdaBusinessRulesVersion": "April 2024",
+  "meddraVersion": null,
+  "lastRegulatoryReviewDate": "2026-09-15",
+  "activationPolicy": "A package is immutable after activation. Add a new versioned file, validate it, then update only this manifest pointer.",
+  "sources": {
+    "ichPackage": "https://admin.ich.org/sites/default/files/inline-files/IG_Complete_Package_v1_11_1.zip",
+    "ichLandingPage": "https://admin.ich.org/node/348",
+    "fdaStandardsPage": "https://www.fda.gov/drugs/fda-adverse-event-monitoring-system-aems/fda-adverse-event-monitoring-system-aems-e2br3-standards",
+    "fdaBusinessRules": "https://www.fda.gov/media/175373/download?attachment="
+  }
+}
