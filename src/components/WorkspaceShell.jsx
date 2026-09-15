@@ -1119,24 +1119,7 @@ export default function WorkspaceShell() {
                 return current;
               }
 
-              const savedModule =
-                window.localStorage.getItem(
-                  "asksocial.activeModule"
-                );
-              if (
-                nextAccess.modules.some(
-                  (module) =>
-                    module.id ===
-                    savedModule
-                )
-              ) {
-                return savedModule;
-              }
-
-              return (
-                nextAccess.modules[0]
-                  ?.id || ""
-              );
+              return "";
             }
           );
         }
@@ -1464,10 +1447,6 @@ export default function WorkspaceShell() {
         )
       ) {
         setActiveModuleId(moduleId);
-        window.localStorage.setItem(
-          "asksocial.activeModule",
-          moduleId
-        );
       }
     }
   }
@@ -2089,16 +2068,16 @@ export default function WorkspaceShell() {
               </div>
 
               <div className="flex shrink-0 flex-wrap items-start justify-end gap-2 self-end xl:ml-auto xl:self-start">
-                {activeModule ? (
-                  <div
-                    data-testid="active-module-indicator"
-                    aria-label={`Current module: ${activeModule.name}`}
-                    className="inline-flex min-h-9 items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300"
-                  >
+                <div
+                  data-testid="active-module-indicator"
+                  aria-label={`Current module: ${activeModule?.name || "None"}`}
+                  className="inline-flex min-h-9 items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300"
+                >
+                  {activeModule ? (
                     <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
-                    <span>Module: {activeModule.name}</span>
-                  </div>
-                ) : null}
+                  ) : null}
+                  <span>Module: {activeModule?.name || "None"}</span>
+                </div>
                 <div
                   data-testid="active-workspace-indicator"
                   aria-label={activeWorkspace ? `Current workspace: ${activeWorkspace.name}` : "Save current session as workspace"}
