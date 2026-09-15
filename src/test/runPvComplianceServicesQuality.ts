@@ -258,11 +258,11 @@ for (const phrase of ["Potential records, not AE determinations", "Original evid
 for (const phrase of ["AE/ADR Detection", "Health Experience Detection", "Human review completed", "Unassigned records with active clocks", "Potential records awaiting human review", "Not reviewed or assigned", "PV_LIFECYCLE_TOOLTIPS"]) {
   assert(workbench.includes(phrase), `PV Compliance Overview is missing clarified stage guidance: ${phrase}`);
 }
-for (const phrase of ["medication errors", "overdose", "misuse or abuse", "pregnancy exposure", "lack of efficacy", "product-quality complaints", "other safety-relevant observations", "Search health experiences by keyword or tag"] ) {
+for (const phrase of ["medication errors", "overdose", "misuse or abuse", "pregnancy exposure", "lack of efficacy", "product-quality complaints", "other safety-significant observations", "Search health experiences by keyword or tag"] ) {
   assert(healthExperienceSource.includes(phrase), `Health Experience Detection is missing its differentiated safety-surveillance UX: ${phrase}.`);
 }
 assert(reviewQueueSource.includes('record.detection_segment !== "health_experience"'), "The Review Queue must exclude the separately segmented health-experience-only records.");
-for (const phrase of ["combined screening score", "confidence that the mention refers", "potential safety-relevant situation", "Origin provides provenance"]) {
+for (const phrase of ["combined screening score", "confidence that the mention refers", "potential safety-significant situation", "Origin provides provenance"]) {
   assert(workbench.includes(phrase), `PV Screening Status is missing metric tooltip guidance: ${phrase}`);
 }
 assert(!workbench.includes('label="Sources due"') && !workbench.includes('label="Awaiting review"'), "Ambiguous PV overview stage labels must not return.");
@@ -311,8 +311,8 @@ for (const removedField of ["Patient existence status", "Patient existence verif
 for (const phrase of ["Sponsor-ready assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
   assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing sponsor-report aggregation UX: ${phrase}.`);
 }
-for (const phrase of ["QA export test · Not Relevant mentions", "QA TEST ONLY", "Create QA PDF", "Internal/test recipient email", "Share QA handoff", "Send QA email", "never changes lifecycle status or starts Day Zero"]) {
-  assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing the segregated Not Relevant export safeguard: ${phrase}.`);
+for (const phrase of ["QA export test · Not Reportable mentions", "QA TEST ONLY", "Create QA PDF", "Internal/test recipient email", "Share QA handoff", "Send QA email", "never changes lifecycle status or starts Day Zero"]) {
+  assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing the segregated Not Reportable export safeguard: ${phrase}.`);
 }
 for (const phrase of ["Source Screening Coverage", "Log Source Screening Run", "nil return", "individual AE/ADR review status"]) {
   assert(sourceRegistrySource.includes(phrase), `Source Registry is missing source-screening operations UX: ${phrase}.`);
@@ -352,9 +352,12 @@ assert(reviewQueueSource.includes('aria-sort={sort.key === head.key') && reviewQ
 assert(!reviewQueueSource.includes("formatDate(record.algorithm_timestamp)"), "The queue must omit the redundant Algorithm timestamp column when it cannot be distinguished from collection.");
 assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('sourceType.endsWith("_csv")'), "CSV-origin PV queue records must be labeled Social.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
-assert(workbench.includes('title="Initial relevance decision"') && workbench.includes("Mark as Relevant") && workbench.includes('review("close_not_relevant", false)'), "The structured-review workflow must require an explicit relevance decision before revealing the detailed assessment.");
-assert(workbench.includes('markedRelevant && !["transferred"') && workbench.includes("setMarkedRelevant(true)"), "Ontology and ICH case fields must remain hidden until the reviewer marks the mention relevant.");
-assert(workbench.includes('onReviewComplete?.(decision)') && workbench.includes('navigateTab("overview")'), "Either Close as Not Relevant action must return the reviewer to Compliance Overview after the retained decision succeeds.");
+assert(workbench.includes('title="Initial reportability decision"') && workbench.includes("Mark as Reportable") && workbench.includes('review("close_not_relevant", false)'), "The structured-review workflow must require an explicit reportability decision before revealing the detailed assessment.");
+assert(workbench.includes('markedReportable && !["transferred"') && workbench.includes("setMarkedReportable(true)"), "Ontology and ICH case fields must remain hidden until the reviewer marks the mention reportable.");
+assert(workbench.includes('onReviewComplete?.(decision)') && workbench.includes('navigateTab("overview")'), "Either Close as Not Reportable action must return the reviewer to Compliance Overview after the retained decision succeeds.");
+for (const obsoleteLabel of ["Mark as Relevant", "Close as Not Relevant", "Initial relevance decision", "Not Relevant mentions"]) {
+  assert(!workbench.includes(obsoleteLabel), `PV Compliance must not expose the retired relevance label: ${obsoleteLabel}.`);
+}
 for (const phrase of ["Reclassify as Health Experience", "Health Experience classification", "Save Health Experience reclassification", "Update reviewed mention", "Reviewer reclassified"]) {
   assert(workbench.includes(phrase), `The governed Health Experience reclassification UX is missing ${phrase}.`);
 }
@@ -430,15 +433,15 @@ assert(sponsorReportRoute.includes("RESEND_API_KEY") && sponsorReportRoute.inclu
 assert(sponsorReportRoute.includes('delivery === "provider" ? "share" : "prepare"'), "A client-email draft must be audited as prepared rather than falsely marked as sent.");
 assert(sponsorReportRoute.includes("emailDelivery") && sponsorReportRoute.includes("No email was sent by AskSocial"), "The sponsor-report API must disclose whether direct email is configured and must not imply that a client draft was sent.");
 for (const contract of ["listPvQaNotRelevantCases", 'mode === "qa_not_relevant"', 'action: mode === "qa_not_relevant" ? "qa_export" : "export"']) {
-  assert(sponsorReportExportRoute.includes(contract) || sponsorReportRoute.includes(contract) || pvService.includes(contract), `Not Relevant QA export is missing ${contract}.`);
+  assert(sponsorReportExportRoute.includes(contract) || sponsorReportRoute.includes(contract) || pvService.includes(contract), `Not Reportable QA export is missing ${contract}.`);
 }
-assert(pvService.includes('.eq("decision", "close_not_relevant")') && pvService.includes('.eq("status", "not_relevant")'), "QA export examples must come only from retained Not Relevant reviews and records.");
+assert(pvService.includes('.eq("decision", "close_not_relevant")') && pvService.includes('.eq("status", "not_relevant")'), "QA export examples must come only from retained Not Reportable reviews and records.");
 assert(sponsorReportRoute.includes('if (mode === "sponsor_handoff")') && sponsorReportRoute.includes('"qa_share"') && sponsorReportRoute.includes('"qa_prepare"'), "QA email delivery must be audited separately and must never call the sponsor transfer mutation path.");
 for (const phrase of ["Share QA handoff", "Direct email is not configured", "Download PDF & open draft", "Send QA email"]) {
   assert(workbench.includes(phrase), `QA handoff delivery UX is missing ${phrase}.`);
 }
 for (const phrase of ["NOT FOR SPONSOR SUBMISSION", "Non-Reportable Case Documentation", "Creating, exporting, or delivering this document does not start Day Zero or alter any record lifecycle status"]) {
-  assert(sponsorReportSource.includes(phrase), `The Not Relevant PDF is missing its non-reportable safeguard: ${phrase}.`);
+  assert(sponsorReportSource.includes(phrase), `The Not Reportable PDF is missing its non-reportable safeguard: ${phrase}.`);
 }
 for (const phrase of ["createQaCaseSheetReport", "Case documentation", "Index of included assessments", "Case identification and source", "Governed chronology", "Reviewer-approved safety assessment", "Unfiltered primary-source evidence", "Stand-alone clinical narrative inputs"]) {
   assert(sponsorReportSource.includes(phrase), `The QA PDF is missing its approved case-sheet format element: ${phrase}.`);
@@ -448,7 +451,7 @@ const notRelevantCaseSheetSource = sponsorReportSource.slice(
   sponsorReportSource.indexOf("export async function createPvSponsorReport"),
 );
 for (const phrase of ["QA Non-Reportable Export Test", "QA case sheets", "QA example", "QA TEST ONLY - NOT FOR SPONSOR SUBMISSION", "CLOSE NOT RELEVANT"]) {
-  assert(!notRelevantCaseSheetSource.includes(phrase), `The Not Relevant PDF must not display the removed label: ${phrase}.`);
+  assert(!notRelevantCaseSheetSource.includes(phrase), `The Not Reportable PDF must not display the removed label: ${phrase}.`);
 }
 void (async () => {
   const sampleSponsorPdf = await createPvSponsorReport({
@@ -475,10 +478,10 @@ void (async () => {
       transfer: null,
     }],
   });
-  assert(Buffer.from(sampleQaPdf.bytes).subarray(0, 5).toString() === "%PDF-", "Not Relevant QA export must produce a valid PDF document.");
+  assert(Buffer.from(sampleQaPdf.bytes).subarray(0, 5).toString() === "%PDF-", "Not Reportable QA export must produce a valid PDF document.");
   const parsedQaPdf = await PDFDocument.load(sampleQaPdf.bytes);
   assert(parsedQaPdf.getPageCount() === 2, "The QA packet must contain one cover/index page followed by exactly one sheet per included mention.");
-  assert(sponsorReportFileName("Test area", "qa_not_relevant") === "asksocial-test-area-qa-not-relevant-export-test.pdf", "The QA PDF filename must be unmistakably segregated from sponsor submission packages.");
+  assert(sponsorReportFileName("Test area", "qa_not_relevant") === "asksocial-test-area-qa-not-reportable-export-test.pdf", "The QA PDF filename must be unmistakably segregated from sponsor submission packages.");
   console.log("PV Compliance operational quality checks passed.");
 })().catch((error) => {
   console.error(error);

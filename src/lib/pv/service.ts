@@ -776,7 +776,7 @@ export async function listPvQaNotRelevantCases(principal: PlatformPrincipal, the
   const { data: reviews, error: reviewError } = await supabase.from("pv_reviews").select("*")
     .eq("principal_id", principal.principalId).eq("decision", "close_not_relevant")
     .order("reviewed_at", { ascending: false }).limit(Math.max(100, Math.min(1000, limit * 20)));
-  if (reviewError) throw new Error(`Failed to load Not Relevant QA reviews: ${reviewError.message}`);
+  if (reviewError) throw new Error(`Failed to load Not Reportable QA reviews: ${reviewError.message}`);
   const recordIds = [...new Set((reviews || []).map((review: any) => String(review.record_id)))];
   if (!recordIds.length) return [];
   const idChunks = Array.from({ length: Math.ceil(recordIds.length / 200) }, (_, index) => recordIds.slice(index * 200, (index + 1) * 200));
@@ -787,7 +787,7 @@ export async function listPvQaNotRelevantCases(principal: PlatformPrincipal, the
     return query;
   }));
   const recordError = recordResults.find((result) => result.error)?.error;
-  if (recordError) throw new Error(`Failed to assemble Not Relevant QA cases: ${recordError.message}`);
+  if (recordError) throw new Error(`Failed to assemble Not Reportable QA cases: ${recordError.message}`);
   const recordById = new Map(recordResults.flatMap((result) => result.data || []).map((record: any) => [String(record.id), record]));
   const retainedRecordIds = new Set<string>();
   const cases: any[] = [];
@@ -1019,7 +1019,7 @@ export async function reopenPvRecordReview(principal: PlatformPrincipal, recordI
     .eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
   if (error || !record) throw new Error("PV record not found.");
   if (!["not_relevant", "health_experience"].includes(record.status)) {
-    throw new Error("Only completed Not Relevant or Health Experience reviews can be updated through this workflow.");
+    throw new Error("Only completed Not Reportable or Health Experience reviews can be updated through this workflow.");
   }
   const reopenedAt = new Date().toISOString();
   const { data: updated, error: updateError } = await supabase.from("pv_records").update({
@@ -1049,7 +1049,7 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     !healthExperienceClassifications.length ||
     healthExperienceClassifications.length !== decision.classifications.length
   )) {
-    throw new Error("Health Experience reclassification requires confirmed product relevance, a safety-relevant observation, and at least one non-AE Health Experience classification.");
+    throw new Error("Health Experience reclassification requires a confirmed product relationship, a safety-significant observation, and at least one non-AE Health Experience classification.");
   }
   if (decision.action === "escalate" && (decision.productMention === "no" || decision.healthExperience === "no" || !decision.classifications.length)) {
     throw new Error("Escalation requires product relevance, a health experience or special situation, and at least one classification.");

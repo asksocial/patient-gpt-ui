@@ -172,13 +172,13 @@ async function createQaCaseSheetReport(input: {
   const area = printable(input.therapeuticArea || "All permitted topics", "All permitted topics");
   cover.drawText(area, { x: margin, y: 682, size: 28, font: bold, color: ink });
   cover.drawText("Case documentation", { x: margin, y: 648, size: 28, font: bold, color: ink });
-  drawLines(cover, clippedLines(`${input.cases.length} screened mention${input.cases.length === 1 ? "" : "s"} closed as Not Relevant, each reformatted onto a single sheet. Every record preserves its source verbatim, chronology, reviewer decision and rationale.`, regular, 8.2, width, 3), margin, 614, { size: 8.2, leading: 12 });
+  drawLines(cover, clippedLines(`${input.cases.length} screened mention${input.cases.length === 1 ? "" : "s"} closed as Not Reportable, each reformatted onto a single sheet. Every record preserves its source verbatim, chronology, reviewer decision and rationale.`, regular, 8.2, width, 3), margin, 614, { size: 8.2, leading: 12 });
 
   const statY = 570;
   const statWidth = width / 4;
   const stats = [
     ["Screened mentions", String(input.cases.length)],
-    ["Review decision", "Closed as Not Relevant"],
+    ["Review decision", "Closed as Not Reportable"],
     ["Standard applied", "ICH E2D(R1) documentation format"],
     ["Generated", compactTimestamp(input.generatedAt)],
   ];
@@ -193,7 +193,7 @@ async function createQaCaseSheetReport(input: {
 
   smallCaps(cover, "Regulatory-use notice", margin, 522, qaRed, 5.7);
   cover.drawLine({ start: { x: 130, y: 532 }, end: { x: 130, y: 487 }, thickness: 0.6, color: rule });
-  drawLines(cover, clippedLines("This document contains records that qualified reviewers closed as Not Relevant. It must not be submitted to a sponsor as an ICSR package, used for regulatory reporting, or interpreted as evidence that reportability criteria were met. Creating, exporting, or delivering this document does not start Day Zero or alter any record lifecycle status.", regular, 6.7, PAGE_WIDTH - margin - 142, 5), 138, 523, { size: 6.7, leading: 8.5 });
+  drawLines(cover, clippedLines("This document contains records that qualified reviewers closed as Not Reportable. It must not be submitted to a sponsor as an ICSR package, used for regulatory reporting, or interpreted as evidence that reportability criteria were met. Creating, exporting, or delivering this document does not start Day Zero or alter any record lifecycle status.", regular, 6.7, PAGE_WIDTH - margin - 142, 5), 138, 523, { size: 6.7, leading: 8.5 });
   cover.drawLine({ start: { x: margin, y: 482 }, end: { x: PAGE_WIDTH - margin, y: 482 }, thickness: 1.5, color: ink });
   smallCaps(cover, "Index of included assessments", margin, 463, muted, 6);
   const indexWidths = [24, 250, 110, 88, 76];
@@ -248,7 +248,7 @@ async function createQaCaseSheetReport(input: {
         ["Topic", record.therapeutic_area], ["Lifecycle status", display(record.status)], ["Report type", display(icsr.reportType, "Undetermined")], ["Primary source", display(icsr.primarySourceType, "Unknown")], ["Evidence origin", record.import_batch_id ? "Social" : display(record.data_origin, "Unknown")], ["Source type", display(record.source_type)], ["Author / source", record.author_identifier], ["Language", record.original_language], ["Source URL", record.source_url, 3],
       ]],
       ["Governed chronology", [
-        ["Publication", compactTimestamp(record.posted_at)], ["Collection", compactTimestamp(record.ingested_at)], ["Algorithm", compactTimestamp(record.created_at || record.identified_at)], ["Content available", compactTimestamp(record.identified_at)], ["Review start", compactTimestamp(record.review_started_at)], ["Day zero", compactTimestamp(record.reportability_identified_at)], ["Decision", compactTimestamp(review.reviewed_at)], ["Escalation", "Not applicable - record closed as Not Relevant", 3], ["Sponsor transfer", compactTimestamp(transfer?.transferred_at)],
+        ["Publication", compactTimestamp(record.posted_at)], ["Collection", compactTimestamp(record.ingested_at)], ["Algorithm", compactTimestamp(record.created_at || record.identified_at)], ["Content available", compactTimestamp(record.identified_at)], ["Review start", compactTimestamp(record.review_started_at)], ["Day zero", compactTimestamp(record.reportability_identified_at)], ["Decision", compactTimestamp(review.reviewed_at)], ["Escalation", "Not applicable - record closed as Not Reportable", 3], ["Sponsor transfer", compactTimestamp(transfer?.transferred_at)],
       ]],
       ["Reviewer-approved safety assessment", [
         ["Product", product], ["Event", event], ["Classifications", review.classifications], ["Seriousness", display(ontology.seriousness?.value, "Unclear")], ["Seriousness criteria", icsr.seriousnessCriteria], ["Outcome", display(outcome, "Unknown")], ["Time to onset", `${display(ontology.timeToOnset?.category, "Unknown")} - ${printable(ontology.timeToOnset?.value, "No onset detail reported")}`, 2], ["Severity", display(ontology.severity?.value, "Unclear")], ["Unexpectedness", display(ontology.unexpectedness?.value, "Unclear")], ["Expectedness basis", display(ontology.unexpectedness?.basis, "Insufficient reference")], ["Causality", display(causality.value, "Not assessed")], ["Causality language", causality.phrase],
@@ -409,16 +409,16 @@ export async function createPvSponsorReport(input: {
   y -= 34;
   if (qaMode) {
     field("Document status", "QA TEST ONLY - NOT FOR SPONSOR SUBMISSION OR REGULATORY REPORTING");
-    field("Included review decision", "Closed as Not Relevant");
+    field("Included review decision", "Closed as Not Reportable");
   }
   field("Topic", input.therapeuticArea || "All permitted topics", { fallback: "All permitted topics" });
   field("Generated at", generatedAt);
   field("Generated by", input.generatedBy);
   field("Screened mentions", input.cases.length);
-  field("Standard applied", qaMode ? "ICH E2D(R1) report-format QA only; included records did not meet the governed relevance decision" : "ICH E2D(R1), final Step 4 guideline adopted 15 September 2025");
+  field("Standard applied", qaMode ? "ICH E2D(R1) report-format QA only; included records did not meet the governed reportability decision" : "ICH E2D(R1), final Step 4 guideline adopted 15 September 2025");
   section("Regulatory-use notice");
   paragraph(qaMode
-    ? "This document contains records that qualified reviewers closed as Not Relevant. It exists only to validate AskSocial export formatting and handoff mechanics. It must not be submitted to a sponsor as an ICSR package, used for regulatory reporting, or interpreted as evidence that reportability criteria were met. QA export and delivery do not start Day Zero or alter any record lifecycle status."
+    ? "This document contains records that qualified reviewers closed as Not Reportable. It exists only to validate AskSocial export formatting and handoff mechanics. It must not be submitted to a sponsor as an ICSR package, used for regulatory reporting, or interpreted as evidence that reportability criteria were met. QA export and delivery do not start Day Zero or alter any record lifecycle status."
     : "This governed sponsor handoff supports pharmacovigilance intake and case assessment. It does not replace qualified medical review, regional or local reporting requirements, or required electronic ICSR transmission in ICH E2B format. Missing source information is shown explicitly and should be followed up where permissible and feasible.");
   section("Included assessments");
   paragraph(qaMode
@@ -470,7 +470,7 @@ export async function createPvSponsorReport(input: {
     field("Structured-review start timestamp", timestamp(record.review_started_at));
     field("Reportability review / day-zero timestamp", timestamp(record.reportability_identified_at));
     field("Review decision timestamp", timestamp(review.reviewed_at));
-    field("Escalation timestamp", qaMode ? "Not applicable - record closed as Not Relevant" : timestamp(review.reviewed_at));
+    field("Escalation timestamp", qaMode ? "Not applicable - record closed as Not Reportable" : timestamp(review.reviewed_at));
     field("Sponsor transfer timestamp", timestamp(transfer?.transferred_at));
 
     section("ICH E2D(R1) minimum ICSR criteria");
@@ -553,6 +553,6 @@ export function sponsorReportFileName(therapeuticArea?: string, mode: "sponsor_h
   const scope = printable(therapeuticArea || "all-therapeutic-areas")
     .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return mode === "qa_not_relevant"
-    ? `asksocial-${scope || "pv"}-qa-not-relevant-export-test.pdf`
+    ? `asksocial-${scope || "pv"}-qa-not-reportable-export-test.pdf`
     : `asksocial-${scope || "pv"}-sponsor-screening-report.pdf`;
 }

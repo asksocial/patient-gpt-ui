@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const cases = mode === "qa_not_relevant"
       ? await listPvQaNotRelevantCases(principal, therapeuticArea)
       : await listPvSponsorCases(principal, therapeuticArea);
-    if (!cases.length) return NextResponse.json({ ok: false, error: mode === "qa_not_relevant" ? "No closed Not Relevant reviews are available for QA export." : "No escalated sponsor cases are available for this report." }, { status: 404 });
+    if (!cases.length) return NextResponse.json({ ok: false, error: mode === "qa_not_relevant" ? "No closed Not Reportable reviews are available for QA export." : "No escalated sponsor cases are available for this report." }, { status: 404 });
     const report = await createPvSponsorReport({ cases, therapeuticArea, generatedBy: principal.actorId, mode });
     await recordPvSponsorReportActivity(principal, {
       action: mode === "qa_not_relevant" ? "qa_export" : "export",
