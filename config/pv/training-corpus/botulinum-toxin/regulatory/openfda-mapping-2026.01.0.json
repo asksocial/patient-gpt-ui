@@ -20,10 +20,15 @@
   "paging": {
     "pageSize": 1000,
     "sort": "receivedate:asc",
-    "strategy": "search_after_link"
+    "strategy": "search_after_link_with_bounded_skip_fallback",
+    "skipFallbackMaximumTotal": 26000,
+    "skipFallbackPageSize": 100
   },
   "retry": {
     "maxAttempts": 5,
+    "queryRestartAttempts": 5,
+    "skipFallbackActivationPass": 3,
+    "skipFallbackCooldownMs": 30000,
     "initialDelayMs": 1000,
     "maximumDelayMs": 30000,
     "minimumRequestIntervalMs": 260

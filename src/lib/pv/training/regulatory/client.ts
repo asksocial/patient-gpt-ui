@@ -186,84 +186,128 @@ export async function ingestBotulinumOpenFda(options: OpenFdaIngestionOptions = 
       duplicatesObserved: 0,
       recordsRejectedBySuspectPostFilter: 0,
       completed: false,
+      queryPasses: 0,
+      attemptErrors: [],
+      skipFallbackUsed: false,
     };
     queryRuns.push(run);
-    let nextUrl: string | undefined = query.publicUrl;
-    const visitedPages = new Set<string>();
-    try {
-      while (nextUrl) {
-        if (options.maxPagesPerQuery && run.pagesRetrieved >= options.maxPagesPerQuery) {
-          truncated = true;
-          break;
-        }
-        const validatedUrl = validateOpenFdaPageUrl(nextUrl);
-        const publicPageUrl = redactOpenFdaApiKey(validatedUrl);
-        if (visitedPages.has(publicPageUrl)) throw new OpenFdaRequestError("openFDA returned a repeated pagination URL; ingestion stopped to prevent an infinite loop.");
-        visitedPages.add(publicPageUrl);
-        const retrievedAt = now().toISOString();
-        const page = await fetchPage(validatedUrl);
-        run.pagesRetrieved += 1;
-        if (page.noMatches) {
-          run.completed = true;
-          break;
-        }
-        const sourceRecords = Array.isArray(page.body.results) ? page.body.results : [];
-        run.totalReportedByApi ??= Number.isFinite(Number(page.body.meta?.results?.total)) ? Number(page.body.meta.results.total) : undefined;
-        run.apiLastUpdated ||= String(page.body.meta?.last_updated || "") || undefined;
-        for (const rawRecord of sourceRecords) {
-          run.sourceHits += 1;
-          const observation = recordObservation(rawRecord, query, retrievedAt, publicPageUrl);
-          try {
-            const deduplicationKey = faersDeduplicationKey(rawRecord);
-            const existing = records.get(deduplicationKey);
-            if (existing) {
-              duplicateCount += 1;
-              run.duplicatesObserved += 1;
-              if (existing.rawSourceRecordSha256 !== rawHash(rawRecord)) {
-                malformedRecords.push({ queryId: query.queryId, retrievedAt, error: `Conflicting payloads share deduplication key ${deduplicationKey}; the first payload was retained.`, rawSourceRecord: rawRecord });
-              }
-              existing.observations = deduplicateObservations([...existing.observations, observation]);
-              if (existing.raw) existing.raw.observations = existing.observations;
-              existing.normalized.provenance.source_api_queries = existing.observations;
-              await invokePersistenceHook("query-observation", options.onQueryObservation, { deduplicationKey, observation });
-              continue;
-            }
-            const normalized = normalizeOpenFdaRegulatoryCase(rawRecord, [observation]);
-            if (query.suspectOnly && !normalized.normalized.drugs.some((drug) => drug.is_target_botulinum_product && drug.drug_role === "suspect")) {
-              run.recordsRejectedBySuspectPostFilter += 1;
-              continue;
-            }
-            records.set(deduplicationKey, {
-              rawSourceRecordSha256: normalized.raw.rawSourceRecordSha256,
-              observations: normalized.raw.observations,
-              raw: options.retainRawRecords === false ? undefined : normalized.raw,
-              normalized: normalized.normalized,
-            });
-            await invokePersistenceHook("raw-record", options.onUniqueRawRecord, normalized.raw);
-            await invokePersistenceHook("query-observation", options.onQueryObservation, { deduplicationKey, observation });
-            run.uniqueRecordsAdded += 1;
-            if (options.maxRecords && records.size >= options.maxRecords) {
-              truncated = true;
-              break queryLoop;
-            }
-          } catch (error) {
-            if (error instanceof OpenFdaPersistenceHookError) throw error;
-            malformedRecords.push({
-              queryId: query.queryId,
-              retrievedAt,
-              error: error instanceof Error ? error.message : "Malformed openFDA record.",
-              rawSourceRecord: rawRecord,
-            });
-          }
-        }
-        nextUrl = parseNextLink(page.response.headers.get("link"));
-        if (!nextUrl) run.completed = true;
+    while (!run.completed && run.queryPasses < mapping.retry.queryRestartAttempts) {
+      run.queryPasses += 1;
+      let pagesThisPass = 0;
+      let skipOffset = 0;
+      const useSkipFallback = run.queryPasses >= mapping.retry.skipFallbackActivationPass
+        && run.totalReportedByApi !== undefined
+        && run.totalReportedByApi <= mapping.paging.skipFallbackMaximumTotal;
+      if (useSkipFallback) run.skipFallbackUsed = true;
+      const initialUrl = new URL(query.publicUrl);
+      if (useSkipFallback) {
+        initialUrl.searchParams.set("limit", String(mapping.paging.skipFallbackPageSize));
+        initialUrl.searchParams.set("skip", "0");
       }
-      if (truncated && !run.completed) run.completed = false;
-    } catch (error) {
-      if (error instanceof OpenFdaPersistenceHookError) throw error;
-      run.error = error instanceof Error ? error.message : "Unknown openFDA query failure.";
-      if (!options.continueOnQueryError) break;
+      let nextUrl: string | undefined = initialUrl.toString();
+      const visitedPages = new Set<string>();
+      try {
+        while (nextUrl) {
+          if (options.maxPagesPerQuery && pagesThisPass >= options.maxPagesPerQuery) {
+            truncated = true;
+            break;
+          }
+          const validatedUrl = validateOpenFdaPageUrl(nextUrl);
+          const publicPageUrl = redactOpenFdaApiKey(validatedUrl);
+          if (visitedPages.has(publicPageUrl)) throw new OpenFdaRequestError("openFDA returned a repeated pagination URL; ingestion stopped to prevent an infinite loop.");
+          visitedPages.add(publicPageUrl);
+          const retrievedAt = now().toISOString();
+          const page = await fetchPage(validatedUrl);
+          pagesThisPass += 1;
+          run.pagesRetrieved += 1;
+          if (page.noMatches) {
+            run.completed = true;
+            break;
+          }
+          const sourceRecords = Array.isArray(page.body.results) ? page.body.results : [];
+          run.totalReportedByApi ??= Number.isFinite(Number(page.body.meta?.results?.total)) ? Number(page.body.meta.results.total) : undefined;
+          run.apiLastUpdated ||= String(page.body.meta?.last_updated || "") || undefined;
+          for (const rawRecord of sourceRecords) {
+            run.sourceHits += 1;
+            const observation = recordObservation(rawRecord, query, retrievedAt, publicPageUrl);
+            try {
+              const deduplicationKey = faersDeduplicationKey(rawRecord);
+              const existing = records.get(deduplicationKey);
+              if (existing) {
+                duplicateCount += 1;
+                run.duplicatesObserved += 1;
+                if (existing.rawSourceRecordSha256 !== rawHash(rawRecord)) {
+                  malformedRecords.push({ queryId: query.queryId, retrievedAt, error: `Conflicting payloads share deduplication key ${deduplicationKey}; the first payload was retained.`, rawSourceRecord: rawRecord });
+                }
+                existing.observations = deduplicateObservations([...existing.observations, observation]);
+                if (existing.raw) existing.raw.observations = existing.observations;
+                existing.normalized.provenance.source_api_queries = existing.observations;
+                await invokePersistenceHook("query-observation", options.onQueryObservation, { deduplicationKey, observation });
+                continue;
+              }
+              const normalized = normalizeOpenFdaRegulatoryCase(rawRecord, [observation]);
+              if (query.suspectOnly && !normalized.normalized.drugs.some((drug) => drug.is_target_botulinum_product && drug.drug_role === "suspect")) {
+                run.recordsRejectedBySuspectPostFilter += 1;
+                continue;
+              }
+              records.set(deduplicationKey, {
+                rawSourceRecordSha256: normalized.raw.rawSourceRecordSha256,
+                observations: normalized.raw.observations,
+                raw: options.retainRawRecords === false ? undefined : normalized.raw,
+                normalized: normalized.normalized,
+              });
+              await invokePersistenceHook("raw-record", options.onUniqueRawRecord, normalized.raw);
+              await invokePersistenceHook("query-observation", options.onQueryObservation, { deduplicationKey, observation });
+              run.uniqueRecordsAdded += 1;
+              if (options.maxRecords && records.size >= options.maxRecords) {
+                truncated = true;
+                break queryLoop;
+              }
+            } catch (error) {
+              if (error instanceof OpenFdaPersistenceHookError) throw error;
+              malformedRecords.push({
+                queryId: query.queryId,
+                retrievedAt,
+                error: error instanceof Error ? error.message : "Malformed openFDA record.",
+                rawSourceRecord: rawRecord,
+              });
+            }
+          }
+          if (useSkipFallback) {
+            skipOffset += sourceRecords.length;
+            if (skipOffset < (run.totalReportedByApi || 0)) {
+              if (!sourceRecords.length) throw new OpenFdaRequestError("openFDA returned an empty skip-fallback page before the reported total was reached.", undefined, true);
+              const skipUrl = new URL(query.publicUrl);
+              skipUrl.searchParams.set("limit", String(mapping.paging.skipFallbackPageSize));
+              skipUrl.searchParams.set("skip", String(skipOffset));
+              nextUrl = skipUrl.toString();
+            } else {
+              nextUrl = undefined;
+            }
+          } else {
+            nextUrl = parseNextLink(page.response.headers.get("link"));
+          }
+          if (!nextUrl) run.completed = true;
+        }
+        if (truncated && !run.completed) run.completed = false;
+        if (truncated) break;
+      } catch (error) {
+        if (error instanceof OpenFdaPersistenceHookError) throw error;
+        const message = error instanceof Error ? error.message : "Unknown openFDA query failure.";
+        run.attemptErrors.push({ pass: run.queryPasses, error: message });
+        const retryable = !(error instanceof OpenFdaRequestError) || error.retryable;
+        if (!retryable || run.queryPasses >= mapping.retry.queryRestartAttempts) {
+          run.error = message;
+          if (!options.continueOnQueryError) break queryLoop;
+          break;
+        }
+        const nextPassUsesFallback = run.queryPasses + 1 >= mapping.retry.skipFallbackActivationPass
+          && run.totalReportedByApi !== undefined
+          && run.totalReportedByApi <= mapping.paging.skipFallbackMaximumTotal;
+        await sleep(nextPassUsesFallback
+          ? mapping.retry.skipFallbackCooldownMs
+          : Math.min(mapping.retry.maximumDelayMs, mapping.retry.initialDelayMs * 2 ** (run.queryPasses - 1)));
+      }
     }
   }
 

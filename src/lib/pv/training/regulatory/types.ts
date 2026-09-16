@@ -27,10 +27,15 @@ export type OpenFdaRegulatoryMapping = {
   paging: {
     pageSize: number;
     sort: string;
-    strategy: "search_after_link";
+    strategy: "search_after_link_with_bounded_skip_fallback";
+    skipFallbackMaximumTotal: number;
+    skipFallbackPageSize: number;
   };
   retry: {
     maxAttempts: number;
+    queryRestartAttempts: number;
+    skipFallbackActivationPass: number;
+    skipFallbackCooldownMs: number;
     initialDelayMs: number;
     maximumDelayMs: number;
     minimumRequestIntervalMs: number;
@@ -194,6 +199,9 @@ export type OpenFdaQueryRun = {
   totalReportedByApi?: number;
   apiLastUpdated?: string;
   completed: boolean;
+  queryPasses: number;
+  attemptErrors: Array<{ pass: number; error: string }>;
+  skipFallbackUsed: boolean;
   error?: string;
 };
 

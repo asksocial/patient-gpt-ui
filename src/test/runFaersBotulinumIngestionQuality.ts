@@ -39,7 +39,10 @@ const firstRecord = pageOne.results[0];
 const normalized = normalizeOpenFdaRegulatoryCase(firstRecord, [observation]);
 assert.equal(getBotulinumRegulatoryCorpusManifest().status, "active", "The corpus manifest must select an active configuration.");
 assert.equal(getBotulinumProductRegistry().families.length, 6, "Six configured botulinum toxin product families are required.");
-assert.equal(getOpenFdaRegulatoryMapping().paging.strategy, "search_after_link", "Large result sets must use search-after pagination.");
+assert.equal(getOpenFdaRegulatoryMapping().paging.strategy, "search_after_link_with_bounded_skip_fallback", "Large result sets must primarily use search-after pagination.");
+assert.equal(getOpenFdaRegulatoryMapping().paging.skipFallbackMaximumTotal, 26000);
+assert.equal(getOpenFdaRegulatoryMapping().paging.skipFallbackPageSize, 100);
+assert.equal(getOpenFdaRegulatoryMapping().retry.skipFallbackActivationPass, 3);
 
 const allQueries = buildBotulinumOpenFdaQueries();
 assert.equal(allQueries.length, 38, "All brand and active-ingredient fields must be queried from versioned configuration.");
@@ -123,6 +126,8 @@ try {
   assert.equal(streamedOutput.manifest.recordCounts.rawUnique, streamed.normalizedRecords.length, "Streaming output must retain one raw payload per normalized case.");
   assert.equal(fs.readFileSync(path.join(streamedDirectory, "raw-records.jsonl"), "utf8").trim().split("\n").length, streamed.normalizedRecords.length);
   assert.equal(streamedOutput.manifest.recordCounts.queryObservations, 6, "Streaming output must preserve every overlapping query observation.");
+  assert.throws(() => streamedWriter.appendRaw(paged.rawRecords[0]), /after the corpus writer has been finalized/);
+  assert.throws(() => streamedWriter.finalize(streamed), /already been finalized/);
 } finally {
   fs.rmSync(temporaryRoot, { recursive: true, force: true });
 }
@@ -146,8 +151,45 @@ const failed = await ingestBotulinumOpenFda({
   now: tickingClock(),
 });
 assert.equal(failed.status, "partial");
-assert.equal(failedCalls, getOpenFdaRegulatoryMapping().retry.maxAttempts, "Retryable API failures must stop after the configured attempt limit.");
+assert.equal(
+  failedCalls,
+  getOpenFdaRegulatoryMapping().retry.maxAttempts * getOpenFdaRegulatoryMapping().retry.queryRestartAttempts,
+  "Retryable API failures must stop after the configured request and whole-query attempt limits.",
+);
 assert(failed.queryRuns[0].error?.includes("malformed JSON") || failed.queryRuns[0].error?.includes("503"));
+
+let restartCalls = 0;
+const restarted = await ingestBotulinumOpenFda({
+  products: ["BOTOX"],
+  fetchImpl: async () => {
+    restartCalls += 1;
+    if (restartCalls <= getOpenFdaRegulatoryMapping().retry.maxAttempts) return new Response("failure", { status: 503 });
+    return new Response(JSON.stringify({ error: { code: "NOT_FOUND", message: "No matches found!" } }), { status: 404 });
+  },
+  sleep: async () => {}, now: tickingClock(),
+});
+assert.equal(restarted.status, "complete", "A transient page failure must recover through a fresh whole-query pass.");
+assert.equal(restarted.queryRuns[0].queryPasses, 2);
+assert.equal(restarted.queryRuns[0].attemptErrors.length, 1);
+assert.equal(restarted.queryRuns[0].error, undefined);
+
+const fallbackFetch = async (input: string | URL | Request) => {
+  const url = new URL(String(input));
+  if (url.searchParams.has("skip")) {
+    assert.equal(url.searchParams.get("skip"), "0", "The bounded fallback must begin on an explicit skip=0 URL rather than the failed base URL.");
+    assert.equal(url.searchParams.get("limit"), "100", "The bounded fallback must use the conservative configured page size.");
+    return new Response(JSON.stringify(pageTwo), { status: 200 });
+  }
+  if (url.searchParams.has("search_after")) return new Response(JSON.stringify({ error: { message: "search_after failed" } }), { status: 500 });
+  const next = "https://api.fda.gov/drug/event.json?search=fixture&limit=1000&sort=receivedate%3Aasc&search_after=cursor";
+  return new Response(JSON.stringify(pageOne), { status: 200, headers: { link: `<${next}>; rel=\"next\"` } });
+};
+const fallback = await ingestBotulinumOpenFda({
+  products: ["BOTOX"], fetchImpl: fallbackFetch, sleep: async () => {}, now: tickingClock(),
+});
+assert.equal(fallback.status, "complete", "A query within the documented skip window must recover from a deterministic search-after failure.");
+assert(fallback.queryRuns.every((run) => run.skipFallbackUsed && run.queryPasses === 3));
+assert.equal(fallback.normalizedRecords.length, 2);
 
 const suspectFiltered = await ingestBotulinumOpenFda({
   products: ["BOTOX"], suspectOnly: true,

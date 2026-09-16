@@ -45,9 +45,14 @@ function validateConfiguration() {
   requireConfiguration(productRegistry.status === "active", "product registry must be active");
   requireConfiguration(sourceMapping.status === "active", "openFDA mapping must be active");
   requireConfiguration(sourceMapping.endpoint === "https://api.fda.gov/drug/event.json", "only the official HTTPS drug/event endpoint is permitted");
-  requireConfiguration(sourceMapping.paging.strategy === "search_after_link", "search-after pagination is required for result sets above the skip limit");
+  requireConfiguration(sourceMapping.paging.strategy === "search_after_link_with_bounded_skip_fallback", "search-after pagination with a bounded skip fallback is required");
   requireConfiguration(sourceMapping.paging.pageSize > 0 && sourceMapping.paging.pageSize <= 1000, "openFDA page size must be between 1 and 1000");
+  requireConfiguration(sourceMapping.paging.skipFallbackMaximumTotal === 26000, "the bounded skip fallback must not exceed openFDA's documented 26,000-result window");
+  requireConfiguration(sourceMapping.paging.skipFallbackPageSize > 0 && sourceMapping.paging.skipFallbackPageSize <= 100, "the bounded skip fallback page size must be between 1 and 100");
   requireConfiguration(sourceMapping.retry.maxAttempts >= 1, "at least one request attempt is required");
+  requireConfiguration(sourceMapping.retry.queryRestartAttempts >= 1, "at least one whole-query pass is required");
+  requireConfiguration(sourceMapping.retry.skipFallbackActivationPass > 1 && sourceMapping.retry.skipFallbackActivationPass <= sourceMapping.retry.queryRestartAttempts, "the skip fallback activation pass must follow the primary search-after passes");
+  requireConfiguration(sourceMapping.retry.skipFallbackCooldownMs >= sourceMapping.retry.maximumDelayMs, "the skip fallback cooldown must be at least the maximum page-retry delay");
   const targets = productRegistry.families.flatMap((family) => [...family.brands, ...family.activeIngredients]);
   requireConfiguration(new Set(targets.map((value) => value.toUpperCase())).size === targets.length, "target product terms must be unique");
   for (const family of productRegistry.families) {

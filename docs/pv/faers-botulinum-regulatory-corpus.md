@@ -24,7 +24,7 @@ The importer creates independent exact-field queries for each configured brand a
 - Active ingredient: source medicinal-product value, source active-substance value, openFDA generic annotation, and openFDA substance annotation.
 - Optional suspect-only mode: adds the configured `drugcharacterization=1` condition, then post-filters the matching drug object. This post-filter is required because a report can contain several drugs and an API-level match does not prove both conditions belong to the same array member.
 
-The client sorts by receive date and follows the API-provided `search_after` link. It does not depend on `skip`, whose documented result window is limited. HTTP 429 and server failures use versioned retry/backoff settings, including `Retry-After` when supplied.
+The client sorts by receive date and follows the API-provided `search_after` link. HTTP 429 and server failures use versioned retry/backoff settings, including `Retry-After` when supplied. If a transient server failure exhausts the per-request retries partway through pagination, the query restarts from page one under a separate bounded whole-query retry policy; identifier deduplication prevents the replay from creating duplicate cases. If search-after repeatedly fails and the API-reported total is no more than 26,000, subsequent passes may start a distinct, explicitly audited `skip=0` fallback path using conservative 100-record pages. Fallback retries use a versioned 30-second cooldown to avoid repeatedly hitting a sustained API failure. The fallback is prohibited for larger result sets because it would exceed openFDA's documented result window.
 
 The API key is added only to the outbound request and is removed from stored query provenance.
 
@@ -47,7 +47,7 @@ Each snapshot contains:
 
 - `raw-records.jsonl`: one complete raw source record and source-record hash per identifier/version. It is streamed to disk so a full corpus run does not retain all raw payloads in memory.
 - `query-observations.jsonl`: every query hit, searched product, source query, retrieval timestamp, source product value, and source reaction value, including overlaps later removed by deduplication.
-- `normalized-records.jsonl`: nested normalized cases.
+- `normalized-records.jsonl`: nested normalized cases, written one row at a time so full-corpus snapshots do not exceed JavaScript string-size limits during finalization.
 - `malformed-records.jsonl`: unparseable or identifier-conflicting records retained for audit.
 - `manifest.json`: versions, query outcomes, counts, completion status, and limitations.
 

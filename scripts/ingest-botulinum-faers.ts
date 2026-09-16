@@ -1,4 +1,6 @@
+import fs from "node:fs";
 import path from "node:path";
+import { loadEnvFile } from "node:process";
 import { createOpenFdaRegulatoryCorpusWriter, ingestBotulinumOpenFda } from "../src/lib/pv/training/regulatory";
 
 type CliOptions = {
@@ -62,6 +64,8 @@ function defaultOutputDirectory() {
 
 async function main() {
   const options = parseArguments(process.argv.slice(2));
+  const localEnvironment = path.resolve(process.cwd(), ".env.local");
+  if (!process.env.OPENFDA_API_KEY && fs.existsSync(localEnvironment)) loadEnvFile(localEnvironment);
   if (!process.env.OPENFDA_API_KEY?.trim()) {
     throw new Error("OPENFDA_API_KEY is required. Obtain a key from https://open.fda.gov/apis/authentication/ and add it to the local or deployment environment.");
   }

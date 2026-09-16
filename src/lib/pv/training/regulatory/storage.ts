@@ -4,8 +4,12 @@ import { getBotulinumRegulatoryCorpusManifest } from "./config";
 import type { OpenFdaIngestionResult } from "./types";
 
 function writeJsonLines(filePath: string, rows: unknown[]) {
-  const value = rows.map((row) => JSON.stringify(row)).join("\n");
-  fs.writeFileSync(filePath, value ? `${value}\n` : "", { encoding: "utf8", flag: "wx" });
+  const descriptor = fs.openSync(filePath, "wx");
+  try {
+    for (const row of rows) fs.writeSync(descriptor, `${JSON.stringify(row)}\n`, undefined, "utf8");
+  } finally {
+    fs.closeSync(descriptor);
+  }
 }
 
 export function writeOpenFdaRegulatoryCorpus(result: OpenFdaIngestionResult, outputDirectory: string) {
@@ -56,21 +60,28 @@ export function createOpenFdaRegulatoryCorpusWriter(outputDirectory: string) {
   fs.mkdirSync(resolved, { recursive: true });
   const rawPath = path.join(resolved, "raw-records.jsonl");
   const observationPath = path.join(resolved, "query-observations.jsonl");
-  fs.writeFileSync(rawPath, "", { encoding: "utf8", flag: "wx" });
-  fs.writeFileSync(observationPath, "", { encoding: "utf8", flag: "wx" });
+  const rawDescriptor = fs.openSync(rawPath, "wx");
+  const observationDescriptor = fs.openSync(observationPath, "wx");
   let rawCount = 0;
   let observationCount = 0;
+  let finalized = false;
   return {
     outputDirectory: resolved,
     appendRaw(record: OpenFdaIngestionResult["rawRecords"][number]) {
-      fs.appendFileSync(rawPath, `${JSON.stringify(record)}\n`, "utf8");
+      if (finalized) throw new Error("Cannot append raw records after the corpus writer has been finalized.");
+      fs.writeSync(rawDescriptor, `${JSON.stringify(record)}\n`, undefined, "utf8");
       rawCount += 1;
     },
     appendObservation(input: { deduplicationKey: string; observation: unknown }) {
-      fs.appendFileSync(observationPath, `${JSON.stringify(input)}\n`, "utf8");
+      if (finalized) throw new Error("Cannot append query observations after the corpus writer has been finalized.");
+      fs.writeSync(observationDescriptor, `${JSON.stringify(input)}\n`, undefined, "utf8");
       observationCount += 1;
     },
     finalize(result: OpenFdaIngestionResult) {
+      if (finalized) throw new Error("The corpus writer has already been finalized.");
+      finalized = true;
+      fs.closeSync(rawDescriptor);
+      fs.closeSync(observationDescriptor);
       writeJsonLines(path.join(resolved, "normalized-records.jsonl"), result.normalizedRecords);
       writeJsonLines(path.join(resolved, "malformed-records.jsonl"), result.malformedRecords);
       const corpusManifest = getBotulinumRegulatoryCorpusManifest();
