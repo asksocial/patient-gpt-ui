@@ -1,0 +1,8 @@
+{
+  "safetyreportversion": "1",
+  "receivedate": "not-a-date",
+  "patient": {
+    "drug": [{ "medicinalproduct": "BOTOX" }],
+    "reaction": [{ "reactionmeddrapt": "Headache" }]
+  }
+}

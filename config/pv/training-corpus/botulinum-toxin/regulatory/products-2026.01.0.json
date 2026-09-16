@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0.0",
+  "registryVersion": "2026.01.0",
+  "status": "active",
+  "families": [
+    {
+      "familyId": "onabotulinumtoxina",
+      "brands": ["BOTOX", "BOTOX COSMETIC"],
+      "activeIngredients": ["ONABOTULINUMTOXINA"]
+    },
+    {
+      "familyId": "abobotulinumtoxina",
+      "brands": ["DYSPORT"],
+      "activeIngredients": ["ABOBOTULINUMTOXINA"]
+    },
+    {
+      "familyId": "incobotulinumtoxina",
+      "brands": ["XEOMIN"],
+      "activeIngredients": ["INCOBOTULINUMTOXINA"]
+    },
+    {
+      "familyId": "prabotulinumtoxina",
+      "brands": ["JEUVEAU"],
+      "activeIngredients": ["PRABOTULINUMTOXINA"]
+    },
+    {
+      "familyId": "daxibotulinumtoxina",
+      "brands": ["DAXXIFY"],
+      "activeIngredients": ["DAXIBOTULINUMTOXINA"]
+    },
+    {
+      "familyId": "letibotulinumtoxina",
+      "brands": ["LETYBO"],
+      "activeIngredients": ["LETIBOTULINUMTOXINA"]
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "disclaimer": "Fixture derived from the documented openFDA drug-event shape.",
+    "license": "https://open.fda.gov/license/",
+    "last_updated": "2026-07-30",
+    "results": { "skip": 1, "limit": 2, "total": 2 }
+  },
+  "results": [
+    {
+      "safetyreportid": "12345678",
+      "safetyreportversion": "2",
+      "receiptdate": "20260815",
+      "receivedate": "20260801",
+      "transmissiondate": "20260816",
+      "serious": "1",
+      "patient": {
+        "drug": [{ "drugcharacterization": "1", "medicinalproduct": "BOTOX" }],
+        "reaction": [{ "reactionmeddrapt": "Eyelid ptosis" }]
+      }
+    },
+    {
+      "safetyreportid": "87654321",
+      "safetyreportversion": "1",
+      "receivedate": "20260701",
+      "serious": "2",
+      "patient": {
+        "drug": [{
+          "drugcharacterization": "2",
+          "medicinalproduct": "DYSPORT",
+          "activesubstance": { "activesubstancename": "ABOBOTULINUMTOXINA" }
+        }],
+        "reaction": [{ "reactionmeddrapt": "Muscular weakness", "reactionoutcome": "6" }]
+      }
+    }
+  ]
+}

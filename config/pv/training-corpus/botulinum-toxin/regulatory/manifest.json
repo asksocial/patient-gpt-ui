@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "configurationVersion": "2026.01.0",
+  "status": "active",
+  "topic": "Botulinum toxin",
+  "source": "FDA FAERS via openFDA drug/event",
+  "sourceDocumentation": "https://open.fda.gov/apis/drug/event/",
+  "activeProductRegistry": "products-2026.01.0.json",
+  "activeOpenFdaMapping": "openfda-mapping-2026.01.0.json",
+  "activationPolicy": "Activated files are immutable. Add a new version, validate it, register it, then update this manifest.",
+  "regulatoryPosture": "Retrieval and normalization only. No medical causality, incidence, final reportability, or product-reaction relationship is inferred."
+}

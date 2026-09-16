@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0.0",
+  "mappingVersion": "2026.01.0",
+  "status": "active",
+  "endpoint": "https://api.fda.gov/drug/event.json",
+  "queryFields": {
+    "brand": [
+      "patient.drug.medicinalproduct.exact",
+      "patient.drug.openfda.brand_name.exact"
+    ],
+    "activeIngredient": [
+      "patient.drug.medicinalproduct.exact",
+      "patient.drug.activesubstance.activesubstancename.exact",
+      "patient.drug.openfda.generic_name.exact",
+      "patient.drug.openfda.substance_name.exact"
+    ],
+    "suspectDrugField": "patient.drug.drugcharacterization",
+    "suspectDrugCode": "1"
+  },
+  "paging": {
+    "pageSize": 1000,
+    "sort": "receivedate:asc",
+    "strategy": "search_after_link"
+  },
+  "retry": {
+    "maxAttempts": 5,
+    "initialDelayMs": 1000,
+    "maximumDelayMs": 30000,
+    "minimumRequestIntervalMs": 260
+  },
+  "codes": {
+    "drugRole": {
+      "1": "suspect",
+      "2": "concomitant",
+      "3": "interacting"
+    },
+    "patientAgeUnit": {
+      "800": "decade",
+      "801": "year",
+      "802": "month",
+      "803": "week",
+      "804": "day",
+      "805": "hour",
+      "806": "minute"
+    },
+    "patientSex": {
+      "0": "unknown",
+      "1": "male",
+      "2": "female"
+    },
+    "reporterQualification": {
+      "1": "physician",
+      "2": "pharmacist",
+      "3": "other_health_professional",
+      "4": "lawyer",
+      "5": "consumer_or_non_health_professional"
+    },
+    "reactionOutcome": {
+      "1": "recovered_resolved",
+      "2": "recovering_resolving",
+      "3": "not_recovered_not_resolved",
+      "4": "recovered_with_sequelae",
+      "5": "fatal",
+      "6": "unknown"
+    }
+  }
+}
