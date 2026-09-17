@@ -2224,7 +2224,7 @@ export default function WorkspaceShell() {
                 workspaceId={activeWorkspaceId}
                 workspaces={workspaces}
                 onRefreshWorkspaces={loadWorkspaces}
-                onNavigate={setActiveDestination}
+                onNavigate={handleNavigation}
               />
             ) : (
               <DestinationPlaceholder

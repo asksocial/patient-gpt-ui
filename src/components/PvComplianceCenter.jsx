@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
+import { resolvePvReviewCompletionNavigation } from "../lib/pv/reviewNavigation";
 import Tooltip from "./ui/Tooltip";
 
 const TABS = [
@@ -288,23 +289,21 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   }
 
   function completeRecordReview(decision) {
-    if (decision === "close_not_relevant") {
-      setSelectedRecord(null);
-      navigateTab("overview");
-    } else if (decision === "reclassify_health_experience") {
-      setSelectedRecord(null);
-      navigateTab("health");
-    }
+    const navigation = resolvePvReviewCompletionNavigation(decision);
+    if (!navigation) return;
+    setSelectedRecord(null);
+    setTab(navigation.tab);
+    onNavigate?.(navigation.destination);
   }
 
-  async function mutate(path, body, busyKey, success) {
+  async function mutate(path, body, busyKey, success, options = {}) {
     setBusy(busyKey); setMessage("");
     const response = await fetch(path, { method: body.method || "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body.payload) });
     const data = await response.json();
     setBusy("");
     if (!response.ok || !data.ok) { setMessage(data.error || "PV operation failed."); return null; }
     setMessage(success);
-    await loadAll();
+    if (options.refresh !== false) await loadAll();
     return data;
   }
 
@@ -896,9 +895,10 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
     const classifications = reclassifying
       ? selectedClasses.filter((classification) => classification !== "adverse_event")
       : includeStructuredAssessment ? selectedClasses : [];
-    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention: reclassifying ? "yes" : productMention, healthExperience: reclassifying ? "yes" : healthExperience, classifications, rationale, decision, ontologyReview: includeStructuredAssessment && !reclassifying ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : reclassifying ? "Record reclassified and moved to Health Experience Detection." : "Record retained and closed as not reportable.");
+    const completionNavigation = resolvePvReviewCompletionNavigation(decision);
+    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention: reclassifying ? "yes" : productMention, healthExperience: reclassifying ? "yes" : healthExperience, classifications, rationale, decision, ontologyReview: includeStructuredAssessment && !reclassifying ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : reclassifying ? "Record reclassified and moved to Health Experience Detection." : "Record retained and closed as not reportable.", { refresh: !completionNavigation });
     if (data) {
-      if (["close_not_relevant", "reclassify_health_experience"].includes(decision)) onReviewComplete?.(decision);
+      if (completionNavigation) onReviewComplete?.(decision);
       else onRefresh();
     }
   }

@@ -5,6 +5,7 @@ import { buildEcosystemNavigation, configurationFromEntitlements, resolveCustome
 import { resolveEntitlements } from "../lib/entitlements";
 import { createPvSponsorReport, sponsorReportFileName } from "../lib/pv/sponsorReport";
 import { assessIcsrIdentifiability, patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
+import { resolvePvReviewCompletionNavigation } from "../lib/pv/reviewNavigation";
 import { PDFDocument } from "pdf-lib";
 
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
@@ -248,6 +249,7 @@ for (const field of ["corpus_id", "therapeutic_area", "pv_records_therapeutic_ar
 for (const field of ["pv_review_lists", "pv_review_list_items", "assigned_to", "shared_emails", "record_id"]) assert(reviewListMigration.includes(field), `PV review-list migration is missing ${field}.`);
 for (const field of ["author_identifier_column", "pv_detection_libraries", "pv_import_batches", "pv_records", "therapeutic_area"]) assert(genericEnrichmentMigration.includes(field), `Therapeutic-area-agnostic PV enrichment migration is missing ${field}.`);
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
+const workspaceShellSource = fs.readFileSync(path.resolve(process.cwd(), "src/components/WorkspaceShell.jsx"), "utf8");
 const lifecycleSource = workbench.slice(workbench.indexOf("function LifecycleRecords"), workbench.indexOf("function ReviewQueue"));
 const healthExperienceSource = workbench.slice(workbench.indexOf("function HealthExperienceDetection"), workbench.indexOf("function ReviewQueue"));
 const reviewQueueSource = workbench.slice(workbench.indexOf("function ReviewQueue"), workbench.indexOf("function RecordWorkbench"));
@@ -354,15 +356,18 @@ assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
 assert(workbench.includes('title="Initial reportability decision"') && workbench.includes("Mark as Reportable") && workbench.includes('review("close_not_relevant", false)'), "The structured-review workflow must require an explicit reportability decision before revealing the detailed assessment.");
 assert(workbench.includes('markedReportable && !["transferred"') && workbench.includes("setMarkedReportable(true)"), "Ontology and ICH case fields must remain hidden until the reviewer marks the mention reportable.");
-assert(workbench.includes('onReviewComplete?.(decision)') && workbench.includes('navigateTab("overview")'), "Either Close as Not Reportable action must return the reviewer to Compliance Overview after the retained decision succeeds.");
+assert(resolvePvReviewCompletionNavigation("close_not_relevant")?.destination === "pv_overview", "Close as Not Reportable must resolve to the canonical Compliance Overview destination.");
+assert(resolvePvReviewCompletionNavigation("reclassify_health_experience")?.destination === "pv_health", "Health Experience reclassification must resolve to the canonical Health Experience destination.");
+assert(resolvePvReviewCompletionNavigation("escalate") === null, "Non-terminal review decisions must remain in the structured-review flow.");
+assert(workbench.includes('onReviewComplete?.(decision)') && workbench.includes('{ refresh: !completionNavigation }'), "A successful terminal PV decision must navigate immediately instead of waiting for the global PV refresh.");
 for (const obsoleteLabel of ["Mark as Relevant", "Close as Not Relevant", "Initial relevance decision", "Not Relevant mentions"]) {
   assert(!workbench.includes(obsoleteLabel), `PV Compliance must not expose the retired relevance label: ${obsoleteLabel}.`);
 }
 for (const phrase of ["Reclassify as Health Experience", "Health Experience classification", "Save Health Experience reclassification", "Update reviewed mention", "Reviewer reclassified"]) {
   assert(workbench.includes(phrase), `The governed Health Experience reclassification UX is missing ${phrase}.`);
 }
-assert(workbench.includes('navigateTab("health")') && workbench.includes('payload: { action: "reopen_review" }'), "A completed review must reopen through a governed action and a saved Health Experience reclassification must route to its destination view.");
-assert(workbench.includes('onNavigate?.(`pv_${nextTab}`)') && workbench.includes('navigateTab("overview")'), "PV section navigation must keep the page heading synchronized when a closed record returns to Compliance Overview.");
+assert(workbench.includes('payload: { action: "reopen_review" }'), "A completed review must reopen through a governed action before its retained assessment can be updated.");
+assert(workbench.includes("onNavigate?.(navigation.destination)") && workspaceShellSource.includes("onNavigate={handleNavigation}"), "PV review completion must keep the inner section and page heading synchronized through canonical workspace navigation.");
 assert(workbench.includes('option === "not_applicable" ? "N/A"') && workbench.includes('const choices = options.includes("not_applicable")'), "Every structured assessment dropdown must include an explicit N/A option.");
 assert(workbench.includes("PV_REVIEW_FIELD_TOOLTIPS") && workbench.includes("<FieldLabel labelText={labelText}"), "Structured-review fields must render contextual tooltips through the shared field-label control.");
 assert(workbench.includes("xl:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]"), "The Compliance Clock must use a compact width so the record content receives the available horizontal space.");
