@@ -218,6 +218,8 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  useEffect(() => { setTab(initialTab); }, [initialTab]);
+
   function navigateTab(nextTab) {
     setTab(nextTab);
     onNavigate?.(`pv_${nextTab}`);
@@ -288,14 +290,6 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
     window.setTimeout(() => document.getElementById("pv-structured-review")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
 
-  function completeRecordReview(decision) {
-    const navigation = resolvePvReviewCompletionNavigation(decision);
-    if (!navigation) return;
-    setSelectedRecord(null);
-    setTab(navigation.tab);
-    onNavigate?.(navigation.destination);
-  }
-
   async function mutate(path, body, busyKey, success, options = {}) {
     setBusy(busyKey); setMessage("");
     const response = await fetch(path, { method: body.method || "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body.payload) });
@@ -303,6 +297,12 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
     setBusy("");
     if (!response.ok || !data.ok) { setMessage(data.error || "PV operation failed."); return null; }
     setMessage(success);
+    if (options.completionNavigation) {
+      setSelectedRecord(null);
+      setTab(options.completionNavigation.tab);
+      onNavigate?.(options.completionNavigation.destination);
+      return data;
+    }
     if (options.refresh !== false) await loadAll();
     return data;
   }
@@ -335,7 +335,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
       {tab === "lifecycle" ? <LifecycleRecords status={lifecycleStatus} expectedCount={overview?.statusCounts?.[lifecycleStatus] || 0} therapeuticArea={therapeuticArea} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onUpdateReview={updateStructuredReview} onBack={() => setTab("overview")} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
       {tab === "health" ? <HealthExperienceDetection records={records} selected={selectedRecord} busy={busy} onOpen={openRecord} onUpdateReview={updateStructuredReview} /> : null}
-      {tab === "review" ? <StructuredReview selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReviewComplete={completeRecordReview} onReturnToQueue={() => navigateTab("queue")} /> : null}
+      {tab === "review" ? <StructuredReview selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReturnToQueue={() => navigateTab("queue")} /> : null}
       {tab === "handoff" ? <SponsorHandoff therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} qaNotRelevantCases={qaNotRelevantCases} emailDeliveryConfigured={sponsorEmailDeliveryConfigured} busy={busy} onMutate={mutate} onOpenRecord={async (recordId) => { await openRecord(recordId); setTab("review"); }} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
       {tab === "reconciliation" ? <Reconciliation runs={reconciliations} busy={busy} onMutate={mutate} /> : null}
@@ -677,7 +677,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
   </div>;
 }
 
-function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }) {
+function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const { record, clock, reviews, transfers, audit } = detail;
   const retainedOntology = reviews.find((review) => review.decision === "escalate")?.validated_ae_ontology;
   const [markedReportable, setMarkedReportable] = useState(["ready_for_transfer", "transferred", "acknowledged", "reconciled"].includes(record.status));
@@ -896,11 +896,8 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh, onReviewComplete }
       ? selectedClasses.filter((classification) => classification !== "adverse_event")
       : includeStructuredAssessment ? selectedClasses : [];
     const completionNavigation = resolvePvReviewCompletionNavigation(decision);
-    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention: reclassifying ? "yes" : productMention, healthExperience: reclassifying ? "yes" : healthExperience, classifications, rationale, decision, ontologyReview: includeStructuredAssessment && !reclassifying ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : reclassifying ? "Record reclassified and moved to Health Experience Detection." : "Record retained and closed as not reportable.", { refresh: !completionNavigation });
-    if (data) {
-      if (completionNavigation) onReviewComplete?.(decision);
-      else onRefresh();
-    }
+    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention: reclassifying ? "yes" : productMention, healthExperience: reclassifying ? "yes" : healthExperience, classifications, rationale, decision, ontologyReview: includeStructuredAssessment && !reclassifying ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : reclassifying ? "Record reclassified and moved to Health Experience Detection." : "Record retained and closed as not reportable.", { refresh: !completionNavigation, completionNavigation });
+    if (data && !completionNavigation) onRefresh();
   }
   async function transfer() {
     const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "transfer", destination, transferMethod } }, "transfer", "Sponsor transfer package created with immutable payload hash.");
@@ -1065,12 +1062,12 @@ function ReviewerWorkflowGuide() {
   return <Card title="Reviewer workflow" subtitle="Follow these steps in order; required fields remain hidden until the mention is marked reportable."><ol className="grid gap-3 lg:grid-cols-5">{steps.map(([title, detail], index) => <li key={title} className="rounded-xl border border-white/10 bg-black/30 p-3"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-200/55">Step {index + 1}</p><p className="mt-1 text-xs font-medium text-white/70">{title}</p><p className="mt-2 text-[11px] leading-5 text-white/35">{detail}</p></li>)}</ol></Card>;
 }
 
-function StructuredReview({ selected, busy, onMutate, onRefreshRecord, onReviewComplete, onReturnToQueue }) {
+function StructuredReview({ selected, busy, onMutate, onRefreshRecord, onReturnToQueue }) {
   if (!selected) return <Card title="Structured Review" subtitle="Open a mention from the Review Queue to begin a governed reportability decision."><Empty>No PV mention is currently open for structured review.</Empty></Card>;
   return <section id="pv-structured-review" className="space-y-5 scroll-mt-6">
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-4"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">Structured Review</p><p className="mt-1 text-sm text-white/45">Determine reportability first, then complete the safety ontology and ICH case assessment only when appropriate.</p></div><button type="button" onClick={onReturnToQueue} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60">Return to Review Queue</button></div>
     <ReviewerWorkflowGuide />
-    <RecordWorkbench key={selected.record.id} detail={selected} busy={busy} onMutate={onMutate} onRefresh={() => onRefreshRecord(selected.record.id)} onReviewComplete={onReviewComplete} />
+    <RecordWorkbench key={selected.record.id} detail={selected} busy={busy} onMutate={onMutate} onRefresh={() => onRefreshRecord(selected.record.id)} />
   </section>;
 }
 

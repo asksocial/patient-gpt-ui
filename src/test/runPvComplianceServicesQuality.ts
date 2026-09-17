@@ -359,7 +359,8 @@ assert(workbench.includes('markedReportable && !["transferred"') && workbench.in
 assert(resolvePvReviewCompletionNavigation("close_not_relevant")?.destination === "pv_overview", "Close as Not Reportable must resolve to the canonical Compliance Overview destination.");
 assert(resolvePvReviewCompletionNavigation("reclassify_health_experience")?.destination === "pv_health", "Health Experience reclassification must resolve to the canonical Health Experience destination.");
 assert(resolvePvReviewCompletionNavigation("escalate") === null, "Non-terminal review decisions must remain in the structured-review flow.");
-assert(workbench.includes('onReviewComplete?.(decision)') && workbench.includes('{ refresh: !completionNavigation }'), "A successful terminal PV decision must navigate immediately instead of waiting for the global PV refresh.");
+assert(workbench.includes("if (options.completionNavigation)") && workbench.includes("onNavigate?.(options.completionNavigation.destination)"), "The successful terminal mutation itself must navigate so the retained decision and visible destination cannot diverge.");
+assert(workbench.includes("{ refresh: !completionNavigation, completionNavigation }") && workbench.includes("if (data && !completionNavigation) onRefresh()"), "Terminal PV decisions must bypass the record refresh and route immediately after the saved response.");
 for (const obsoleteLabel of ["Mark as Relevant", "Close as Not Relevant", "Initial relevance decision", "Not Relevant mentions"]) {
   assert(!workbench.includes(obsoleteLabel), `PV Compliance must not expose the retired relevance label: ${obsoleteLabel}.`);
 }
@@ -367,7 +368,7 @@ for (const phrase of ["Reclassify as Health Experience", "Health Experience clas
   assert(workbench.includes(phrase), `The governed Health Experience reclassification UX is missing ${phrase}.`);
 }
 assert(workbench.includes('payload: { action: "reopen_review" }'), "A completed review must reopen through a governed action before its retained assessment can be updated.");
-assert(workbench.includes("onNavigate?.(navigation.destination)") && workspaceShellSource.includes("onNavigate={handleNavigation}"), "PV review completion must keep the inner section and page heading synchronized through canonical workspace navigation.");
+assert(workbench.includes("setTab(options.completionNavigation.tab)") && workspaceShellSource.includes("onNavigate={handleNavigation}"), "PV review completion must keep the inner section and page heading synchronized through canonical workspace navigation.");
 assert(workbench.includes('option === "not_applicable" ? "N/A"') && workbench.includes('const choices = options.includes("not_applicable")'), "Every structured assessment dropdown must include an explicit N/A option.");
 assert(workbench.includes("PV_REVIEW_FIELD_TOOLTIPS") && workbench.includes("<FieldLabel labelText={labelText}"), "Structured-review fields must render contextual tooltips through the shared field-label control.");
 assert(workbench.includes("xl:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]"), "The Compliance Clock must use a compact width so the record content receives the available horizontal space.");
