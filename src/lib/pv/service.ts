@@ -1126,11 +1126,26 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     recordUpdates.segment_reclassified_at = null;
     recordUpdates.segment_reclassified_by = null;
   }
-  const { error: updateError } = await supabase.from("pv_records").update(recordUpdates)
-    .eq("id", recordId).eq("principal_id", principal.principalId);
-  if (updateError) throw new Error(`Failed to update PV record status: ${updateError.message}`);
+  const { data: updatedRecord, error: updateError } = await supabase.from("pv_records").update(recordUpdates)
+    .eq("id", recordId).eq("principal_id", principal.principalId)
+    .select("*").maybeSingle();
+  if (updateError || !updatedRecord) {
+    throw new Error(`Failed to update PV record status: ${updateError?.message || "the governed record was not updated"}`);
+  }
+  if (
+    decision.action === "reclassify_health_experience" &&
+    (updatedRecord.status !== "health_experience" || derivePvDetectionSegment(updatedRecord) !== "health_experience")
+  ) {
+    throw new Error("Failed to retain the Health Experience reclassification on the governed PV record.");
+  }
   await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, originalDetectionSegment: derivePvDetectionSegment(record), reviewerDetectionSegment: decision.action === "reclassify_health_experience" ? "health_experience" : null, ontologyReviewed: Boolean(decision.ontologyReview), retained: true, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null, dayZeroStarted: decision.action === "escalate" && !record.reportability_identified_at } });
-  return { review, status: nextStatus, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null };
+  const [enrichedRecord] = await enrichPvRecordRows(principal, [updatedRecord]);
+  return {
+    review,
+    record: compactPvRecordListItem(enrichedRecord),
+    status: nextStatus,
+    reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null,
+  };
 }
 
 export async function transferPvRecord(principal: PlatformPrincipal, recordId: string, input: { destination: string; transferMethod: "secure_api" | "sftp" | "secure_email" | "manual_export" }) {

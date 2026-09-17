@@ -297,7 +297,14 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
     setBusy("");
     if (!response.ok || !data.ok) { setMessage(data.error || "PV operation failed."); return null; }
     setMessage(success);
+    if (data.record?.id) {
+      setRecords((current) => current.map((record) => record.id === data.record.id ? { ...record, ...data.record } : record));
+      setSelectedRecord((current) => current?.record?.id === data.record.id
+        ? { ...current, record: { ...current.record, ...data.record } }
+        : current);
+    }
     if (options.completionNavigation) {
+      await loadAll();
       setSelectedRecord(null);
       setTab(options.completionNavigation.tab);
       onNavigate?.(options.completionNavigation.destination);

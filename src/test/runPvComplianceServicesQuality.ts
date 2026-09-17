@@ -360,7 +360,8 @@ assert(resolvePvReviewCompletionNavigation("close_not_relevant")?.destination ==
 assert(resolvePvReviewCompletionNavigation("reclassify_health_experience")?.destination === "pv_health", "Health Experience reclassification must resolve to the canonical Health Experience destination.");
 assert(resolvePvReviewCompletionNavigation("escalate") === null, "Non-terminal review decisions must remain in the structured-review flow.");
 assert(workbench.includes("if (options.completionNavigation)") && workbench.includes("onNavigate?.(options.completionNavigation.destination)"), "The successful terminal mutation itself must navigate so the retained decision and visible destination cannot diverge.");
-assert(workbench.includes("{ refresh: !completionNavigation, completionNavigation }") && workbench.includes("if (data && !completionNavigation) onRefresh()"), "Terminal PV decisions must bypass the record refresh and route immediately after the saved response.");
+assert(workbench.includes("if (data.record?.id)") && workbench.includes("await loadAll();"), "Terminal PV decisions must merge the verified saved record and reload governed records before navigating away from Structured Review.");
+assert(workbench.includes("{ refresh: !completionNavigation, completionNavigation }") && workbench.includes("if (data && !completionNavigation) onRefresh()"), "The structured-review caller must delegate terminal refresh and navigation to the successful saved mutation.");
 for (const obsoleteLabel of ["Mark as Relevant", "Close as Not Relevant", "Initial relevance decision", "Not Relevant mentions"]) {
   assert(!workbench.includes(obsoleteLabel), `PV Compliance must not expose the retired relevance label: ${obsoleteLabel}.`);
 }
@@ -402,6 +403,9 @@ assert(pvService.includes("reportabilityIdentifiedAt: record.reportability_ident
 assert(pvService.includes("startPvRecordReview") && pvService.includes('action: "review.start"') && pvService.includes("review_started_at"), "Continue to structured review must retain its own immutable human-review start timestamp.");
 for (const contract of ["reopenPvRecordReview", 'action: "review.reopen"', 'decision.action === "reclassify_health_experience"', "reviewer_detection_segment", "segment_reclassified_at", "originalDetectionSegment"]) {
   assert(pvService.includes(contract), `The governed Health Experience reclassification service is missing ${contract}.`);
+}
+for (const contract of ['.select("*").maybeSingle()', 'updatedRecord.status !== "health_experience"', 'derivePvDetectionSegment(updatedRecord) !== "health_experience"', "record: compactPvRecordListItem(enrichedRecord)"]) {
+  assert(pvService.includes(contract), `PV review persistence must verify and return the saved governed record: ${contract}.`);
 }
 const reviewStartMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608230002_add_pv_review_start.sql"), "utf8");
 assert(reviewStartMigration.includes("review_started_at") && !reviewStartMigration.includes("update public.pv_records"), "Historical records must remain blank rather than inferring a structured-review timestamp from a different workflow event.");
