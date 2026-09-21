@@ -198,7 +198,7 @@ function Empty({ children }) {
   return <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-5 py-8 text-center text-sm text-white/35">{children}</div>;
 }
 
-export default function PvComplianceCenter({ initialTab = "overview", therapeuticArea = "", workspaceId = "", workspaces = [], onRefreshWorkspaces, onNavigate }) {
+export default function PvComplianceCenter({ initialTab = "overview", initialMessage = "", therapeuticArea = "", workspaceId = "", workspaces = [], onRefreshWorkspaces, onNavigate, onInitialMessageConsumed }) {
   const [tab, setTab] = useState(initialTab);
   const [overview, setOverview] = useState(null);
   const [records, setRecords] = useState([]);
@@ -215,10 +215,15 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [lifecycleStatus, setLifecycleStatus] = useState("");
   const [busy, setBusy] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
   const [error, setError] = useState("");
 
   useEffect(() => { setTab(initialTab); }, [initialTab]);
+  useEffect(() => {
+    if (!initialMessage) return;
+    setMessage(initialMessage);
+    onInitialMessageConsumed?.();
+  }, [initialMessage, onInitialMessageConsumed]);
 
   function navigateTab(nextTab) {
     setTab(nextTab);
@@ -229,6 +234,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
     setLifecycleStatus(status);
     setSelectedRecord(null);
     setTab("lifecycle");
+    window.setTimeout(() => document.getElementById("pv-lifecycle-ledger")?.focus({ preventScroll: false }), 0);
   }
 
   const loadAll = useCallback(async () => {
@@ -304,10 +310,9 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
         : current);
     }
     if (options.completionNavigation) {
-      await loadAll();
       setSelectedRecord(null);
       setTab(options.completionNavigation.tab);
-      onNavigate?.(options.completionNavigation.destination);
+      onNavigate?.(options.completionNavigation.destination, { notice: success });
       return data;
     }
     if (options.refresh !== false) await loadAll();
@@ -335,7 +340,7 @@ export default function PvComplianceCenter({ initialTab = "overview", therapeuti
         {tab === "review" ? <button type="button" role="tab" aria-selected="true" className="shrink-0 rounded-xl border border-white bg-white px-3 py-2 text-xs font-medium text-black">Structured Review</button> : null}
       </div>
 
-      {message ? <div className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.06] px-4 py-3 text-sm text-cyan-100/75">{message}</div> : null}
+      {message ? <div role="status" aria-live="polite" className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.06] px-4 py-3 text-sm text-cyan-100/75">{message}</div> : null}
       {error ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{error}<p className="mt-1 text-xs text-rose-200/60">Apply the PV Supabase migration before using persistent workflow features.</p></div> : null}
 
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} onSelectLifecycle={openLifecycle} onNavigate={navigateTab} /> : null}
@@ -432,7 +437,7 @@ function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, bu
     if (detail) setPreviewOpen(true);
   }
 
-  return <div className="space-y-5">
+  return <div id="pv-lifecycle-ledger" tabIndex={-1} className="space-y-5 outline-none">
     {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} onContinueReview={onContinueReview} onUpdateReview={onUpdateReview} /> : null}
     <Card title={`PV lifecycle · ${label(status)}`} subtitle={`${total} ${total === 1 ? "mention" : "mentions"} currently comprise this lifecycle count.`} actions={<button type="button" onClick={onBack} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 transition-colors hover:text-white">← Back to Compliance Overview</button>}>
       {loadError ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{loadError}</div> : loading ? <Empty>Loading {label(status)} mentions…</Empty> : records.length ? <>

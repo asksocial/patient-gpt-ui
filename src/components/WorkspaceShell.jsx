@@ -892,6 +892,7 @@ export default function WorkspaceShell() {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [error, setError] = useState("");
   const [activeDestination, setActiveDestination] = useState("ask");
+  const [pvNavigationNotice, setPvNavigationNotice] = useState("");
   const [workspaces, setWorkspaces] = useState([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState("");
   const [workspaceSaveStatus, setWorkspaceSaveStatus] = useState("idle");
@@ -1406,7 +1407,8 @@ export default function WorkspaceShell() {
   }
 
   function handleNavigation(
-    destinationId
+    destinationId,
+    options = {}
   ) {
     if (
       destinationId ===
@@ -1426,6 +1428,10 @@ export default function WorkspaceShell() {
             messages.length > 0
         )
       );
+
+    setPvNavigationNotice(
+      options.notice || ""
+    );
 
     setActiveDestination(
       resolvedDestination
@@ -2220,11 +2226,13 @@ export default function WorkspaceShell() {
               <PvComplianceCenter
                 key={activeDestination}
                 initialTab={activeDestination.slice("pv_".length)}
+                initialMessage={pvNavigationNotice}
                 therapeuticArea={therapeuticArea}
                 workspaceId={activeWorkspaceId}
                 workspaces={workspaces}
                 onRefreshWorkspaces={loadWorkspaces}
                 onNavigate={handleNavigation}
+                onInitialMessageConsumed={() => setPvNavigationNotice("")}
               />
             ) : (
               <DestinationPlaceholder
