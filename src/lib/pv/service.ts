@@ -1089,9 +1089,10 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     }
   }
   const supabase = getSupabaseServerClient();
-  const { data: record } = await supabase.from("pv_records")
-    .select("id,status,reportability_identified_at,reviewer_detection_segment,reviewer_health_experience_tags,proposed_classifications,matched_concepts,ae_ontology")
+  const { data: record, error: recordLookupError } = await supabase.from("pv_records")
+    .select("*")
     .eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
+  if (recordLookupError) throw new Error(`Failed to load PV record for review: ${recordLookupError.message}`);
   if (!record) throw new Error("PV record not found.");
   if (["transferred", "acknowledged", "reconciled", "ready_for_transfer"].includes(record.status)) throw new Error("Sponsor-ready or transferred PV records cannot be reclassified without a governed correction workflow.");
   const reviewedAt = new Date().toISOString();
@@ -1115,12 +1116,13 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     recordUpdates.day_zero_basis = "reportability_identified_at";
     recordUpdates.day_zero_reason = "Day Zero began when the qualified reviewer confirmed the minimum ICSR criteria and escalated the AE/ADR for sponsor handoff.";
   }
+  const supportsReviewerSegmentation = Object.prototype.hasOwnProperty.call(record, "reviewer_detection_segment");
   if (decision.action === "reclassify_health_experience") {
     recordUpdates.reviewer_detection_segment = "health_experience";
     recordUpdates.reviewer_health_experience_tags = derivePvHealthExperienceTags({ classifications: healthExperienceClassifications });
     recordUpdates.segment_reclassified_at = reviewedAt;
     recordUpdates.segment_reclassified_by = principal.actorId;
-  } else {
+  } else if (supportsReviewerSegmentation) {
     recordUpdates.reviewer_detection_segment = null;
     recordUpdates.reviewer_health_experience_tags = null;
     recordUpdates.segment_reclassified_at = null;

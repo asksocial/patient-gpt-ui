@@ -301,7 +301,12 @@ export default function PvComplianceCenter({ initialTab = "overview", initialMes
     const response = await fetch(path, { method: body.method || "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body.payload) });
     const data = await response.json();
     setBusy("");
-    if (!response.ok || !data.ok) { setMessage(data.error || "PV operation failed."); return null; }
+    if (!response.ok || !data.ok) {
+      const failureMessage = data.error || "PV operation failed.";
+      setMessage(failureMessage);
+      options.onError?.(failureMessage);
+      return null;
+    }
     setMessage(success);
     if (data.record?.id) {
       setRecords((current) => current.map((record) => record.id === data.record.id ? { ...record, ...data.record } : record));
@@ -908,7 +913,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       ? selectedClasses.filter((classification) => classification !== "adverse_event")
       : includeStructuredAssessment ? selectedClasses : [];
     const completionNavigation = resolvePvReviewCompletionNavigation(decision);
-    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention: reclassifying ? "yes" : productMention, healthExperience: reclassifying ? "yes" : healthExperience, classifications, rationale, decision, ontologyReview: includeStructuredAssessment && !reclassifying ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : reclassifying ? "Record reclassified and moved to Health Experience Detection." : "Record retained and closed as not reportable.", { refresh: !completionNavigation, completionNavigation });
+    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention: reclassifying ? "yes" : productMention, healthExperience: reclassifying ? "yes" : healthExperience, classifications, rationale, decision, ontologyReview: includeStructuredAssessment && !reclassifying ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : reclassifying ? "Record reclassified and moved to Health Experience Detection." : "Record retained and closed as not reportable.", { refresh: !completionNavigation, completionNavigation, onError: setReviewError });
     if (data && !completionNavigation) onRefresh();
   }
   async function transfer() {
