@@ -1097,13 +1097,19 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
   if (["transferred", "acknowledged", "reconciled", "ready_for_transfer"].includes(record.status)) throw new Error("Sponsor-ready or transferred PV records cannot be reclassified without a governed correction workflow.");
   const reviewedAt = new Date().toISOString();
   const regulatoryVersions = pvE2bVersionSnapshot();
-  const { data: review, error: reviewError } = await supabase.from("pv_reviews").insert({
+  const reviewPayload = {
     principal_id: principal.principalId, record_id: recordId, reviewer_id: principal.actorId,
     product_mention: decision.productMention, health_experience: decision.healthExperience, classifications: decision.classifications,
     rationale: decision.rationale.trim(), decision: decision.action, reviewed_at: reviewedAt,
     validated_ae_ontology: decision.ontologyReview || {},
     e2b_mapping_version: regulatoryVersions.mappingVersion,
-  }).select("*").single();
+  };
+  let reviewResult = await supabase.from("pv_reviews").insert(reviewPayload).select("*").single();
+  if (reviewResult.error && /e2b_mapping_version/i.test(reviewResult.error.message || "")) {
+    const { e2b_mapping_version: _legacySchemaOmission, ...legacyReviewPayload } = reviewPayload;
+    reviewResult = await supabase.from("pv_reviews").insert(legacyReviewPayload).select("*").single();
+  }
+  const { data: review, error: reviewError } = reviewResult;
   if (reviewError || !review) throw new Error(`Failed to save PV review: ${reviewError?.message || "missing row"}`);
   const nextStatus = decision.action === "escalate"
     ? "ready_for_transfer"
@@ -1140,7 +1146,7 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
   ) {
     throw new Error("Failed to retain the Health Experience reclassification on the governed PV record.");
   }
-  await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, originalDetectionSegment: derivePvDetectionSegment(record), reviewerDetectionSegment: decision.action === "reclassify_health_experience" ? "health_experience" : null, ontologyReviewed: Boolean(decision.ontologyReview), retained: true, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null, dayZeroStarted: decision.action === "escalate" && !record.reportability_identified_at } });
+  await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, originalDetectionSegment: derivePvDetectionSegment(record), reviewerDetectionSegment: decision.action === "reclassify_health_experience" ? "health_experience" : null, ontologyReviewed: Boolean(decision.ontologyReview), retained: true, e2bMappingVersion: regulatoryVersions.mappingVersion, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null, dayZeroStarted: decision.action === "escalate" && !record.reportability_identified_at } });
   const [enrichedRecord] = await enrichPvRecordRows(principal, [updatedRecord]);
   return {
     review,

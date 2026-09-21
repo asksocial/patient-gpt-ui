@@ -387,6 +387,7 @@ assert(importRoute.includes('form.get("therapeuticArea")'), "PV CSV ingestion mu
 const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
 assert(pvService.includes('.from("pv_records")\n    .select("*")') && pvService.includes("Failed to load PV record for review"), "PV review must load the governed record without requiring optional migration-era columns in the projection.");
 assert(pvService.includes('else if (supportsReviewerSegmentation)'), "Closing a review must remain compatible with legacy staging schemas that predate reviewer-segmentation columns.");
+assert(pvService.includes("legacyReviewPayload") && pvService.includes("e2bMappingVersion: regulatoryVersions.mappingVersion"), "PV review must preserve the mapping version in audit provenance while remaining compatible with a staging schema that predates the dedicated review column.");
 assert(pvService.includes("Math.min(1000, input.limit || 1000)"), "PV detection views must expose the complete retained therapeutic-area evidence set up to the governed API ceiling.");
 for (const contract of ["enrichPvRecordsWithAvailableMetadata", "repeat_csv_import", "record.available_metadata_enrich", "enrichedAvailableFields", "library.therapeutic_area", "author_identifier_column"]) {
   assert(pvService.includes(contract), `Generic PV ingestion is missing the shared metadata-enrichment contract ${contract}.`);
