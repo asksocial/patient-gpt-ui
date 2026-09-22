@@ -254,6 +254,7 @@ const lifecycleSource = workbench.slice(workbench.indexOf("function LifecycleRec
 const healthExperienceSource = workbench.slice(workbench.indexOf("function HealthExperienceDetection"), workbench.indexOf("function ReviewQueue"));
 const reviewQueueSource = workbench.slice(workbench.indexOf("function ReviewQueue"), workbench.indexOf("function RecordWorkbench"));
 assert(!workbench.includes("Eight connected PV services"), "The removed PV services marketing overview must not return to Compliance Overview.");
+assert(!workbench.includes("North star:"), "The removed North star callout must not return to Compliance Overview.");
 for (const phrase of ["Potential records, not AE determinations", "Original evidence is immutable", "Structured human review", "Zero unexplained records", "nil return"]) {
   assert(workbench.toLowerCase().includes(phrase.toLowerCase()), `PV workbench is missing required UX: ${phrase}`);
 }

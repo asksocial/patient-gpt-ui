@@ -329,13 +329,12 @@ export default function PvComplianceCenter({ initialTab = "overview", initialMes
   return (
     <div className="pv-compliance-v2 space-y-5">
       <section className="pv-compliance-hero overflow-hidden rounded-3xl border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.08] via-white/[0.03] to-violet-400/[0.06] p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+        <div>
           <div className="max-w-3xl">
             <div className="flex items-center gap-2"><ToneBadge tone="complete">Human review required</ToneBadge><ToneBadge>Potential records, not AE determinations</ToneBadge></div>
             <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white">PV Compliance Operations</h2>
             <p className="mt-2 text-sm leading-6 text-white/55">A governed workflow for source screening, potential safety-content detection, structured review, sponsor transfer, provenance, clocks, and reconciliation. Conversational intelligence remains available separately for analysis.</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-xs leading-5 text-white/45"><span className="font-medium text-white/70">North star:</span> every signal is explainable, every decision is retained, and every transfer is reconcilable.</div>
         </div>
       </section>
 
