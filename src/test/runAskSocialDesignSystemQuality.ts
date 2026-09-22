@@ -11,6 +11,8 @@ assert(shell.includes("asksocial-v2") && shell.includes("From conversation to in
 assert(shell.includes("What would you like to understand?") && shell.includes("Human conversations") && shell.includes("Decisions"), "The query workspace must communicate the conversation-to-decision journey.");
 assert(shell.includes('name="close"') && !shell.includes("<span>Collapse</span>"), "The expanded rail must use a compact X control instead of a text Collapse control.");
 assert(shell.includes('name="menu"') && !shell.includes("<span>Show left rail</span>"), "The collapsed rail must use a hamburger control instead of a text Show left rail control.");
+assert(shell.includes("AskSocialWordmark") && shell.includes("asksocial-wordmark-symbol"), "The rail must use the supplied AskSocial wordmark instead of the legacy AS tile.");
+assert(styles.includes(".asksocial-wordmark-bubble") && styles.includes(".asksocial-wordmark-block") && styles.includes(".asksocial-wordmark-text > strong"), "The AskSocial wordmark must retain its split speech mark and mixed-weight typography.");
 for (const icon of ["topic", "investigate", "questions", "intelligence", "user"]) {
   assert(shell.includes(`name=\"${icon}\"`), `The contextual left-rail icon set is missing ${icon}.`);
 }

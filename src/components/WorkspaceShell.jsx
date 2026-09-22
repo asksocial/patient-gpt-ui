@@ -66,6 +66,26 @@ function RailDockButton({ label, icon, onClick }) {
   );
 }
 
+function AskSocialWordmark({ compact = false }) {
+  return (
+    <div
+      className={`asksocial-wordmark ${compact ? "asksocial-wordmark-compact" : ""}`}
+      aria-label="AskSocial"
+      role="img"
+    >
+      <span className="asksocial-wordmark-symbol" aria-hidden="true">
+        <span className="asksocial-wordmark-bubble" />
+        <span className="asksocial-wordmark-block" />
+      </span>
+      {!compact ? (
+        <span className="asksocial-wordmark-text" aria-hidden="true">
+          <span>Ask</span><strong>Social</strong>
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 const DESTINATION_COPY = {
   ask: {
     eyebrow: "Intelligence workspace",
@@ -1824,7 +1844,7 @@ export default function WorkspaceShell() {
               >
                 <RailIcon name="menu" className="h-5 w-5" />
               </button>
-              <span className="asksocial-brand-mark mt-2" aria-label="AskSocial">AS</span>
+              <AskSocialWordmark compact />
               <div className="my-2 h-px w-8 bg-white/8" />
               <RailDockButton label="New conversation" icon="new" onClick={startNewConversation} />
               <RailDockButton label="Topic" icon="topic" onClick={toggleLeftRail} />
@@ -1838,18 +1858,12 @@ export default function WorkspaceShell() {
           ) : (
           <div className="flex min-h-full flex-col p-5">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="asksocial-brand-mark" aria-hidden="true">AS</span>
+              <div className="flex min-w-0 items-center gap-3">
+                <AskSocialWordmark />
                 <div>
-                  <div className="text-2xl font-semibold tracking-tight">
-                    AskSocial
-                  </div>
                   <div className="sr-only">
                   AskSocial
                 </div>
-                  <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-white/40">
-                    From conversation to intelligence
-                  </div>
                   <div className="sr-only">
                   Workspace
                 </div>

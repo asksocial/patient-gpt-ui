@@ -96,21 +96,76 @@ body {
   height: 1.25rem;
 }
 
-.asksocial-brand-mark {
+.asksocial-wordmark {
   display: inline-flex;
-  width: 2.35rem;
-  height: 2.35rem;
-  flex: 0 0 auto;
+  min-width: 0;
   align-items: center;
+  color: #edf7f3;
+}
+
+.asksocial-wordmark-symbol {
+  position: relative;
+  display: inline-block;
+  width: 3.2rem;
+  height: 2.1rem;
+  flex: 0 0 auto;
+}
+
+.asksocial-wordmark-bubble {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1.95rem;
+  height: 1.55rem;
+  background: #edf7f3;
+}
+
+.asksocial-wordmark-bubble::after {
+  position: absolute;
+  bottom: -0.56rem;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-top: 0.6rem solid #edf7f3;
+  border-right: 0.66rem solid transparent;
+  content: "";
+}
+
+.asksocial-wordmark-block {
+  position: absolute;
+  top: 0.28rem;
+  left: 2.16rem;
+  width: 1.05rem;
+  height: 1.55rem;
+  background: #83dfcf;
+}
+
+.asksocial-wordmark-text {
+  display: inline-flex;
+  margin-left: 0.66rem;
+  align-items: baseline;
+  font-size: 1.72rem;
+  line-height: 1;
+  letter-spacing: -0.055em;
+  white-space: nowrap;
+}
+
+.asksocial-wordmark-text > span {
+  font-weight: 390;
+}
+
+.asksocial-wordmark-text > strong {
+  font-weight: 760;
+}
+
+.asksocial-wordmark-compact {
+  width: 2.75rem;
   justify-content: center;
-  border: 1px solid rgba(142, 232, 214, 0.34);
-  border-radius: 0.85rem;
-  background: linear-gradient(145deg, rgba(142, 232, 214, 0.2), rgba(214, 184, 117, 0.1));
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.1), 0 10px 32px rgba(0, 0, 0, 0.22);
-  color: var(--as-mint);
-  font-size: 0.69rem;
-  font-weight: 750;
-  letter-spacing: 0.12em;
+}
+
+.asksocial-wordmark-compact .asksocial-wordmark-symbol {
+  transform: scale(0.78);
+  transform-origin: center;
 }
 
 .asksocial-v2 main {
@@ -333,7 +388,7 @@ body {
     padding: 0.65rem 1rem;
   }
 
-  .asksocial-v2[data-rail-collapsed="true"] .asksocial-rail-collapsed .asksocial-brand-mark {
+  .asksocial-v2[data-rail-collapsed="true"] .asksocial-rail-collapsed .asksocial-wordmark-compact {
     margin-top: 0;
   }
 

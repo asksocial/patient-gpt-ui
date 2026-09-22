@@ -49,6 +49,12 @@ The redesign changes brand expression and information hierarchy while preserving
 
 ## Brand foundations
 
+### Wordmark
+
+- The expanded left rail uses the split speech-mark symbol with the mixed-weight **AskSocial** wordmark supplied for Design System 2.0.
+- The collapsed rail retains the speech-mark symbol without the text so the brand remains recognizable while preserving workspace width.
+- The wordmark is rendered as resolution-independent interface geometry and text, preserving sharp edges at every display density.
+
 ### Palette
 
 | Token | Value | Purpose |
