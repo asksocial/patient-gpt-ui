@@ -17,6 +17,29 @@ const DROPDOWN_GROUPS = new Set([
   "power_user",
 ]);
 
+const NAVIGATION_PRESENTATION = {
+  intelligence: {
+    label: "Explore",
+    description: "Themes, evidence, briefs, and connected intelligence",
+  },
+  modules: {
+    label: "Analyze",
+    description: "Apply a specialized analytical lens",
+  },
+  workflows: {
+    label: "Monitor",
+    description: "Track active, scheduled, and governed work",
+  },
+  pv_compliance: {
+    label: "Verify",
+    description: "Review safety signals with human oversight",
+  },
+  power_user: {
+    label: "Manage",
+    description: "Shared resources, governance, and administration",
+  },
+};
+
 function NavigationItem({
   item,
   active,
@@ -31,7 +54,7 @@ function NavigationItem({
         active ? "page" : undefined
       }
       title={item.description}
-      className={`flex items-center justify-between rounded-xl text-left text-sm transition ${
+      className={`as-nav-item flex items-center justify-between rounded-xl text-left text-sm transition ${
         compact
           ? "w-full px-3 py-2"
           : "shrink-0 px-3 py-2"
@@ -130,9 +153,26 @@ export default function EcosystemNavigation({
     <nav
       ref={navigationRef}
       aria-label="Platform navigation"
-      className="flex flex-wrap items-center gap-1"
+      className="as-platform-nav flex flex-wrap items-center gap-1"
     >
+      <button
+        type="button"
+        onClick={() => navigate("ask")}
+        aria-current={activeItem === "ask" ? "page" : undefined}
+        className={`as-nav-trigger flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
+          activeItem === "ask"
+            ? "bg-white text-black"
+            : "text-white/65 hover:bg-white/[0.06] hover:text-white"
+        }`}
+      >
+        <span className="as-nav-symbol" aria-hidden="true">✦</span>
+        <span>Ask</span>
+      </button>
       {navigationGroups.map((group) => {
+        const presentation = NAVIGATION_PRESENTATION[group.id] || {
+          label: group.label,
+          description: group.description,
+        };
         const groupIsActive =
           group.items.some(
             (item) =>
@@ -158,13 +198,13 @@ export default function EcosystemNavigation({
                     : group.id
                 )
               }
-              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
+              className={`as-nav-trigger flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
                 groupIsActive
                   ? "bg-white text-black"
                   : "text-white/65 hover:bg-white/[0.06] hover:text-white"
               }`}
             >
-              <span>{group.label}</span>
+              <span>{presentation.label}</span>
               <svg
                 aria-hidden="true"
                 viewBox="0 0 20 20"
@@ -188,8 +228,16 @@ export default function EcosystemNavigation({
             {expanded ? (
               <div
                 id={`navigation-group-${group.id}`}
-                className="absolute left-0 top-full z-50 mt-2 min-w-56 space-y-0.5 rounded-2xl border border-white/10 bg-zinc-950 p-2 shadow-2xl shadow-black/60"
+                className="as-nav-menu absolute left-0 top-full z-50 mt-2 min-w-72 space-y-0.5 rounded-2xl border border-white/10 bg-zinc-950 p-2 shadow-2xl shadow-black/60"
               >
+                <div className="px-3 pb-2 pt-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200/55">
+                    {presentation.label}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-white/35">
+                    {presentation.description}
+                  </p>
+                </div>
                 {group.items.map(
                   (item) => (
                     <NavigationItem

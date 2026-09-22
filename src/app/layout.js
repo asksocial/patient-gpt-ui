@@ -3,7 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata = {
   title: "AskSocial",
-  description: "AI-powered social intelligence",
+  description: "From conversation to decision-ready healthcare intelligence.",
 };
 
 export default function RootLayout({ children }) {

@@ -179,7 +179,7 @@ function Card({ title, subtitle, children, actions }) {
 
 function Metric({ label: metricLabel, value, detail, tooltip, tone = "neutral", actionLabel, onAction }) {
   const border = tone === "warning" ? "border-amber-400/20 bg-amber-400/[0.05]" : tone === "danger" ? "border-rose-400/20 bg-rose-400/[0.05]" : "border-white/10 bg-black/30";
-  return <div className={`rounded-2xl border p-4 ${border}`}><div className="text-xs text-white/40">{tooltip ? <Tooltip content={tooltip} delay={200} side="bottom" align="start"><button type="button" aria-label={`${metricLabel}: ${tooltip}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{metricLabel}</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip> : metricLabel}</div><p className="mt-2 text-2xl font-semibold text-white">{value}</p>{detail ? <p className="mt-1 text-xs text-white/30">{detail}</p> : null}{onAction ? <button type="button" onClick={onAction} className="mt-3 cursor-pointer text-xs font-semibold text-cyan-300 transition-colors hover:text-cyan-200">{actionLabel || "View records"} →</button> : null}</div>;
+  return <div className={`pv-intelligence-metric rounded-2xl border p-4 ${border}`}><div className="text-xs text-white/40">{tooltip ? <Tooltip content={tooltip} delay={200} side="bottom" align="start"><button type="button" aria-label={`${metricLabel}: ${tooltip}`} className="inline-flex cursor-help items-center gap-1.5 text-left transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"><span>{metricLabel}</span><span aria-hidden="true" className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50">?</span></button></Tooltip> : metricLabel}</div><p className="mt-2 text-2xl font-semibold text-white">{value}</p>{detail ? <p className="mt-1 text-xs text-white/30">{detail}</p> : null}{onAction ? <button type="button" onClick={onAction} className="mt-3 cursor-pointer text-xs font-semibold text-cyan-300 transition-colors hover:text-cyan-200">{actionLabel || "View records"} →</button> : null}</div>;
 }
 
 function IdentifiabilitySummary({ assessment }) {
@@ -327,8 +327,8 @@ export default function PvComplianceCenter({ initialTab = "overview", initialMes
   const metricData = overview?.metrics || {};
 
   return (
-    <div className="space-y-5">
-      <section className="overflow-hidden rounded-3xl border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.08] via-white/[0.03] to-violet-400/[0.06] p-6">
+    <div className="pv-compliance-v2 space-y-5">
+      <section className="pv-compliance-hero overflow-hidden rounded-3xl border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[0.08] via-white/[0.03] to-violet-400/[0.06] p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <div className="flex items-center gap-2"><ToneBadge tone="complete">Human review required</ToneBadge><ToneBadge>Potential records, not AE determinations</ToneBadge></div>

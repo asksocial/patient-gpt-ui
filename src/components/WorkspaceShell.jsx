@@ -27,10 +27,10 @@ const QUICK_ACTIONS = [
 
 const DESTINATION_COPY = {
   ask: {
-    eyebrow: "Ask AskSocial",
-    title: "Conversational social intelligence",
+    eyebrow: "Intelligence workspace",
+    title: "From conversation to intelligence",
     description:
-      "Ask questions across report themes and social narrative signals to understand what is changing and what it means.",
+      "Ask the governed evidence what is happening, why it matters, and where to investigate next.",
   },
   intelligence_search: {
     eyebrow: "Intelligence",
@@ -1753,7 +1753,7 @@ export default function WorkspaceShell() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="asksocial-v2 asksocial-shell min-h-screen bg-black text-white">
       {workspaceSaveDialogOpen ? <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="save-current-session-title"><form onSubmit={saveCurrentSessionAsWorkspace} className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300/70">Workspace</p><h2 id="save-current-session-title" className="mt-2 text-xl font-semibold text-white">Save current session as workspace</h2><p className="mt-2 text-sm leading-6 text-white/45">Name this workspace to retain the active conversation and automatically save subsequent intelligence generated while it is selected.</p><label className="mt-5 block text-xs font-medium text-white/50">Workspace name<input autoFocus value={workspaceDraftName} onChange={(event) => { setWorkspaceDraftName(event.target.value); if (workspaceCreateError) setWorkspaceCreateError(""); }} placeholder="e.g., Botulinum toxin PV review" className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none focus:border-cyan-300/40" /></label>{workspaceCreateError ? <p role="alert" className="mt-3 text-xs text-amber-300">{workspaceCreateError}</p> : null}<div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setWorkspaceSaveDialogOpen(false)} disabled={workspaceCreateBusy} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">Cancel</button><button type="submit" disabled={workspaceCreateBusy || !workspaceDraftName.trim()} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{workspaceCreateBusy ? "Saving…" : "Save workspace"}</button></div></form></div> : null}
       <div
         className={
@@ -1765,16 +1765,25 @@ export default function WorkspaceShell() {
         <aside
           id="workspace-left-rail"
           aria-hidden={leftRailCollapsed}
-          className={`${leftRailCollapsed ? "hidden" : "block"} border-r border-white/10 bg-black/80 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto`}
+          className={`asksocial-rail ${leftRailCollapsed ? "hidden" : "block"} border-r border-white/10 bg-black/80 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto`}
         >
           <div className="flex min-h-full flex-col p-5">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-2xl font-semibold tracking-tight">
+              <div className="flex items-center gap-3">
+                <span className="asksocial-brand-mark" aria-hidden="true">AS</span>
+                <div>
+                  <div className="text-2xl font-semibold tracking-tight">
+                    AskSocial
+                  </div>
+                  <div className="sr-only">
                   AskSocial
                 </div>
-                <div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-white/40">
+                  <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-white/40">
+                    From conversation to intelligence
+                  </div>
+                  <div className="sr-only">
                   Workspace
+                </div>
                 </div>
               </div>
               <button
@@ -1828,7 +1837,7 @@ export default function WorkspaceShell() {
 
             <div className="mt-8">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                Quick actions
+                Suggested investigations
               </p>
               <div className="mt-3 space-y-2">
                 {QUICK_ACTIONS.map((item) => (
@@ -1873,7 +1882,7 @@ export default function WorkspaceShell() {
             <div className="mt-8">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                  Conversations
+                Recent intelligence
                 </p>
                 <span className="text-[11px] text-white/30">
                   {filteredSessions.length} shown
@@ -2011,7 +2020,7 @@ export default function WorkspaceShell() {
         </aside>
 
         <main className="flex min-h-screen min-w-0 flex-col">
-          <header className="order-1 sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
+          <header className="asksocial-topbar order-1 sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
             <div className="mb-5 flex items-start gap-3 border-b border-white/10 pb-4">
               {leftRailCollapsed ? (
                 <button
@@ -2129,18 +2138,29 @@ export default function WorkspaceShell() {
             ) : activeDestination ===
               "ask" ? (
               <div className="space-y-4">
-              <section className="flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
+              <section className="asksocial-answer-canvas flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
                 {messages.length === 0 ? (
                   <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
                     <div>
-                      <h2 className="text-lg font-semibold text-white">
-                        Start with a question
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/60">
+                        Intelligence workspace
+                      </p>
+                      <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-white">
+                        What would you like to understand?
                       </h2>
                       <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">
                         Ask about baseline themes, emerging narratives, changing
                         concerns, trust signals, country differences, platform
                         behavior, or what has shifted since the last report.
                       </p>
+                      <div className="asksocial-intelligence-path mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="From conversation to intelligence">
+                        {["Human conversations", "Evidence", "Patterns", "Intelligence", "Decisions"].map((stage, index) => (
+                          <div key={stage} className="flex items-center gap-2">
+                            <span>{stage}</span>
+                            {index < 4 ? <span aria-hidden="true" className="text-cyan-200/30">→</span> : null}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -2258,13 +2278,13 @@ export default function WorkspaceShell() {
               <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
                 <div className="flex flex-col gap-3">
                   <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                    Ask AskSocial
+                    Intelligence query <span className="ml-2 font-normal normal-case tracking-normal text-white/25">Ask AskSocial</span>
                   </label>
 
                   <textarea
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Ask about country differences, personas, platform preferences, trust dynamics, barriers, or what changed since the last report..."
+                    placeholder="What would you like to understand about the conversation?"
                     rows={3}
                     className="w-full resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
                   />
@@ -2275,7 +2295,7 @@ export default function WorkspaceShell() {
                       disabled={!canSubmit}
                       className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {loading ? "Analyzing..." : "Ask"}
+                      {loading ? "Synthesizing intelligence…" : "Explore intelligence →"}
                     </button>
                   </div>
                 </div>
