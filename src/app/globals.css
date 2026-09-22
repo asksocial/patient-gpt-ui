@@ -7,6 +7,9 @@
   --as-ink-soft: #0d1f1b;
   --as-panel: #102722;
   --as-panel-raised: #15312b;
+  --as-canvas-tan: #f2eedd;
+  --as-canvas-tan-deep: #e7dec7;
+  --as-canvas-ink: #17362f;
   --as-ivory: #f4f0e6;
   --as-stone: #aab7b1;
   --as-mint: #8ee8d6;
@@ -44,9 +47,9 @@ body {
 
 /*
  * AskSocial Design System 2.0
- * A calm, evidence-forward intelligence environment. The application remains
- * dark to support long analytical sessions, but replaces flat black with a
- * layered botanical-ink palette and restrained warm accents.
+ * A calm, evidence-forward intelligence environment. The application pairs a
+ * warm neutral work canvas with botanical-ink analytical surfaces and
+ * restrained mint and gold accents.
  */
 .asksocial-v2 {
   min-height: 100vh;
@@ -171,8 +174,10 @@ body {
 .asksocial-v2 main {
   position: relative;
   background:
-    linear-gradient(180deg, rgba(7, 19, 16, 0.56), rgba(7, 19, 16, 0.92)),
-    repeating-linear-gradient(90deg, transparent 0, transparent 79px, rgba(142, 232, 214, 0.018) 80px);
+    linear-gradient(180deg, rgba(255, 253, 247, 0.2), rgba(231, 222, 199, 0.34)),
+    repeating-linear-gradient(90deg, transparent 0, transparent 79px, rgba(23, 54, 47, 0.035) 80px),
+    var(--as-canvas-tan);
+  color: var(--as-canvas-ink);
 }
 
 .asksocial-v2 main::before {
@@ -180,7 +185,7 @@ body {
   z-index: -1;
   inset: 0 0 auto 320px;
   height: 26rem;
-  background: radial-gradient(ellipse at 52% 0%, rgba(64, 178, 160, 0.1), transparent 68%);
+  background: radial-gradient(ellipse at 52% 0%, rgba(44, 112, 97, 0.1), transparent 68%);
   content: "";
   pointer-events: none;
 }
@@ -253,11 +258,20 @@ body {
 .asksocial-v2 main section,
 .asksocial-v2 main [role="dialog"] > div,
 .asksocial-v2 main [role="dialog"] > form {
-  border-color: rgba(142, 232, 214, 0.11);
+  border-color: rgba(142, 232, 214, 0.16);
 }
 
 .asksocial-v2 main section {
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.12);
+  background-color: rgba(10, 31, 26, 0.96);
+  box-shadow: 0 18px 60px rgba(55, 43, 29, 0.16);
+}
+
+.asksocial-v2 main .pv-compliance-v2 > [role="tablist"] {
+  padding: 0.4rem;
+  border: 1px solid rgba(142, 232, 214, 0.13);
+  border-radius: 1rem;
+  background: rgba(10, 31, 26, 0.96);
+  box-shadow: 0 12px 34px rgba(55, 43, 29, 0.12);
 }
 
 .asksocial-answer-canvas {
@@ -361,8 +375,8 @@ body {
 
 .asksocial-footer,
 .asksocial-v2 [data-testid="primary-search-footer"] {
-  border-color: rgba(142, 232, 214, 0.08) !important;
-  background: rgba(7, 19, 16, 0.32);
+  border-color: rgba(142, 232, 214, 0.1) !important;
+  background: rgba(7, 27, 23, 0.9);
 }
 
 @media (max-width: 1023px) {

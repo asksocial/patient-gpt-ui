@@ -59,10 +59,12 @@ The redesign changes brand expression and information hierarchy while preserving
 
 | Token | Value | Purpose |
 | --- | --- | --- |
-| Botanical ink | `#071310` | Primary canvas |
+| Botanical ink | `#071310` | Navigation and analytical surfaces |
 | Soft ink | `#0d1f1b` | Navigation and recessed surfaces |
 | Intelligence panel | `#102722` | Cards and analytical surfaces |
 | Raised panel | `#15312b` | Hover and priority surfaces |
+| Warm work canvas | `#f2eedd` | Primary work-area background; adapted from the referenced darker neutral rail tone |
+| Canvas ink | `#17362f` | High-contrast text and structure placed directly on the warm canvas |
 | Warm ivory | `#f4f0e6` | Primary text and actions |
 | Intelligence mint | `#8ee8d6` | Queries, evidence, active context |
 | Deep mint | `#3bb9a7` | Charts and sustained signals |
@@ -80,7 +82,7 @@ Color never carries meaning alone; every governed state also includes a text lab
 
 ### Surfaces and depth
 
-- Cards use tonal separation, faint mint borders, and soft ambient shadow.
+- The primary work area uses a warm tan canvas while cards retain botanical-green depth, faint mint borders, and soft ambient shadow.
 - Modal surfaces are raised but remain part of the same ink spectrum.
 - Dashed borders are reserved for genuine empty or incomplete states.
 - Rounded geometry is consistent: 12px controls, 16px cards, 24px work areas.

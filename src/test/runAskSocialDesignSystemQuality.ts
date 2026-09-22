@@ -20,9 +20,10 @@ assert(shell.includes("asksocial-rail-collapsed") && styles.includes('data-rail-
 for (const label of ["Ask", "Explore", "Analyze", "Monitor", "Verify", "Manage"]) {
   assert(navigation.includes(`label: \"${label}\"`) || navigation.includes(`<span>${label}</span>`), `The task-oriented navigation is missing ${label}.`);
 }
-for (const token of ["--as-ink", "--as-ivory", "--as-mint", "--as-gold", "--as-danger"]) {
+for (const token of ["--as-ink", "--as-canvas-tan", "--as-canvas-ink", "--as-ivory", "--as-mint", "--as-gold", "--as-danger"]) {
   assert(styles.includes(token), `The design system is missing ${token}.`);
 }
+assert(styles.includes("var(--as-canvas-tan)") && styles.includes("background-color: rgba(10, 31, 26, 0.96)"), "The main work area must pair the warm tan canvas with high-contrast botanical-green analytical surfaces.");
 assert(styles.includes("prefers-reduced-motion") && styles.includes(":focus"), "The visual system must retain motion and focus accessibility safeguards.");
 assert(designSystem.includes("Insight → Theme → Supporting evidence → Full mention → Original source"), "Evidence provenance must be documented as a first-class product journey.");
 
