@@ -25,6 +25,47 @@ const QUICK_ACTIONS = [
   "What’s changed since the last report?",
 ];
 
+function RailIcon({ name, className = "h-4 w-4" }) {
+  const common = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.55,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+  };
+
+  const drawings = {
+    menu: <><path d="M4 6.5h16M4 12h16M4 17.5h16" /></>,
+    close: <><path d="m6 6 12 12M18 6 6 18" /></>,
+    new: <><path d="M5 5.5h14v10H9l-4 3v-13Z" /><path d="M12 8.5v4M10 10.5h4" /></>,
+    topic: <><circle cx="12" cy="12" r="8" /><path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8 4.8-2.2Z" /></>,
+    investigate: <><path d="m12 3 1.1 3.9L17 8l-3.9 1.1L12 13l-1.1-3.9L7 8l3.9-1.1L12 3Z" /><circle cx="17.5" cy="16.5" r="2.5" /><path d="m19.4 18.4 1.6 1.6" /></>,
+    questions: <><path d="M5 5.5h14v10H9l-4 3v-13Z" /><path d="M10.4 9.2a1.8 1.8 0 1 1 2.5 1.7c-.7.3-.9.7-.9 1.2M12 14h.01" /></>,
+    intelligence: <><path d="m4 8 8-4 8 4-8 4-8-4Z" /><path d="m5.5 12 6.5 3.2 6.5-3.2M5.5 16l6.5 3.2 6.5-3.2" /></>,
+    user: <><circle cx="12" cy="8.5" r="3" /><path d="M5.5 19c.7-3.2 3-5 6.5-5s5.8 1.8 6.5 5" /></>,
+  };
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={className} {...common}>
+      {drawings[name] || drawings.intelligence}
+    </svg>
+  );
+}
+
+function RailDockButton({ label, icon, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="asksocial-rail-dock-button inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-transparent text-white/48 transition hover:border-cyan-200/15 hover:bg-cyan-200/[0.07] hover:text-cyan-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+    >
+      <RailIcon name={icon} className="h-[19px] w-[19px]" />
+    </button>
+  );
+}
+
 const DESTINATION_COPY = {
   ask: {
     eyebrow: "Intelligence workspace",
@@ -1753,9 +1794,13 @@ export default function WorkspaceShell() {
   }
 
   return (
-    <div className="asksocial-v2 asksocial-shell min-h-screen bg-black text-white">
+    <div
+      className="asksocial-v2 asksocial-shell min-h-screen bg-black text-white"
+      data-rail-collapsed={leftRailCollapsed ? "true" : "false"}
+    >
       {workspaceSaveDialogOpen ? <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="save-current-session-title"><form onSubmit={saveCurrentSessionAsWorkspace} className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300/70">Workspace</p><h2 id="save-current-session-title" className="mt-2 text-xl font-semibold text-white">Save current session as workspace</h2><p className="mt-2 text-sm leading-6 text-white/45">Name this workspace to retain the active conversation and automatically save subsequent intelligence generated while it is selected.</p><label className="mt-5 block text-xs font-medium text-white/50">Workspace name<input autoFocus value={workspaceDraftName} onChange={(event) => { setWorkspaceDraftName(event.target.value); if (workspaceCreateError) setWorkspaceCreateError(""); }} placeholder="e.g., Botulinum toxin PV review" className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none focus:border-cyan-300/40" /></label>{workspaceCreateError ? <p role="alert" className="mt-3 text-xs text-amber-300">{workspaceCreateError}</p> : null}<div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setWorkspaceSaveDialogOpen(false)} disabled={workspaceCreateBusy} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">Cancel</button><button type="submit" disabled={workspaceCreateBusy || !workspaceDraftName.trim()} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{workspaceCreateBusy ? "Saving…" : "Save workspace"}</button></div></form></div> : null}
       <div
+        data-asksocial-layout
         className={
           leftRailCollapsed
             ? "grid min-h-screen lg:grid-cols-[1fr]"
@@ -1764,9 +1809,33 @@ export default function WorkspaceShell() {
       >
         <aside
           id="workspace-left-rail"
-          aria-hidden={leftRailCollapsed}
-          className={`asksocial-rail ${leftRailCollapsed ? "hidden" : "block"} border-r border-white/10 bg-black/80 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto`}
+          className={`asksocial-rail ${leftRailCollapsed ? "asksocial-rail-collapsed" : "asksocial-rail-expanded"} block border-r border-white/10 bg-black/80 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto`}
         >
+          {leftRailCollapsed ? (
+            <div className="flex min-h-full flex-col items-center gap-2 px-3 py-5">
+              <button
+                type="button"
+                onClick={toggleLeftRail}
+                aria-label="Show left rail"
+                aria-controls="workspace-left-rail"
+                aria-expanded="false"
+                title="Show left rail"
+                className="asksocial-rail-menu-button inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-200/15 bg-cyan-200/[0.07] text-cyan-100 transition hover:border-cyan-200/30 hover:bg-cyan-200/[0.11] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+              >
+                <RailIcon name="menu" className="h-5 w-5" />
+              </button>
+              <span className="asksocial-brand-mark mt-2" aria-label="AskSocial">AS</span>
+              <div className="my-2 h-px w-8 bg-white/8" />
+              <RailDockButton label="New conversation" icon="new" onClick={startNewConversation} />
+              <RailDockButton label="Topic" icon="topic" onClick={toggleLeftRail} />
+              <RailDockButton label="Suggested investigations" icon="investigate" onClick={toggleLeftRail} />
+              <RailDockButton label="Recent questions" icon="questions" onClick={toggleLeftRail} />
+              <RailDockButton label="Recent intelligence" icon="intelligence" onClick={toggleLeftRail} />
+              <div className="mt-auto">
+                <RailDockButton label="User and workspace access" icon="user" onClick={toggleLeftRail} />
+              </div>
+            </div>
+          ) : (
           <div className="flex min-h-full flex-col p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -1793,10 +1862,9 @@ export default function WorkspaceShell() {
                 aria-controls="workspace-left-rail"
                 aria-expanded="true"
                 title="Collapse left rail"
-                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-white/10 px-2.5 py-2 text-[11px] text-white/45 transition hover:border-white/20 hover:text-white/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-white/10 text-white/45 transition hover:border-white/20 hover:bg-white/[0.04] hover:text-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
               >
-                <span>Collapse</span>
-                <span aria-hidden="true">‹</span>
+                <RailIcon name="close" className="h-4 w-4" />
               </button>
             </div>
 
@@ -1804,15 +1872,17 @@ export default function WorkspaceShell() {
               <button
                 type="button"
                 onClick={startNewConversation}
-                className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90"
               >
+                <RailIcon name="new" className="h-4 w-4" />
                 New conversation
               </button>
             </div>
 
             <div className="mt-8">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                Topic
+              <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+                <RailIcon name="topic" />
+                <span>Topic</span>
               </label>
 
               <select
@@ -1836,8 +1906,9 @@ export default function WorkspaceShell() {
             </div>
 
             <div className="mt-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                Suggested investigations
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+                <RailIcon name="investigate" />
+                <span>Suggested investigations</span>
               </p>
               <div className="mt-3 space-y-2">
                 {QUICK_ACTIONS.map((item) => (
@@ -1855,8 +1926,9 @@ export default function WorkspaceShell() {
             </div>
 
             <div className="mt-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                Recent questions
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+                <RailIcon name="questions" />
+                <span>Recent questions</span>
               </p>
               <div className="mt-3 space-y-2">
                 {recentQuestions.length === 0 ? (
@@ -1881,8 +1953,9 @@ export default function WorkspaceShell() {
 
             <div className="mt-8">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                Recent intelligence
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+                  <RailIcon name="intelligence" />
+                  <span>Recent intelligence</span>
                 </p>
                 <span className="text-[11px] text-white/30">
                   {filteredSessions.length} shown
@@ -2003,8 +2076,9 @@ export default function WorkspaceShell() {
             </div>
 
             <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                User
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+                <RailIcon name="user" />
+                <span>User</span>
               </p>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <div>
@@ -2017,25 +2091,12 @@ export default function WorkspaceShell() {
               </div>
             </div>
           </div>
+          )}
         </aside>
 
         <main className="flex min-h-screen min-w-0 flex-col">
           <header className="asksocial-topbar order-1 sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
             <div className="mb-5 flex items-start gap-3 border-b border-white/10 pb-4">
-              {leftRailCollapsed ? (
-                <button
-                  type="button"
-                  onClick={toggleLeftRail}
-                  aria-label="Show left rail"
-                  aria-controls="workspace-left-rail"
-                  aria-expanded="false"
-                  title="Show left rail"
-                  className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-cyan-400/20 bg-cyan-400/[0.06] px-3 py-2 text-xs text-cyan-200/70 transition hover:border-cyan-300/40 hover:text-cyan-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
-                >
-                  <span aria-hidden="true">›</span>
-                  <span>Show left rail</span>
-                </button>
-              ) : null}
               <div className="min-w-0 flex-1">
                 <EcosystemNavigation
                   access={

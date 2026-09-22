@@ -105,6 +105,7 @@ PV Compliance uses the same brand system with stronger state communication. Life
 ## Responsive behavior
 
 - The left rail remains collapsible and becomes an off-canvas context surface at smaller widths.
+- When collapsed on desktop, the rail remains as an icon-only intelligence dock; contextual line icons and accessible labels preserve orientation without consuming the analytical canvas.
 - Navigation can wrap without obscuring the current destination.
 - The intelligence journey collapses before primary content or evidence.
 - Tables remain horizontally scrollable rather than compressing governed fields.

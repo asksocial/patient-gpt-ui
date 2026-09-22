@@ -9,6 +9,12 @@ const designSystem = readFileSync(resolve(process.cwd(), "docs/design/asksocial-
 
 assert(shell.includes("asksocial-v2") && shell.includes("From conversation to intelligence"), "The redesigned shell must expose the AskSocial 2.0 brand thesis.");
 assert(shell.includes("What would you like to understand?") && shell.includes("Human conversations") && shell.includes("Decisions"), "The query workspace must communicate the conversation-to-decision journey.");
+assert(shell.includes('name="close"') && !shell.includes("<span>Collapse</span>"), "The expanded rail must use a compact X control instead of a text Collapse control.");
+assert(shell.includes('name="menu"') && !shell.includes("<span>Show left rail</span>"), "The collapsed rail must use a hamburger control instead of a text Show left rail control.");
+for (const icon of ["topic", "investigate", "questions", "intelligence", "user"]) {
+  assert(shell.includes(`name=\"${icon}\"`), `The contextual left-rail icon set is missing ${icon}.`);
+}
+assert(shell.includes("asksocial-rail-collapsed") && styles.includes('data-rail-collapsed="true"'), "The collapsed rail must remain as an icon-only dock instead of disappearing.");
 for (const label of ["Ask", "Explore", "Analyze", "Monitor", "Verify", "Manage"]) {
   assert(navigation.includes(`label: \"${label}\"`) || navigation.includes(`<span>${label}</span>`), `The task-oriented navigation is missing ${label}.`);
 }

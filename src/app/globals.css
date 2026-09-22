@@ -70,6 +70,32 @@ body {
   scrollbar-color: rgba(142, 232, 214, 0.2) transparent;
 }
 
+.asksocial-rail-collapsed {
+  overflow: hidden !important;
+}
+
+.asksocial-rail-dock-button {
+  position: relative;
+}
+
+.asksocial-rail-dock-button::after {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  width: 0.2rem;
+  height: 0;
+  border-radius: 999px;
+  background: var(--as-mint);
+  content: "";
+  transform: translateY(-50%);
+  transition: height 160ms ease;
+}
+
+.asksocial-rail-dock-button:hover::after,
+.asksocial-rail-dock-button:focus-visible::after {
+  height: 1.25rem;
+}
+
 .asksocial-brand-mark {
   display: inline-flex;
   width: 2.35rem;
@@ -97,11 +123,21 @@ body {
 .asksocial-v2 main::before {
   position: fixed;
   z-index: -1;
-  inset: 0 0 auto 296px;
+  inset: 0 0 auto 320px;
   height: 26rem;
   background: radial-gradient(ellipse at 52% 0%, rgba(64, 178, 160, 0.1), transparent 68%);
   content: "";
   pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  .asksocial-v2[data-rail-collapsed="true"] > [data-asksocial-layout] {
+    grid-template-columns: 76px minmax(0, 1fr) !important;
+  }
+
+  .asksocial-v2[data-rail-collapsed="true"] main::before {
+    left: 76px;
+  }
 }
 
 .asksocial-topbar {
@@ -281,6 +317,29 @@ body {
 
   .asksocial-intelligence-path {
     display: none;
+  }
+
+  .asksocial-v2[data-rail-collapsed="true"] .asksocial-rail-collapsed {
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    height: auto;
+  }
+
+  .asksocial-v2[data-rail-collapsed="true"] .asksocial-rail-collapsed > div {
+    min-height: 0;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0.65rem 1rem;
+  }
+
+  .asksocial-v2[data-rail-collapsed="true"] .asksocial-rail-collapsed .asksocial-brand-mark {
+    margin-top: 0;
+  }
+
+  .asksocial-v2[data-rail-collapsed="true"] .asksocial-rail-collapsed .mt-auto {
+    margin-top: 0;
+    margin-left: auto;
   }
 }
 
