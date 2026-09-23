@@ -13,6 +13,8 @@ assert(shell.includes('name="close"') && !shell.includes("<span>Collapse</span>"
 assert(shell.includes('name="menu"') && !shell.includes("<span>Show left rail</span>"), "The collapsed rail must use a hamburger control instead of a text Show left rail control.");
 assert(shell.includes("AskSocialWordmark") && shell.includes("asksocial-wordmark-symbol"), "The rail must use the supplied AskSocial wordmark instead of the legacy AS tile.");
 assert(styles.includes(".asksocial-wordmark-bubble") && styles.includes(".asksocial-wordmark-block") && styles.includes(".asksocial-wordmark-text > strong"), "The AskSocial wordmark must retain its split speech mark and mixed-weight typography.");
+assert(shell.includes("asksocial-workarea-header-card") && shell.includes("data-asksocial-workarea-content"), "The primary work area must expose the Sage Mist header-card and content-surface contracts.");
+assert(shell.includes("asksocial-pv-context-chips") && shell.includes("Potential records, not AE determinations"), "PV context must remain visible in the Sage Mist page header.");
 for (const icon of ["topic", "investigate", "questions", "intelligence", "user"]) {
   assert(shell.includes(`name=\"${icon}\"`), `The contextual left-rail icon set is missing ${icon}.`);
 }
@@ -20,9 +22,11 @@ assert(shell.includes("asksocial-rail-collapsed") && styles.includes('data-rail-
 for (const label of ["Ask", "Explore", "Analyze", "Monitor", "Verify", "Manage"]) {
   assert(navigation.includes(`label: \"${label}\"`) || navigation.includes(`<span>${label}</span>`), `The task-oriented navigation is missing ${label}.`);
 }
-for (const token of ["--as-ink", "--as-ivory", "--as-mint", "--as-gold", "--as-danger"]) {
+for (const token of ["--as-ink", "--as-sage-mist", "--as-sage-paper", "--as-sage-ink", "--as-sage-active", "--as-ivory", "--as-mint", "--as-gold", "--as-danger"]) {
   assert(styles.includes(token), `The design system is missing ${token}.`);
 }
+assert(styles.includes(".pv-metric-category") && styles.includes(".pv-metric-category-reconciliation"), "PV metrics must use the Sage Mist category-chip system.");
+assert(styles.includes(".pv-compliance-hero") && styles.includes("display: none"), "The redundant PV hero must stay removed from the Sage Mist work area.");
 assert(styles.includes("prefers-reduced-motion") && styles.includes(":focus"), "The visual system must retain motion and focus accessibility safeguards.");
 assert(designSystem.includes("Insight → Theme → Supporting evidence → Full mention → Original source"), "Evidence provenance must be documented as a first-class product journey.");
 

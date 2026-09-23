@@ -7,6 +7,15 @@
   --as-ink-soft: #0d1f1b;
   --as-panel: #102722;
   --as-panel-raised: #15312b;
+  --as-sage-mist: #edf3f0;
+  --as-sage-soft: #f6f9f7;
+  --as-sage-paper: #ffffff;
+  --as-sage-ink: #0c2923;
+  --as-sage-copy: #536a63;
+  --as-sage-muted: #63766f;
+  --as-sage-line: #d7e3de;
+  --as-sage-active: #0c7a69;
+  --as-sage-active-soft: #e2f3ee;
   --as-ivory: #f4f0e6;
   --as-stone: #aab7b1;
   --as-mint: #8ee8d6;
@@ -44,9 +53,8 @@ body {
 
 /*
  * AskSocial Design System 2.0
- * A calm, evidence-forward intelligence environment. The application remains
- * dark to support long analytical sessions, but replaces flat black with a
- * layered botanical-ink palette and restrained warm accents.
+ * A calm, evidence-forward intelligence environment. A botanical-ink rail
+ * anchors a cool sage-mist work area with white analytical surfaces.
  */
 .asksocial-v2 {
   min-height: 100vh;
@@ -170,9 +178,8 @@ body {
 
 .asksocial-v2 main {
   position: relative;
-  background:
-    linear-gradient(180deg, rgba(7, 19, 16, 0.56), rgba(7, 19, 16, 0.92)),
-    repeating-linear-gradient(90deg, transparent 0, transparent 79px, rgba(142, 232, 214, 0.018) 80px);
+  background: var(--as-sage-mist);
+  color: var(--as-sage-ink);
 }
 
 .asksocial-v2 main::before {
@@ -180,7 +187,7 @@ body {
   z-index: -1;
   inset: 0 0 auto 320px;
   height: 26rem;
-  background: radial-gradient(ellipse at 52% 0%, rgba(64, 178, 160, 0.1), transparent 68%);
+  display: none;
   content: "";
   pointer-events: none;
 }
@@ -196,10 +203,40 @@ body {
 }
 
 .asksocial-topbar {
-  background: rgba(7, 19, 16, 0.8) !important;
-  border-color: rgba(142, 232, 214, 0.1) !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.16);
+  background: rgba(237, 243, 240, 0.95) !important;
+  border-color: transparent !important;
+  box-shadow: none;
   backdrop-filter: blur(22px) saturate(125%);
+}
+
+.asksocial-topbar > div:first-child {
+  margin-bottom: 1rem !important;
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+
+.asksocial-workarea-header-card {
+  padding: clamp(1.35rem, 2.4vw, 2rem);
+  border-radius: 1.75rem;
+  background: var(--as-sage-paper);
+  box-shadow: 0 1px 2px rgba(12, 41, 35, 0.04), 0 14px 38px rgba(12, 41, 35, 0.055);
+}
+
+.asksocial-pv-context-chips > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: var(--as-sage-active-soft);
+  color: var(--as-sage-active);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.asksocial-pv-context-chips > span + span {
+  background: #eef1ef;
+  color: var(--as-sage-copy);
 }
 
 .asksocial-content,
@@ -221,52 +258,52 @@ body {
 }
 
 .as-nav-trigger:hover {
-  border-color: rgba(142, 232, 214, 0.14);
+  border-color: rgba(12, 122, 105, 0.12);
+  background: rgba(255, 255, 255, 0.7) !important;
 }
 
 .as-nav-trigger[aria-current="page"],
 .as-nav-trigger.bg-white {
-  border-color: rgba(142, 232, 214, 0.38) !important;
-  background: rgba(142, 232, 214, 0.13) !important;
-  color: var(--as-mint) !important;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+  border-color: transparent !important;
+  background: var(--as-sage-active-soft) !important;
+  color: var(--as-sage-active) !important;
+  box-shadow: none;
 }
 
 .as-nav-symbol {
-  color: var(--as-gold);
+  color: var(--as-sage-active);
   font-size: 0.72rem;
 }
 
 .as-nav-menu {
   overflow: hidden;
-  border-color: rgba(142, 232, 214, 0.14) !important;
-  background: rgba(10, 28, 24, 0.98) !important;
-  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.48) !important;
+  border-color: transparent !important;
+  background: var(--as-sage-paper) !important;
+  box-shadow: 0 24px 60px rgba(12, 41, 35, 0.16) !important;
   backdrop-filter: blur(24px);
 }
 
 .as-nav-item[aria-current="page"] {
-  background: rgba(142, 232, 214, 0.12) !important;
-  color: var(--as-mint) !important;
+  background: var(--as-sage-active-soft) !important;
+  color: var(--as-sage-active) !important;
 }
 
 .asksocial-v2 main section,
 .asksocial-v2 main [role="dialog"] > div,
 .asksocial-v2 main [role="dialog"] > form {
-  border-color: rgba(142, 232, 214, 0.11);
+  border-color: transparent !important;
 }
 
 .asksocial-v2 main section {
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.12);
+  background-color: var(--as-sage-paper) !important;
+  box-shadow: 0 1px 2px rgba(12, 41, 35, 0.035), 0 12px 32px rgba(12, 41, 35, 0.045);
 }
 
 .asksocial-answer-canvas {
   overflow: hidden;
-  border-color: rgba(142, 232, 214, 0.13) !important;
-  background:
-    linear-gradient(145deg, rgba(18, 49, 42, 0.56), rgba(10, 28, 24, 0.76)),
-    radial-gradient(circle at 50% 20%, rgba(142, 232, 214, 0.09), transparent 28rem) !important;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025), 0 28px 80px rgba(0, 0, 0, 0.2) !important;
+  border-color: transparent !important;
+  background: var(--as-sage-paper) !important;
+  box-shadow: 0 1px 2px rgba(12, 41, 35, 0.035), 0 16px 42px rgba(12, 41, 35, 0.05) !important;
 }
 
 .asksocial-intelligence-path span:first-child {
@@ -274,10 +311,10 @@ body {
   align-items: center;
   min-height: 1.8rem;
   padding: 0.38rem 0.7rem;
-  border: 1px solid rgba(142, 232, 214, 0.12);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: rgba(7, 19, 16, 0.45);
-  color: rgba(244, 240, 230, 0.56);
+  background: var(--as-sage-active-soft);
+  color: var(--as-sage-active);
   font-size: 0.67rem;
   font-weight: 620;
   letter-spacing: 0.075em;
@@ -291,23 +328,24 @@ body {
 }
 
 .asksocial-v2 [data-testid="primary-search-composer"] form > div {
-  border-color: rgba(142, 232, 214, 0.18) !important;
-  background: linear-gradient(135deg, rgba(21, 49, 43, 0.93), rgba(11, 30, 26, 0.96)) !important;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2), inset 0 1px rgba(255, 255, 255, 0.035);
+  border-color: transparent !important;
+  background: var(--as-sage-paper) !important;
+  box-shadow: 0 1px 2px rgba(12, 41, 35, 0.035), 0 14px 38px rgba(12, 41, 35, 0.05);
 }
 
-.asksocial-v2 textarea,
-.asksocial-v2 input,
-.asksocial-v2 select {
-  border-color: rgba(142, 232, 214, 0.13) !important;
-  background-color: rgba(4, 14, 12, 0.56) !important;
+.asksocial-v2 main textarea,
+.asksocial-v2 main input,
+.asksocial-v2 main select {
+  border-color: var(--as-sage-line) !important;
+  background-color: var(--as-sage-soft) !important;
+  color: var(--as-sage-ink) !important;
 }
 
-.asksocial-v2 textarea:focus,
-.asksocial-v2 input:focus,
-.asksocial-v2 select:focus {
-  border-color: rgba(142, 232, 214, 0.48) !important;
-  box-shadow: 0 0 0 3px rgba(142, 232, 214, 0.07);
+.asksocial-v2 main textarea:focus,
+.asksocial-v2 main input:focus,
+.asksocial-v2 main select:focus {
+  border-color: rgba(12, 122, 105, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(12, 122, 105, 0.1);
 }
 
 .asksocial-v2 button {
@@ -319,22 +357,19 @@ body {
   transform: translateY(1px);
 }
 
-.asksocial-v2 button.bg-white:not(.as-nav-trigger):not(.as-nav-item) {
-  background: var(--as-ivory) !important;
-  color: #10231f !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+.asksocial-v2 main button.bg-white:not(.as-nav-trigger):not(.as-nav-item) {
+  background: var(--as-sage-active) !important;
+  color: #ffffff !important;
+  box-shadow: none;
 }
 
-.asksocial-v2 button.bg-white:not(.as-nav-trigger):not(.as-nav-item):hover {
-  background: #ffffff !important;
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.23);
+.asksocial-v2 main button.bg-white:not(.as-nav-trigger):not(.as-nav-item):hover {
+  background: #086657 !important;
+  box-shadow: none;
 }
 
 .pv-compliance-hero {
-  position: relative;
-  background:
-    linear-gradient(120deg, rgba(19, 59, 51, 0.82), rgba(14, 37, 33, 0.72)),
-    radial-gradient(circle at 88% 20%, rgba(214, 184, 117, 0.13), transparent 22rem) !important;
+  display: none;
 }
 
 .pv-compliance-hero::after {
@@ -350,19 +385,206 @@ body {
 
 .pv-intelligence-metric {
   min-height: 9.5rem;
-  background: linear-gradient(155deg, rgba(18, 45, 39, 0.78), rgba(8, 24, 20, 0.88)) !important;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025), 0 18px 40px rgba(0, 0, 0, 0.12);
+  border-color: transparent !important;
+  background: var(--as-sage-paper) !important;
+  box-shadow: 0 1px 2px rgba(12, 41, 35, 0.04), 0 10px 28px rgba(12, 41, 35, 0.045);
 }
 
 .pv-intelligence-metric:hover {
-  border-color: rgba(142, 232, 214, 0.22) !important;
-  background: linear-gradient(155deg, rgba(22, 57, 49, 0.84), rgba(9, 27, 23, 0.9)) !important;
+  border-color: transparent !important;
+  background: #fbfdfc !important;
+  box-shadow: 0 1px 2px rgba(12, 41, 35, 0.05), 0 16px 36px rgba(12, 41, 35, 0.07);
 }
 
 .asksocial-footer,
 .asksocial-v2 [data-testid="primary-search-footer"] {
-  border-color: rgba(142, 232, 214, 0.08) !important;
-  background: rgba(7, 19, 16, 0.32);
+  border-color: var(--as-sage-line) !important;
+  background: var(--as-sage-mist);
+}
+
+/* Sage Mist primary work area. The left rail intentionally remains on the
+ * original botanical-ink treatment above. */
+.asksocial-topbar h1,
+[data-asksocial-workarea-content] :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--as-sage-ink) !important;
+}
+
+.as-nav-trigger,
+.as-nav-item {
+  color: var(--as-sage-copy) !important;
+}
+
+.as-nav-trigger:hover,
+.as-nav-item:hover {
+  color: var(--as-sage-ink) !important;
+}
+
+.as-nav-menu p {
+  color: var(--as-sage-copy) !important;
+}
+
+.as-nav-menu p:first-child {
+  color: var(--as-sage-active) !important;
+}
+
+:is(.asksocial-topbar, [data-asksocial-workarea-content], [data-testid="primary-search-composer"]) :is(
+  [class~="text-white"],
+  [class~="text-white/85"],
+  [class~="text-white/80"],
+  [class~="text-white/75"],
+  [class~="text-white/70"],
+  [class~="text-white/65"]
+) {
+  color: var(--as-sage-ink) !important;
+}
+
+:is(.asksocial-topbar, [data-asksocial-workarea-content], [data-testid="primary-search-composer"], [data-testid="primary-search-footer"]) :is(
+  [class~="text-white/60"],
+  [class~="text-white/55"],
+  [class~="text-white/50"],
+  [class~="text-white/45"],
+  [class~="text-white/40"],
+  [class~="text-white/35"],
+  [class~="text-white/30"],
+  [class~="text-white/25"],
+  [class~="text-white/20"],
+  [class~="text-white/15"]
+) {
+  color: var(--as-sage-copy) !important;
+}
+
+:is(.asksocial-topbar, [data-asksocial-workarea-content], [data-testid="primary-search-composer"]) [class*="text-cyan-"] {
+  color: var(--as-sage-active) !important;
+}
+
+.asksocial-topbar [class*="text-amber-"] {
+  color: #865b08 !important;
+}
+
+[data-asksocial-workarea-content] [class*="text-emerald-"] {
+  color: #176d5d !important;
+}
+
+[data-asksocial-workarea-content] [class*="text-amber-"] {
+  color: #865b08 !important;
+}
+
+[data-asksocial-workarea-content] [class*="text-rose-"] {
+  color: #a1433d !important;
+}
+
+[data-asksocial-workarea-content] [class*="text-blue-"] {
+  color: #315f87 !important;
+}
+
+[data-asksocial-workarea-content] [class*="text-violet-"] {
+  color: #655591 !important;
+}
+
+[data-asksocial-workarea-content] [class*="border-white"],
+.asksocial-topbar [class*="border-white"] {
+  border-color: var(--as-sage-line) !important;
+}
+
+[data-asksocial-workarea-content] :is(
+  [class~="bg-black/20"],
+  [class~="bg-black/25"],
+  [class~="bg-black/30"],
+  [class~="bg-black/35"],
+  [class~="bg-black/40"],
+  [class~="bg-white/[0.02]"],
+  [class~="bg-white/[0.025]"],
+  [class~="bg-white/[0.03]"],
+  [class~="bg-white/[0.05]"],
+  [class~="bg-white/5"]
+) {
+  background-color: var(--as-sage-soft) !important;
+}
+
+[data-asksocial-workarea-content] section section {
+  background-color: var(--as-sage-soft) !important;
+  box-shadow: none;
+}
+
+[data-asksocial-workarea-content] [role="dialog"] > div,
+[data-asksocial-workarea-content] [role="dialog"] > form {
+  background: var(--as-sage-paper) !important;
+  color: var(--as-sage-ink) !important;
+  box-shadow: 0 28px 80px rgba(12, 41, 35, 0.22) !important;
+}
+
+.asksocial-v2 main textarea::placeholder,
+.asksocial-v2 main input::placeholder {
+  color: var(--as-sage-muted) !important;
+  opacity: 1;
+}
+
+[data-testid="active-module-indicator"] {
+  border-color: var(--as-sage-line) !important;
+  background: var(--as-sage-paper) !important;
+  color: var(--as-sage-active) !important;
+}
+
+[data-testid="active-workspace-indicator"] > button,
+[data-testid="active-workspace-indicator"] > select {
+  border-color: transparent !important;
+  background: var(--as-sage-active) !important;
+  color: #ffffff !important;
+}
+
+.asksocial-v2 main .pv-compliance-v2 > [role="tablist"] {
+  padding: 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--as-sage-paper);
+  box-shadow: 0 1px 2px rgba(12, 41, 35, 0.03), 0 10px 28px rgba(12, 41, 35, 0.04);
+}
+
+.asksocial-v2 main .pv-compliance-v2 > [role="tablist"] > button {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--as-sage-copy) !important;
+}
+
+.asksocial-v2 main .pv-compliance-v2 > [role="tablist"] > button[aria-selected="true"] {
+  background: var(--as-sage-active) !important;
+  color: #ffffff !important;
+}
+
+.pv-metric-category {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.55rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--as-sage-active-soft);
+  color: var(--as-sage-active);
+  font-size: 0.67rem;
+  font-weight: 700;
+}
+
+.pv-metric-category-review {
+  background: #fff1d5;
+  color: #805407;
+}
+
+.pv-metric-category-timing {
+  background: #fde2dc;
+  color: #9b4438;
+}
+
+.pv-metric-category-transfer {
+  background: #e5effa;
+  color: #315e87;
+}
+
+.pv-metric-category-reconciliation {
+  background: #eee8fa;
+  color: #655291;
+}
+
+.asksocial-v2 [data-testid="primary-search-footer"] p {
+  color: var(--as-sage-copy) !important;
 }
 
 @media (max-width: 1023px) {

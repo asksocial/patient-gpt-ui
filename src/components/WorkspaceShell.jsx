@@ -2108,7 +2108,7 @@ export default function WorkspaceShell() {
           )}
         </aside>
 
-        <main className="flex min-h-screen min-w-0 flex-col">
+        <main data-asksocial-workarea className="flex min-h-screen min-w-0 flex-col">
           <header className="asksocial-topbar order-1 sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
             <div className="mb-5 flex items-start gap-3 border-b border-white/10 pb-4">
               <div className="min-w-0 flex-1">
@@ -2133,7 +2133,7 @@ export default function WorkspaceShell() {
                 />
               </div>
             </div>
-            <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
+            <div className="asksocial-workarea-header-card flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
               <div className="flex flex-col gap-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                   {destinationCopy.eyebrow}
@@ -2155,6 +2155,12 @@ export default function WorkspaceShell() {
                       )}.`
                     : destinationCopy.description}
                 </p>
+                {activeDestination.startsWith("pv_") ? (
+                  <div className="asksocial-pv-context-chips mt-2 flex flex-wrap gap-2">
+                    <span>Human review required</span>
+                    <span>Potential records, not AE determinations</span>
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex shrink-0 flex-wrap items-start justify-end gap-2 self-end xl:ml-auto xl:self-start">
@@ -2196,7 +2202,7 @@ export default function WorkspaceShell() {
             ) : null}
           </header>
 
-          <div className="order-3 flex-1 px-6 py-6">
+          <div data-asksocial-workarea-content className="order-3 flex-1 px-6 py-6">
             {activeDestination ===
             "intelligence_reports" ? (
               <ExecutiveIntelligenceView

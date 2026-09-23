@@ -22,7 +22,7 @@ The redesign changes brand expression and information hierarchy while preserving
 ### What changes
 
 - Navigation uses the user’s investigative mental model: **Ask, Explore, Analyze, Monitor, Verify, Manage**.
-- Flat black is replaced by layered botanical ink, warm ivory, restrained mint, and signal gold.
+- Flat black is replaced by a botanical-ink rail and a Sage Mist primary work area with white analytical cards, restrained mint, and signal gold.
 - The query area becomes the primary visual anchor instead of looking like a conventional chat composer.
 - Typography becomes more editorial, with clearer contrast between executive interpretation, metadata, and evidence.
 - Containers use soft depth and tonal separation instead of repeated high-contrast outlines.
@@ -59,10 +59,15 @@ The redesign changes brand expression and information hierarchy while preserving
 
 | Token | Value | Purpose |
 | --- | --- | --- |
-| Botanical ink | `#071310` | Primary canvas |
+| Botanical ink | `#071310` | Left rail and anchored navigation |
 | Soft ink | `#0d1f1b` | Navigation and recessed surfaces |
-| Intelligence panel | `#102722` | Cards and analytical surfaces |
-| Raised panel | `#15312b` | Hover and priority surfaces |
+| Sage Mist | `#edf3f0` | Primary work-area canvas |
+| Sage paper | `#ffffff` | Borderless cards and page-context surfaces |
+| Sage ink | `#0c2923` | Primary work-area text |
+| Sage copy | `#536a63` | Secondary text and metadata |
+| Sage active | `#0c7a69` | Active navigation, primary actions, and evidence links |
+| Intelligence panel | `#102722` | Reserved dark analytical emphasis |
+| Raised panel | `#15312b` | Reserved priority surfaces |
 | Warm ivory | `#f4f0e6` | Primary text and actions |
 | Intelligence mint | `#8ee8d6` | Queries, evidence, active context |
 | Deep mint | `#3bb9a7` | Charts and sustained signals |
@@ -80,8 +85,8 @@ Color never carries meaning alone; every governed state also includes a text lab
 
 ### Surfaces and depth
 
-- Cards use tonal separation, faint mint borders, and soft ambient shadow.
-- Modal surfaces are raised but remain part of the same ink spectrum.
+- Primary work-area cards are borderless white surfaces with soft botanical shadow; internal supporting areas use a near-white sage tint.
+- Modal surfaces use elevated white panels over a darkened scrim so governed decisions retain focus and clear contrast.
 - Dashed borders are reserved for genuine empty or incomplete states.
 - Rounded geometry is consistent: 12px controls, 16px cards, 24px work areas.
 
@@ -110,7 +115,7 @@ PV Compliance uses the same brand system with stronger state communication. Life
 
 ## Responsive behavior
 
-- The left rail remains collapsible and becomes an off-canvas context surface at smaller widths.
+- The left rail retains its botanical-ink appearance, remains collapsible, and becomes an off-canvas context surface at smaller widths.
 - When collapsed on desktop, the rail remains as an icon-only intelligence dock; contextual line icons and accessible labels preserve orientation without consuming the analytical canvas.
 - Navigation can wrap without obscuring the current destination.
 - The intelligence journey collapses before primary content or evidence.
