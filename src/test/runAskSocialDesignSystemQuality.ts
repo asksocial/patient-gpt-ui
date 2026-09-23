@@ -28,6 +28,9 @@ for (const token of ["--as-ink", "--as-sage-mist", "--as-sage-paper", "--as-sage
 }
 assert(styles.includes(".pv-metric-category") && styles.includes(".pv-metric-category-reconciliation"), "PV metrics must use the Sage Mist category-chip system.");
 assert(styles.includes(".pv-compliance-hero") && styles.includes("display: none"), "The redundant PV hero must stay removed from the Sage Mist work area.");
+assert(styles.includes(".asksocial-workspace-save-action") && shell.includes("asksocial-workspace-save-action"), "The workspace-save action must retain a visible high-contrast label.");
+assert(styles.includes('button:not([aria-selected="true"]):hover') && styles.includes("--as-sage-active-soft"), "PV sub-navigation must expose a visible rollover state.");
+assert(styles.includes("@media (hover: hover) and (pointer: fine)") && styles.includes("transform: translateY(-2px)"), "Work-area cards must expose pointer-specific rollover feedback.");
 assert(styles.includes("prefers-reduced-motion") && styles.includes(":focus"), "The visual system must retain motion and focus accessibility safeguards.");
 assert(landing.includes('bg-[#edf3f0]') && landing.includes("LandingWordmark"), "The public landing page must use the Sage Mist ground and AskSocial wordmark.");
 assert(landing.includes("Turn social data into strategic answers.") && landing.includes("Report-backed intelligence + live emerging narratives"), "The landing hero must communicate the reference value proposition.");

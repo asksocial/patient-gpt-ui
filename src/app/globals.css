@@ -220,6 +220,7 @@ body {
   border-radius: 1.75rem;
   background: var(--as-sage-paper);
   box-shadow: 0 1px 2px rgba(12, 41, 35, 0.04), 0 14px 38px rgba(12, 41, 35, 0.055);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
 }
 
 .asksocial-pv-context-chips > span {
@@ -388,12 +389,14 @@ body {
   border-color: transparent !important;
   background: var(--as-sage-paper) !important;
   box-shadow: 0 1px 2px rgba(12, 41, 35, 0.04), 0 10px 28px rgba(12, 41, 35, 0.045);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
 }
 
 .pv-intelligence-metric:hover {
   border-color: transparent !important;
   background: #fbfdfc !important;
   box-shadow: 0 1px 2px rgba(12, 41, 35, 0.05), 0 16px 36px rgba(12, 41, 35, 0.07);
+  transform: translateY(-2px);
 }
 
 .asksocial-footer,
@@ -532,6 +535,26 @@ body {
   color: #ffffff !important;
 }
 
+.asksocial-workspace-save-action,
+.asksocial-workspace-save-action > span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.asksocial-workspace-save-action {
+  min-height: 2.25rem;
+  min-width: min(23rem, 100%);
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.asksocial-workspace-save-action:hover {
+  background: #086657 !important;
+  box-shadow: 0 8px 20px rgba(12, 122, 105, 0.18) !important;
+  transform: translateY(-1px);
+}
+
 .asksocial-v2 main .pv-compliance-v2 > [role="tablist"] {
   padding: 0.35rem;
   border: 0;
@@ -544,11 +567,40 @@ body {
   border-color: transparent !important;
   background: transparent !important;
   color: var(--as-sage-copy) !important;
+  cursor: pointer;
+  transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .asksocial-v2 main .pv-compliance-v2 > [role="tablist"] > button[aria-selected="true"] {
   background: var(--as-sage-active) !important;
   color: #ffffff !important;
+}
+
+.asksocial-v2 main .pv-compliance-v2 > [role="tablist"] > button:not([aria-selected="true"]):hover {
+  background: var(--as-sage-active-soft) !important;
+  color: var(--as-sage-active) !important;
+  box-shadow: inset 0 0 0 1px rgba(12, 122, 105, 0.08);
+  transform: translateY(-1px);
+}
+
+.asksocial-v2 main .pv-compliance-v2 > [role="tablist"] > button:focus-visible {
+  outline: 2px solid rgba(12, 122, 105, 0.5);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .asksocial-workarea-header-card:hover,
+  [data-asksocial-workarea-content] section:not(.pv-compliance-hero):hover,
+  [data-asksocial-workarea-content] article:hover {
+    border-color: rgba(12, 122, 105, 0.14) !important;
+    box-shadow: 0 2px 4px rgba(12, 41, 35, 0.04), 0 18px 42px rgba(12, 41, 35, 0.075) !important;
+    transform: translateY(-2px);
+  }
+}
+
+[data-asksocial-workarea-content] section:not(.pv-compliance-hero),
+[data-asksocial-workarea-content] article {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
 }
 
 .pv-metric-category {
