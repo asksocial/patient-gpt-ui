@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "libraryVersion": "2026.01.0",
+  "status": "draft_pending_pv_medical_review",
+  "topic": "Botulinum toxin",
+  "activeTemplates": "generation-templates-2026.01.0.json",
+  "activeCuratedSeeds": "curated-seeds-2026.01.0.json",
+  "expressionSchema": "../schemas/consumer-social-expression.schema.json",
+  "language": "en",
+  "locale": "en-US",
+  "highPriorityDefinition": {
+    "frequencyRankAtOrBelow": 50,
+    "seriousnessRankAtOrBelow": 50
+  },
+  "minimumHighPriorityCoverage": {
+    "lay_synonyms": 10,
+    "colloquial_expressions": 5,
+    "temporal_expressions": 5
+  },
+  "nonClinicalPatterns": [
+    "off label", "unapproved indication", "drug ineffective", "therapeutic response", "therapeutic product effect",
+    "product preparation", "product storage", "product quality", "wrong technique", "multiple use of single-use",
+    "multiple use of single use", "medication error", "drug administration error", "product use error", "overdose",
+    "maternal exposure", "paternal exposure", "exposure during pregnancy", "misuse", "abuse"
+  ],
+  "fatalOutcomePatterns": ["death", "fatal outcome"],
+  "associationStatement": "Expression mapping supports recognition of potentially PV-relevant language and does not establish that a target product caused an event.",
+  "officialTerminologyStatement": "Generated and curated phrases are AskSocial training expressions, not official MedDRA synonyms or hierarchy.",
+  "activationPolicy": "Every expression remains pending qualified PV/medical review. Published libraries are immutable and changes require new versioned templates, seeds, validation, and manifest activation."
+}

@@ -5,6 +5,8 @@
   "topic": "Botulinum toxin",
   "source": "FDA FAERS via openFDA drug/event",
   "sourceDocumentation": "https://open.fda.gov/apis/drug/event/",
+  "projectManifest": "../manifest.json",
+  "normalizedRecordSchema": "../schemas/regulatory-case.schema.json",
   "activeProductRegistry": "products-2026.01.0.json",
   "activeOpenFdaMapping": "openfda-mapping-2026.01.0.json",
   "activationPolicy": "Activated files are immutable. Add a new version, validate it, register it, then update this manifest.",

@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "1.0.0",
+  "rulesVersion": "2026.01.0",
+  "status": "active",
+  "normalizationPolicy": "Preserve meddra_pt verbatim. Use an explicit reviewed mapping when available; otherwise normalize case, Unicode presentation, punctuation, and whitespace only. Do not stem or infer an official MedDRA relationship.",
+  "categories": [
+    {
+      "id": "swallowing",
+      "patterns": ["dysphag", "swallow", "choking"]
+    },
+    {
+      "id": "speech",
+      "patterns": ["dysarth", "dysphoni", "aphoni", "speech", "voice alteration", "slurred"]
+    },
+    {
+      "id": "respiratory",
+      "patterns": ["dyspn", "respirat", "breath", "apnoe", "apnea", "hypoxi", "asphyx", "cough", "bronchospasm"]
+    },
+    {
+      "id": "ocular",
+      "patterns": ["eyelid", " eye", "eye ", "ocular", "visual", "vision", "diplopi", "ptosis", "blephar", "pupil", "blind", "photophobi", "lacrimation"]
+    },
+    {
+      "id": "injection-site",
+      "patterns": ["injection site", "administration site", "application site", "instillation site", "puncture site"]
+    },
+    {
+      "id": "allergic/hypersensitivity",
+      "patterns": ["hypersensitiv", "anaphyl", "allerg", "urticaria", "angioedema", "rash", "pruritus"]
+    },
+    {
+      "id": "neuromuscular",
+      "patterns": ["muscle", "muscular", "paralys", "paresis", "myasth", "botulism", "neuromuscular", "hypertoni", "hypotoni", "spastic"]
+    },
+    {
+      "id": "weakness/fatigue",
+      "patterns": ["weakness", "asthenia", "fatigue", "letharg", "tired", "malaise"]
+    },
+    {
+      "id": "cosmetic/asymmetry",
+      "patterns": ["asymmetr", "cosmetic", "wrinkle", "facial expression", "appearance", "skin atrophy"]
+    },
+    {
+      "id": "pain",
+      "patterns": ["pain", "ache", "tenderness", "headache", "migraine", "neuralgia"]
+    },
+    {
+      "id": "gastrointestinal",
+      "patterns": ["nausea", "vomit", "diarr", "constipat", "abdominal", "gastro", "intestinal", "dyspepsia", "dry mouth", "saliv", "oral discomfort"]
+    },
+    {
+      "id": "cardiovascular",
+      "patterns": ["cardiac", "heart", "tachy", "brady", "hypertension", "hypotension", "blood pressure", "arrhythm", "myocard", "vascular", "palpitation"]
+    },
+    {
+      "id": "neurologic",
+      "patterns": ["headache", "migraine", "dizz", "vertigo", "seizure", "convulsion", "syncope", "neuropath", "paraesth", "paresth", "tremor", "sensory", "numbness", "cerebr", "memory", "balance disorder"]
+    },
+    {
+      "id": "psychiatric",
+      "patterns": ["anxiety", "depress", "suicid", "hallucinat", "insomnia", "sleep disorder", "confusion", "psych", "agitation", "panic"]
+    },
+    {
+      "id": "systemic",
+      "patterns": ["pyrexia", "fever", "chills", "influenza like", "systemic", "multiple organ", "generalised oedema", "generalized edema", "body temperature"]
+    }
+  ],
+  "explicitConceptMappings": [
+    {
+      "meddra_pts": ["Eyelid ptosis", "Ptosis"],
+      "normalized_concept": "eyelid drooping",
+      "relationship_type": "closely_related_to",
+      "confidence": 0.95,
+      "rationale": "Internal AskSocial grouping for ptosis concepts; original MedDRA PT remains unchanged."
+    },
+    {
+      "meddra_pts": ["Dysphagia", "Swallowing disorder"],
+      "normalized_concept": "difficulty swallowing",
+      "relationship_type": "closely_related_to",
+      "confidence": 0.9,
+      "rationale": "Internal AskSocial grouping for swallowing-difficulty concepts; not an official MedDRA hierarchy assertion."
+    },
+    {
+      "meddra_pts": ["Dyspnoea", "Breathing difficult"],
+      "normalized_concept": "difficulty breathing",
+      "relationship_type": "closely_related_to",
+      "confidence": 0.9,
+      "rationale": "Internal AskSocial grouping for breathing-difficulty concepts; not a causal or official MedDRA assertion."
+    },
+    {
+      "meddra_pts": ["Muscular weakness", "Asthenia"],
+      "normalized_concept": "weakness",
+      "relationship_type": "closely_related_to",
+      "confidence": 0.8,
+      "rationale": "Broad internal training grouping subject to PV review; source PT distinctions remain available."
+    },
+    {
+      "meddra_pts": ["Dysphonia", "Speech disorder", "Slurred speech"],
+      "normalized_concept": "speech or voice difficulty",
+      "relationship_type": "closely_related_to",
+      "confidence": 0.75,
+      "rationale": "Broad internal communication-impairment grouping subject to PV review."
+    },
+    {
+      "meddra_pts": ["Injection site pain", "Administration site pain"],
+      "normalized_concept": "injection or administration site pain",
+      "relationship_type": "closely_related_to",
+      "confidence": 0.9,
+      "rationale": "Internal grouping retains the source site terminology and does not imply equivalence in MedDRA."
+    }
+  ]
+}

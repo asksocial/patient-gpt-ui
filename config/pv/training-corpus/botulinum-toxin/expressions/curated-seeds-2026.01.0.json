@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "seedsVersion": "2026.01.0",
+  "status": "active",
+  "reviewStatus": "pending_pv_medical_review",
+  "concepts": [
+    {
+      "meddra_pt": "Dysphagia",
+      "confidence": "high",
+      "lay_synonyms": [
+        "trouble swallowing", "difficulty swallowing", "hard to swallow", "can't swallow", "couldn't swallow",
+        "food gets stuck", "choking when I eat", "hard to get food down", "swallowing feels weird", "my throat doesn't work right"
+      ],
+      "temporal_expressions": [
+        "started after my injections", "happened two days after Botox", "ever since getting Botox", "began later that evening"
+      ],
+      "causal_expressions": ["Botox caused it", "the injections made it happen", "I think Botox did this"],
+      "uncertain_causality_expressions": [
+        "not sure if it was the Botox", "could this be from the injections", "maybe related to Botox"
+      ]
+    }
+  ]
+}

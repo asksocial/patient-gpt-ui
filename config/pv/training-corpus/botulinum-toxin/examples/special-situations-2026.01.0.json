@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "specialSituationsVersion": "2026.01.0",
+  "status": "active",
+  "situations": [
+    { "id": "OVERDOSE", "meddra_pt": "Overdose", "mentioned_event": "more {product} than intended", "text": "The clinic told me I received more {product} than intended." },
+    { "id": "EXTRA_DOSE", "meddra_pt": "Extra dose administered", "mentioned_event": "an extra dose", "text": "I was given an extra dose of {product} by mistake." },
+    { "id": "WRONG_PRODUCT", "meddra_pt": "Wrong product administered", "mentioned_event": "the wrong product", "text": "The injector discovered that the wrong product was used instead of the planned {product}." },
+    { "id": "MISUSE", "meddra_pt": "Intentional product misuse", "mentioned_event": "did not direct", "text": "I used {product} in a way my clinician did not direct." },
+    { "id": "OFF_LABEL_USE", "meddra_pt": "Off label use", "mentioned_event": "outside its approved indication", "text": "My clinician used {product} for a condition outside its approved indication." },
+    { "id": "ACCIDENTAL_EXPOSURE", "meddra_pt": "Accidental exposure to product", "mentioned_event": "accidentally exposed", "text": "I was accidentally exposed to {product} while helping with a procedure." },
+    { "id": "OCCUPATIONAL_EXPOSURE", "meddra_pt": "Occupational exposure to product", "mentioned_event": "exposed", "text": "I was exposed to {product} while working at the clinic." },
+    { "id": "PREGNANCY_EXPOSURE", "meddra_pt": "Maternal exposure during pregnancy", "mentioned_event": "pregnant", "text": "I received {product} before I realized I was pregnant." },
+    { "id": "BREASTFEEDING_EXPOSURE", "meddra_pt": "Maternal exposure during breast feeding", "mentioned_event": "breastfeeding", "text": "I received {product} while breastfeeding." },
+    { "id": "LACK_OF_EFFICACY", "meddra_pt": "Drug ineffective", "mentioned_event": "did not work", "text": "{product} did not work for me at all." },
+    { "id": "PRODUCT_QUALITY_CONCERN", "meddra_pt": "Product quality issue", "mentioned_event": "vial looked damaged", "text": "The {product} vial looked damaged and the seal appeared broken." }
+  ]
+}

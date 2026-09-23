@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asksocial.example/schemas/pv-training/botulinum-toxin/regulatory-case/2026.01.0",
+  "title": "Botulinum toxin regulatory case",
+  "type": "object",
+  "required": [
+    "case_id",
+    "faers_case_id",
+    "safety_report_id",
+    "seriousness_criteria",
+    "drugs",
+    "reactions",
+    "outcomes",
+    "concomitant_products",
+    "is_target_botulinum_product",
+    "matched_target_products",
+    "matched_active_ingredients",
+    "suspect_role_if_available",
+    "causality_status",
+    "provenance",
+    "normalization_warnings"
+  ],
+  "properties": {
+    "case_id": { "type": "string", "minLength": 1 },
+    "faers_case_id": { "type": "string", "minLength": 1 },
+    "safety_report_id": { "type": "string", "minLength": 1 },
+    "safety_report_version": { "type": "string" },
+    "authority_case_number": { "type": "string" },
+    "company_case_number": { "type": "string" },
+    "receipt_date": { "$ref": "#/$defs/date" },
+    "receive_date": { "$ref": "#/$defs/date" },
+    "transmission_date": { "$ref": "#/$defs/date" },
+    "serious_indicator": { "type": "boolean" },
+    "seriousness_criteria": {
+      "type": "object",
+      "required": ["death", "life_threatening", "hospitalization", "disability", "congenital_anomaly", "other_medically_important"],
+      "properties": {
+        "death": { "type": "boolean" },
+        "life_threatening": { "type": "boolean" },
+        "hospitalization": { "type": "boolean" },
+        "disability": { "type": "boolean" },
+        "congenital_anomaly": { "type": "boolean" },
+        "other_medically_important": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "patient": {
+      "type": "object",
+      "properties": {
+        "age": { "type": "string" },
+        "age_unit_code": { "type": "string" },
+        "age_unit": { "type": "string" },
+        "sex_code": { "type": "string" },
+        "sex": { "type": "string" },
+        "weight_kg": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "country": { "type": "string" },
+    "reporter": {
+      "type": "object",
+      "properties": {
+        "qualification_code": { "type": "string" },
+        "qualification": { "type": "string" },
+        "country": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "drugs": { "type": "array", "items": { "$ref": "#/$defs/drug" } },
+    "reactions": { "type": "array", "items": { "$ref": "#/$defs/reaction" } },
+    "outcomes": { "type": "array", "items": { "$ref": "#/$defs/outcome" } },
+    "concomitant_products": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "is_target_botulinum_product": { "type": "boolean" },
+    "matched_target_products": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "matched_active_ingredients": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "suspect_role_if_available": {
+      "type": "array",
+      "items": { "enum": ["suspect", "concomitant", "interacting", "unknown"] },
+      "uniqueItems": true
+    },
+    "causality_status": { "const": "NOT_ESTABLISHED" },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "normalization_warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "date": {
+      "type": "object",
+      "required": ["raw"],
+      "properties": {
+        "raw": { "type": "string" },
+        "iso": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "drug": {
+      "type": "object",
+      "required": ["source_index", "openfda_brand_names", "openfda_generic_names", "openfda_substance_names", "is_target_botulinum_product"],
+      "properties": {
+        "source_index": { "type": "integer", "minimum": 0 },
+        "medicinal_product": { "type": "string" },
+        "active_ingredient": { "type": "string" },
+        "openfda_brand_names": { "type": "array", "items": { "type": "string" } },
+        "openfda_generic_names": { "type": "array", "items": { "type": "string" } },
+        "openfda_substance_names": { "type": "array", "items": { "type": "string" } },
+        "drug_characterization_code": { "type": "string" },
+        "drug_role": { "enum": ["suspect", "concomitant", "interacting", "unknown"] },
+        "indication": { "type": "string" },
+        "dose_text": { "type": "string" },
+        "structured_dose": { "$ref": "#/$defs/quantity" },
+        "cumulative_dose": { "$ref": "#/$defs/quantity" },
+        "route": { "type": "string" },
+        "therapy_start_date": { "$ref": "#/$defs/date" },
+        "therapy_end_date": { "$ref": "#/$defs/date" },
+        "is_target_botulinum_product": { "type": "boolean" },
+        "matched_target_product": { "type": "string" },
+        "matched_active_ingredient": { "type": "string" },
+        "suspect_role_if_available": { "enum": ["suspect", "concomitant", "interacting", "unknown"] }
+      },
+      "additionalProperties": false
+    },
+    "quantity": {
+      "type": "object",
+      "properties": {
+        "value": { "type": "string" },
+        "unit_code": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "reaction": {
+      "type": "object",
+      "required": ["source_index", "source_reaction_value", "meddra_preferred_term"],
+      "properties": {
+        "source_index": { "type": "integer", "minimum": 0 },
+        "source_reaction_value": { "type": "string", "minLength": 1 },
+        "meddra_preferred_term": { "type": "string", "minLength": 1 },
+        "meddra_version": { "type": "string" },
+        "outcome_code": { "type": "string" },
+        "outcome": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["source_reaction_index", "source_reaction_value", "outcome_code", "outcome"],
+      "properties": {
+        "source_reaction_index": { "type": "integer", "minimum": 0 },
+        "source_reaction_value": { "type": "string" },
+        "outcome_code": { "type": "string" },
+        "outcome": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "queryObservation": {
+      "type": "object",
+      "required": ["queryId", "queryKind", "productSearched", "field", "suspectOnly", "sourceApiQuery", "retrievedAt", "sourceProductValues", "sourceReactionValues"],
+      "properties": {
+        "queryId": { "type": "string" },
+        "queryKind": { "enum": ["brand", "active_ingredient"] },
+        "productSearched": { "type": "string" },
+        "field": { "type": "string" },
+        "suspectOnly": { "type": "boolean" },
+        "sourceApiQuery": { "type": "string" },
+        "retrievedAt": { "type": "string", "format": "date-time" },
+        "sourceProductValues": { "type": "array", "items": { "type": "string" } },
+        "sourceReactionValues": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source", "endpoint", "source_api_queries", "raw_source_record_sha256", "raw_source_record_storage", "configuration_version", "product_registry_version", "source_mapping_version"],
+      "properties": {
+        "source": { "const": "FDA_FAERS_OPENFDA" },
+        "endpoint": { "type": "string" },
+        "source_api_queries": { "type": "array", "items": { "$ref": "#/$defs/queryObservation" }, "minItems": 1 },
+        "raw_source_record_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "raw_source_record_storage": { "type": "string" },
+        "configuration_version": { "type": "string" },
+        "product_registry_version": { "type": "string" },
+        "source_mapping_version": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

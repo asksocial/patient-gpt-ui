@@ -10,3 +10,7 @@ export * from "./overview";
 export * from "./sponsorReport";
 export * from "./identifiability";
 export * from "./segmentation";
+export * from "./icsrEvaluator";
+export * from "./recognition";
+export * from "./evaluation";
+export * from "./acceptance";

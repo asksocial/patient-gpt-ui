@@ -23,6 +23,11 @@ import {
   BOTULINUM_PV_THERAPEUTIC_AREA,
   loadBotulinumPvCorpus,
 } from "./botulinumCorpus";
+import {
+  BOTULINUM_PV_RECOGNITION_VERSION,
+  botulinumRecognitionToLegacyDetection,
+  recognizeBotulinumToxinPvMention,
+} from "./recognition";
 
 function hashPayload(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -257,20 +262,43 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
   const { data: conceptRows, error: conceptError } = await supabase.from("pv_detection_concepts").select("*")
     .eq("library_id", input.libraryId).eq("principal_id", principal.principalId).eq("active", true);
   if (conceptError) throw new Error(`Failed to load PV concepts: ${conceptError.message}`);
-  const result = classifyPvContent(input, (conceptRows || []).map(mapConcept), {
-    threshold: Number(library.detection_threshold),
-    libraryVersion: Number(library.version),
-    expectedEvents: library.expected_event_terms || [],
-  });
-  const evidenceHash = hashPayload({ verbatim: input.verbatim, url: input.sourceUrl, postedAt: input.postedAt, parentContext: input.parentContext, threadContext: input.threadContext });
   const identificationTimestamp = input.identifiedAt || new Date().toISOString();
+  const algorithmTimestamp = new Date().toISOString();
   if (input.therapeuticArea?.trim() && library.therapeutic_area && input.therapeuticArea.trim() !== library.therapeutic_area) {
     throw new Error("The selected PV Detection Library belongs to a different topic.");
   }
   const therapeuticArea = input.therapeuticArea?.trim() || String(library.therapeutic_area || "").trim() || null;
+  const useBotulinumRecognition = therapeuticArea?.toLocaleLowerCase("en-US") === BOTULINUM_PV_THERAPEUTIC_AREA.toLocaleLowerCase("en-US")
+    || String(library.product_id || "").toLocaleLowerCase("en-US") === "botulinum_toxin";
+  const structuredRecognition = useBotulinumRecognition ? recognizeBotulinumToxinPvMention({
+    original_mention: input.verbatim,
+    source: input.sourceType,
+    source_url: input.sourceUrl,
+    source_id: input.externalId,
+    original_timestamp: input.postedAt,
+    collection_timestamp: input.ingestedAt || identificationTimestamp,
+    algorithm_timestamp: algorithmTimestamp,
+    author_identifier: input.authorIdentifier || null,
+    language: input.language || "en",
+  }) : null;
+  const result = structuredRecognition
+    ? botulinumRecognitionToLegacyDetection(input, structuredRecognition, Number(library.version))
+    : classifyPvContent(input, (conceptRows || []).map(mapConcept), {
+      threshold: Number(library.detection_threshold),
+      libraryVersion: Number(library.version),
+      expectedEvents: library.expected_event_terms || [],
+    });
+  const evidenceHash = hashPayload({ verbatim: input.verbatim, url: input.sourceUrl, postedAt: input.postedAt, parentContext: input.parentContext, threadContext: input.threadContext });
+  const recognitionMetadata = structuredRecognition ? {
+    recognitionPipelineVersion: structuredRecognition.versions.classifier_version,
+    taxonomyVersion: structuredRecognition.versions.taxonomy_version,
+    expressionLibraryVersion: structuredRecognition.versions.expression_library_version,
+    pvRelevance: structuredRecognition.pv_relevance.level,
+    humanReviewRoute: structuredRecognition.human_review_routing.route,
+  } : {};
 
   if (!result.shouldCreateRecord) {
-    await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, detectionSegment: result.detectionSegment, healthExperienceTags: result.healthExperienceTags, evidenceHash, classifierVersion: result.classifierVersion, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber, postedAtSourceColumn: input.postedAtSourceColumn, postedAtRawValue: input.postedAtRawValue } });
+    await appendPvAuditEvent(principal, { action: "detection.evaluate", resourceType: "source_content", resourceId: input.externalId, outcome: "completed", metadata: { routed: false, score: result.score, detectionSegment: result.detectionSegment, healthExperienceTags: result.healthExperienceTags, evidenceHash, classifierVersion: result.classifierVersion, ...recognitionMetadata, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, algorithmTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber, postedAtSourceColumn: input.postedAtSourceColumn, postedAtRawValue: input.postedAtRawValue } });
     return { result, record: null };
   }
 
@@ -295,7 +323,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
       resourceType: "pv_record",
       resourceId: String(existingRecord.id),
       outcome: "completed",
-      metadata: { externalId: input.externalId, detectionSegment: result.detectionSegment, healthExperienceTags: result.healthExperienceTags, evidenceHash, retainedExistingRecord: true, enrichedAvailableFields: Object.keys(duplicateUpdates), postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber },
+      metadata: { externalId: input.externalId, detectionSegment: result.detectionSegment, healthExperienceTags: result.healthExperienceTags, evidenceHash, retainedExistingRecord: true, enrichedAvailableFields: Object.keys(duplicateUpdates), ...recognitionMetadata, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, algorithmTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber },
     });
     return { result, record: retainedRecord, duplicate: true };
   }
@@ -314,7 +342,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
     product_confidence: result.productConfidence, health_experience_confidence: result.healthExperienceConfidence,
     context_confidence: result.contextConfidence, matched_concepts: result.matches, proposed_classifications: result.classifications,
     classifier_version: result.classifierVersion, library_version: result.detectionLibraryVersion, detection_rationale: result.rationale,
-    algorithm_assessed_at: now,
+    algorithm_assessed_at: algorithmTimestamp,
     data_origin: input.dataOrigin || "unknown", ae_ontology: result.ontologyExtraction,
     ontology_version: result.ontologyExtraction.ontologyVersion,
     import_batch_id: input.importBatchId || null, source_row_number: input.sourceRowNumber || null,
@@ -322,7 +350,7 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
     day_zero_basis: input.dayZeroBasis || "posted_at", day_zero_reason: input.dayZeroReason || null,
   }).select("*").single();
   if (recordError || !record) throw new Error(`Failed to create potential PV record: ${recordError?.message || "missing row"}`);
-  await appendPvAuditEvent(principal, { action: "record.create_from_detection", resourceType: "pv_record", resourceId: String(record.id), outcome: "completed", metadata: { score: result.score, detectionSegment: result.detectionSegment, healthExperienceTags: result.healthExperienceTags, evidenceHash, humanReviewRequired: result.detectionSegment === "ae_adr", postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber } });
+  await appendPvAuditEvent(principal, { action: "record.create_from_detection", resourceType: "pv_record", resourceId: String(record.id), outcome: "completed", metadata: { score: result.score, detectionSegment: result.detectionSegment, healthExperienceTags: result.healthExperienceTags, evidenceHash, humanReviewRequired: result.shouldCreateRecord, ...recognitionMetadata, postDate: input.postedAt, contentAvailabilityDate: identificationTimestamp, algorithmTimestamp, dayZeroBasis: input.dayZeroBasis || "posted_at", importBatchId: input.importBatchId, sourceRowNumber: input.sourceRowNumber } });
   return { result, record, duplicate: false };
 }
 
@@ -491,7 +519,20 @@ function buildBundledBotulinumPvRecord(
   postedAtSourceColumn: string,
   dayZeroBasis: "identified_at" | "reportability_identified_at"
 ) {
-  const result = classifyPvContent({ externalId: row.externalId, sourceType: "curated_csv", sourceUrl: row.sourceUrl, verbatim: row.verbatim, postedAt: row.postedAt, dataOrigin: "curated" }, BOTULINUM_PV_CONCEPTS, { threshold: 55, libraryVersion: Number(library.version), expectedEvents: library.expected_event_terms || [] });
+  const pvInput = { externalId: row.externalId, sourceType: "curated_csv", sourceUrl: row.sourceUrl, verbatim: row.verbatim, postedAt: row.postedAt, dataOrigin: "curated" as const, authorIdentifier: row.authorIdentifier };
+  const recognition = recognizeBotulinumToxinPvMention({
+    original_mention: row.verbatim,
+    source: "curated_csv",
+    source_url: row.sourceUrl,
+    source_id: row.externalId,
+    original_timestamp: row.postedAt,
+    collection_timestamp: availableAt,
+    algorithm_timestamp: availableAt,
+    author_identifier: row.authorIdentifier || null,
+    language: "en",
+  });
+  const result = botulinumRecognitionToLegacyDetection(pvInput, recognition, Number(library.version));
+  if (!result.shouldCreateRecord) return null;
   const productMatch = result.matches.find((match) => match.category === "product");
   const eventMatch = result.matches.find((match) => !["product", "severity", "treatment_change"].includes(match.category));
   return {
@@ -536,7 +577,8 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     const retainedDayZeroBasis = existingBatch.day_zero_basis === "reportability_identified_at" ? "reportability_identified_at" : "identified_at";
     const newlyDetected = corpus.candidates
       .filter((row) => !existingIds.has(row.externalId))
-      .map((row) => buildBundledBotulinumPvRecord(principal, row, library, String(existingBatch.id), reclassifiedAt, corpus.dateColumn, retainedDayZeroBasis));
+      .map((row) => buildBundledBotulinumPvRecord(principal, row, library, String(existingBatch.id), reclassifiedAt, corpus.dateColumn, retainedDayZeroBasis))
+      .filter((record): record is NonNullable<typeof record> => Boolean(record));
     for (let index = 0; index < newlyDetected.length; index += 100) {
       const { error } = await supabase.from("pv_records").insert(newlyDetected.slice(index, index + 100));
       if (error) throw new Error(`Failed to retain updated health-experience detections: ${error.message}`);
@@ -561,7 +603,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     }
     if (newlyDetected.length) await appendPvAuditEvent(principal, {
       action: "csv_import.reclassify", resourceType: "pv_import_batch", resourceId: String(existingBatch.id), outcome: "completed",
-      metadata: { therapeuticArea: corpus.therapeuticArea, classifierVersion: PV_CLASSIFIER_VERSION, sourceFiles: corpus.sourceFiles, newlyDetectedCount: newlyDetected.length, detectionSegmentation: ["ae_adr", "health_experience"] },
+      metadata: { therapeuticArea: corpus.therapeuticArea, classifierVersion: BOTULINUM_PV_RECOGNITION_VERSION, sourceFiles: corpus.sourceFiles, newlyDetectedCount: newlyDetected.length, detectionSegmentation: ["ae_adr", "health_experience"] },
     });
     return { ...retainedBatch, alreadyImported: true, newlyDetectedCount: newlyDetected.length, ...enrichment };
   }
@@ -589,7 +631,8 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
   }
   const records = corpus.candidates
     .filter((row) => !existingIds.has(row.externalId))
-    .map((row) => buildBundledBotulinumPvRecord(principal, row, library, String(batch.id), availableAt, corpus.dateColumn, "reportability_identified_at"));
+    .map((row) => buildBundledBotulinumPvRecord(principal, row, library, String(batch.id), availableAt, corpus.dateColumn, "reportability_identified_at"))
+    .filter((record): record is NonNullable<typeof record> => Boolean(record));
   let routedCount = 0;
   for (let index = 0; index < records.length; index += 100) {
     const chunk = records.slice(index, index + 100);
@@ -604,7 +647,7 @@ export async function importBundledBotulinumPvCorpus(principal: PlatformPrincipa
     failed_count: failedCount, status, error_summary: corpus.errors.slice(0, 100), updated_at: new Date().toISOString(),
   }).eq("id", batch.id).eq("principal_id", principal.principalId).select("*").single();
   if (updateError || !completed) throw new Error(`Failed to finalize the bundled PV corpus: ${updateError?.message || "missing batch"}`);
-  await appendPvAuditEvent(principal, { action: "csv_import.complete", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, sourceFiles: corpus.sourceFiles, screenedCount: corpus.rows.length, candidateCount: corpus.candidates.length, routedCount, duplicateCount: existingIds.size, failedCount, availableAt, dayZeroBasis: "reportability_identified_at", screeningMethod: PV_CLASSIFIER_VERSION } });
+  await appendPvAuditEvent(principal, { action: "csv_import.complete", resourceType: "pv_import_batch", resourceId: String(batch.id), outcome: "completed", metadata: { corpusId: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, sourceFiles: corpus.sourceFiles, screenedCount: corpus.rows.length, candidateCount: corpus.candidates.length, routedCount, duplicateCount: existingIds.size, failedCount, availableAt, dayZeroBasis: "reportability_identified_at", screeningMethod: BOTULINUM_PV_RECOGNITION_VERSION } });
   return completed;
 }
 

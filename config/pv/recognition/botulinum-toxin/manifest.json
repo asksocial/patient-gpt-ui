@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0.0",
+  "pipelineVersion": "btx-pv-recognition-2026.01.0",
+  "status": "active",
+  "topic": "Botulinum toxin",
+  "productRegistryVersion": "2026.01.0",
+  "productAliasVersion": "2026.01.0",
+  "taxonomyVersion": "2026.01.0",
+  "expressionLibraryVersion": "2026.01.0",
+  "contrastTemplatesVersion": "2026.01.0",
+  "specialSituationsVersion": "2026.01.0",
+  "icsrEvaluatorVersion": "2026.01.0",
+  "activeEventLexicon": "event-lexicon-2026.01.0.json",
+  "activeProductAliases": "product-aliases-2026.01.0.json",
+  "thresholds": {
+    "high": 0.8,
+    "medium": 0.5,
+    "low": 0.25,
+    "minimumProduct": 0.7,
+    "minimumEvent": 0.55,
+    "seriousEventMinimum": "MEDIUM"
+  },
+  "contextWindowCharacters": 180,
+  "principles": [
+    "No single keyword is sufficient for an observed-event classification.",
+    "PV relevance and ICSR completeness are evaluated separately.",
+    "Potentially serious observed or ambiguous events are routed to human review to reduce false negatives.",
+    "Generated or normalized terminology is a candidate only and never establishes causality, reportability, or validated MedDRA coding.",
+    "Hypothetical, informational, negated, anticipated, and temporally unrelated content is retained for audit but is not treated as an observed case."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetVersion": "2026.01.0",
+  "status": "draft_pending_human_adjudication",
+  "topic": "Botulinum toxin",
+  "activeContrastTemplates": "contrast-templates-2026.01.0.json",
+  "activeSpecialSituations": "special-situations-2026.01.0.json",
+  "productRegistry": "../regulatory/products-2026.01.0.json",
+  "recordSchema": "../schemas/pv-classifier-training-example.schema.json",
+  "language": "en",
+  "locale": "en-US",
+  "importantConceptProfiles": ["clinical_high_priority"],
+  "importantConceptCount": 52,
+  "fallbackConceptProfile": "clinical_standard",
+  "expectedExamplesPerClass": 52,
+  "minimumDifficultNegativesPerPositive": 3,
+  "splitVersion": "2026.01.0",
+  "splitPercentages": {
+    "train": 70,
+    "validation": 15,
+    "test": 10,
+    "locked_holdout": 5
+  },
+  "generationStatement": "Synthetic contrast examples support PV-recognition training and do not establish causality, final reportability, or a confirmed adverse reaction.",
+  "humanReviewPolicy": "Every generated record requires qualified human assessment before use in a promoted training or evaluation dataset.",
+  "activationPolicy": "Published example datasets are immutable. Promotion requires qualified PV review, leakage-safe partition validation, approval records, and a new versioned manifest."
+}

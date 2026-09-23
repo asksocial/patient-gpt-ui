@@ -10,6 +10,8 @@ export type BotulinumRegulatoryCorpusManifest = {
   topic: string;
   source: string;
   sourceDocumentation: string;
+  projectManifest: string;
+  normalizedRecordSchema: string;
   activeProductRegistry: string;
   activeOpenFdaMapping: string;
   activationPolicy: string;

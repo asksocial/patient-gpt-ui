@@ -1,5 +1,7 @@
 # Botulinum toxin FAERS/openFDA regulatory case corpus
 
+This implemented dataset is Phase 1 of the governed [botulinum toxin PV training-corpus architecture](./botulinum-toxin-pv-training-corpus-architecture.md). The project manifest and the proposed contracts for all four datasets live under `config/pv/training-corpus/botulinum-toxin/`. The later taxonomy, expression-library, and classifier-example datasets remain planned; this importer does not generate them.
+
 ## Scope
 
 This ingestion layer retrieves FDA FAERS drug-event reports through the official openFDA API for the configured botulinum toxin brands and active ingredients. It preserves the complete source JSON and produces a separate normalized record for corpus development.
@@ -11,6 +13,8 @@ It does not determine medical causality, incidence, final reportability, or whet
 The active configuration is selected by:
 
 - `config/pv/training-corpus/botulinum-toxin/regulatory/manifest.json`
+- `config/pv/training-corpus/botulinum-toxin/manifest.json`
+- `config/pv/training-corpus/botulinum-toxin/schemas/regulatory-case.schema.json`
 - `products-2026.01.0.json`
 - `openfda-mapping-2026.01.0.json`
 

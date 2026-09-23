@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "taxonomyVersion": "2026.01.0",
+  "status": "draft_pending_pv_review",
+  "topic": "Botulinum toxin",
+  "activeSemanticRules": "semantic-rules-2026.01.0.json",
+  "recordSchema": "../schemas/ae-adr-master-taxonomy.schema.json",
+  "categorySystem": "ASKSOCIAL_INTERNAL_PV_SEMANTIC_2026.01.0",
+  "categorySystemIsOfficialMeddraHierarchy": false,
+  "associationStatement": "Reported in association with FAERS cases containing the target product; this does not establish that the product caused the reaction.",
+  "datePrecedence": ["receive_date", "receipt_date", "transmission_date"],
+  "exampleCaseLimit": 5,
+  "summaryLimit": 50,
+  "activationPolicy": "Generated records and algorithmic category or relationship suggestions remain draft until qualified PV review. Published versions are immutable; updates require a new versioned rules file and manifest activation."
+}

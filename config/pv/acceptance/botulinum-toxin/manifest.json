@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "acceptanceSuiteVersion": "2026.01.0",
+  "topic": "Botulinum toxin",
+  "status": "active",
+  "regulatorySnapshot": "data/pv-training/regulatory/botulinum-toxin/2026-09-16T19-27-12-044Z",
+  "taxonomySnapshot": "data/pv-training/taxonomy/botulinum-toxin/2026-09-16T22-15-00-000Z",
+  "expressionSnapshot": "data/pv-training/expressions/botulinum-toxin/2026-09-17T13-42-33-849Z",
+  "minimumSyntheticExamples": 50,
+  "requiredProducts": ["BOTOX", "BOTOX COSMETIC", "DYSPORT", "XEOMIN", "JEUVEAU", "DAXXIFY", "LETYBO"],
+  "requiredConcepts": [
+    "Eyelid ptosis",
+    "Dysphagia",
+    "Dyspnoea",
+    "Muscular weakness",
+    "Vision blurred",
+    "Diplopia",
+    "Injection site pain",
+    "Injection site swelling",
+    "Injection site erythema",
+    "Facial asymmetry",
+    "Dysarthria",
+    "Anaphylactic reaction"
+  ]
+}

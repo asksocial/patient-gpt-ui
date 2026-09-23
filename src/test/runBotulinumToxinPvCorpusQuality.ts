@@ -5,10 +5,10 @@ import {
   BOTULINUM_PV_CORPUS_ID,
   BOTULINUM_PV_CORPUS_FILES,
   BOTULINUM_PV_THERAPEUTIC_AREA,
-  classifyPvContent,
   isBotulinumPvCandidate,
   loadBotulinumPvCorpus,
   parseCsvPostDate,
+  recognizeBotulinumToxinPvMention,
 } from "../lib/pv";
 
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
@@ -18,17 +18,22 @@ assert(corpus.corpusId === BOTULINUM_PV_CORPUS_ID && corpus.therapeuticArea === 
 assert(corpus.rowCount === 8716, "The combined Botulinum toxin PV corpus must include both governed source exports.");
 assert(corpus.rows.length === 6248 && corpus.errors.length === 2447, "Corpus must deduplicate screenable source verbatims and retain row-level parsing limitations.");
 assert(corpus.sourceFiles.map((source) => source.fileName).join("|") === BOTULINUM_PV_CORPUS_FILES.join("|"), "PV synchronization must inspect the dedicated PV export and the enriched core social export.");
-assert(corpus.candidates.length >= 100 && corpus.candidates.length < 300, "Contextual PV rules must produce a bounded, evidence-linked compliance set.");
-const candidateSegments = corpus.candidates.map((candidate) => classifyPvContent({
-  externalId: candidate.externalId,
-  sourceType: "curated_csv",
-  sourceUrl: candidate.sourceUrl,
-  verbatim: candidate.verbatim,
-  postedAt: candidate.postedAt,
-  dataOrigin: "curated",
-}, BOTULINUM_PV_CONCEPTS, { threshold: 55, libraryVersion: 1 }).detectionSegment);
-assert(candidateSegments.filter((segment) => segment === "ae_adr").length >= 75, "Potential case-level AE/ADR mentions must populate the governed Review Queue.");
-assert(candidateSegments.filter((segment) => segment === "health_experience").length >= 25, "Non-AE special situations must populate Health Experience Detection separately.");
+assert(corpus.candidates.length >= 1_000 && corpus.candidates.length < 2_500, "The production pipeline must retain a bounded, false-negative-sensitive review population.");
+const candidateSegments = corpus.candidates.map((candidate) => {
+  const recognition = recognizeBotulinumToxinPvMention({
+    original_mention: candidate.verbatim,
+    source: "curated_csv",
+    source_url: candidate.sourceUrl,
+    source_id: candidate.externalId,
+    original_timestamp: candidate.postedAt,
+    collection_timestamp: candidate.postedAt,
+    algorithm_timestamp: candidate.postedAt,
+    author_identifier: candidate.authorIdentifier || null,
+  });
+  return recognition.observed_event_detection.events.some((event) => ["OBSERVED", "POSSIBLE_OBSERVED"].includes(event.observation_status)) ? "ae_adr" : "health_experience";
+});
+assert(candidateSegments.filter((segment) => segment === "ae_adr").length >= 300, "Potential case-level AE/ADR mentions must populate the governed Review Queue.");
+assert(candidateSegments.filter((segment) => segment === "health_experience").length >= 800, "Non-AE special situations must populate Health Experience Detection separately.");
 assert(corpus.contentColumns.join("|") === "Headline|Opening Text|Hit Sentence", "Keywords and key phrases must not be treated as original post verbatim.");
 assert(parseCsvPostDate("11-Aug-2026 10:58AM") === "2026-08-11T10:58:00.000Z", "Meltwater post timestamps must normalize deterministically.");
 assert(BOTULINUM_PV_CONCEPTS.some((item) => item.canonicalTerm === "Dysphagia") && BOTULINUM_PV_CONCEPTS.some((item) => item.canonicalTerm === "Eyelid or brow ptosis"), "Botulinum toxin detection concepts must cover benchmark safety events.");
@@ -57,6 +62,8 @@ const migration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migratio
 for (const field of ["therapeutic_area", "corpus_id", "pv_records_therapeutic_area_queue_idx", "pv_import_batches_principal_corpus_idx"]) assert(migration.includes(field), `Botulinum PV migration is missing ${field}.`);
 const route = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/corpora/botulinum-toxin/route.ts"), "utf8");
 assert(route.includes("importBundledBotulinumPvCorpus") && route.includes("maxDuration = 60"), "Bundled corpus route must use the governed bulk activation path.");
+const service = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
+assert(service.includes("recognizeBotulinumToxinPvMention") && service.includes("botulinumRecognitionToLegacyDetection"), "Production persistence must use the versioned Botulinum toxin recognition pipeline.");
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
 assert(!workbench.includes("Botulinum toxin PV corpus"), "The corpus activation section must remain removed from Screening Status after ingestion.");
 

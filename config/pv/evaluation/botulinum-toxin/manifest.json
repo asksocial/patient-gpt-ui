@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "harnessVersion": "2026.01.0",
+  "datasetVersion": "btx-pv-gold-candidate-2026.01.0",
+  "status": "candidate_pending_qualified_pv_adjudication",
+  "activeDataset": "gold-candidate-2026.01.0.json",
+  "activeFalseNegativeRegressions": "false-negative-regressions-2026.01.0.json",
+  "goldCandidateRecordSchema": "gold-candidate-record.schema.json",
+  "adjudicationEventSchema": "adjudication-event.schema.json",
+  "classifierVersion": "btx-pv-recognition-2026.01.0",
+  "taxonomyVersion": "2026.01.0",
+  "positiveReviewerLabels": ["TRUE_PV_CANDIDATE", "POSSIBLE_PV_CANDIDATE", "INSUFFICIENT_INFORMATION", "SPECIAL_SITUATION"],
+  "negativeReviewerLabels": ["NON_CASE"],
+  "excludedUntilResolvedLabels": ["NEEDS_SECOND_REVIEW"],
+  "requiredSlices": [
+    "serious_event_concepts", "negated_events", "hypothetical_statements", "third_party_reports",
+    "missing_icsr_elements", "special_situations", "colloquial_language", "misspellings", "fragmented_social_posts"
+  ],
+  "governance": {
+    "modelSnapshotsImmutable": true,
+    "adjudicationAppendOnly": true,
+    "qualifiedPvReviewerRequired": true,
+    "goldPromotionRequiresFinalAdjudication": true,
+    "provisionalMetricsAreProductionQualification": false,
+    "statement": "Seeded reference labels exercise the harness but are not gold labels. Only final decisions by qualified PV adjudication may be used for production qualification."
+  }
+}

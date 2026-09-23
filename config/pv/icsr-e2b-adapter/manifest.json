@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "1.0.0",
+  "adapterVersion": "2026.01.0",
+  "status": "active",
+  "sourceEvaluatorVersion": "2026.01.0",
+  "targetMappingVersion": "2026.01.0",
+  "targetEmailMappingVersion": "1.0.0",
+  "stage": "POST_ICSR_CANDIDATE_EVALUATION",
+  "duplicateKeyFields": [
+    "source_metadata.source_platform",
+    "source_metadata.post_id",
+    "source_metadata.source_url"
+  ],
+  "candidateMappings": [
+    {
+      "candidateField": "original_mention",
+      "targetField": "narrative.caseNarrative",
+      "channel": "source_value",
+      "populatesTarget": true,
+      "note": "The exact source mention is retained as source material. H.1 remains subject to human review."
+    },
+    {
+      "candidateField": "original_mention",
+      "targetField": "narrative.reporterComments",
+      "channel": "source_value",
+      "populatesTarget": true,
+      "note": "The original mention is retained without rewriting or silent normalization."
+    },
+    {
+      "candidateField": "patient.evidence",
+      "targetField": "patient.initials",
+      "channel": "source_value",
+      "populatesTarget": false,
+      "note": "Identifiability evidence may support follow-up but does not itself populate D.1."
+    },
+    {
+      "candidateField": "reporter.evidence",
+      "targetField": "reporter.qualification",
+      "channel": "source_value",
+      "populatesTarget": false,
+      "note": "Reporter evidence does not establish a coded qualification without human review."
+    },
+    {
+      "candidateField": "drugs[].evidence",
+      "targetField": "drugs[].productNameReported",
+      "channel": "source_value",
+      "populatesTarget": true,
+      "note": "Source evidence is retained separately from the normalized product candidate."
+    },
+    {
+      "candidateField": "drugs[].product",
+      "targetField": "drugs[].productNameReported",
+      "channel": "normalized_value",
+      "populatesTarget": true,
+      "note": "The normalized product candidate never replaces source evidence."
+    },
+    {
+      "candidateField": "drugs[].active_ingredient",
+      "targetField": "drugs[].activeIngredient",
+      "channel": "normalized_value",
+      "populatesTarget": true,
+      "note": "Active ingredient is an AI-normalized candidate pending review."
+    },
+    {
+      "candidateField": "events[].raw_expression",
+      "targetField": "reactions[].verbatim",
+      "channel": "source_value",
+      "populatesTarget": true,
+      "note": "The source reaction expression is preserved verbatim."
+    },
+    {
+      "candidateField": "events[].normalized_event",
+      "targetField": "reactions[].verbatim",
+      "channel": "normalized_value",
+      "populatesTarget": true,
+      "note": "The normalized event remains separate from the source expression."
+    },
+    {
+      "candidateField": "events[].meddra_pt_candidate",
+      "targetField": "reactions[].meddraCode",
+      "channel": "normalized_value",
+      "populatesTarget": false,
+      "note": "A PT-name suggestion is not an official MedDRA code and cannot populate E.i.2.1b."
+    },
+    {
+      "candidateField": "source_metadata.original_post_timestamp",
+      "targetField": "audit.sourcePublishedAt",
+      "channel": "source_value",
+      "populatesTarget": true,
+      "note": "AskSocial audit metadata; not substituted for an E2B receipt timestamp."
+    },
+    {
+      "candidateField": "source_metadata.collection_timestamp",
+      "targetField": "audit.collectedAt",
+      "channel": "source_value",
+      "populatesTarget": true,
+      "note": "May support C.1.4 only under a client-approved receipt policy."
+    },
+    {
+      "candidateField": "source_metadata.algorithm_timestamp",
+      "targetField": "audit.algorithmAssessedAt",
+      "channel": "source_value",
+      "populatesTarget": true,
+      "note": "Algorithm time remains independent from collection and review timestamps."
+    },
+    {
+      "candidateField": "source_metadata.human_review_timestamp",
+      "targetField": "audit.humanReviewedAt",
+      "channel": "source_value",
+      "populatesTarget": true,
+      "note": "Remains null until a governed human review is completed."
+    },
+    {
+      "candidateField": "source_metadata.escalation_timestamp",
+      "targetField": "audit.escalatedAt",
+      "channel": "source_value",
+      "populatesTarget": true,
+      "note": "Remains null until an escalation action occurs."
+    }
+  ],
+  "nonR3ProvenanceFields": [
+    "source_metadata.username",
+    "source_metadata.source_platform",
+    "source_metadata.source_url",
+    "source_metadata.post_id",
+    "patient.present",
+    "patient.confidence",
+    "reporter.present",
+    "reporter.confidence",
+    "drug (primary compatibility view of drugs[0])",
+    "event (primary compatibility view of events[0])",
+    "icsr_status",
+    "missing_elements",
+    "pv_review_required",
+    "review_route",
+    "special_situation",
+    "evaluator"
+  ],
+  "activationPolicy": "The adapter is versioned independently. It references but does not modify the authoritative E2B(R3) mapping or approved email template."
+}

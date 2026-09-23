@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asksocial.example/schemas/pv-training/botulinum-toxin/consumer-social-expression/2026.01.0",
+  "title": "AskSocial consumer and social expression mapping",
+  "type": "object",
+  "required": [
+    "expression_id", "expression", "normalized_expression", "expression_type", "expression_source", "confidence",
+    "language", "locale", "taxonomy_concept_id", "normalized_concept", "meddra_pt",
+    "is_official_meddra_synonym", "validation_status", "provenance"
+  ],
+  "properties": {
+    "expression_id": { "type": "string", "minLength": 1 },
+    "expression": { "type": "string", "minLength": 1 },
+    "normalized_expression": { "type": "string", "minLength": 1 },
+    "expression_type": {
+      "enum": [
+        "clinical_synonyms", "lay_synonyms", "consumer_expressions", "colloquial_expressions", "symptom_descriptions",
+        "likely_misspellings", "slang_or_informal_phrasing", "temporal_expressions", "causal_expressions",
+        "uncertain_causality_expressions"
+      ]
+    },
+    "expression_source": { "enum": ["GENERATED", "CURATED"] },
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "language": { "const": "en" },
+    "locale": { "const": "en-US" },
+    "taxonomy_concept_id": { "type": "string", "minLength": 1 },
+    "normalized_concept": { "type": "string", "minLength": 1 },
+    "meddra_pt": { "type": "string", "minLength": 1 },
+    "is_official_meddra_synonym": { "const": false },
+    "validation_status": { "const": "pending_pv_medical_review" },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_reference", "source_taxonomy_snapshot", "source_taxonomy_sha256", "taxonomy_version", "templates_version",
+        "curated_seeds_version", "generated_at", "generation_method", "association_statement", "official_terminology_statement"
+      ],
+      "properties": {
+        "source_reference": { "type": "string", "minLength": 1 },
+        "source_taxonomy_snapshot": { "type": "string", "minLength": 1 },
+        "source_taxonomy_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "taxonomy_version": { "type": "string", "minLength": 1 },
+        "templates_version": { "type": "string", "minLength": 1 },
+        "curated_seeds_version": { "type": "string", "minLength": 1 },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "generation_method": { "enum": ["versioned_template", "versioned_curated_seed"] },
+        "association_statement": { "type": "string", "minLength": 1 },
+        "official_terminology_statement": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

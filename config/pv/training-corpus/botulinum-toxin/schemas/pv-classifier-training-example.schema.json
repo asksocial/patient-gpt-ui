@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asksocial.example/schemas/pv-training/botulinum-toxin/pv-classifier-training-example/2026.01.0",
+  "title": "AskSocial PV recognition training example",
+  "type": "object",
+  "required": [
+    "example_id", "dataset_version", "example_class", "contrast_group_id", "text", "target_product", "active_ingredient",
+    "mentioned_event", "normalized_event", "meddra_pt", "observation_status", "patient_status", "reporter_status",
+    "drug_status", "event_status", "temporal_relationship", "causality_language", "negated", "hypothetical",
+    "third_party", "special_situation", "pv_relevance", "icsr_candidate", "needs_human_review", "reasoning_label",
+    "evidence_spans", "split", "human_review_status", "provenance"
+  ],
+  "properties": {
+    "example_id": { "type": "string", "minLength": 1 },
+    "dataset_version": { "type": "string", "minLength": 1 },
+    "example_class": { "$ref": "#/$defs/exampleClass" },
+    "contrast_group_id": { "type": "string", "minLength": 1 },
+    "text": { "type": "string", "minLength": 1 },
+    "target_product": { "type": "string", "minLength": 1 },
+    "active_ingredient": { "type": "string", "minLength": 1 },
+    "mentioned_event": { "type": "string", "minLength": 1 },
+    "normalized_event": { "type": "string", "minLength": 1 },
+    "meddra_pt": { "type": "string", "minLength": 1 },
+    "observation_status": { "$ref": "#/$defs/exampleClass" },
+    "patient_status": { "enum": ["IDENTIFIABLE", "SPECIFIC_NOT_IDENTIFIABLE", "NO_CASE_PATIENT", "UNKNOWN"] },
+    "reporter_status": { "enum": ["IDENTIFIABLE_FIRST_HAND", "FIRST_HAND_NOT_IDENTIFIABLE", "SECOND_HAND_NOT_IDENTIFIABLE", "NO_CASE_REPORTER", "UNKNOWN"] },
+    "drug_status": { "enum": ["MENTIONED_SUSPECT_CONTEXT", "MENTIONED_NON_CASE_CONTEXT", "MENTIONED_SPECIAL_SITUATION"] },
+    "event_status": { "enum": ["OBSERVED", "POSSIBLE", "AMBIGUOUS", "HYPOTHETICAL", "ANTICIPATED", "NEGATED", "INFORMATIONAL", "HISTORICAL_UNRELATED", "SPECIAL_SITUATION"] },
+    "temporal_relationship": { "enum": ["AFTER_PRODUCT", "SINCE_PRODUCT", "BEFORE_PRODUCT", "ANTICIPATED_FUTURE", "NO_TEMPORAL_RELATIONSHIP", "UNKNOWN"] },
+    "causality_language": { "enum": ["TEMPORAL_ONLY", "UNCERTAIN_ASSOCIATION", "HYPOTHETICAL_CAUSAL_QUESTION", "ANTICIPATED_CAUSALITY", "NEGATED_ASSOCIATION", "GENERAL_CAUSAL_STATEMENT", "PROVIDER_WARNING_ONLY", "TEMPORALLY_UNRELATED", "NO_CAUSALITY_CLAIM"] },
+    "negated": { "type": "boolean" },
+    "hypothetical": { "type": "boolean" },
+    "third_party": { "type": "boolean" },
+    "special_situation": {
+      "oneOf": [
+        { "type": "null" },
+        { "enum": ["OVERDOSE", "EXTRA_DOSE", "WRONG_PRODUCT", "MISUSE", "OFF_LABEL_USE", "ACCIDENTAL_EXPOSURE", "OCCUPATIONAL_EXPOSURE", "PREGNANCY_EXPOSURE", "BREASTFEEDING_EXPOSURE", "LACK_OF_EFFICACY", "PRODUCT_QUALITY_CONCERN"] }
+      ]
+    },
+    "pv_relevance": { "enum": ["HIGH", "MEDIUM", "LOW", "NONE"] },
+    "icsr_candidate": { "enum": ["COMPLETE_POTENTIAL_ICSR", "POTENTIAL_ICSR_MISSING_ELEMENT", "SPECIAL_SITUATION_REVIEW", "NOT_AN_OBSERVED_EVENT", "NON_CASE"] },
+    "needs_human_review": { "const": true },
+    "reasoning_label": { "type": "string", "minLength": 1 },
+    "evidence_spans": {
+      "type": "object",
+      "required": ["product", "event", "patient", "reporter", "temporal", "causality"],
+      "properties": {
+        "product": { "$ref": "#/$defs/spanArray" },
+        "event": { "$ref": "#/$defs/spanArray" },
+        "patient": { "$ref": "#/$defs/spanArray" },
+        "reporter": { "$ref": "#/$defs/spanArray" },
+        "temporal": { "$ref": "#/$defs/spanArray" },
+        "causality": { "$ref": "#/$defs/spanArray" }
+      },
+      "additionalProperties": false
+    },
+    "split": {
+      "type": "object",
+      "required": ["partition", "group_id", "split_version"],
+      "properties": {
+        "partition": { "enum": ["train", "validation", "test", "locked_holdout"] },
+        "group_id": { "type": "string", "minLength": 1 },
+        "split_version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "human_review_status": { "const": "PENDING" },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_type", "source_taxonomy_concept_id", "source_taxonomy_snapshot", "source_taxonomy_sha256",
+        "source_expression_library_snapshot", "source_expression_library_sha256", "taxonomy_version", "expression_library_version",
+        "templates_version", "special_situations_version", "product_registry_version", "generated_at", "generation_method", "generation_statement"
+      ],
+      "properties": {
+        "source_type": { "const": "SYNTHETIC_CONTRAST" },
+        "source_taxonomy_concept_id": { "type": "string", "minLength": 1 },
+        "source_expression_id": { "type": "string", "minLength": 1 },
+        "source_taxonomy_snapshot": { "type": "string", "minLength": 1 },
+        "source_taxonomy_sha256": { "$ref": "#/$defs/sha256" },
+        "source_expression_library_snapshot": { "type": "string", "minLength": 1 },
+        "source_expression_library_sha256": { "$ref": "#/$defs/sha256" },
+        "taxonomy_version": { "type": "string", "minLength": 1 },
+        "expression_library_version": { "type": "string", "minLength": 1 },
+        "templates_version": { "type": "string", "minLength": 1 },
+        "special_situations_version": { "type": "string", "minLength": 1 },
+        "product_registry_version": { "type": "string", "minLength": 1 },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "generation_method": { "enum": ["VERSIONED_CONTRAST_TEMPLATE", "VERSIONED_SPECIAL_SITUATION_TEMPLATE"] },
+        "generation_statement": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "exampleClass": {
+      "enum": ["OBSERVED_EVENT_SELF", "OBSERVED_EVENT_THIRD_PARTY", "POSSIBLE_EVENT_UNCERTAIN_CAUSALITY", "HYPOTHETICAL", "ANTICIPATED_OR_FEARED", "NEGATED", "GENERAL_INFORMATION", "PROVIDER_WARNING", "HISTORICAL_OR_UNRELATED", "INSUFFICIENT_INFORMATION", "MEDICATION_ERROR_OR_SPECIAL_SITUATION"]
+    },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "span": {
+      "type": "object",
+      "required": ["start", "end", "text"],
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 1 },
+        "text": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "spanArray": { "type": "array", "items": { "$ref": "#/$defs/span" } }
+  }
+}

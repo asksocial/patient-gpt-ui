@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0.0",
+  "aliasVersion": "2026.01.0",
+  "productRegistryVersion": "2026.01.0",
+  "status": "active",
+  "aliases": [
+    { "familyId": "onabotulinumtoxina", "term": "onabotulinum toxin a" },
+    { "familyId": "onabotulinumtoxina", "term": "onabotulinum toxin type a" },
+    { "familyId": "abobotulinumtoxina", "term": "abobotulinum toxin a" },
+    { "familyId": "abobotulinumtoxina", "term": "abobotulinum toxin type a" },
+    { "familyId": "incobotulinumtoxina", "term": "incobotulinum toxin a" },
+    { "familyId": "incobotulinumtoxina", "term": "incobotulinum toxin type a" },
+    { "familyId": "prabotulinumtoxina", "term": "prabotulinum toxin a" },
+    { "familyId": "prabotulinumtoxina", "term": "prabotulinum toxin type a" },
+    { "familyId": "daxibotulinumtoxina", "term": "daxibotulinum toxin a" },
+    { "familyId": "daxibotulinumtoxina", "term": "daxibotulinum toxin type a" },
+    { "familyId": "letibotulinumtoxina", "term": "letibotulinum toxin a" },
+    { "familyId": "letibotulinumtoxina", "term": "letibotulinum toxin type a" }
+  ],
+  "classAliases": ["botulinum toxin", "botulinum toxin a", "botulinum toxin type a", "botulinum neurotoxin type a", "bont-a", "bont/a"]
+}

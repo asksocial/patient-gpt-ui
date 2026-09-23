@@ -1,0 +1,334 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectVersion": "2026.01.0",
+  "status": "active",
+  "topic": "Botulinum toxin",
+  "objective": "Build a governed corpus that recognizes potentially PV-relevant language and routes it for human review without determining medical causality.",
+  "architectureDocument": "../../../../docs/pv/botulinum-toxin-pv-training-corpus-architecture.md",
+  "regulatoryPosture": {
+    "causalityDefault": "NOT_ESTABLISHED",
+    "pvRelevanceIsNotIcsrCompleteness": true,
+    "humanReviewRequiredForEscalation": true,
+    "aeKeywordAloneIsInsufficient": true,
+    "minimumIcsrElements": ["P", "R", "D", "E"]
+  },
+  "datasets": [
+    {
+      "id": "regulatory_case_corpus",
+      "status": "complete",
+      "schema": "schemas/regulatory-case.schema.json",
+      "configuration": "regulatory/manifest.json",
+      "dependsOn": [],
+      "contains": "Source-faithful FDA FAERS/openFDA cases with nested drugs, reactions, outcomes, raw records, provenance, and deduplication metadata."
+    },
+    {
+      "id": "ae_adr_master_taxonomy",
+      "status": "draft_generated_pending_pv_review",
+      "schema": "schemas/ae-adr-master-taxonomy.schema.json",
+      "configuration": "taxonomy/manifest.json",
+      "generationCommand": "npm run taxonomy:botulinum",
+      "dependsOn": ["regulatory_case_corpus"],
+      "contains": "Versioned safety concepts that preserve source MedDRA Preferred Terms and propose equivalent or closely related mapping candidates without inventing official hierarchy; mappings remain pending qualified PV review."
+    },
+    {
+      "id": "consumer_social_expression_library",
+      "status": "draft_generated_pending_pv_medical_review",
+      "schema": "schemas/consumer-social-expression.schema.json",
+      "configuration": "expressions/manifest.json",
+      "generationCommand": "npm run expressions:botulinum",
+      "dependsOn": ["ae_adr_master_taxonomy"],
+      "contains": "Draft governed consumer, colloquial, symptom, temporal, and causal expression candidates linked to source-preserved taxonomy concepts; all mappings remain pending qualified PV/medical review."
+    },
+    {
+      "id": "pv_classifier_training_examples",
+      "status": "draft_generated_pending_human_adjudication",
+      "schema": "schemas/pv-classifier-training-example.schema.json",
+      "configuration": "examples/manifest.json",
+      "generationCommand": "npm run examples:botulinum",
+      "dependsOn": ["regulatory_case_corpus", "ae_adr_master_taxonomy", "consumer_social_expression_library"],
+      "contains": "Synthetic draft examples separating PV relevance, P/R/D/E completeness, and routing across eleven balanced contextual and special-situation classes; every record remains pending human adjudication."
+    }
+  ],
+  "pipeline": [
+    "RAW_MENTION",
+    "PRODUCT_RECOGNITION",
+    "PATIENT_REPORTER_RECOGNITION",
+    "OBSERVED_EVENT_RECOGNITION",
+    "TEMPORAL_CAUSAL_CONTEXT",
+    "PV_RELEVANCE",
+    "ICSR_ELEMENT_ASSESSMENT",
+    "HUMAN_REVIEW_OR_NO_ESCALATION"
+  ],
+  "assumptions": [
+    {
+      "id": "A-001",
+      "statement": "FAERS/openFDA is a regulatory signal source and does not establish incidence or causality.",
+      "status": "accepted"
+    },
+    {
+      "id": "A-002",
+      "statement": "Source-provided MedDRA Preferred Terms may be preserved, but absent official hierarchy values or codes will not be invented.",
+      "status": "accepted"
+    },
+    {
+      "id": "A-003",
+      "statement": "PV relevance and ICSR completeness are separate labels; a potentially relevant mention may have one or more unknown P/R/D/E elements.",
+      "status": "accepted"
+    },
+    {
+      "id": "A-004",
+      "statement": "Human PV reviewers are the authority for adjudication, escalation, and correction of model- or rule-suggested labels.",
+      "status": "accepted"
+    },
+    {
+      "id": "A-005",
+      "statement": "Every derived artifact must be traceable to a source record, configuration version, transformation version, and review state.",
+      "status": "accepted"
+    },
+    {
+      "id": "A-006",
+      "statement": "The initial topic registry covers the six configured botulinum toxin product families and can be superseded through versioned configuration.",
+      "status": "accepted"
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "D-001",
+      "question": "Which licensed MedDRA release and hierarchy access may be used beyond source-provided Preferred Term strings?",
+      "blockingPhase": "PHASE_2_TAXONOMY",
+      "status": "open",
+      "owner": "PV governance"
+    },
+    {
+      "id": "D-002",
+      "question": "Which approved social sources, languages, retention rules, and reuse rights may contribute observed consumer expressions?",
+      "blockingPhase": "PHASE_3_EXPRESSION_LIBRARY",
+      "status": "open",
+      "owner": "Privacy, legal, and data governance"
+    },
+    {
+      "id": "D-003",
+      "question": "What reviewer qualifications, dual-review sampling rate, disagreement process, and adjudication authority govern gold labels?",
+      "blockingPhase": "PHASE_4_TRAINING_EXAMPLES",
+      "status": "open",
+      "owner": "PV quality"
+    },
+    {
+      "id": "D-004",
+      "question": "What recall, precision, subgroup, and false-negative thresholds are required before a classifier can be promoted?",
+      "blockingPhase": "PHASE_5_EVALUATION",
+      "status": "open",
+      "owner": "PV quality and model risk"
+    },
+    {
+      "id": "D-005",
+      "question": "Will historical FAERS versions be acquired from quarterly extracts, and how will amendments be represented across releases?",
+      "blockingPhase": "PHASE_6_OPERATIONS",
+      "status": "open",
+      "owner": "Data engineering"
+    },
+    {
+      "id": "D-006",
+      "question": "Where will complete multi-gigabyte immutable corpus releases be retained, encrypted, access-controlled, and promoted?",
+      "blockingPhase": "PHASE_6_OPERATIONS",
+      "status": "open",
+      "owner": "Security and platform operations"
+    }
+  ],
+  "phases": [
+    {
+      "id": "PHASE_0_FOUNDATION",
+      "name": "Architecture and governance foundation",
+      "status": "complete",
+      "acceptanceCriteria": [
+        {
+          "id": "AC-0.1",
+          "requirement": "All four datasets have versioned contracts and declared dependencies.",
+          "verification": "Automated project-manifest and schema-contract validation.",
+          "status": "met"
+        },
+        {
+          "id": "AC-0.2",
+          "requirement": "The pipeline explicitly separates PV relevance from ICSR P/R/D/E completeness and requires human review for escalation.",
+          "verification": "Manifest governance assertions.",
+          "status": "met"
+        },
+        {
+          "id": "AC-0.3",
+          "requirement": "Assumptions and unresolved governance decisions are versioned and assigned to an owner.",
+          "verification": "Decision-register validation.",
+          "status": "met"
+        }
+      ]
+    },
+    {
+      "id": "PHASE_1_REGULATORY_CORPUS",
+      "name": "Regulatory case ingestion",
+      "status": "complete",
+      "acceptanceCriteria": [
+        {
+          "id": "AC-1.1",
+          "requirement": "All configured brands and active ingredients are queryable by exact source fields, with optional suspect-drug designation.",
+          "verification": "Fixture and query-registry tests.",
+          "status": "met"
+        },
+        {
+          "id": "AC-1.2",
+          "requirement": "Raw and normalized records retain identifiers, nested drugs/reactions/outcomes, query provenance, hashes, configuration versions, and causality_status=NOT_ESTABLISHED.",
+          "verification": "Schema, normalization, provenance, and storage tests.",
+          "status": "met"
+        },
+        {
+          "id": "AC-1.3",
+          "requirement": "Rate limits, pagination, malformed records, duplicate observations, conflicting payloads, and partial snapshots are auditable.",
+          "verification": "Fixture-based failure, retry, deduplication, and immutable-output tests.",
+          "status": "met"
+        }
+      ]
+    },
+    {
+      "id": "PHASE_2_TAXONOMY",
+      "name": "AE/ADR master taxonomy",
+      "status": "in_progress",
+      "acceptanceCriteria": [
+        {
+          "id": "AC-2.1",
+          "requirement": "Every taxonomy concept has a stable versioned ID, provenance, review status, and at least one source term.",
+          "verification": "Schema validation and referential-integrity tests.",
+          "status": "met"
+        },
+        {
+          "id": "AC-2.2",
+          "requirement": "Source MedDRA Preferred Terms remain unchanged and official codes/hierarchy appear only when source-provided or licensed and versioned.",
+          "verification": "No-invented-hierarchy and release-version tests.",
+          "status": "met"
+        },
+        {
+          "id": "AC-2.3",
+          "requirement": "Equivalent and related concept mappings are human-reviewed, reversible, and retain mapping rationale and confidence.",
+          "verification": "Reviewer audit and mapping-diff tests.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "PHASE_3_EXPRESSION_LIBRARY",
+      "name": "Consumer and social expression library",
+      "status": "in_progress",
+      "acceptanceCriteria": [
+        {
+          "id": "AC-3.0",
+          "requirement": "A versioned draft generation layer retains every source taxonomy concept, requires parent mappings and provenance for every expression, and prevents unreviewed language from becoming production-eligible.",
+          "verification": "Fixture-based concept-retention, referential-integrity, provenance, immutable-output, and production-eligibility tests.",
+          "status": "met"
+        },
+        {
+          "id": "AC-3.1",
+          "requirement": "Expressions are linked to reviewed taxonomy concepts and labeled by language, expression type, origin, confidence, and validation state.",
+          "verification": "Schema and foreign-key validation.",
+          "status": "pending"
+        },
+        {
+          "id": "AC-3.2",
+          "requirement": "Observed, human-authored, and model-suggested language remain distinguishable and source rights are recorded.",
+          "verification": "Provenance and rights-policy tests.",
+          "status": "pending"
+        },
+        {
+          "id": "AC-3.3",
+          "requirement": "The library covers clinical terms, consumer phrasing, colloquialisms, misspellings, symptom descriptions, and temporal/causal language without asserting causality.",
+          "verification": "Coverage matrix and prohibited-inference tests.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "PHASE_4_TRAINING_EXAMPLES",
+      "name": "PV classifier training examples",
+      "status": "in_progress",
+      "acceptanceCriteria": [
+        {
+          "id": "AC-4.0",
+          "requirement": "A versioned synthetic draft uses source-linked contrast sets, controlled PV/ICSR labels, complete provenance, and mandatory human-review status without making final reportability determinations.",
+          "verification": "Schema, provenance, label-consistency, prohibited-language, and immutable-output tests.",
+          "status": "met"
+        },
+        {
+          "id": "AC-4.1",
+          "requirement": "The corpus represents all eleven configured example classes with balanced positive, uncertain, negative, informational, and special-situation contrast sets.",
+          "verification": "Label-distribution and contrast-set tests.",
+          "status": "met"
+        },
+        {
+          "id": "AC-4.2",
+          "requirement": "Every example separately records PV relevance, P/R/D/E status, evidence spans, routing, confidence, and human adjudication.",
+          "verification": "Schema, evidence-span, and label-consistency tests.",
+          "status": "pending"
+        },
+        {
+          "id": "AC-4.3",
+          "requirement": "Near duplicates and source/case families cannot leak across train, validation, and test partitions.",
+          "verification": "Group-split and semantic-near-duplicate tests.",
+          "status": "met"
+        }
+      ]
+    },
+    {
+      "id": "PHASE_5_EVALUATION",
+      "name": "Evaluation and controlled promotion",
+      "status": "in_progress",
+      "acceptanceCriteria": [
+        {
+          "id": "AC-5.0",
+          "requirement": "A versioned gold-candidate dataset, append-only adjudication workflow, segmented metrics, and locked false-negative regression set are available for qualified PV review.",
+          "verification": "Validation-harness quality tests and immutable evaluation run manifest.",
+          "status": "met"
+        },
+        {
+          "id": "AC-5.1",
+          "requirement": "Performance is measured by label, product family, expression type, source, and ICSR element on a locked holdout set.",
+          "verification": "Versioned evaluation report and reproducible run manifest.",
+          "status": "pending"
+        },
+        {
+          "id": "AC-5.2",
+          "requirement": "PV-approved thresholds, error review, limitations, and rollback criteria are documented before promotion.",
+          "verification": "Signed model-risk and PV-quality approval record.",
+          "status": "pending"
+        },
+        {
+          "id": "AC-5.3",
+          "requirement": "The promoted classifier routes candidates to human review and does not independently determine causality or final reportability.",
+          "verification": "End-to-end routing and prohibited-autonomy tests.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "PHASE_6_OPERATIONS",
+      "name": "Release, monitoring, and controlled updates",
+      "status": "planned",
+      "acceptanceCriteria": [
+        {
+          "id": "AC-6.1",
+          "requirement": "Corpus releases are immutable, access-controlled, checksummed, reproducible, and linked to source/configuration versions.",
+          "verification": "Release-manifest, storage-policy, and restoration tests.",
+          "status": "pending"
+        },
+        {
+          "id": "AC-6.2",
+          "requirement": "Code-list, taxonomy, product-registry, and source updates create new versions with reviewed migration and rollback paths.",
+          "verification": "Change-control and prior-version replay tests.",
+          "status": "pending"
+        },
+        {
+          "id": "AC-6.3",
+          "requirement": "Drift, false-negative review, reviewer overrides, and data-quality exceptions are monitored without rewriting historical labels.",
+          "verification": "Operational dashboard and append-only audit tests.",
+          "status": "pending"
+        }
+      ]
+    }
+  ],
+  "activationPolicy": "Published configurations and schemas are immutable. Changes require a new version, automated validation, governance review, and an explicit manifest activation update."
+}

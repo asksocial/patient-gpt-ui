@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0.0",
+  "lexiconVersion": "2026.01.0",
+  "taxonomyVersion": "2026.01.0",
+  "expressionLibraryVersion": "2026.01.0",
+  "status": "active_for_candidate_screening",
+  "sourceStatement": "Runtime subset compiled from the FAERS-derived AE/ADR taxonomy, curated expression seeds, and established AskSocial botulinum detection concepts. MedDRA PT values are preserved as candidates and require human validation.",
+  "events": [
+    { "conceptId": "faers_pt_f5b9a159a93ff798a2d7", "meddraPt": "Eyelid ptosis", "normalizedConcept": "eyelid drooping", "seriousPotential": false, "terms": ["eyelid ptosis", "ptosis", "eyelid droop", "eyelid drooped", "ptotic eyelid", "droopy eyelid", "drooping eyelid", "eyelid drooping", "eyelid started drooping", "dropped my eyelid", "dropped her eyelid", "dropped his eyelid", "heavy eyelid", "brow droop", "droopy eye", "drooping eye", "droppy eyelid", "drooopy eyelid"] },
+    { "conceptId": "faers_pt_37b0bc41f4b4aee09cee", "meddraPt": "Dysphagia", "normalizedConcept": "difficulty swallowing", "seriousPotential": true, "terms": ["dysphagia", "trouble swallowing", "difficulty swallowing", "hard to swallow", "can't swallow", "cannot swallow", "couldn't swallow", "food gets stuck", "choking when i eat", "hard to get food down", "swallowing feels weird", "my throat doesn't work right", "trouble swollowing", "cant swallow"] },
+    { "conceptId": "faers_pt_20a1c9fee171e3ff1523", "meddraPt": "Dyspnoea", "normalizedConcept": "breathing difficulty", "seriousPotential": true, "terms": ["dyspnoea", "dyspnea", "shortness of breath", "difficulty breathing", "trouble breathing", "breathless", "couldn't breathe", "cannot breathe", "can't breathe", "cant breathe"] },
+    { "conceptId": "faers_pt_9bee1eaf089594b54b96", "meddraPt": "Muscular weakness", "normalizedConcept": "muscle weakness", "seriousPotential": true, "terms": ["muscular weakness", "muscle weakness", "generalized weakness", "generalised weakness", "neck weakness", "weak neck", "weakness all over", "whole body felt weak"] },
+    { "conceptId": "faers_pt_ecb3e300a47a6e8689c1", "meddraPt": "Vision blurred", "normalizedConcept": "blurred vision", "seriousPotential": false, "terms": ["vision blurred", "blurred vision", "blurry vision", "blury vision", "double vision", "diplopia", "seeing double"] },
+    { "conceptId": "faers_pt_83c79d85bb0bd4a8c8b1", "meddraPt": "Headache", "normalizedConcept": "headache", "seriousPotential": false, "terms": ["headache", "migraine", "migrainee", "pounding head", "splitting headache"] },
+    { "conceptId": "faers_pt_171b84b1e79ac95051e4", "meddraPt": "Dysphonia", "normalizedConcept": "voice change", "seriousPotential": true, "terms": ["dysphonia", "voice change", "hoarse voice", "hoarseness", "slurred speech", "voice went hoarse"] },
+    { "conceptId": "faers_pt_f79426a54a84e83f1622", "meddraPt": "Anaphylactic reaction", "normalizedConcept": "anaphylactic reaction", "seriousPotential": true, "terms": ["anaphylaxis", "anaphylactic reaction", "throat closed", "swollen throat", "severe allergic reaction"] },
+    { "conceptId": "faers_pt_8d648417c591da8f6766", "meddraPt": "Urticaria", "normalizedConcept": "hives", "seriousPotential": false, "terms": ["urticaria", "hives", "itchy welts"] },
+    { "conceptId": "faers_pt_e3e17e583b4b7df53b59", "meddraPt": "Rash", "normalizedConcept": "rash", "seriousPotential": false, "terms": ["rash", "skin rash", "broke out in a rash"] },
+    { "conceptId": "faers_pt_1b8b6444b004ad931978", "meddraPt": "Injection site pain", "normalizedConcept": "injection-site pain", "seriousPotential": false, "terms": ["injection site pain", "painful bump", "painful lump", "injection spot hurts", "pain where i was injected"] },
+    { "conceptId": "faers_pt_bfdb6d02de1be60a98ca", "meddraPt": "Injection site swelling", "normalizedConcept": "injection-site swelling", "seriousPotential": false, "terms": ["injection site swelling", "swollen injection site", "swelling where i was injected"] },
+    { "conceptId": "faers_pt_030b0873c88dfe30ad58", "meddraPt": "Injection site erythema", "normalizedConcept": "injection-site redness", "seriousPotential": false, "terms": ["injection site redness", "red injection site", "redness where i was injected"] },
+    { "conceptId": "faers_pt_44a61466f96ae3437c54", "meddraPt": "Facial asymmetry", "normalizedConcept": "facial asymmetry", "seriousPotential": false, "terms": ["facial asymmetry", "uneven smile", "crooked smile", "uneven brow", "uneven eyebrow", "spock brow", "botox shelf"] },
+    { "conceptId": "faers_pt_a3db92a6abbd92f04b7e", "meddraPt": "Facial paralysis", "normalizedConcept": "facial movement impairment", "seriousPotential": true, "terms": ["facial paralysis", "frozen face", "face frozen", "stiff face", "facial stiffness", "can't move my face", "cannot move my face", "couldn't move my face", "could not move my face", "unable to move my face", "can't smile", "cannot smile", "couldn't smile", "could not smile", "difficulty smiling"] },
+    { "conceptId": "faers_pt_d9fd946d1167ee9e225a", "meddraPt": "Urinary retention", "normalizedConcept": "urinary retention", "seriousPotential": true, "terms": ["urinary retention", "can't urinate", "cannot urinate", "trouble urinating", "couldn't pee", "can't pee"] }
+  ]
+}

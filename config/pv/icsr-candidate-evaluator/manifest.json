@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "evaluatorVersion": "2026.01.0",
+  "status": "active",
+  "stage": "POST_PV_RELEVANCE_DETECTION",
+  "standard": "ICH E2D(R1) 6.1",
+  "outputSchema": "output-schema-2026.01.0.json",
+  "legalNameRequiredForPatient": false,
+  "legalNameRequiredForReporter": false,
+  "accountContextPolicy": {
+    "enabled": true,
+    "requiredFields": ["username", "source_platform", "source_url", "post_id"],
+    "requiresFirstHandRelationship": true,
+    "status": "POTENTIALLY_IDENTIFIABLE_PENDING_HUMAN_CONFIRMATION",
+    "confidence": 0.65,
+    "note": "A handle alone is insufficient. A first-hand author linked to a stable platform, source URL, and post ID may be treated as potentially identifiable for triage, subject to PV policy and human confirmation."
+  },
+  "minimumCandidateConfidence": {
+    "drug": 0.5,
+    "event": 0.5
+  },
+  "incompleteCaseReviewRoute": "POTENTIAL_ICSR_MISSING_ELEMENT",
+  "finalDeterminationPolicy": "The evaluator identifies potential ICSR candidates for human PV review and never determines final regulatory reportability, causality, or a confirmed ADR."
+}

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "1.0.0",
+  "templatesVersion": "2026.01.0",
+  "status": "active",
+  "profiles": {
+    "clinical_high_priority": {
+      "lay_synonyms": [
+        "{concept}", "I had {concept}", "I experienced {concept}", "I noticed {concept}", "I started having {concept}",
+        "I developed {concept}", "I've been dealing with {concept}", "my symptoms included {concept}",
+        "it felt like {concept}", "I ended up with {concept}"
+      ],
+      "consumer_expressions": [
+        "after treatment I had {concept}", "the injections were followed by {concept}", "I noticed {concept} after my appointment"
+      ],
+      "colloquial_expressions": [
+        "{concept} hit me", "{concept} came out of nowhere", "I've got {concept} now", "{concept} has been rough", "dealing with this {concept}"
+      ],
+      "symptom_descriptions": [
+        "I noticed symptoms that felt like {concept}", "the main problem was {concept}", "my body started showing {concept}"
+      ],
+      "slang_or_informal_phrasing": [
+        "this {concept} thing", "the {concept} was no joke", "got hit with {concept}"
+      ],
+      "temporal_expressions": [
+        "{concept} started after my injections", "I noticed {concept} after Botox", "{concept} began two days after the treatment",
+        "I've had {concept} ever since the injections", "{concept} showed up later that evening"
+      ],
+      "causal_expressions": [
+        "Botox caused my {concept}", "the injections made me develop {concept}", "I think the treatment caused {concept}"
+      ],
+      "uncertain_causality_expressions": [
+        "not sure if my {concept} was from Botox", "could this {concept} be from the injections", "maybe the {concept} is related to Botox"
+      ]
+    },
+    "special_situation_high_priority": {
+      "lay_synonyms": [
+        "{concept}", "there was a {concept} issue", "I had a problem described as {concept}", "the treatment involved {concept}",
+        "I reported {concept}", "we noticed {concept}", "the record mentioned {concept}", "this involved {concept}",
+        "the situation was described as {concept}", "{concept} happened during treatment"
+      ],
+      "consumer_expressions": [
+        "something about the treatment involved {concept}", "I was concerned about {concept}", "we had an issue involving {concept}"
+      ],
+      "colloquial_expressions": [
+        "something went wrong with {concept}", "the whole {concept} situation", "we ran into {concept}",
+        "there was a problem with {concept}", "this {concept} issue came up"
+      ],
+      "symptom_descriptions": ["the reported situation involved {concept}"],
+      "slang_or_informal_phrasing": ["the {concept} issue", "a problem with {concept}"],
+      "temporal_expressions": [
+        "{concept} happened after the appointment", "{concept} was noticed after the injections", "{concept} came up during treatment",
+        "{concept} was reported later that day", "{concept} was identified after the product was used"
+      ],
+      "causal_expressions": [
+        "the treatment caused the {concept} situation", "the injections led to {concept}", "I think the product caused {concept}"
+      ],
+      "uncertain_causality_expressions": [
+        "not sure if {concept} was related to the product", "could {concept} be connected to the treatment", "maybe {concept} had something to do with the injections"
+      ]
+    },
+    "fatal_outcome_high_priority": {
+      "lay_synonyms": [
+        "death", "the patient died", "they died", "my family member died", "they passed away", "we lost them",
+        "the person did not survive", "the patient passed away", "the outcome was fatal", "it resulted in death"
+      ],
+      "consumer_expressions": [
+        "they died after treatment", "my loved one passed away after the injections", "the patient did not survive after the procedure"
+      ],
+      "colloquial_expressions": [
+        "we lost them", "they didn't make it", "they passed", "my loved one is gone", "the treatment was followed by their passing"
+      ],
+      "symptom_descriptions": ["the reported outcome was death", "the person was reported to have died"],
+      "slang_or_informal_phrasing": ["they didn't make it", "we lost them"] ,
+      "temporal_expressions": [
+        "they died after the injections", "the patient died two days after treatment", "they passed away later that evening",
+        "the death happened after the procedure", "the patient did not survive following treatment"
+      ],
+      "causal_expressions": [
+        "the injections caused the death", "Botox killed them", "I think the treatment caused them to die"
+      ],
+      "uncertain_causality_expressions": [
+        "not sure if the death was related to Botox", "could the death be connected to the injections", "maybe the treatment contributed to the death"
+      ]
+    },
+    "clinical_standard": {
+      "lay_synonyms": ["{concept}"],
+      "consumer_expressions": ["I experienced {concept}"],
+      "colloquial_expressions": [],
+      "symptom_descriptions": ["I noticed symptoms that felt like {concept}"],
+      "slang_or_informal_phrasing": [],
+      "temporal_expressions": ["{concept} started after the treatment"],
+      "causal_expressions": ["the injections caused {concept}"],
+      "uncertain_causality_expressions": ["not sure if {concept} was related to the injections"]
+    },
+    "manual_review_only": {
+      "lay_synonyms": [],
+      "consumer_expressions": [],
+      "colloquial_expressions": [],
+      "symptom_descriptions": [],
+      "slang_or_informal_phrasing": [],
+      "temporal_expressions": [],
+      "causal_expressions": [],
+      "uncertain_causality_expressions": []
+    }
+  }
+}

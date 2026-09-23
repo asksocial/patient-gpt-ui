@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asksocial.example/schemas/pv/icsr-candidate-evaluator/2026.01.0",
+  "title": "AskSocial ICSR candidate evaluation",
+  "type": "object",
+  "required": ["original_mention", "patient", "reporter", "drug", "event", "drugs", "events", "special_situation", "icsr_status", "missing_elements", "pv_review_required", "review_route", "source_metadata", "evaluator", "limitations"],
+  "properties": {
+    "original_mention": { "type": "string", "minLength": 1 },
+    "patient": { "$ref": "#/$defs/personElement" },
+    "reporter": { "$ref": "#/$defs/personElement" },
+    "drug": {
+      "type": "object",
+      "required": ["present", "product", "active_ingredient", "evidence", "confidence"],
+      "properties": {
+        "present": { "type": "boolean" },
+        "product": { "type": "string" },
+        "active_ingredient": { "type": "string" },
+        "evidence": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      },
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "required": ["present", "raw_expression", "normalized_event", "meddra_pt_candidate", "evidence", "confidence"],
+      "properties": {
+        "present": { "type": "boolean" },
+        "raw_expression": { "type": "string" },
+        "normalized_event": { "type": "string" },
+        "meddra_pt_candidate": { "type": "string" },
+        "evidence": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      },
+      "additionalProperties": false
+    },
+    "drugs": { "type": "array", "items": { "$ref": "#/$defs/drugElement" } },
+    "events": { "type": "array", "items": { "$ref": "#/$defs/eventElement" } },
+    "special_situation": { "type": ["string", "null"] },
+    "icsr_status": {
+      "enum": ["POTENTIAL_ICSR_COMPLETE", "POTENTIAL_ICSR_MISSING_PATIENT", "POTENTIAL_ICSR_MISSING_REPORTER", "POTENTIAL_ICSR_MISSING_DRUG", "POTENTIAL_ICSR_MISSING_EVENT", "POTENTIAL_ICSR_MULTIPLE_ELEMENTS_MISSING", "NOT_AN_OBSERVED_EVENT", "SPECIAL_SITUATION_REVIEW"]
+    },
+    "missing_elements": { "type": "array", "items": { "enum": ["P", "R", "D", "E"] }, "uniqueItems": true },
+    "pv_review_required": { "const": true },
+    "review_route": { "enum": ["POTENTIAL_ICSR_REVIEW", "POTENTIAL_ICSR_MISSING_ELEMENT", "NON_OBSERVED_CONTEXT_REVIEW", "SPECIAL_SITUATION_REVIEW"] },
+    "source_metadata": {
+      "type": "object",
+      "required": ["username", "source_platform", "source_url", "post_id", "original_post_timestamp", "collection_timestamp", "algorithm_timestamp", "human_review_timestamp", "escalation_timestamp"],
+      "properties": {
+        "username": { "type": ["string", "null"] },
+        "source_platform": { "type": "string", "minLength": 1 },
+        "source_url": { "type": "string", "minLength": 1 },
+        "post_id": { "type": "string", "minLength": 1 },
+        "original_post_timestamp": { "type": "string", "format": "date-time" },
+        "collection_timestamp": { "type": "string", "format": "date-time" },
+        "algorithm_timestamp": { "type": "string", "format": "date-time" },
+        "human_review_timestamp": { "type": ["string", "null"], "format": "date-time" },
+        "escalation_timestamp": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "evaluator": {
+      "type": "object",
+      "required": ["version", "stage", "standard", "final_determination_made"],
+      "properties": {
+        "version": { "type": "string", "minLength": 1 },
+        "stage": { "const": "POST_PV_RELEVANCE_DETECTION" },
+        "standard": { "const": "ICH E2D(R1) 6.1" },
+        "final_determination_made": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "limitations": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "drugElement": {
+      "type": "object",
+      "required": ["present", "product", "active_ingredient", "evidence", "confidence"],
+      "properties": {
+        "present": { "type": "boolean" },
+        "product": { "type": "string" },
+        "active_ingredient": { "type": "string" },
+        "evidence": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      },
+      "additionalProperties": false
+    },
+    "eventElement": {
+      "type": "object",
+      "required": ["present", "raw_expression", "normalized_event", "meddra_pt_candidate", "evidence", "confidence"],
+      "properties": {
+        "present": { "type": "boolean" },
+        "raw_expression": { "type": "string" },
+        "normalized_event": { "type": "string" },
+        "meddra_pt_candidate": { "type": "string" },
+        "evidence": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      },
+      "additionalProperties": false
+    },
+    "personElement": {
+      "type": "object",
+      "required": ["present", "evidence", "confidence", "basis", "requires_human_confirmation"],
+      "properties": {
+        "present": { "type": "boolean" },
+        "evidence": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "basis": { "enum": ["ICH_QUALIFYING_CHARACTERISTIC", "VERIFIED_EXISTENCE", "SOURCE_ACCOUNT_CONTEXT", "NONE"] },
+        "requires_human_confirmation": { "const": true }
+      },
+      "additionalProperties": false
+    }
+  }
+}

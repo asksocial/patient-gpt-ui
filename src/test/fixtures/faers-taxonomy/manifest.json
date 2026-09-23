@@ -1,0 +1,8 @@
+{
+  "status": "complete",
+  "truncated": false,
+  "configurationVersion": "fixture-config-v1",
+  "productRegistryVersion": "fixture-products-v1",
+  "sourceMappingVersion": "fixture-mapping-v1",
+  "recordCounts": { "normalized": 5 }
+}

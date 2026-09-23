@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asksocial.invalid/schemas/pv/botulinum-adjudication-event-2026.01.0.json",
+  "title": "AskSocial PV Adjudication Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id", "record_id", "model_snapshot_id", "stage", "reviewer_id", "reviewer_qualification_attested",
+    "reviewer_decision", "reviewer_notes", "adjudication_timestamp", "classifier_version", "taxonomy_version",
+    "model_decision_at_review", "disagreement_with_model", "disagreement_with_prior_review", "previous_event_hash", "event_hash"
+  ],
+  "properties": {
+    "event_id": { "type": "string", "minLength": 1 },
+    "record_id": { "type": "string", "minLength": 1 },
+    "model_snapshot_id": { "type": "string", "minLength": 1 },
+    "stage": { "enum": ["PRIMARY_REVIEW", "SECOND_REVIEW", "FINAL_ADJUDICATION"] },
+    "reviewer_id": { "type": "string", "minLength": 1 },
+    "reviewer_qualification_attested": { "const": true },
+    "reviewer_decision": { "enum": ["TRUE_PV_CANDIDATE", "POSSIBLE_PV_CANDIDATE", "NON_CASE", "INSUFFICIENT_INFORMATION", "SPECIAL_SITUATION", "NEEDS_SECOND_REVIEW"] },
+    "reviewer_notes": { "type": "string", "minLength": 1 },
+    "adjudication_timestamp": { "type": "string", "format": "date-time" },
+    "classifier_version": { "type": "string", "minLength": 1 },
+    "taxonomy_version": { "type": "string", "minLength": 1 },
+    "model_decision_at_review": { "type": "object" },
+    "disagreement_with_model": { "type": "boolean" },
+    "disagreement_with_prior_review": { "type": "boolean" },
+    "previous_event_hash": { "type": "string", "minLength": 1 },
+    "event_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

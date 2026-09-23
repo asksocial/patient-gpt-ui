@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asksocial.invalid/schemas/pv/botulinum-gold-candidate-record-2026.01.0.json",
+  "title": "AskSocial Botulinum Toxin PV Gold-Candidate Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id", "dataset_version", "text", "source", "provisional_reference_label",
+    "provisional_binary_truth", "reference_label_source", "adjudication_status", "slice_tags",
+    "expected_icsr_missing_elements", "rationale"
+  ],
+  "properties": {
+    "record_id": { "type": "string", "minLength": 1 },
+    "dataset_version": { "type": "string", "minLength": 1 },
+    "text": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "url", "id", "author_identifier", "original_timestamp", "collection_timestamp"],
+      "properties": {
+        "platform": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1 },
+        "author_identifier": { "type": ["string", "null"] },
+        "original_timestamp": { "type": "string", "format": "date-time" },
+        "collection_timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "provisional_reference_label": {
+      "enum": ["TRUE_PV_CANDIDATE", "POSSIBLE_PV_CANDIDATE", "NON_CASE", "INSUFFICIENT_INFORMATION", "SPECIAL_SITUATION"]
+    },
+    "provisional_binary_truth": { "enum": ["POSITIVE", "NEGATIVE"] },
+    "reference_label_source": { "enum": ["SEEDED_EVALUATION_DESIGN", "KNOWN_FALSE_NEGATIVE_REGRESSION"] },
+    "adjudication_status": { "const": "PENDING_PV_REVIEW" },
+    "slice_tags": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "serious_event_concepts", "negated_events", "hypothetical_statements", "third_party_reports",
+          "missing_icsr_elements", "special_situations", "colloquial_language", "misspellings", "fragmented_social_posts"
+        ]
+      }
+    },
+    "expected_icsr_missing_elements": { "type": "array", "uniqueItems": true, "items": { "enum": ["P", "R", "D", "E"] } },
+    "rationale": { "type": "string", "minLength": 1 }
+  }
+}
