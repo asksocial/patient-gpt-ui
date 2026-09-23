@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 const shell = readFileSync(resolve(process.cwd(), "src/components/WorkspaceShell.jsx"), "utf8");
 const navigation = readFileSync(resolve(process.cwd(), "src/components/EcosystemNavigation.jsx"), "utf8");
+const compliance = readFileSync(resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
 const styles = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
 const landing = readFileSync(resolve(process.cwd(), "src/app/page.js"), "utf8");
 const designSystem = readFileSync(resolve(process.cwd(), "docs/design/asksocial-design-system-2.md"), "utf8");
@@ -31,6 +32,8 @@ assert(styles.includes(".pv-compliance-hero") && styles.includes("display: none"
 assert(styles.includes(".asksocial-workspace-save-action") && shell.includes("asksocial-workspace-save-action"), "The workspace-save action must retain a visible high-contrast label.");
 assert(styles.includes('button:not([aria-selected="true"]):hover') && styles.includes("--as-sage-active-soft"), "PV sub-navigation must expose a visible rollover state.");
 assert(styles.includes("@media (hover: hover) and (pointer: fine)") && styles.includes("transform: translateY(-2px)"), "Work-area cards must expose pointer-specific rollover feedback.");
+assert(styles.includes(".pv-lifecycle-card:hover") && compliance.includes("pv-lifecycle-card"), "PV lifecycle cards must expose the work-area rollover treatment.");
+assert(!styles.includes(".asksocial-workarea-header-card:hover"), "The page header card must remain visually anchored on rollover.");
 assert(styles.includes("prefers-reduced-motion") && styles.includes(":focus"), "The visual system must retain motion and focus accessibility safeguards.");
 assert(landing.includes('bg-[#edf3f0]') && landing.includes("LandingWordmark"), "The public landing page must use the Sage Mist ground and AskSocial wordmark.");
 assert(landing.includes("Turn social data into strategic answers.") && landing.includes("Report-backed intelligence + live emerging narratives"), "The landing hero must communicate the reference value proposition.");
