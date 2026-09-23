@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
 import { resolvePvReviewCompletionNavigation } from "../lib/pv/reviewNavigation";
 import Tooltip from "./ui/Tooltip";
@@ -226,6 +226,7 @@ export default function PvComplianceCenter({ initialTab = "overview", initialMes
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState(initialMessage);
   const [error, setError] = useState("");
+  const automaticCorpusSync = useRef("");
 
   useEffect(() => { setTab(initialTab); }, [initialTab]);
   useEffect(() => {
@@ -274,6 +275,41 @@ export default function PvComplianceCenter({ initialTab = "overview", initialMes
   }, [therapeuticArea]);
 
   useEffect(() => { const timer = window.setTimeout(loadAll, 0); return () => window.clearTimeout(timer); }, [loadAll]);
+
+  useEffect(() => {
+    const detectedRecords = Number(overview?.metrics?.aeAdrDetections || 0)
+      + Number(overview?.metrics?.healthExperienceDetections || 0);
+    if (therapeuticArea !== "Botulinum toxin" || !overview || detectedRecords > 0) return;
+    if (automaticCorpusSync.current === therapeuticArea) return;
+    automaticCorpusSync.current = therapeuticArea;
+    let cancelled = false;
+
+    async function initializeBotulinumPvCorpus() {
+      setBusy("corpus-auto-sync");
+      setMessage("Preparing governed Botulinum toxin safety records for this environment…");
+      try {
+        const response = await fetch("/api/pv/corpora/botulinum-toxin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "The governed Botulinum toxin safety records could not be initialized.");
+        if (cancelled) return;
+        setMessage("Botulinum toxin safety records synchronized. Compliance counts have been refreshed.");
+        await loadAll();
+      } catch (syncError) {
+        if (cancelled) return;
+        automaticCorpusSync.current = "";
+        setError(syncError instanceof Error ? syncError.message : "The governed Botulinum toxin safety records could not be initialized.");
+      } finally {
+        if (!cancelled) setBusy("");
+      }
+    }
+
+    void initializeBotulinumPvCorpus();
+    return () => { cancelled = true; };
+  }, [loadAll, overview, therapeuticArea]);
 
   async function openRecord(recordId) {
     setBusy(`record:${recordId}`);

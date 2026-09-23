@@ -66,5 +66,8 @@ const service = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.
 assert(service.includes("recognizeBotulinumToxinPvMention") && service.includes("botulinumRecognitionToLegacyDetection"), "Production persistence must use the versioned Botulinum toxin recognition pipeline.");
 const workbench = fs.readFileSync(path.resolve(process.cwd(), "src/components/PvComplianceCenter.jsx"), "utf8");
 assert(!workbench.includes("Botulinum toxin PV corpus"), "The corpus activation section must remain removed from Screening Status after ingestion.");
+for (const contract of ["automaticCorpusSync", "initializeBotulinumPvCorpus", 'therapeuticArea !== "Botulinum toxin"', 'fetch("/api/pv/corpora/botulinum-toxin"', "await loadAll()"] as const) {
+  assert(workbench.includes(contract), `An empty authorized production tenant must automatically initialize and refresh the governed Botulinum toxin PV corpus: ${contract}.`);
+}
 
 console.log(JSON.stringify({ therapeuticArea: corpus.therapeuticArea, sourceRows: corpus.rowCount, screenableVerbatims: corpus.rows.length, candidateRecords: corpus.candidates.length, aeAdrReviewCandidates: candidateSegments.filter((segment) => segment === "ae_adr").length, healthExperienceDetections: candidateSegments.filter((segment) => segment === "health_experience").length, rowsWithoutVerbatim: corpus.errors.length }, null, 2));
