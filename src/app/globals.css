@@ -460,6 +460,22 @@ body {
   color: var(--as-sage-active) !important;
 }
 
+/* Tooltips retain an accessible inverse treatment inside the light work area.
+ * This must follow the broad Sage Mist text remapping above. */
+[data-asksocial-workarea-content] [role="tooltip"].asksocial-tooltip,
+.asksocial-v2 [role="tooltip"].asksocial-tooltip {
+  width: max-content !important;
+  max-width: min(20rem, calc(100vw - 2rem));
+  border-color: #4a6e66 !important;
+  background: #0b2b24 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  box-shadow: 0 14px 36px rgba(6, 32, 27, 0.3) !important;
+}
+
 .asksocial-topbar [class*="text-amber-"] {
   color: #865b08 !important;
 }

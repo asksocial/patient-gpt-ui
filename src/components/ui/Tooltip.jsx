@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from "react";
 
 export default function Tooltip({
   content,
@@ -11,6 +11,7 @@ export default function Tooltip({
 }) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const tooltipId = useId();
   const openTimerRef = useRef(null);
   const closeTimerRef = useRef(null);
 
@@ -42,6 +43,19 @@ export default function Tooltip({
     }, 160);
   }
 
+  function dismissTooltip() {
+    if (openTimerRef.current) clearTimeout(openTimerRef.current);
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setVisible(false);
+    setMounted(false);
+  }
+
+  const describedChild = isValidElement(children)
+    ? cloneElement(children, {
+        "aria-describedby": [children.props?.["aria-describedby"], tooltipId].filter(Boolean).join(" "),
+      })
+    : children;
+
   const sideClasses = {
     top: "bottom-full mb-2",
     bottom: "top-full mt-2",
@@ -65,22 +79,26 @@ export default function Tooltip({
       onMouseLeave={hideTooltip}
       onFocus={showTooltip}
       onBlur={hideTooltip}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") dismissTooltip();
+      }}
     >
-      {children}
+      {describedChild}
 
-      {mounted && content ? (
+      {content ? (
         <span
+          id={tooltipId}
           role="tooltip"
           className={[
-            "pointer-events-none absolute z-[9999]",
+            mounted ? "asksocial-tooltip absolute z-[9999]" : "sr-only",
             "w-56",
             "rounded-xl border border-white/10 bg-neutral-950 px-3 py-2",
             "text-left text-xs leading-5 text-white/85 shadow-2xl",
             "whitespace-normal break-words",
             "transition-all duration-150 ease-out",
-            visible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
-            sideClasses[side],
-            alignClasses[align],
+            mounted && visible ? "translate-y-0 opacity-100" : mounted ? "translate-y-1 opacity-0" : "",
+            mounted ? sideClasses[side] : "",
+            mounted ? alignClasses[align] : "",
           ].join(" ")}
         >
           {content}
