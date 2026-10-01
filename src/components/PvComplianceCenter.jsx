@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
 import { resolvePvReviewCompletionNavigation } from "../lib/pv/reviewNavigation";
 import Tooltip from "./ui/Tooltip";
+import PvIcsrReview from "./PvIcsrReview";
 
 const TABS = [
   ["overview", "Compliance Overview"],
@@ -1014,6 +1015,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
         </div>
       </Card>
     ) : null}
+    <PvIcsrReview key={record.id} recordId={record.id} />
     {record.status === "ready_for_transfer" ? <Card title="Sponsor transfer service" subtitle="AskSocial constructs the handoff package from immutable evidence, review decisions, provenance, and the final reviewer-approved adverse-event ontology."><div className="grid gap-3 md:grid-cols-3"><input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="Sponsor destination" className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white outline-none" /><select value={transferMethod} onChange={(event) => setTransferMethod(event.target.value)} className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white"><option value="manual_export">Manual secure export</option><option value="secure_api">Secure API</option><option value="sftp">SFTP</option><option value="secure_email">Secure email</option></select><button type="button" disabled={busy === "transfer" || !destination.trim()} onClick={transfer} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{busy === "transfer" ? "Creating package…" : "Transfer to Sponsor"}</button></div></Card> : null}
     <details className="group rounded-2xl border border-white/10 bg-white/[0.02]">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-medium text-white/70 marker:hidden">

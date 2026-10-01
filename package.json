@@ -45,11 +45,14 @@
     "test:botulinum-pv-training-examples": "tsx src/test/runBotulinumPvTrainingExamplesQuality.ts",
     "test:pv-training-architecture": "tsx src/test/runPvTrainingCorpusArchitectureQuality.ts",
     "pretest:production": "tsx src/test/runFaersBotulinumTaxonomyQuality.ts && tsx src/test/runBotulinumSocialExpressionLibraryQuality.ts && tsx src/test/runBotulinumPvTrainingExamplesQuality.ts && tsx src/test/runIcsrCandidateEvaluatorQuality.ts && tsx src/test/runIcsrE2bCandidateMappingQuality.ts && tsx src/test/runBotulinumPvRecognitionPipelineQuality.ts && tsx src/test/runBotulinumPvValidationHarnessQuality.ts",
-    "test:production": "tsx src/test/runProductionSafeguardsQuality.ts && tsx src/test/runHybridNoEvidenceGuardQuality.ts && tsx src/test/runEntitlementEngineQuality.ts && tsx src/test/runIntelligencePlatformModelQuality.ts && tsx src/test/runIntelligenceNavigationQuality.ts && tsx src/test/runConversationNavigationPersistenceQuality.ts && tsx src/test/runPrimarySearchLayoutQuality.ts && tsx src/test/runWorkspaceManagementQuality.ts && tsx src/test/runSharedIntelligencePlatformQuality.ts && tsx src/test/runEnterpriseSecurityGovernanceQuality.ts && tsx src/test/runModuleShellQuality.ts && tsx src/test/runModuleDeliveryQuality.ts && tsx src/test/runModuleIntelligenceGenerationQuality.ts && tsx src/test/runTherapeuticAreaFrameworkQuality.ts && tsx src/test/runHepatitisBGeneTherapySourceIntelligenceQuality.ts && tsx src/test/runPatientEvidenceClassifierQuality.ts && tsx src/test/runAgentFrameworkQuality.ts && tsx src/test/runAgentActionMappingQuality.ts && tsx src/test/runAgentWorkspaceExperienceQuality.ts && tsx src/test/runIntelligenceModeTherapeuticAreaQuality.ts && tsx src/test/runCrossModuleIntelligenceQuality.ts && tsx src/test/runReportComposerQuality.ts && tsx src/test/runCommercialPackagingQuality.ts && tsx src/test/runMeasurementEvaluationQuality.ts && tsx src/test/runPlatformDeliverySequenceQuality.ts && tsx src/test/runMedicalAestheticsEvidenceLabelQuality.ts && tsx src/test/runMedicalAestheticsHighPriorityReviewQuality.ts && tsx src/test/runAdminUserAccessManagementQuality.ts && tsx src/test/runProductionAskEngineWiringTest.ts && tsx src/test/runWorkspaceAnswerRenderingQuality.ts && tsx src/test/runAnalyticalHybridEnrichmentQuality.ts && tsx src/test/runExecutiveBriefTooltipsQuality.ts && tsx src/test/runExecutiveIntelligenceQuality.ts && tsx src/test/runThemeKnowledgeStoreQuality.ts && tsx src/test/runThemeLongitudinalTrackingQuality.ts && tsx src/test/runThemeStrategicImplicationsQuality.ts && tsx src/test/runThemePrevalenceQuality.ts && tsx src/test/runThemeSourceAggregationQuality.ts && tsx src/test/runThemeEvidenceQuality.ts && tsx src/test/runThemeRelationshipQuality.ts && tsx src/test/evidence/runPlatformAwareSocialArchetypeTest.ts && tsx src/test/evidence/runSocialEvidenceRecoveryTest.ts && tsx src/test/evidence/runEvidenceOntologyTest.ts && tsx src/test/evidence/runRawMetadataNormalizationTest.ts && tsx src/test/runPvComplianceServicesQuality.ts && tsx src/test/runPvE2bR3AlignmentQuality.ts && tsx src/test/runFaersBotulinumIngestionQuality.ts && tsx src/test/runPvTrainingCorpusArchitectureQuality.ts && tsx src/test/runBotulinumToxinTherapeuticAreaQuality.ts && tsx src/test/runBotulinumToxinClinicalTrialsCorpusQuality.ts && tsx src/test/runBotulinumToxinPvCorpusQuality.ts",
+    "test:production": "tsx src/test/runProductionSafeguardsQuality.ts && tsx src/test/runHybridNoEvidenceGuardQuality.ts && tsx src/test/runEntitlementEngineQuality.ts && tsx src/test/runIntelligencePlatformModelQuality.ts && tsx src/test/runIntelligenceNavigationQuality.ts && tsx src/test/runConversationNavigationPersistenceQuality.ts && tsx src/test/runPrimarySearchLayoutQuality.ts && tsx src/test/runWorkspaceManagementQuality.ts && tsx src/test/runSharedIntelligencePlatformQuality.ts && tsx src/test/runEnterpriseSecurityGovernanceQuality.ts && tsx src/test/runModuleShellQuality.ts && tsx src/test/runModuleDeliveryQuality.ts && tsx src/test/runModuleIntelligenceGenerationQuality.ts && tsx src/test/runTherapeuticAreaFrameworkQuality.ts && tsx src/test/runHepatitisBGeneTherapySourceIntelligenceQuality.ts && tsx src/test/runPatientEvidenceClassifierQuality.ts && tsx src/test/runAgentFrameworkQuality.ts && tsx src/test/runAgentActionMappingQuality.ts && tsx src/test/runAgentWorkspaceExperienceQuality.ts && tsx src/test/runIntelligenceModeTherapeuticAreaQuality.ts && tsx src/test/runCrossModuleIntelligenceQuality.ts && tsx src/test/runReportComposerQuality.ts && tsx src/test/runCommercialPackagingQuality.ts && tsx src/test/runMeasurementEvaluationQuality.ts && tsx src/test/runPlatformDeliverySequenceQuality.ts && tsx src/test/runMedicalAestheticsEvidenceLabelQuality.ts && tsx src/test/runMedicalAestheticsHighPriorityReviewQuality.ts && tsx src/test/runAdminUserAccessManagementQuality.ts && tsx src/test/runProductionAskEngineWiringTest.ts && tsx src/test/runWorkspaceAnswerRenderingQuality.ts && tsx src/test/runAnalyticalHybridEnrichmentQuality.ts && tsx src/test/runExecutiveBriefTooltipsQuality.ts && tsx src/test/runExecutiveIntelligenceQuality.ts && tsx src/test/runThemeKnowledgeStoreQuality.ts && tsx src/test/runThemeLongitudinalTrackingQuality.ts && tsx src/test/runThemeStrategicImplicationsQuality.ts && tsx src/test/runThemePrevalenceQuality.ts && tsx src/test/runThemeSourceAggregationQuality.ts && tsx src/test/runThemeEvidenceQuality.ts && tsx src/test/runThemeRelationshipQuality.ts && tsx src/test/evidence/runPlatformAwareSocialArchetypeTest.ts && tsx src/test/evidence/runSocialEvidenceRecoveryTest.ts && tsx src/test/evidence/runEvidenceOntologyTest.ts && tsx src/test/evidence/runRawMetadataNormalizationTest.ts && tsx src/test/runPvComplianceServicesQuality.ts && tsx src/test/runPvE2bR3AlignmentQuality.ts && tsx src/test/runFaersBotulinumIngestionQuality.ts && tsx src/test/runPvTrainingCorpusArchitectureQuality.ts && tsx src/test/runBotulinumToxinTherapeuticAreaQuality.ts && tsx src/test/runBotulinumToxinClinicalTrialsCorpusQuality.ts && tsx src/test/runBotulinumToxinPvCorpusQuality.ts && tsx src/test/runPvIcsrEmailQuality.ts",
     "preflight": "tsx scripts/production-preflight.ts",
     "smoke:staging": "tsx scripts/staging-smoke.ts",
     "audit:production": "npm audit --omit=dev --audit-level=moderate --cache /tmp/asksocial-npm-cache",
-    "release:check": "npm run lint && npm run test:platform-persistence && npm run test:citations && npm run test:intelligence-library && npm run test:patient-intelligence && npm run test:continuous-intelligence && npm run test:pv-compliance && npm run test:production && npm run build && npm run preflight && npm run audit:production"
+    "release:check": "npm run lint && npm run test:platform-persistence && npm run test:citations && npm run test:intelligence-library && npm run test:patient-intelligence && npm run test:continuous-intelligence && npm run test:pv-compliance && npm run test:production && npm run build && npm run preflight && npm run preflight:pv-icsr && npm run audit:production",
+    "test:pv-icsr-email": "tsx src/test/runPvIcsrEmailQuality.ts",
+    "preflight:pv-icsr": "tsx scripts/pv-icsr-preflight.ts",
+    "smoke:pv-icsr": "tsx scripts/pv-icsr-staging-smoke.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -57,7 +60,7 @@
     "@supabase/supabase-js": "^2.97.0",
     "fast-xml-parser": "^5.7.1",
     "jszip": "^3.10.1",
-    "next": "^16.2.10",
+    "next": "^16.3.8",
     "openai": "^6.25.0",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^2.4.5",
@@ -69,13 +72,13 @@
     "@types/react": "19.2.14",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
     "tsx": "^4.23.1"
   },
   "overrides": {
     "next": {
-      "postcss": "8.5.10"
+      "postcss": "8.5.28"
     }
   }
 }
