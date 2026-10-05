@@ -36,9 +36,9 @@ assert(styles.includes(".pv-lifecycle-card:hover") && compliance.includes("pv-li
 assert(!styles.includes(".asksocial-workarea-header-card:hover"), "The page header card must remain visually anchored on rollover.");
 assert(styles.includes("prefers-reduced-motion") && styles.includes(":focus"), "The visual system must retain motion and focus accessibility safeguards.");
 assert(landing.includes('bg-[#edf3f0]') && landing.includes("LandingWordmark"), "The public landing page must use the Sage Mist ground and AskSocial wordmark.");
-assert(landing.includes("Turn social data into strategic answers.") && landing.includes("Report-backed intelligence + live emerging narratives"), "The landing hero must communicate the reference value proposition.");
+assert(landing.includes("Understand what people are really saying—and why it matters.") && landing.includes("AI-powered audience intelligence"), "The landing hero must communicate the open-web audience intelligence positioning.");
 assert(landing.includes("IntelligencePreview") && landing.includes("What themes are driving confusion or concern?"), "The landing hero must retain its conversational intelligence preview.");
-for (const capability of ["Ask strategic questions", "Blend baseline and live context", "Surface narratives, not just volume"]) {
+for (const capability of ["Ask naturally", "Search beyond social", "Find what dashboards miss", "Understand what it means"]) {
   assert(landing.includes(capability), `The landing capability grid is missing ${capability}.`);
 }
 assert(designSystem.includes("Insight → Theme → Supporting evidence → Full mention → Original source"), "Evidence provenance must be documented as a first-class product journey.");
