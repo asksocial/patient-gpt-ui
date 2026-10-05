@@ -125,7 +125,7 @@ export default async function Home() {
         </section>
 
         <section id="how-it-works" className="rounded-[2rem] bg-white px-6 py-12 shadow-[0_1px_2px_rgba(12,41,35,0.03),0_18px_50px_rgba(12,41,35,0.04)] sm:px-10 lg:px-14 lg:py-14">
-          <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-end">
+          <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-start">
             <div className="max-w-xl">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0c7a69]">How it works</div>
               <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-[-0.04em] text-[#0b2822] sm:text-5xl">From the open web to actionable intelligence</h2>
