@@ -28,6 +28,8 @@ export type Fields<K extends string> = { [P in K]: CaseField };
 export type SeriousnessEvidence = Omit<CaseField, "value"> & { value: "evidence_present" | "evidence_absent_from_source" | "requires_pv_review" };
 export type R3AlignedCase = {
   schemaVersion: "asksocial-r3-intake-1";
+  /** Exact canonical review approved in Structured Review; required for queue eligibility. */
+  structuredReviewId?: string;
   id: string;
   identification: Fields<"reportType" | "country">;
   status: "detected" | "requires_review" | "reviewed" | "email_ready" | "sent" | "exported";

@@ -4,13 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
 import { resolvePvReviewCompletionNavigation } from "../lib/pv/reviewNavigation";
 import Tooltip from "./ui/Tooltip";
-import PvIcsrReview from "./PvIcsrReview";
+import PvStructuredCaseHistory from "./PvStructuredCaseHistory";
+import PvStructuredClinicalFields from "./PvStructuredClinicalFields";
+import PvReviewedEmailQueue from "./PvReviewedEmailQueue";
 
 const TABS = [
   ["overview", "Compliance Overview"],
   ["queue", "Review Queue"],
   ["health", "Health Experience Detection"],
-  ["handoff", "QA & Sponsor Handoff"],
+  ["handoff", "Reviewed Cases & Email"],
   ["transfers", "Transfers"],
   ["reconciliation", "Reconciliation"],
   ["sources", "Source Registry"],
@@ -749,9 +751,11 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const [selectedClasses, setSelectedClasses] = useState(record.proposed_classifications || []);
   const [rationale, setRationale] = useState("");
   const [reviewError, setReviewError] = useState("");
+  const [reviewedFields,setReviewedFields]=useState(reviews[0]?.validated_ae_ontology?.reviewedCaseFields||{});
+  const [initialFollowUp,setInitialFollowUp]=useState("Initial");
+  const [casePreview,setCasePreview]=useState(null);
+  const [completionAttested,setCompletionAttested]=useState(false);
   const [patientEvidenceConfirmed, setPatientEvidenceConfirmed] = useState(retainedOntology?.icsrAssessment?.patientAssessment?.reviewerConfirmed === true);
-  const [destination, setDestination] = useState("");
-  const [transferMethod, setTransferMethod] = useState("manual_export");
   const [historyView, setHistoryView] = useState("history");
   const proposedOntology = retainedOntology && Object.keys(retainedOntology).length ? retainedOntology : record.ae_ontology || {};
   const retainedIcsr = proposedOntology.icsrAssessment || {};
@@ -759,8 +763,8 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const retainedPatient = retainedIcsr.patientAssessment || {};
   const retainedReporter = retainedIcsr.reporterAssessment || {};
   const [ontologyReview, setOntologyReview] = useState({
-    productProcedure: proposedOntology.productProcedures?.[0]?.value || record.product_name || "",
-    adverseEvent: proposedOntology.adverseEvents?.[0]?.value || record.potential_event || "",
+    productProcedure: proposedOntology.productProcedures?.map(p=>p.value).join("\n") || record.product_name || "",
+    adverseEvent: proposedOntology.adverseEvents?.map(e=>e.value).join("\n") || record.potential_event || "",
     seriousness: proposedOntology.seriousness?.value || "unclear",
     outcome: proposedOntology.outcomes?.[0]?.category || "unknown",
     timeToOnset: proposedOntology.timeToOnset?.category || "unknown",
@@ -826,8 +830,8 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   function validatedOntology() {
     return {
       ...proposedOntology,
-      productProcedures: ontologyReview.productProcedure ? [{ value: ontologyReview.productProcedure, evidence: proposedOntology.productProcedures?.[0]?.evidence || "Reviewer confirmed", confidence: 1 }] : [],
-      adverseEvents: ontologyReview.adverseEvent ? [{ value: ontologyReview.adverseEvent, evidence: proposedOntology.adverseEvents?.[0]?.evidence || "Reviewer confirmed", confidence: 1 }] : [],
+      productProcedures: ontologyReview.productProcedure.split("\n").map(v=>v.trim()).filter(Boolean).map(value=>({value,evidence:proposedOntology.productProcedures?.find(p=>p.value===value)?.evidence || "Reviewer confirmed",confidence:1})),
+      adverseEvents: ontologyReview.adverseEvent.split("\n").map(v=>v.trim()).filter(Boolean).map(value=>({value,evidence:proposedOntology.adverseEvents?.find(e=>e.value===value)?.evidence || "Reviewer confirmed",confidence:1})),
       seriousness: { ...(proposedOntology.seriousness || {}), value: ontologyReview.seriousness, confidence: ontologyReview.seriousness === "unclear" ? 0 : 1 },
       outcomes: ontologyReview.outcome === "unknown" ? [] : [{ category: ontologyReview.outcome, value: ontologyReview.outcome, evidence: proposedOntology.outcomes?.[0]?.evidence || "Reviewer confirmed", confidence: 1 }],
       timeToOnset: { category: ontologyReview.timeToOnset, value: ontologyReview.timeToOnsetDetail || undefined, evidence: proposedOntology.timeToOnset?.evidence, confidence: ontologyReview.timeToOnset === "unknown" ? 0 : 1 },
@@ -884,8 +888,8 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       },
     };
   }
-  function toggleClassification(value) { setSelectedClasses((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]); }
-  async function review(decision, includeStructuredAssessment = markedReportable) {
+  function toggleClassification(value) { setCasePreview(null);setCompletionAttested(false);setSelectedClasses((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]); }
+  async function review(decision, includeStructuredAssessment = markedReportable, finalize = false) {
     if (!rationale.trim()) {
       setReviewError("Enter a reviewer rationale before saving this PV decision.");
       return;
@@ -957,13 +961,15 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
     const classifications = reclassifying
       ? selectedClasses.filter((classification) => classification !== "adverse_event")
       : includeStructuredAssessment ? selectedClasses : [];
-    const completionNavigation = resolvePvReviewCompletionNavigation(decision);
-    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "review", productMention: reclassifying ? "yes" : productMention, healthExperience: reclassifying ? "yes" : healthExperience, classifications, rationale, decision, ontologyReview: includeStructuredAssessment && !reclassifying ? validatedOntology() : undefined } }, `review:${decision}`, decision === "escalate" ? "Record marked ready for sponsor transfer." : reclassifying ? "Record reclassified and moved to Health Experience Detection." : "Record retained and closed as not reportable.", { refresh: !completionNavigation, completionNavigation, onError: setReviewError });
+    const payload={ action:decision === "escalate"&&!finalize?"review_preview":"review",productMention:reclassifying?"yes":productMention,healthExperience:reclassifying?"yes":healthExperience,classifications,rationale,decision,ontologyReview:includeStructuredAssessment&&!reclassifying?validatedOntology():undefined,initialFollowUp,reviewedFields,expectedUpdatedAt:record.updated_at };
+    if(decision === "escalate"&&!finalize){
+      const preview=await onMutate(`/api/pv/records/${record.id}`,{method:"PATCH",payload},"review:preview","Case summary prepared for Structured Review.",{refresh:false,onError: setReviewError});
+      if(preview){setCasePreview(preview);setCompletionAttested(false);}return;
+    }
+    if(decision==="escalate"&&(!casePreview||!completionAttested)){setReviewError("Review the current case summary and attest completion.");return;}
+    const completionNavigation=resolvePvReviewCompletionNavigation(decision);
+    const data=await onMutate(`/api/pv/records/${record.id}`,{method:"PATCH",payload:{...payload,completionAttested,previewHash:casePreview?.previewHash}},`review:${decision}`,decision==="escalate"?"Structured Review completed. Case added to the reviewed-case email queue; nothing was sent.":reclassifying?"Record reclassified as Health Experience.":"Record retained and closed as not reportable.",{ refresh: !completionNavigation, completionNavigation, onError: setReviewError });
     if (data && !completionNavigation) onRefresh();
-  }
-  async function transfer() {
-    const data = await onMutate(`/api/pv/records/${record.id}`, { method: "PATCH", payload: { action: "transfer", destination, transferMethod } }, "transfer", "Sponsor transfer package created with immutable payload hash.");
-    if (data) onRefresh();
   }
   return <div className="space-y-5">
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]">
@@ -980,10 +986,10 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
         {reclassifyingHealth ? <div className="space-y-4">
           <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/[0.05] p-4"><p className="text-sm font-medium text-cyan-100/80">Reclassify as Health Experience</p><p className="mt-1 text-xs leading-5 text-white/45">Use this outcome when the mention is product-linked and safety-significant but does not contain an AE/ADR signal. The original automated detection and prior review remain preserved in History &amp; Audit.</p></div>
           <div><p className="text-xs font-medium text-white/55"><FieldLabel labelText="Health Experience classification" /></p><div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{HEALTH_EXPERIENCE_CLASSIFICATIONS.map((classification) => <label key={classification} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={selectedClasses.includes(classification)} onChange={() => toggleClassification(classification)} />{label(classification)}</label>)}</div></div>
-          <label className="block text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /><textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={4} placeholder="Document why the mention is a safety-significant Health Experience rather than an AE/ADR." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" /></label>
+          <label className="block text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /><textarea value={rationale} onChange={(event) => { setRationale(event.target.value);setCasePreview(null);setCompletionAttested(false); if (reviewError) setReviewError(""); }} rows={4} placeholder="Document why the mention is a safety-significant Health Experience rather than an AE/ADR." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" /></label>
           <div className="flex flex-wrap gap-2"><button type="button" disabled={busy.startsWith("review:")} onClick={() => review("reclassify_health_experience", false)} className="cursor-pointer rounded-xl bg-cyan-200 px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:reclassify_health_experience" ? "Saving…" : "Save Health Experience reclassification"}</button><button type="button" onClick={() => { setReclassifyingHealth(false); setReviewError(""); }} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60">Cancel</button></div>
         </div> : <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-          <label className="text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /><textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={3} placeholder="Required when closing or reclassifying the mention." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" /></label>
+          <label className="text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /><textarea value={rationale} onChange={(event) => { setRationale(event.target.value);setCasePreview(null);setCompletionAttested(false); if (reviewError) setReviewError(""); }} rows={3} placeholder="Required when closing or reclassifying the mention." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" /></label>
           <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setMarkedReportable(true); setReviewError(""); }} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black">Mark as Reportable</button><button type="button" onClick={() => { setSelectedClasses((current) => current.filter((classification) => classification !== "adverse_event")); setReclassifyingHealth(true); setReviewError(""); }} className="cursor-pointer rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-medium text-cyan-200">Reclassify as Health Experience</button><button type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant", false)} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Reportable"}</button></div>
         </div>}
         {reviewError ? <p role="alert" className="mt-3 text-xs text-amber-300">{reviewError}</p> : null}
@@ -993,11 +999,14 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       <Card title="Structured human review" subtitle="Complete the four minimum ICSR criteria first. AskSocial starts Day Zero only when a qualified reviewer confirms and escalates a complete case.">
         <MinimumCriteriaSummary product={productMention} event={healthExperience} patient={patientCriterion} reporter={reporterCriterion} />
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          <DecisionSelect labelText="Does the content mention or reasonably imply a sponsor product?" value={productMention} onChange={setProductMention} />
-          <DecisionSelect labelText="Does it describe a health experience or potential special situation?" value={healthExperience} onChange={setHealthExperience} />
+          <DecisionSelect labelText="Does the content mention or reasonably imply a sponsor product?" value={productMention} onChange={value=>{setProductMention(value);setCasePreview(null);setCompletionAttested(false);}} />
+          <DecisionSelect labelText="Does it describe a health experience or potential special situation?" value={healthExperience} onChange={value=>{setHealthExperience(value);setCasePreview(null);setCompletionAttested(false);}} />
         </div>
-        <div className="mt-5"><E2dCaseAssessment value={e2dReview} onChange={setE2dReview} patientCriterion={patientCriterion} reporterCriterion={reporterCriterion} patientEvidenceConfirmed={patientEvidenceConfirmed} onPatientEvidenceConfirmed={setPatientEvidenceConfirmed} /></div>
-        <div className="mt-5"><PvOntologyReview value={ontologyReview} onChange={setOntologyReview} /></div>
+        <div className="mt-5"><E2dCaseAssessment value={e2dReview} onChange={value=>{setE2dReview(value);setCasePreview(null);setCompletionAttested(false);}} patientCriterion={patientCriterion} reporterCriterion={reporterCriterion} patientEvidenceConfirmed={patientEvidenceConfirmed} onPatientEvidenceConfirmed={value=>{setPatientEvidenceConfirmed(value);setCasePreview(null);setCompletionAttested(false);}} /></div>
+        <label className="mt-5 block text-sm text-white/65">Initial / Follow-up<select aria-label="Initial or Follow-up" value={initialFollowUp} onChange={e=>{setInitialFollowUp(e.target.value);setCasePreview(null);setCompletionAttested(false);}} className="ml-3 rounded-lg border border-white/20 bg-black p-2"><option>Initial</option><option>Follow-up</option></select></label>
+        <p className="mt-2 text-xs text-white/40">Enter separate products and events on separate lines. Report origin (spontaneous/solicited) is separate from Initial/Follow-up.</p>
+        <div className="mt-5"><PvOntologyReview value={ontologyReview} onChange={value=>{setOntologyReview(value);setCasePreview(null);setCompletionAttested(false);}} /></div>
+        <PvStructuredClinicalFields initialReviewedFields={reviews[0]?.validated_ae_ontology?.reviewedCaseFields||{}} recordId={record.id} onChange={(path,field)=>{setReviewedFields(current=>({...current,[path]:field}));setCasePreview(null);setCompletionAttested(false);}}/>
         <div className="mt-5 grid gap-5 xl:grid-cols-2">
           <div>
             <p className="text-xs font-medium text-white/55"><FieldLabel labelText="Classification" /></p>
@@ -1005,18 +1014,20 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
           </div>
           <div>
             <label className="text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /></label>
-            <textarea value={rationale} onChange={(event) => { setRationale(event.target.value); if (reviewError) setReviewError(""); }} rows={6} placeholder="Document the source evidence and reasoning supporting the final decision." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" />
+            <textarea value={rationale} onChange={(event) => { setRationale(event.target.value);setCasePreview(null);setCompletionAttested(false); if (reviewError) setReviewError(""); }} rows={6} placeholder="Document the source evidence and reasoning supporting the final decision." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" />
             {reviewError ? <p role="alert" className="mt-2 text-xs text-amber-300">{reviewError}</p> : <p className="mt-2 text-[11px] text-white/30">A rationale and at least one classification are required for escalation.</p>}
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" disabled={busy.startsWith("review:")} onClick={() => review("escalate")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:escalate" ? "Saving…" : "Confirm reportability & escalate"}</button>
+              <button type="button" disabled={busy.startsWith("review:")} onClick={() => review("escalate")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:escalate" ? "Saving…" : "Review case summary"}</button>
               <button type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant")} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Reportable"}</button>
             </div>
           </div>
         </div>
       </Card>
     ) : null}
-    <PvIcsrReview key={record.id} recordId={record.id} />
-    {record.status === "ready_for_transfer" ? <Card title="Sponsor transfer service" subtitle="AskSocial constructs the handoff package from immutable evidence, review decisions, provenance, and the final reviewer-approved adverse-event ontology."><div className="grid gap-3 md:grid-cols-3"><input value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="Sponsor destination" className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white outline-none" /><select value={transferMethod} onChange={(event) => setTransferMethod(event.target.value)} className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white"><option value="manual_export">Manual secure export</option><option value="secure_api">Secure API</option><option value="sftp">SFTP</option><option value="secure_email">Secure email</option></select><button type="button" disabled={busy === "transfer" || !destination.trim()} onClick={transfer} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{busy === "transfer" ? "Creating package…" : "Transfer to Sponsor"}</button></div></Card> : null}
+
+    {casePreview ? <section aria-label="Structured Review completion" className="rounded-xl border border-cyan-300/30 p-5"><h3 className="font-semibold text-white">Complete Structured Review</h3><p className="mt-2 text-sm text-white/55">Inspect the complete case summary, source evidence and missing information. Make corrections in Structured Review above, then prepare a fresh summary. Completion enables email composition; it does not send.</p><label className="mt-3 block text-sm text-white/70">Case summary<textarea readOnly rows={20} className="mt-2 w-full rounded-xl border border-white/20 bg-black/40 p-3 text-sm text-white" value={casePreview.text}/></label><label className="mt-3 flex items-start gap-2 text-sm text-white/70"><input type="checkbox" checked={completionAttested} onChange={e=>setCompletionAttested(e.target.checked)}/>I reviewed all case details, source evidence, the narrative and explicit missing information, and approve this case for the R3 email queue.</label><button type="button" disabled={!completionAttested||busy.startsWith("review:")} onClick={()=>review("escalate",true,true)} className="mt-4 rounded-xl bg-cyan-100 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-40">Complete Structured Review & add to email queue</button>{reviewError?<p role="alert" className="mt-2 text-amber-200">{reviewError}</p>:null}</section>:null}
+    {record.status === "ready_for_transfer" ? <Card title="Review completed" subtitle="Compose and send notifications from Reviewed Cases & Email. Review completion does not send an email." /> : null}
+    <PvStructuredCaseHistory recordId={record.id}/>
     <details className="group rounded-2xl border border-white/10 bg-white/[0.02]">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-medium text-white/70 marker:hidden">
         <span><span className="block">History &amp; Audit</span><span className="mt-1 block text-xs font-normal text-white/30">The complete review, transfer, and provenance ledger for this record.</span></span>
@@ -1107,7 +1118,7 @@ function E2dCaseAssessment({ value, onChange, patientCriterion, reporterCriterio
   </section>;
 }
 
-function OntologyText({ labelText, value, onChange }) { return <label className="text-xs text-white/40"><FieldLabel labelText={labelText} /><input value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
+function OntologyText({ labelText, value, onChange }) { return <label className="text-xs text-white/40"><FieldLabel labelText={labelText} /><textarea rows={2} value={value} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white" /></label>; }
 function OntologySelect({ labelText, options, value, onChange, emptyLabel = "Unclear" }) {
   const choices = options.includes("not_applicable") ? options : [...options, "not_applicable"];
   return <label className="text-xs text-white/40"><FieldLabel labelText={labelText} /><select value={value} onChange={onChange} className="mt-1.5 w-full cursor-pointer rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white">{choices.map((option) => <option key={option || "empty"} value={option}>{option === "not_applicable" ? "N/A" : option ? label(option) : emptyLabel}</option>)}</select></label>;
@@ -1134,45 +1145,8 @@ function StructuredReview({ selected, busy, onMutate, onRefreshRecord, onReturnT
   </section>;
 }
 
-function SponsorHandoff({ therapeuticArea, sponsorCases, qaNotRelevantCases, emailDeliveryConfigured, busy, onMutate, onOpenRecord }) {
-  const [sponsorEmail, setSponsorEmail] = useState("");
-  const [shareConfirmOpen, setShareConfirmOpen] = useState(false);
-  const sponsorReportScope = therapeuticArea ? `?therapeuticArea=${encodeURIComponent(therapeuticArea)}` : "";
-  async function shareSponsorReport() {
-    const recipientEmail = sponsorEmail.trim();
-    const data = await onMutate("/api/pv/sponsor-reports", { payload: { therapeuticArea, recipientEmail } }, "sponsor-report:share", "Sponsor report share recorded in the governed PV audit trail.");
-    setShareConfirmOpen(false);
-    if (!data || data.delivery === "provider") return;
-    const download = document.createElement("a");
-    download.href = `/api/pv/sponsor-reports/export${sponsorReportScope}`;
-    download.download = data.fileName || "asksocial-pv-sponsor-screening-report.pdf";
-    document.body.appendChild(download);
-    download.click();
-    download.remove();
-    const subject = encodeURIComponent(`AskSocial PV sponsor screening report - ${therapeuticArea || "All topics"}`);
-    const body = encodeURIComponent(`Attached is the AskSocial ICH E2D(R1) sponsor screening report containing ${data.caseCount} escalated mention${data.caseCount === 1 ? "" : "s"}.\n\nThe PDF has been downloaded to this device. Please attach it before sending. This working document supports PV intake and does not replace qualified medical review or applicable regional reporting requirements.`);
-    window.location.href = `mailto:${encodeURIComponent(recipientEmail)}?subject=${subject}&body=${body}`;
-  }
-  return <div className="space-y-5">
-    {shareConfirmOpen ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Confirm sponsor report handoff"><div className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300/70">Confirm sponsor handoff</p><h2 className="mt-2 text-xl font-semibold text-white">Share {sponsorCases.length} screened assessment{sponsorCases.length === 1 ? "" : "s"}?</h2><p className="mt-3 text-sm leading-6 text-white/45">The ICH E2D(R1) PDF will be prepared for <span className="font-medium text-white/75">{sponsorEmail.trim()}</span>. If governed email delivery is configured, this confirmation sends the attachment and records the transfer. Otherwise, AskSocial downloads the PDF and opens a draft email for your final review.</p><div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setShareConfirmOpen(false)} disabled={busy === "sponsor-report:share"} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">Cancel</button><button type="button" onClick={shareSponsorReport} disabled={busy === "sponsor-report:share"} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "sponsor-report:share" ? "Sending…" : "Confirm & continue"}</button></div></div></div> : null}
-    <Card title="Sponsor-ready assessments" subtitle="Quality-assure every escalated assessment, create the ICH E2D(R1) PDF, and prepare the governed sponsor handoff from one dedicated workspace." actions={<ToneBadge tone={sponsorCases.length ? "complete" : "neutral"}>{sponsorCases.length} screened mention{sponsorCases.length === 1 ? "" : "s"}</ToneBadge>}>
-      {sponsorCases.length ? <div className="space-y-4">
-        <div className="max-h-[30rem] overflow-auto rounded-xl border border-white/10"><table className="w-full min-w-[1080px] text-left text-xs"><thead className="sticky top-0 bg-[#090909] text-white/35"><tr>{["Product / procedure", "Adverse event", "Day-zero timestamp", "Reviewer", "Minimum criteria", "Transfer status", "QA action"].map((item) => <th key={item} className="px-3 py-3">{item}</th>)}</tr></thead><tbody>{sponsorCases.map((item) => {
-          const ontology = item.review?.validated_ae_ontology || {};
-          const criteria = ontology.icsrAssessment?.minimumCriteria || {};
-          const criteriaMet = [criteria.suspectProduct, criteria.adverseEventOrObservation, criteria.identifiablePatient, criteria.identifiableReporter].every((criterion) => criterion?.status === "yes");
-          return <tr key={item.id} className="border-t border-white/[0.06] text-white/55"><td className="px-3 py-3 text-white/75">{ontology.productProcedures?.[0]?.value || item.record.product_name || "Unspecified"}</td><td className="px-3 py-3">{ontology.adverseEvents?.[0]?.value || item.record.potential_event || "Unspecified"}</td><td className="px-3 py-3">{formatDate(item.record.reportability_identified_at || item.review.reviewed_at)}</td><td className="px-3 py-3">{item.review.reviewer_id}</td><td className="px-3 py-3"><ToneBadge tone={criteriaMet ? "healthy" : "approaching"}>{criteriaMet ? "Complete" : "Follow-up needed"}</ToneBadge></td><td className="px-3 py-3">{label(item.transfer?.status || "not_transferred")}</td><td className="px-3 py-3"><button type="button" onClick={() => onOpenRecord(item.record.id)} disabled={busy === `record:${item.record.id}`} className="cursor-pointer rounded-lg border border-cyan-300/20 px-3 py-2 text-xs font-semibold text-cyan-300 disabled:cursor-not-allowed disabled:opacity-40">{busy === `record:${item.record.id}` ? "Opening…" : "Review assessment"}</button></td></tr>;
-        })}</tbody></table></div>
-        <div className="grid gap-3 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4 lg:grid-cols-[auto_1fr_auto] lg:items-end">
-          <a href={`/api/pv/sponsor-reports/export${sponsorReportScope}`} download className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black">Create PDF</a>
-          <label className="text-xs text-white/40">Sponsor email<input type="email" value={sponsorEmail} onChange={(event) => setSponsorEmail(event.target.value)} placeholder="pv@sponsor.com" className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" /></label>
-          <button type="button" onClick={() => setShareConfirmOpen(true)} disabled={!sponsorEmail.trim() || busy === "sponsor-report:share"} className="cursor-pointer rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-semibold text-cyan-300 disabled:cursor-not-allowed disabled:opacity-40">Review email handoff</button>
-        </div>
-        <p className="text-[11px] leading-5 text-white/30">If a governed email provider is configured, AskSocial sends the PDF as an attachment. Otherwise, the PDF downloads and your email client opens with a prepared message so you can attach and send it.</p>
-      </div> : <Empty>Escalated structured reviews will appear here as sponsor-ready assessments.</Empty>}
-    </Card>
-    <QaNotRelevantHandoff therapeuticArea={therapeuticArea} cases={qaNotRelevantCases} emailDeliveryConfigured={emailDeliveryConfigured} busy={busy} onMutate={onMutate} />
-  </div>;
+function SponsorHandoff({ therapeuticArea, qaNotRelevantCases, emailDeliveryConfigured, busy, onMutate, onOpenRecord }) {
+ return <div className="space-y-5"><PvReviewedEmailQueue key={therapeuticArea} therapeuticArea={therapeuticArea} onOpenRecord={onOpenRecord}/><QaNotRelevantHandoff therapeuticArea={therapeuticArea} cases={qaNotRelevantCases} emailDeliveryConfigured={emailDeliveryConfigured} busy={busy} onMutate={onMutate}/></div>;
 }
 
 function QaNotRelevantHandoff({ therapeuticArea, cases, emailDeliveryConfigured, busy, onMutate }) {

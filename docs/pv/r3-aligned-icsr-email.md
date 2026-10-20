@@ -1,3 +1,5 @@
+> October 20 refinement: the separate R3 review/email panel is superseded by one Structured Review and the reviewed-case email queue. See [current workflow](./structured-review-email-queue.md). Original extraction/history remain retained; legacy ICSR mutations are blocked. The domain architecture below remains the baseline.
+
 # R3-aligned ICSR review and email
 
 ## Existing architecture and extension

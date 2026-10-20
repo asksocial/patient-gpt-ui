@@ -188,7 +188,7 @@ export function buildEcosystemNavigation(
               },
               {
                 id: "pv_handoff",
-                label: "QA & Sponsor Handoff",
+                label: "Reviewed Cases & Email",
                 kind: "destination" as const,
               },
               {

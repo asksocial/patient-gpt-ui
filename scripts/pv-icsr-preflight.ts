@@ -15,6 +15,7 @@ async function main() {
   for (const [table, columns] of [
     ["pv_records", "id,principal_id,original_verbatim,ae_ontology"],
     ["pv_audit_events", "id,principal_id,event_hash"],
+    ["pv_icsr_email_batches", "id,principal_id,created_by,status,payload,provider_reference,updated_at"],
     ["pv_icsr_cases", "record_id,principal_id,revision,snapshot,updated_by,updated_at"],
     ["pv_icsr_case_revisions", "record_id,principal_id,revision,action,snapshot,changes,reviewer_id,reviewed_at"],
   ]) {

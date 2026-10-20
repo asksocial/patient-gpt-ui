@@ -1,3 +1,6 @@
+import { structuredIcsr, structuredPreviewHash, externalStructuredText } from "./icsr/structured";
+import { changedPaths } from "./icsr/review";
+import type { IcsrSnapshot } from "./icsr/types";
 import { createHash } from "node:crypto";
 import { getSupabaseServerClient } from "../supabase/server";
 import type { PlatformPrincipal } from "../intelligence-platform/persistence";
@@ -1085,7 +1088,7 @@ export async function reopenPvRecordReview(principal: PlatformPrincipal, recordI
   return { status: updated.status, previousStatus: record.status, reopenedAt };
 }
 
-export async function reviewPvRecord(principal: PlatformPrincipal, recordId: string, decision: PvReviewDecision) {
+export async function reviewPvRecord(principal: PlatformPrincipal, recordId: string, decision: PvReviewDecision, previewOnly = false) {
   assertPrincipal(principal);
   if (!decision.rationale.trim()) throw new Error("Reviewer rationale is required.");
   const healthExperienceClassifications = decision.classifications.filter((classification) => classification !== "adverse_event");
@@ -1097,7 +1100,7 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
   )) {
     throw new Error("Health Experience reclassification requires a confirmed product relationship, a safety-significant observation, and at least one non-AE Health Experience classification.");
   }
-  if (decision.action === "escalate" && (decision.productMention === "no" || decision.healthExperience === "no" || !decision.classifications.length)) {
+  if (decision.action === "escalate" && (decision.productMention !== "yes" || decision.healthExperience !== "yes" || !decision.classifications.length)) {
     throw new Error("Escalation requires product relevance, a health experience or special situation, and at least one classification.");
   }
   if (decision.action === "escalate") {
@@ -1137,23 +1140,20 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     .eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
   if (recordLookupError) throw new Error(`Failed to load PV record for review: ${recordLookupError.message}`);
   if (!record) throw new Error("PV record not found.");
-  if (["transferred", "acknowledged", "reconciled", "ready_for_transfer"].includes(record.status)) throw new Error("Sponsor-ready or transferred PV records cannot be reclassified without a governed correction workflow.");
+  if (["transferred", "acknowledged", "reconciled"].includes(record.status)) throw new Error("Sponsor-ready or transferred PV records cannot be reclassified without a governed correction workflow.");
   const reviewedAt = new Date().toISOString();
   const regulatoryVersions = pvE2bVersionSnapshot();
   const reviewPayload = {
     principal_id: principal.principalId, record_id: recordId, reviewer_id: principal.actorId,
     product_mention: decision.productMention, health_experience: decision.healthExperience, classifications: decision.classifications,
     rationale: decision.rationale.trim(), decision: decision.action, reviewed_at: reviewedAt,
-    validated_ae_ontology: decision.ontologyReview || {},
+    validated_ae_ontology: { ...(decision.ontologyReview || {}), reviewedCaseFields: decision.reviewedFields || {} },
     e2b_mapping_version: regulatoryVersions.mappingVersion,
+    originalDetectionSegment: derivePvDetectionSegment(record),
+    reviewerDetectionSegment: decision.action === "reclassify_health_experience" ? "health_experience" : null,
+    ontologyReviewed: Boolean(decision.ontologyReview),
+    dayZeroStarted: decision.action === "escalate" && !record.reportability_identified_at,
   };
-  let reviewResult = await supabase.from("pv_reviews").insert(reviewPayload).select("*").single();
-  if (reviewResult.error && /e2b_mapping_version/i.test(reviewResult.error.message || "")) {
-    const { e2b_mapping_version: _legacySchemaOmission, ...legacyReviewPayload } = reviewPayload;
-    reviewResult = await supabase.from("pv_reviews").insert(legacyReviewPayload).select("*").single();
-  }
-  const { data: review, error: reviewError } = reviewResult;
-  if (reviewError || !review) throw new Error(`Failed to save PV review: ${reviewError?.message || "missing row"}`);
   const nextStatus = decision.action === "escalate"
     ? "ready_for_transfer"
     : decision.action === "reclassify_health_experience" ? "health_experience" : "not_relevant";
@@ -1177,19 +1177,23 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     recordUpdates.segment_reclassified_at = null;
     recordUpdates.segment_reclassified_by = null;
   }
-  const { data: updatedRecord, error: updateError } = await supabase.from("pv_records").update(recordUpdates)
-    .eq("id", recordId).eq("principal_id", principal.principalId)
-    .select("*").maybeSingle();
-  if (updateError || !updatedRecord) {
-    throw new Error(`Failed to update PV record status: ${updateError?.message || "the governed record was not updated"}`);
-  }
-  if (
-    decision.action === "reclassify_health_experience" &&
-    (updatedRecord.status !== "health_experience" || derivePvDetectionSegment(updatedRecord) !== "health_experience")
-  ) {
-    throw new Error("Failed to retain the Health Experience reclassification on the governed PV record.");
-  }
-  await appendPvAuditEvent(principal, { action: `review.${decision.action}`, resourceType: "pv_record", resourceId: recordId, outcome: "completed", metadata: { reviewId: review.id, classifications: decision.classifications, originalDetectionSegment: derivePvDetectionSegment(record), reviewerDetectionSegment: decision.action === "reclassify_health_experience" ? "health_experience" : null, ontologyReviewed: Boolean(decision.ontologyReview), retained: true, e2bMappingVersion: regulatoryVersions.mappingVersion, reportabilityIdentifiedAt: decision.action === "escalate" ? reportabilityIdentifiedAt : null, dayZeroStarted: decision.action === "escalate" && !record.reportability_identified_at } });
+  if (!decision.expectedUpdatedAt || decision.expectedUpdatedAt !== record.updated_at) throw Object.assign(new Error("Another reviewer changed this record. Reload Structured Review."), { status: 409 });
+  const { data: head, error: headError } = await supabase.from("pv_icsr_cases").select("snapshot").eq("record_id", recordId).eq("principal_id", principal.principalId).maybeSingle();
+  if (headError) throw new Error("ICSR storage unavailable. Verify the selected release migration.");
+  const previous = head?.snapshot as IcsrSnapshot | undefined;
+  const previewHash = structuredPreviewHash(record, decision, previous?.revision || 0);
+  const snapshot = decision.action === "escalate" ? structuredIcsr(record, decision.ontologyReview, decision.initialFollowUp, principal.actorId, reviewedAt, previous, decision.reviewedFields) : null;
+  (reviewPayload as Record<string, unknown>).icsrChangedPaths = snapshot ? changedPaths(previous || null,snapshot) : ["caseData.approval","caseData.status"];
+  if (previewOnly) return { previewHash, text: snapshot ? externalStructuredText(snapshot,decision.ontologyReview,decision.classifications) : "", recordUpdatedAt: record.updated_at };
+  if (decision.action === "escalate" && (decision.completionAttested !== true || decision.previewHash !== previewHash)) throw new Error("Inspect the current case preview and attest completion in Structured Review before adding it to the email queue.");
+  const { data: saved, error: saveError } = await supabase.rpc("complete_pv_structured_review", {
+    p_record_id: recordId, p_principal_id: principal.principalId, p_actor_id: principal.actorId,
+    p_expected_updated_at: record.updated_at, p_review: reviewPayload, p_updates: recordUpdates,
+    p_expected_revision: previous?.revision || 0, p_snapshot: snapshot,
+  });
+  if (saveError) throw Object.assign(new Error(`Failed to save PV review: ${saveError.message}`), { status: /conflict/.test(saveError.message) ? 409 : 400 });
+  const review = saved.review;
+  const updatedRecord = saved.record;
   const [enrichedRecord] = await enrichPvRecordRows(principal, [updatedRecord]);
   return {
     review,

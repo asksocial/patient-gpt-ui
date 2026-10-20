@@ -221,6 +221,11 @@ export type PvReviewDecision = {
   rationale: string;
   action: "escalate" | "close_not_relevant" | "reclassify_health_experience";
   ontologyReview?: PvAdverseEventOntology;
+  reviewedFields?: Record<string, any>;
+  initialFollowUp?: "Initial" | "Follow-up";
+  expectedUpdatedAt?: string;
+  completionAttested?: boolean;
+  previewHash?: string;
 };
 
 export type PvReconciliationIssueType =

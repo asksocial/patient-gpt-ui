@@ -164,7 +164,7 @@ const DESTINATION_COPY = {
   },
   pv_handoff: {
     eyebrow: "PV Compliance",
-    title: "QA & Sponsor Handoff",
+    title: "Reviewed Cases & Email",
     description: "Quality-check escalated cases, create sponsor-ready PDFs, and coordinate governed handoff.",
   },
   pv_transfers: {

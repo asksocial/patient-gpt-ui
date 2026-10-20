@@ -1,4 +1,15 @@
-# ICSR email release checklist — October 1, 2026
+# ICSR email release checklist
+
+## October 20 workflow refinement — implementation in isolated checkout
+
+The owner requested one canonical Structured Review, followed by a discretionary reviewed-case email queue and one combined PDF with each case starting on its own page. The separate R3 email review panel is removed from the UI. Long evidence continues on labelled pages.
+
+Implementation branch: `codex/icsr-structured-email-queue`, based on Scope A commit `dd78048`. Matching migration: `202610200002_structured_review_email_queue.sql`. See `docs/pv/structured-review-email-queue.md` for workflow, validation and staging prerequisites. No deferred ODCS/background/GLP-1 code is included.
+
+No live migration, deployment or email was performed for this refinement. Staging schema compatibility and branch-specific secrets must be verified before deployment; the confirmed override on `codex/icsr-email-release` does not automatically cover this new branch. Authenticated browser/HTTP concurrency and qualified PV acceptance remain release gates.
+
+The following October 1 results are historical baseline evidence, not approval of the refined candidate.
+
 
 Release decision: **HOLD**. The implementation and staging database checks pass; production dependency remediation is complete. Deployed application acceptance remains open.
 

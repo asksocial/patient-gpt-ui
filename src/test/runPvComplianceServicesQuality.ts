@@ -311,9 +311,10 @@ for (const phrase of ["ICH E2D(R1) identifiability gate", "Four minimum ICSR cri
 for (const removedField of ["Patient existence status", "Patient existence verification evidence", "Patient follow-up feasible", "Patient follow-up status", "Reporter follow-up feasible", "Reporter follow-up status", "Patient characteristics", "Therapy details", "Medical history", "Concurrent conditions", "Diagnosis / laboratory evidence", "Alternative causes / confounders", "Regional / local reporting assessment", "Causality type"]) {
   assert(!workbench.includes(`labelText="${removedField}"`), `The simplified Structured Review must not render the noncritical or duplicative input ${removedField}.`);
 }
-for (const phrase of ["Sponsor-ready assessments", "Create PDF", "Review email handoff", "Minimum criteria", "Review assessment", "sponsorCases.map"]) {
-  assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing sponsor-report aggregation UX: ${phrase}.`);
-}
+assert(sponsorHandoffSource.includes("<PvReviewedEmailQueue"), "Completed Structured Reviews must feed the reviewed-case email queue.");
+assert(!workbench.includes("<PvIcsrReview"), "The duplicate R3 review panel must not render.");
+assert(workbench.includes("Complete Structured Review & add to email queue"), "Canonical review completion must enable discretionary email composition.");
+
 for (const phrase of ["QA export test · Not Reportable mentions", "QA TEST ONLY", "Create QA PDF", "Internal/test recipient email", "Share QA handoff", "Send QA email", "never changes lifecycle status or starts Day Zero"]) {
   assert(sponsorHandoffSource.includes(phrase), `QA & Sponsor Handoff is missing the segregated Not Reportable export safeguard: ${phrase}.`);
 }
@@ -359,7 +360,7 @@ assert(workbench.includes('title="Initial reportability decision"') && workbench
 assert(workbench.includes('markedReportable && !["transferred"') && workbench.includes("setMarkedReportable(true)"), "Ontology and ICH case fields must remain hidden until the reviewer marks the mention reportable.");
 assert(resolvePvReviewCompletionNavigation("close_not_relevant")?.destination === "pv_overview", "Close as Not Reportable must resolve to the canonical Compliance Overview destination.");
 assert(resolvePvReviewCompletionNavigation("reclassify_health_experience")?.destination === "pv_overview", "Health Experience reclassification must return to Compliance Overview so the affected lifecycle count is visible.");
-assert(resolvePvReviewCompletionNavigation("escalate")?.destination === "pv_overview", "Completed reportability assessments must return to Compliance Overview so the affected lifecycle count is visible.");
+assert(resolvePvReviewCompletionNavigation("escalate")?.destination === "pv_handoff", "Completed Structured Reviews must enter the discretionary email queue without sending.");
 assert(resolvePvReviewCompletionNavigation("draft") === null, "Non-terminal review decisions must remain in the structured-review flow.");
 assert(workbench.includes("if (options.completionNavigation)") && workbench.includes("onNavigate?.(options.completionNavigation.destination, { notice: success })"), "The successful terminal mutation itself must navigate with a retained confirmation so the saved decision and visible destination cannot diverge.");
 assert(workbench.includes("options.onError?.(failureMessage)") && workbench.includes("onError: setReviewError"), "A failed terminal PV mutation must display the backend reason inside the structured-review panel instead of failing without visible feedback.");
@@ -379,7 +380,7 @@ assert(workbench.includes("setTab(options.completionNavigation.tab)") && workspa
 assert(workbench.includes('option === "not_applicable" ? "N/A"') && workbench.includes('const choices = options.includes("not_applicable")'), "Every structured assessment dropdown must include an explicit N/A option.");
 assert(workbench.includes("PV_REVIEW_FIELD_TOOLTIPS") && workbench.includes("<FieldLabel labelText={labelText}"), "Structured-review fields must render contextual tooltips through the shared field-label control.");
 assert(workbench.includes("xl:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]"), "The Compliance Clock must use a compact width so the record content receives the available horizontal space.");
-assert(workbench.includes("Confirm all four minimum ICSR criteria") && workbench.includes("Confirm reportability & escalate"), "Escalation must require the four minimum ICSR criteria and explicitly establish Day Zero.");
+assert(workbench.includes("Confirm all four minimum ICSR criteria") && workbench.includes("Complete Structured Review & add to email queue"), "Escalation must require the four minimum ICSR criteria and explicitly establish Day Zero.");
 assert(!workbench.includes('disabled={busy.startsWith("review:") || !rationale.trim()}'), "PV decision buttons must not be silently disabled while the rationale is empty.");
 const importRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/pv/imports/route.ts"), "utf8");
 assert(importRoute.includes("request.formData()"), "PV CSV ingestion must use a file-upload route.");
@@ -389,7 +390,7 @@ assert(importRoute.includes('form.get("therapeuticArea")'), "PV CSV ingestion mu
 const pvService = fs.readFileSync(path.resolve(process.cwd(), "src/lib/pv/service.ts"), "utf8");
 assert(pvService.includes('.from("pv_records")\n    .select("*")') && pvService.includes("Failed to load PV record for review"), "PV review must load the governed record without requiring optional migration-era columns in the projection.");
 assert(pvService.includes('else if (supportsReviewerSegmentation)'), "Closing a review must remain compatible with legacy staging schemas that predate reviewer-segmentation columns.");
-assert(pvService.includes("legacyReviewPayload") && pvService.includes("e2bMappingVersion: regulatoryVersions.mappingVersion"), "PV review must preserve the mapping version in audit provenance while remaining compatible with a staging schema that predates the dedicated review column.");
+assert(pvService.includes("complete_pv_structured_review") && pvService.includes("e2b_mapping_version: regulatoryVersions.mappingVersion"), "Structured Review must preserve the mapping version through the required transactional migration.");
 assert(pvService.includes("Math.min(1000, input.limit || 1000)"), "PV detection views must expose the complete retained therapeutic-area evidence set up to the governed API ceiling.");
 for (const contract of ["enrichPvRecordsWithAvailableMetadata", "repeat_csv_import", "record.available_metadata_enrich", "enrichedAvailableFields", "library.therapeutic_area", "author_identifier_column"]) {
   assert(pvService.includes(contract), `Generic PV ingestion is missing the shared metadata-enrichment contract ${contract}.`);
@@ -413,7 +414,7 @@ assert(pvService.includes("startPvRecordReview") && pvService.includes('action: 
 for (const contract of ["reopenPvRecordReview", 'action: "review.reopen"', 'decision.action === "reclassify_health_experience"', "reviewer_detection_segment", "segment_reclassified_at", "originalDetectionSegment"]) {
   assert(pvService.includes(contract), `The governed Health Experience reclassification service is missing ${contract}.`);
 }
-for (const contract of ['.select("*").maybeSingle()', 'updatedRecord.status !== "health_experience"', 'derivePvDetectionSegment(updatedRecord) !== "health_experience"', "record: compactPvRecordListItem(enrichedRecord)"]) {
+for (const contract of ["complete_pv_structured_review", "const review = saved.review", "const updatedRecord = saved.record", "record: compactPvRecordListItem(enrichedRecord)"]) {
   assert(pvService.includes(contract), `PV review persistence must verify and return the saved governed record: ${contract}.`);
 }
 const reviewStartMigration = fs.readFileSync(path.resolve(process.cwd(), "supabase/migrations/202608230002_add_pv_review_start.sql"), "utf8");
@@ -448,14 +449,14 @@ for (const phrase of ["publication timestamp", "collection timestamp", "algorith
   assert(sponsorReportSource.toLowerCase().includes(phrase.toLowerCase()), `Sponsor PDF is missing E2D(R1) report content: ${phrase}.`);
 }
 assert(sponsorReportExportRoute.includes('"Content-Type": "application/pdf"') && sponsorReportExportRoute.includes("recordPvSponsorReportActivity"), "Sponsor-report export must return an audited PDF.");
-assert(sponsorReportRoute.includes("RESEND_API_KEY") && sponsorReportRoute.includes("PV_SPONSOR_FROM_EMAIL") && sponsorReportRoute.includes('transferMethod: "secure_email"'), "Sponsor-report sharing must support governed email attachment delivery and transfer provenance.");
-assert(sponsorReportRoute.includes('delivery === "provider" ? "share" : "prepare"'), "A client-email draft must be audited as prepared rather than falsely marked as sent.");
+assert(sponsorReportRoute.includes("RESEND_API_KEY") && sponsorReportRoute.includes("PV_SPONSOR_FROM_EMAIL") && sponsorReportRoute.includes("Reviewed Cases & Email"), "Legacy report endpoint must retain QA delivery but redirect sponsor sending to the selected-case email queue.");
+assert(sponsorReportRoute.includes('delivery==="provider"?"qa_share":"qa_prepare"'), "QA client-email drafts must be recorded as prepared rather than sent.");
 assert(sponsorReportRoute.includes("emailDelivery") && sponsorReportRoute.includes("No email was sent by AskSocial"), "The sponsor-report API must disclose whether direct email is configured and must not imply that a client draft was sent.");
 for (const contract of ["listPvQaNotRelevantCases", 'mode === "qa_not_relevant"', 'action: mode === "qa_not_relevant" ? "qa_export" : "export"']) {
   assert(sponsorReportExportRoute.includes(contract) || sponsorReportRoute.includes(contract) || pvService.includes(contract), `Not Reportable QA export is missing ${contract}.`);
 }
 assert(pvService.includes('.eq("decision", "close_not_relevant")') && pvService.includes('.eq("status", "not_relevant")'), "QA export examples must come only from retained Not Reportable reviews and records.");
-assert(sponsorReportRoute.includes('if (mode === "sponsor_handoff")') && sponsorReportRoute.includes('"qa_share"') && sponsorReportRoute.includes('"qa_prepare"'), "QA email delivery must be audited separately and must never call the sponsor transfer mutation path.");
+assert(!sponsorReportRoute.includes("transferPvRecord") && sponsorReportRoute.includes('"qa_share"') && sponsorReportRoute.includes('"qa_prepare"'), "QA delivery must never call the sponsor transfer mutation path.");
 for (const phrase of ["Share QA handoff", "Direct email is not configured", "Download PDF & open draft", "Send QA email"]) {
   assert(workbench.includes(phrase), `QA handoff delivery UX is missing ${phrase}.`);
 }
