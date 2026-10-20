@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from "../supabase/server";
 import type { PlatformPrincipal } from "../intelligence-platform/persistence";
 import { calculatePvClock } from "./clock";
 import { classifyPvContent, PV_CLASSIFIER_VERSION } from "./detection";
+import { classifyGlp1PvContent } from "./glp1/detection";
 import { DEFAULT_PV_SLA, derivePvOverviewMetrics } from "./overview";
 import { reconcilePvOperations } from "./reconciliation";
 import { assessIcsrIdentifiability, patientCriterionStatus, reporterCriterionStatus } from "./identifiability";
@@ -283,6 +284,10 @@ export async function detectAndStorePvContent(principal: PlatformPrincipal, inpu
   }) : null;
   const result = structuredRecognition
     ? botulinumRecognitionToLegacyDetection(input, structuredRecognition, Number(library.version))
+    : therapeuticArea === "GLP-1"
+    ? classifyGlp1PvContent(input, (conceptRows || []).map(mapConcept), {
+      threshold: Number(library.detection_threshold), libraryVersion: Number(library.version), expectedEvents: library.expected_event_terms || [],
+    })
     : classifyPvContent(input, (conceptRows || []).map(mapConcept), {
       threshold: Number(library.detection_threshold),
       libraryVersion: Number(library.version),

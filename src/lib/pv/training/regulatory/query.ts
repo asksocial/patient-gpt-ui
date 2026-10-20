@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { getBotulinumProductRegistry, getOpenFdaRegulatoryMapping } from "./config";
 import type { OpenFdaQueryDefinition, OpenFdaQueryKind } from "./types";
+import { botulinumRegulatoryConfiguration, type RegulatoryCorpusConfiguration } from "./config";
 
 function quoteOpenFdaTerm(value: string) {
   return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
@@ -22,8 +22,12 @@ export function buildBotulinumOpenFdaQueries(options: {
   suspectOnly?: boolean;
   products?: string[];
 } = {}): OpenFdaQueryDefinition[] {
-  const registry = getBotulinumProductRegistry();
-  const mapping = getOpenFdaRegulatoryMapping();
+  return buildOpenFdaQueries(options);
+}
+
+export function buildOpenFdaQueries(options: { suspectOnly?: boolean; products?: string[] } = {}, configuration: RegulatoryCorpusConfiguration = botulinumRegulatoryConfiguration): OpenFdaQueryDefinition[] {
+  const registry = configuration.productRegistry;
+  const mapping = configuration.mapping;
   const selected = new Set((options.products || []).map((value) => value.trim().toUpperCase()).filter(Boolean));
   const requested = (value: string) => selected.size === 0 || selected.has(value.toUpperCase());
   const terms: Array<{ kind: OpenFdaQueryKind; term: string; fields: string[] }> = [];
@@ -36,7 +40,7 @@ export function buildBotulinumOpenFdaQueries(options: {
   if (selected.size) {
     const configured = new Set(terms.map((item) => item.term.toUpperCase()));
     const unknown = [...selected].filter((value) => !configured.has(value));
-    if (unknown.length) throw new Error(`Unknown botulinum product target(s): ${unknown.join(", ")}`);
+    if (unknown.length) throw new Error(`Unknown ${configuration.manifest.topic === "Botulinum toxin" ? "botulinum" : configuration.manifest.topic} product target(s): ${unknown.join(", ")}`);
   }
   return terms.flatMap(({ kind, term, fields }) => fields.map((field) => {
     const targetClause = `${field}:${quoteOpenFdaTerm(term)}`;

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "registryVersion": "glp-1-2026.01.0",
+  "status": "active",
+  "scope": "GLP-1 receptor agonists and dual GIP/GLP-1 agonist tirzepatide, including historical brands and insulin combination products. Not a claim of current marketing status.",
+  "sources": ["https://www.fda.gov/consumers/womens-health-topics/women-and-diabetes-diabetes-medicines", "https://www.fda.gov/drugs/drug-safety-communications/update-fdas-ongoing-evaluation-reports-suicidal-thoughts-or-actions-patients-taking-certain-type"],
+  "families": [
+    { "familyId": "semaglutide", "brands": ["OZEMPIC", "WEGOVY", "RYBELSUS"], "activeIngredients": ["SEMAGLUTIDE"] },
+    { "familyId": "tirzepatide", "brands": ["MOUNJARO", "ZEPBOUND"], "activeIngredients": ["TIRZEPATIDE"] },
+    { "familyId": "liraglutide", "brands": ["VICTOZA", "SAXENDA", "XULTOPHY", "XULTOPHY 100/3.6"], "activeIngredients": ["LIRAGLUTIDE"] },
+    { "familyId": "dulaglutide", "brands": ["TRULICITY"], "activeIngredients": ["DULAGLUTIDE"] },
+    { "familyId": "exenatide", "brands": ["BYETTA", "BYDUREON", "BYDUREON BCISE"], "activeIngredients": ["EXENATIDE"] },
+    { "familyId": "lixisenatide", "brands": ["ADLYXIN", "LYXUMIA", "SOLIQUA", "SOLIQUA 100/33", "SULIQUA"], "activeIngredients": ["LIXISENATIDE"] }
+  ]
+}

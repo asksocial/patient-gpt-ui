@@ -11,6 +11,7 @@ const nextConfig = {
     "/api/monitoring/run": ["./data/*.csv"],
     "/api/cron/monitoring": ["./data/*.csv"],
     "/api/pv/corpora/botulinum-toxin": ["./data/botulinum-toxin-pv-relevance.csv"],
+    "/api/pv/corpora/glp-1": ["./data/glp-1.csv"],
   },
 };
 

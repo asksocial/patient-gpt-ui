@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
-import { getBotulinumProductRegistry, getBotulinumRegulatoryCorpusManifest, getOpenFdaRegulatoryMapping } from "./config";
 import { faersDeduplicationKey, normalizeOpenFdaRegulatoryCase, sourceProductValues, sourceReactionValues } from "./normalize";
-import { buildBotulinumOpenFdaQueries, redactOpenFdaApiKey, withOpenFdaApiKey } from "./query";
+import { redactOpenFdaApiKey, withOpenFdaApiKey } from "./query";
+import { buildOpenFdaQueries } from "./query";
+import { botulinumRegulatoryConfiguration, type RegulatoryCorpusConfiguration } from "./config";
 import type {
   OpenFdaIngestionResult,
   OpenFdaMalformedRecord,
@@ -14,6 +15,7 @@ import type {
 type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
 export type OpenFdaIngestionOptions = {
+  configuration?: RegulatoryCorpusConfiguration;
   apiKey?: string;
   products?: string[];
   suspectOnly?: boolean;
@@ -126,12 +128,17 @@ function recordObservation(rawRecord: unknown, query: OpenFdaQueryDefinition, re
 }
 
 export async function ingestBotulinumOpenFda(options: OpenFdaIngestionOptions = {}): Promise<OpenFdaIngestionResult> {
-  const mapping = getOpenFdaRegulatoryMapping();
-  const corpusManifest = getBotulinumRegulatoryCorpusManifest();
+  return ingestOpenFda(options);
+}
+
+export async function ingestOpenFda(options: OpenFdaIngestionOptions = {}): Promise<OpenFdaIngestionResult> {
+  const configuration = options.configuration || botulinumRegulatoryConfiguration;
+  const mapping = configuration.mapping;
+  const corpusManifest = configuration.manifest;
   const fetchImpl = options.fetchImpl || fetch;
   const now = options.now || (() => new Date());
   const sleep = options.sleep || ((milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds)));
-  const queries = buildBotulinumOpenFdaQueries({ suspectOnly: options.suspectOnly, products: options.products });
+  const queries = buildOpenFdaQueries({ suspectOnly: options.suspectOnly, products: options.products }, configuration);
   const startedAt = now().toISOString();
   const records = new Map<string, {
     rawSourceRecordSha256: string;
@@ -245,8 +252,8 @@ export async function ingestBotulinumOpenFda(options: OpenFdaIngestionOptions = 
                 await invokePersistenceHook("query-observation", options.onQueryObservation, { deduplicationKey, observation });
                 continue;
               }
-              const normalized = normalizeOpenFdaRegulatoryCase(rawRecord, [observation]);
-              if (query.suspectOnly && !normalized.normalized.drugs.some((drug) => drug.is_target_botulinum_product && drug.drug_role === "suspect")) {
+              const normalized = normalizeOpenFdaRegulatoryCase(rawRecord, [observation], configuration);
+              if (query.suspectOnly && !normalized.normalized.drugs.some((drug) => (drug.is_target_product || drug.is_target_botulinum_product) && drug.drug_role === "suspect")) {
                 run.recordsRejectedBySuspectPostFilter += 1;
                 continue;
               }
@@ -317,7 +324,7 @@ export async function ingestBotulinumOpenFda(options: OpenFdaIngestionOptions = 
     startedAt,
     completedAt: now().toISOString(),
     configurationVersion: corpusManifest.configurationVersion,
-    productRegistryVersion: getBotulinumProductRegistry().registryVersion,
+    productRegistryVersion: configuration.productRegistry.registryVersion,
     sourceMappingVersion: mapping.mappingVersion,
     status: complete ? "complete" : "partial",
     truncated,

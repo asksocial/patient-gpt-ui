@@ -1,6 +1,7 @@
 import { ThemeTaxonomy } from "../themeModels";
 import { regenerativeAestheticsThemeTaxonomy } from "./regenerativeAesthetics";
 import { botulinumToxinThemeTaxonomy } from "./botulinumToxin";
+import { glp1ThemeTaxonomy } from "./glp1";
 import { createGenericThemeTaxonomy } from "./genericTherapeuticArea";
 import { normalizeTherapeuticAreaId } from "../../../lib/analytics/coverage";
 
@@ -10,6 +11,7 @@ const medicalAestheticsThemeTaxonomy: ThemeTaxonomy = {
 };
 
 export const THEME_TAXONOMIES: Record<string, ThemeTaxonomy> = {
+  glp_1: glp1ThemeTaxonomy,
   regenerative_aesthetics: regenerativeAestheticsThemeTaxonomy,
   medical_aesthetics: medicalAestheticsThemeTaxonomy,
   botulinum_toxin: botulinumToxinThemeTaxonomy,

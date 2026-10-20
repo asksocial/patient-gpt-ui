@@ -75,3 +75,13 @@ export function getBotulinumProductRegistry() {
 export function getOpenFdaRegulatoryMapping() {
   return sourceMapping;
 }
+
+export type RegulatoryCorpusConfiguration = {
+  manifest: BotulinumRegulatoryCorpusManifest;
+  productRegistry: BotulinumProductRegistry;
+  mapping: OpenFdaRegulatoryMapping;
+};
+
+export const botulinumRegulatoryConfiguration: RegulatoryCorpusConfiguration = {
+  manifest, productRegistry, mapping: sourceMapping,
+};

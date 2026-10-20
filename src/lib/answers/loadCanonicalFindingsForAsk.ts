@@ -112,6 +112,16 @@ const CORPORA: Record<
   string,
   CorpusDefinition
 > = {
+  glp_1: {
+    source: "meltwater_csv",
+    sourceLabel: "GLP-1 Meltwater canonical corpus",
+    load: () => ingestMeltwaterCsv(requireFile("data/glp-1.csv"), {
+      sourceType: "meltwater",
+      therapeuticArea: "glp_1",
+      profileId: "glp_1",
+      includeCurated: false,
+    }) as CanonicalFinding[],
+  },
   hepatitis_b: {
     source: "meltwater_csv",
     sourceLabel:

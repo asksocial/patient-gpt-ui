@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { getBotulinumRegulatoryCorpusManifest } from "./config";
+import { botulinumRegulatoryConfiguration, type RegulatoryCorpusConfiguration } from "./config";
 import type { OpenFdaIngestionResult } from "./types";
 
 function writeJsonLines(filePath: string, rows: unknown[]) {
@@ -12,11 +12,11 @@ function writeJsonLines(filePath: string, rows: unknown[]) {
   }
 }
 
-export function writeOpenFdaRegulatoryCorpus(result: OpenFdaIngestionResult, outputDirectory: string) {
+export function writeOpenFdaRegulatoryCorpus(result: OpenFdaIngestionResult, outputDirectory: string, configuration: RegulatoryCorpusConfiguration = botulinumRegulatoryConfiguration) {
   const resolved = path.resolve(outputDirectory);
   if (fs.existsSync(resolved)) throw new Error(`Output directory already exists: ${resolved}. Choose a new directory to preserve immutable corpus snapshots.`);
   fs.mkdirSync(resolved, { recursive: true });
-  const manifest = getBotulinumRegulatoryCorpusManifest();
+  const manifest = configuration.manifest;
   writeJsonLines(path.join(resolved, "raw-records.jsonl"), result.rawRecords);
   writeJsonLines(path.join(resolved, "query-observations.jsonl"), result.rawRecords.flatMap((record) => record.observations.map((observation) => ({ deduplicationKey: record.deduplicationKey, observation }))));
   writeJsonLines(path.join(resolved, "normalized-records.jsonl"), result.normalizedRecords);
@@ -54,7 +54,7 @@ export function writeOpenFdaRegulatoryCorpus(result: OpenFdaIngestionResult, out
   return { outputDirectory: resolved, manifest: outputManifest };
 }
 
-export function createOpenFdaRegulatoryCorpusWriter(outputDirectory: string) {
+export function createOpenFdaRegulatoryCorpusWriter(outputDirectory: string, configuration: RegulatoryCorpusConfiguration = botulinumRegulatoryConfiguration) {
   const resolved = path.resolve(outputDirectory);
   if (fs.existsSync(resolved)) throw new Error(`Output directory already exists: ${resolved}. Choose a new directory to preserve immutable corpus snapshots.`);
   fs.mkdirSync(resolved, { recursive: true });
@@ -84,7 +84,7 @@ export function createOpenFdaRegulatoryCorpusWriter(outputDirectory: string) {
       fs.closeSync(observationDescriptor);
       writeJsonLines(path.join(resolved, "normalized-records.jsonl"), result.normalizedRecords);
       writeJsonLines(path.join(resolved, "malformed-records.jsonl"), result.malformedRecords);
-      const corpusManifest = getBotulinumRegulatoryCorpusManifest();
+      const corpusManifest = configuration.manifest;
       const outputManifest = {
         schemaVersion: "1.0.0",
         corpusType: "regulatory_case_corpus",
