@@ -35,16 +35,22 @@ assert.throws(()=>structuredIcsr(record,ontology,"Initial","a",review.reviewed_a
 const reordered=structuredIcsr(record,{...ontology,productProcedures:[...multi.caseData.suspectProducts].reverse().map(p=>({value:p.brandName.value})),adverseEvents:[...ontology.adverseEvents]},"Initial","a",review.reviewed_at,multi);
 assert.equal(reordered.caseData.suspectProducts[0].brandName.value,"Dysport");
 const one=await createIcsrCasePdf(first.caseData,review);
+assert.equal((await PDFDocument.load(one.bytes)).getPageCount(),1,"A concise case should fit the supplied single-sheet format");
 const secondCase={...first.caseData,id:"b23d8974-4fa5-4115-891b-f26abf054eae"};
 const longReview={...review,validated_ae_ontology:{icsrAssessment:{clinicalNarrative:{clinicalCourse:"LONG EVIDENCE TOKEN ".repeat(1200)+"FINAL-EVIDENCE-MARKER"}}}};
 const two=await createIcsrCasePdf(secondCase,longReview);
+const multiPdf=await createIcsrCasePdf(multi.caseData,review);
+assert.ok((await PDFDocument.load(multiPdf.bytes)).getPageCount()>=1);
+const longUrlCase={...first.caseData,sourceEvidence:first.caseData.sourceEvidence.map(s=>({...s,url:"https://example.invalid/"+"long-source-token".repeat(2000)}))};
+assert.ok((await PDFDocument.load((await createIcsrCasePdf(longUrlCase,review)).bytes)).getPageCount()>1,"Very long source URLs paginate without clipping");
 const report=await combineIcsrCasePdfs([{recordId:first.caseData.id,content:Buffer.from(one.bytes).toString("base64")},{recordId:secondCase.id,content:Buffer.from(two.bytes).toString("base64")}]);
 assert.equal(report.ranges[1].firstPage,report.ranges[0].lastPage+1);
 assert.equal((await PDFDocument.load(report.bytes)).getPageCount(),report.ranges[1].lastPage);
 assert.ok(report.ranges[1].lastPage>report.ranges[1].firstPage,"Long source evidence must continue without truncation");
+if(process.env.ASKSOCIAL_PV_TEST_SINGLE_PDF)writeFileSync(process.env.ASKSOCIAL_PV_TEST_SINGLE_PDF,one.bytes);
 if(process.env.ASKSOCIAL_PV_TEST_PDF)writeFileSync(process.env.ASKSOCIAL_PV_TEST_PDF,report.bytes);
 const ui=readFileSync("src/components/PvComplianceCenter.jsx","utf8");assert.ok(!ui.includes("<PvIcsrReview"));assert.ok(ui.includes("Complete Structured Review & add to email queue"));
-console.log("PASS canonical review approval, missing criteria, immutable extraction, stale preview, multiple products/events, one combined paginated PDF and internal-information exclusion. Synthetic sample: /tmp/asksocial-structured-queue-synthetic.pdf");
+console.log(`PASS canonical review approval, missing criteria, immutable extraction, stale preview, multiple products/events, one combined paginated PDF and internal-information exclusion. Synthetic sample: ${process.env.ASKSOCIAL_PV_TEST_PDF || "not written"}`);
 
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
