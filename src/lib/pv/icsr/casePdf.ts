@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { ICSR_LOGO_PNG_BASE64 } from "./pdfBranding";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { outwardStructuredAssessment } from "./structured";
 import { generateIcsrEmail, fieldLabel, ICSR_ASSESSMENT } from "./email";
@@ -10,6 +11,7 @@ import type { CaseField, R3AlignedCase } from "./types";
 export async function createIcsrCasePdf(c: R3AlignedCase, review: Record<string, any>) {
  const email = generateIcsrEmail(c); // Enforce approval and minimum-criteria validation before rendering.
  const pdf = await PDFDocument.create();
+ const logo = await pdf.embedPng(Buffer.from(ICSR_LOGO_PNG_BASE64, "base64"));
  const regular = await pdf.embedFont(StandardFonts.Helvetica);
  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
  const ink=rgb(.04,.17,.15), teal=rgb(0,.43,.37), muted=rgb(.43,.43,.43), rule=rgb(.81,.81,.8);
@@ -30,8 +32,9 @@ export async function createIcsrCasePdf(c: R3AlignedCase, review: Record<string,
  const line=(x1:number,x2:number,at:number,dark=false)=>page.drawLine({start:{x:x1,y:at},end:{x:x2,y:at},thickness:dark?1.2:.4,color:dark?ink:rule});
  const draw=(text:string,x:number,at:number,size=7.2,strong=false,color=ink)=>page.drawText(printable(text),{x,y:at,size,font:strong?bold:regular,color});
  function header(continued=false){
-  draw("AskSocial",40,756,14,true);draw("PV COMPLIANCE",150,757,7,false,muted);
-  draw("R3-ALIGNED CASE SUMMARY",150,746,6.5,false,muted);
+  page.drawImage(logo,{x:40,y:746,width:110,height:110*logo.height/logo.width});
+  draw("PV COMPLIANCE",165,757,7,false,muted);
+  draw("R3-ALIGNED CASE SUMMARY",165,746,6.5,false,muted);
   draw("HUMAN REVIEWED",465,755,6.5,true,teal);line(40,572,738,true);
   draw(continued?`Case ${c.id} - continued`:`Case ${c.id}`,40,727,6.5,false,muted);
   y=714;
