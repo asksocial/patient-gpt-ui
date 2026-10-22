@@ -1,33 +1,14 @@
-/** Roles describe source attribution; conversation types describe the content.
- * Native disclosures keep the full breakdown and provenance available without
- * requiring client state or another request.
- */
-export default function PersonaIntelligencePanel({ summary }) {
-  const publicGroup = summary.segments.find(segment => segment.id === "public_discussion");
-  const fullCorpus = summary.scope === "full_corpus";
-  const universe = fullCorpus ? "corpus" : "selected";
-  return <div className="space-y-5">
-    <p className="text-sm leading-6 text-white/70">
-      {summary.denominator.toLocaleString()} {fullCorpus ? "posts in the full source corpus" : "selected posts"} across {summary.roleCount} audience and source groups. Shares measure posts; one author can contribute more than one.
-      {summary.denominator < 20 ? " This small sample is directional." : ""}
-    </p>
-    {fullCorpus ? <p className="text-xs leading-5 text-white/55">All source rows contribute to these shares. {summary.analyticalCount.toLocaleString()} posts are retained for thematic analytics; {summary.excludedFromAnalysisCount.toLocaleString()} excluded records remain designated here. The ranked examples used in the answer do not change this denominator.</p> : null}
-    {summary.patientRelated ? <div className="rounded-xl border border-white/10 p-4">
-      <p className="font-semibold text-white/85">Patient-related content · {summary.patientRelated.count.toLocaleString()} posts ({summary.patientRelated.percent}%)</p>
-      <p className="mt-2 text-sm leading-6 text-white/70">Includes {summary.patientRelated.likelyVoiceCount.toLocaleString()} likely patient/caregiver voices, plus patient-community context and third-party or commercially influenced accounts. These posts overlap the audience rows below; this broader grouping does not establish patient authorship.</p>
-      <details className="mt-3"><summary className="cursor-pointer text-sm font-medium text-cyan-300">Patient-related content breakdown</summary>
-        <table className="mt-3 w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Content group</th><th scope="col" className="py-2 text-right">Posts</th><th scope="col" className="py-2 text-right">Share of {universe} posts</th></tr></thead><tbody>
-          {summary.patientRelated.breakdown.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{item.percent}%</td></tr>)}
-        </tbody></table>
-      </details>
-    </div> : null}
+import { groupClientAudiences } from "../answering/personas/clientAudienceGroups";
+
+function AudienceSubtypeTable({ segments }) {
+  return (
     <div className="overflow-x-auto rounded-xl border border-white/10">
       <table className="w-full text-left text-sm">
-        <caption className="px-4 py-3 text-left font-semibold text-white/85">Who is contributing, and what are they discussing?</caption>
+        <caption className="px-4 py-3 text-left font-semibold text-white/85">Audience subtypes and classification evidence</caption>
         <thead className="border-y border-white/10 bg-white/[0.03] text-xs text-white/55"><tr>
           <th scope="col" className="px-4 py-3">Audience / source</th><th scope="col" className="px-4 py-3 text-right">Posts</th><th scope="col" className="px-4 py-3 text-right">Share</th><th scope="col" className="px-4 py-3">Main conversation types</th><th scope="col" className="px-4 py-3">Classification evidence</th>
         </tr></thead>
-        <tbody>{summary.segments.map(segment => <tr key={segment.id} className="border-b border-white/10 align-top last:border-0">
+        <tbody>{segments.map(segment => <tr key={segment.id} className="border-b border-white/10 align-top last:border-0">
           <th scope="row" className="min-w-48 px-4 py-3 font-medium text-white/85"><span>{segment.label}</span><p className="mt-1 text-xs font-normal leading-5 text-white/50">{segment.description}</p></th>
           <td className="px-4 py-3 text-right tabular-nums text-white/80">{segment.count.toLocaleString()}</td>
           <td className="px-4 py-3 text-right tabular-nums text-white/80">{segment.percent}%</td>
@@ -42,13 +23,69 @@ export default function PersonaIntelligencePanel({ summary }) {
         </tr>)}</tbody>
       </table>
     </div>
-    {publicGroup ? <details open className="rounded-xl border border-white/10 p-4">
-      <summary className="cursor-pointer font-semibold text-white/85">Inside public discussion · {publicGroup.count.toLocaleString()} posts</summary>
-      <p className="mt-2 text-xs leading-5 text-white/55">These posts do not establish the writer&apos;s personal or professional role. Their content can still be segmented. Every row below is a subset of public discussion; the share uses all {summary.denominator.toLocaleString()} {universe} posts.</p>
+  );
+}
+
+function PublicConversationBreakdown({ segment, denominator, universe }) {
+  return (
+    <details open className="rounded-xl border border-white/10 p-4">
+      <summary className="cursor-pointer font-semibold text-white/85">Inside public discussion · {segment.count.toLocaleString()} posts</summary>
+      <p className="mt-2 text-xs leading-5 text-white/55">These posts do not establish the writer&apos;s personal or professional role. Their content can still be segmented. Every row below is a subset of public discussion; the share uses all {denominator.toLocaleString()} {universe} posts.</p>
       <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Conversation type</th><th scope="col" className="py-2 text-right">Posts</th><th scope="col" className="py-2 text-right">Share of {universe} posts</th></tr></thead>
-        <tbody>{publicGroup.conversations.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{Math.round(item.count / summary.denominator * 10000) / 100}%</td></tr>)}</tbody>
+        <tbody>{segment.conversations.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{Math.round(item.count / denominator * 10000) / 100}%</td></tr>)}</tbody>
       </table></div>
-    </details> : null}
+    </details>
+  );
+}
+
+function AudienceGroup({ group, denominator, universe }) {
+  const publicSubtype = group.subtypes.find(subtype => subtype.id === "public_discussion");
+  return <details className="rounded-xl border border-white/10">
+    <summary className="cursor-pointer px-4 py-4 text-white/85">
+      <span className="ml-1 font-semibold">{group.label}</span>
+      <span className="ml-3 text-sm font-normal text-white/70">{group.count.toLocaleString()} posts · {group.percent}%</span>
+      <span className="ml-3 text-xs font-normal text-cyan-300">{group.excluded ? "View excluded records" : `View ${group.subtypes.length} ${group.subtypes.length === 1 ? "subtype" : "subtypes"}`}</span>
+    </summary>
+    <div className="space-y-4 border-t border-white/10 p-4">
+      <p className="text-sm leading-6 text-white/65">{group.description}</p>
+      {group.subtypes.length ? <AudienceSubtypeTable segments={group.subtypes} /> : <p className="text-sm text-white/55">No posts in this group.</p>}
+      {publicSubtype ? <PublicConversationBreakdown segment={publicSubtype} denominator={denominator} universe={universe} /> : null}
+    </div>
+  </details>;
+}
+
+/** Six client-facing voices, with granular roles and source evidence retained
+ * inside native disclosures. Off-topic records are a separate, closed bucket. */
+export default function PersonaIntelligencePanel({ summary }) {
+  const groups = summary.clientGroups || groupClientAudiences(summary.segments, summary.denominator);
+  const audiences = groups.filter(group => !group.excluded);
+  const exclusion = groups.find(group => group.excluded);
+  const fullCorpus = summary.scope === "full_corpus";
+  const universe = fullCorpus ? "corpus" : "selected";
+  return <div className="space-y-5">
+    <p className="text-sm leading-6 text-white/70">
+      {summary.denominator.toLocaleString()} {fullCorpus ? "posts in the full source corpus" : "selected posts"} · {audiences.length} audience groups, plus a separate off-topic bucket. Shares measure posts; one author can contribute more than one.
+      {summary.denominator < 20 ? " This small sample is directional." : ""}
+    </p>
+    {fullCorpus ? <p className="text-xs leading-5 text-white/55">All source rows contribute to these shares. {summary.analyticalCount.toLocaleString()} posts are retained for thematic analytics; {summary.excludedFromAnalysisCount.toLocaleString()} excluded records remain designated here. The off-topic bucket contains {exclusion.count.toLocaleString()} records. Another {(summary.excludedFromAnalysisCount - exclusion.count).toLocaleString()} spam or promotional records are excluded only from thematic analytics. Shares always use all {summary.denominator.toLocaleString()} source rows.</p> : null}
+    {summary.patientRelated ? <div className="rounded-xl border border-white/10 p-4">
+      <p className="font-semibold text-white/85">Patient-related content · {summary.patientRelated.count.toLocaleString()} posts ({summary.patientRelated.percent}%)</p>
+      <p className="mt-2 text-sm leading-6 text-white/70">Includes {summary.patientRelated.likelyVoiceCount.toLocaleString()} likely patient/caregiver voices, plus patient-community context and third-party or commercially influenced accounts. These posts overlap the audience rows below; this broader grouping does not establish patient authorship.</p>
+      <details className="mt-3"><summary className="cursor-pointer text-sm font-medium text-cyan-300">Patient-related content breakdown</summary>
+        <table className="mt-3 w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Content group</th><th scope="col" className="py-2 text-right">Posts</th><th scope="col" className="py-2 text-right">Share of {universe} posts</th></tr></thead><tbody>
+          {summary.patientRelated.breakdown.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{item.percent}%</td></tr>)}
+        </tbody></table>
+      </details>
+    </div> : null}
+    <section aria-label="Audience groups" className="space-y-3">
+      <h4 className="font-semibold text-white/85">Whose voice is this?</h4>
+      <p className="text-xs leading-5 text-white/55">Expand a group to see its audience subtypes, conversation types and original-source evidence. Every percentage uses all {summary.denominator.toLocaleString()} {universe} posts.</p>
+      {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={summary.denominator} universe={universe} />)}
+    </section>
+    <section aria-label="Exclusion bucket" className="space-y-2">
+      <p className="text-xs text-white/50">Excluded from audience groups; included in the full denominator for reconciliation.</p>
+      <AudienceGroup group={exclusion} denominator={summary.denominator} universe={universe} />
+    </section>
     <p className="text-xs leading-5 text-white/50">Roles and conversation types are machine-inferred from source metadata and available text. Clinical credentials require explicit evidence; sharing news or research alone does not establish a journalist or researcher. Patient support community membership does not establish treatment use. Figures describe this {fullCorpus ? "source corpus" : "selected sample"}.</p>
   </div>;
 }

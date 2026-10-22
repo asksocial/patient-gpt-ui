@@ -1,3 +1,4 @@
+import { groupClientAudiences, type ClientAudienceGroup } from "./clientAudienceGroups";
 import type { Glp1AudienceClassification } from "../../ingestion/glp1Audience";
 
 export type PersonaRecord = {
@@ -8,6 +9,7 @@ export type PersonaRecord = {
 import { AUDIENCE_ROLES, CONVERSATION_SEGMENTS, type AudienceRole, type ConversationSegment } from "../../ingestion/audienceSegments";
 
 export type PersonaIntelligenceSummary = {
+  clientGroups: ClientAudienceGroup[];
   scope: "full_corpus" | "selected_findings";
   analyticalCount?: number;
   excludedFromAnalysisCount?: number;
@@ -59,8 +61,8 @@ export function buildPersonaIntelligence(findings: PersonaRecord[], options: { s
     group.content.set(classification.contentSegment, (group.content.get(classification.contentSegment) || 0) + 1);
     groups.set(classification.audience, group);
   }
-  return {
-    scope: options.scope || "selected_findings",
+  const summary = {
+    scope: options.scope || "selected_findings" as const,
     analyticalCount: options.analyticalCount,
     excludedFromAnalysisCount: options.analyticalCount === undefined ? undefined : findings.length - options.analyticalCount,
     patientRelated: {
@@ -90,4 +92,5 @@ export function buildPersonaIntelligence(findings: PersonaRecord[], options: { s
       }),
     })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
   };
+  return { ...summary, clientGroups: groupClientAudiences(summary.segments, summary.denominator) };
 }

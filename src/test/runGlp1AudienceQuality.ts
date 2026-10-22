@@ -1,3 +1,4 @@
+import { CLIENT_GROUP_BY_ROLE, groupClientAudiences } from "../answering/personas/clientAudienceGroups";
 import { askSocial } from "../app/api/ask";
 import { loadGlp1PersonaIntelligence } from "../lib/answers/loadGlp1PersonaIntelligence";
 import assert from "node:assert/strict";
@@ -99,9 +100,9 @@ assert(summary.segments.length > 8);
 assert(summary.segments.every(segment => segment.conversations.reduce((n, item) => n + item.count, 0) === segment.count));
 const detailed = buildRenderedAnswer(corpus, {}, "only").sections.find(section => section.key === "persona_intelligence");
 assert(detailed?.personaIntelligence);
-assert(detailed.bullets!.length > summary.segments.length, "Public discussion must show its individual conversation segments");
-assert(detailed.bullets!.some(bullet => bullet.startsWith("Public discussion · News reporting")));
-assert(detailed.bullets!.some(bullet => bullet.startsWith("Healthcare professionals:")));
+assert.equal(detailed.personaIntelligence!.clientGroups.filter(group => !group.excluded).length, 6);
+assert(detailed.bullets!.some(bullet => bullet.startsWith("General Public:")));
+assert(detailed.bullets!.some(bullet => bullet.startsWith("Healthcare & Science:")));
 assert(detailed.bullets!.every(bullet => !/Observer-labeled|unknown|\bother\b/i.test(bullet)));
 console.log(JSON.stringify({ sourceRows: rows.length, analyticalFindings: corpus.length, patientLabels: classified.filter(c => c.audience === "patient").length, unassigned: 0, provenanceAndAudienceConsistency: true }, null, 2));
 
@@ -133,3 +134,22 @@ for (const question of ["What are people saying right now?", "What education bar
 full.denominator = 0;
 assert.equal(loadGlp1PersonaIntelligence().denominator, 5000, "A consumer cannot mutate cached corpus composition");
 console.log("PASS full-corpus persona composition, 639 patient-related records, strict voice subset, excluded-record visibility, and ranking/intent independence");
+
+const grouped = loadGlp1PersonaIntelligence().clientGroups;
+assert.equal(Object.keys(CLIENT_GROUP_BY_ROLE).length, Object.keys(AUDIENCE_ROLES).length, "Every granular role has exactly one client-facing designation");
+assert.deepEqual(grouped.map(group => [group.label, group.count, group.percent]), [
+  ["Patients & Their Circle", 596, 11.92], ["Healthcare & Science", 72, 1.44],
+  ["Health & Wellness Influencers", 75, 1.5], ["Industry & Markets", 145, 2.9],
+  ["Media & Advocacy", 1895, 37.9], ["General Public", 2043, 40.86],
+  ["Excluded / Off-topic", 174, 3.48],
+]);
+assert.equal(grouped.filter(group => !group.excluded).reduce((n, group) => n + group.count, 0), 4826);
+assert.equal(grouped.reduce((n, group) => n + group.count, 0), 5000);
+assert.equal(grouped.flatMap(group => group.subtypes).length, 15);
+assert.equal(new Set(grouped.flatMap(group => group.subtypes.map(subtype => subtype.id))).size, 15);
+assert.equal(CLIENT_GROUP_BY_ROLE.advocacy, "media_advocacy");
+assert.equal(CLIENT_GROUP_BY_ROLE.clinic_telehealth, "healthcare_science");
+assert.equal(grouped.find(group => group.id === "patients_circle")!.subtypes.reduce((n, subtype) => n + subtype.count, 0), 596);
+assert.equal(loadGlp1PersonaIntelligence().patientRelated.count, 639, "The audience grouping must not replace the broader patient-content lens");
+assert.deepEqual(groupClientAudiences(full.segments, 5000), grouped, "Historical granular summaries can derive the same client grouping");
+console.log("PASS six exclusive client-facing groups, granular drill-downs, separate off-topic bucket and unchanged full-corpus denominator");

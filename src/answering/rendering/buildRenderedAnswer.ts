@@ -989,18 +989,13 @@ function buildPersonaSection(
     return {
       key: "persona_intelligence",
       title: "Persona Intelligence",
-      text: `Audience and source roles across ${summary.denominator.toLocaleString()} ${summary.scope === "full_corpus" ? "posts in the full source corpus" : "selected posts"}; ${summary.classifiedCount.toLocaleString()} have detailed classifications. Shares measure posts, and one author can contribute multiple posts. Specific professional roles require source, account or self-description evidence. ${summary.denominator < LOW_SAMPLE_THRESHOLD ? "This small sample is directional. " : ""}The main conversation types within each group are shown below.`,
+      text: `Audience and source roles across ${summary.denominator.toLocaleString()} ${summary.scope === "full_corpus" ? "posts in the full source corpus" : "selected posts"}; ${summary.classifiedCount.toLocaleString()} have detailed classifications. Shares measure posts, and one author can contribute multiple posts. Specific professional roles require source, account or self-description evidence. ${summary.denominator < LOW_SAMPLE_THRESHOLD ? "This small sample is directional. " : ""}Six client-facing audience groups retain their granular source roles and conversation types in drill-downs. Off-topic content is a separate exclusion bucket.`,
       bullets: [
         `Patient-related content: ${summary.patientRelated.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${summary.patientRelated.percent}%). This includes ${summary.patientRelated.likelyVoiceCount} likely patient/caregiver voices plus community context, third-party stories, reposts and commercial testimonials. This content grouping overlaps the audience rows.`,
         ...(summary.scope === "full_corpus" ? [`Full source corpus denominator: ${summary.denominator.toLocaleString()} rows. ${summary.analyticalCount?.toLocaleString()} rows are retained for thematic analytics; ${summary.excludedFromAnalysisCount?.toLocaleString()} are excluded from thematic analytics but remain in this composition. Ranked answer examples do not determine these shares.`] : []),
-        ...summary.segments.flatMap(segment => {
-        if (segment.id === "public_discussion") {
-          return segment.conversations.map(item => `Public discussion · ${item.label}: ${item.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${Math.round(item.count / summary.denominator * 10000) / 100}%). The speaker's personal or professional role is not stated.`);
-        }
-        const activity = segment.conversations.slice(0, 2).map(item => `${item.label.toLowerCase()} (${item.count.toLocaleString()})`).join("; ");
-        const boundary = segment.id === "patient_community" ? " Community participation does not establish personal treatment use." : segment.id === "patient" || segment.id === "caregiver" ? " These are likely, machine-inferred voices." : "";
-        return [`${segment.label}: ${segment.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${segment.percent}%). Main activity: ${activity}.${boundary}`];
-      })],
+        ...summary.clientGroups.filter(group => !group.excluded).map(group => `${group.label}: ${group.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${group.percent}%). Subtypes: ${group.subtypes.map(subtype => `${subtype.label} (${subtype.count.toLocaleString()})`).join("; ")}.`),
+        ...summary.clientGroups.filter(group => group.excluded && group.count).map(group => `${group.label}: ${group.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${group.percent}%). Excluded from audience groups; retained in the denominator for source-corpus reconciliation.`),
+      ],
       personaIntelligence: summary,
       findings: [],
     };

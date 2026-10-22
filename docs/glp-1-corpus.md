@@ -214,6 +214,48 @@ patient-content reconciliation and independence from the ranked evidence limit.
 Historical saved answers retain their original snapshots; new analyses use the
 corrected full-corpus composition.
 
+## Six client-facing audience groups (October 22, 2026)
+
+The default view answers “Whose voice is this?” with six closed, expandable
+audience groups and one separate closed exclusion bucket. The original 15
+nonempty granular designations remain visible as subtypes with their original
+counts, shares, conversation types, classification evidence and source links.
+General Public's 19 conversation types appear inside its drill-down. The same
+mapping is used for API summaries, text fallback answers, the UI and audit exports.
+Historical summaries containing only granular labels derive the grouping in the UI.
+
+All shares still use the full 5,000-row source corpus, including hidden off-topic
+records. No renormalization occurs when exclusions are collapsed:
+
+| Client group | Posts | Share of 5,000 |
+| --- | ---: | ---: |
+| Patients & Their Circle | 596 | 11.92% |
+| Healthcare & Science | 72 | 1.44% |
+| Health & Wellness Influencers | 75 | 1.50% |
+| Industry & Markets | 145 | 2.90% |
+| Media & Advocacy | 1,895 | 37.90% |
+| General Public | 2,043 | 40.86% |
+| Excluded / Off-topic (separate bucket) | 174 | 3.48% |
+| **Total** | **5,000** | **100%** |
+
+Advocacy remains under Media & Advocacy because organizational representation
+does not establish a personal patient voice. Clinics and pharmacies remain
+under Healthcare & Science as care-delivery organizations; their subtype and
+commercial conversation classifications remain explicit. These are grouping
+choices, not reclassification of individual source records or credentials.
+
+The six audience groups cover 4,826 posts. The separate exclusion bucket contains
+174 off-topic posts. Another 89 spam/promotional records are excluded only from
+thematic analytics and retain their source groups in this composition. The
+broader patient-related content lens remains 639 (12.78%) with 277 likely voices;
+it overlaps source groups and does not equal Patients & Their Circle (596).
+
+The labeled CSV preserves all 49 source columns and now adds 19 audit columns,
+including Client Audience Group and Client Audience Group Name alongside the
+unchanged granular audience fields. Regression checks assert exclusive mapping,
+all-row reconciliation, source-denominator percentages, subtype preservation and
+the advocacy/clinic placement decisions.
+
 ## Registration and verification
 
 Apply `supabase/migrations/202610200001_register_glp_1.sql` to each target database.
