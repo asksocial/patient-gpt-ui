@@ -1,3 +1,4 @@
+import { buildCorpusCharts } from "../../answering/personas/buildCorpusCharts";
 import path from "node:path";
 import { parseMeltwaterCsv, adaptMeltwaterRows } from "../../ingestion/adapters/meltwaterAdapter";
 import { glp1Profile } from "../../ingestion/profiles/glp1Profile";
@@ -11,12 +12,14 @@ let cached: PersonaIntelligenceSummary | undefined;
 export function loadGlp1PersonaIntelligence(): PersonaIntelligenceSummary {
   if (!cached) {
     const rows = parseMeltwaterCsv(path.resolve(process.cwd(), "data/glp-1.csv"));
-    const analyticalCount = adaptMeltwaterRows(rows, { sourceType: "meltwater", profile: glp1Profile }).length;
+    const analytical = adaptMeltwaterRows(rows, { sourceType: "meltwater", profile: glp1Profile });
+    const analyticalCount = analytical.length;
     cached = buildPersonaIntelligence(rows.map((fields, index) => ({
       findingId: `glp1-source-row-${index + 2}`,
       audienceClassification: classifyGlp1Audience(fields),
       rawMetadata: { fields },
     })), { scope: "full_corpus", analyticalCount });
+    cached.corpusCharts = buildCorpusCharts(analytical);
   }
   return structuredClone(cached);
 }

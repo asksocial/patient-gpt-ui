@@ -171,3 +171,21 @@ assert.equal(refreshGlp1PersonaComposition(stored, "Gene Therapy"), stored);
 assert.equal(refreshGlp1PersonaComposition(refreshed, "GLP-1"), refreshed, "Current summaries need no refresh");
 console.log("PASS 639 unique patient-related posts, no duplicate client assignment, and read-only refresh of saved full-corpus composition");
 console.log("PASS six exclusive client-facing groups, granular drill-downs, separate off-topic bucket and unchanged full-corpus denominator");
+
+const charts = current.corpusCharts!;
+assert.equal(charts.version, 1);
+for (const chart of [charts.burdens, charts.markets]) {
+  assert.equal(chart.denominator, 4737, "Charts use all retained analytical posts, independent of the 50 ranked examples");
+  assert.equal(chart.segments.reduce((n, s) => n + s.count, 0), chart.denominator, "Donut slices partition the complete denominator");
+}
+assert.equal(charts.burdens.highlightCount, 376);
+assert.equal(charts.burdens.segments.find(s => s.id === "overlap")!.count, 20);
+assert.equal(charts.markets.highlightLabel, "United States");
+assert.equal(charts.markets.highlightCount, 1687);
+assert.deepEqual(charts.markets.segments.slice(0, 3).map(s => s.count), [1687, 882, 526]);
+const oldChartless = structuredClone(current);
+delete oldChartless.corpusCharts;
+const chartRefreshed = refreshGlp1PersonaComposition({ analyticalAnswer: { sections: [{ key: "persona_intelligence", personaIntelligence: oldChartless }] } }, "GLP-1");
+assert.equal(chartRefreshed.analyticalAnswer.sections[0].personaIntelligence.corpusCharts?.burdens.highlightCount, 376);
+assert.equal(oldChartless.corpusCharts, undefined, "Chart refresh must not mutate saved reports");
+console.log("PASS full-corpus donut totals, unique burden overlap, source markets and saved-report chart refresh");

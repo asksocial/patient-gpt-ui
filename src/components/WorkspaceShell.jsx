@@ -11,6 +11,7 @@ import GovernanceCenter from "./GovernanceCenter";
 import IntelligenceLibrary from "./IntelligenceLibrary";
 import PatientIntelligenceView from "./PatientIntelligenceView";
 import PersonaIntelligencePanel from "./PersonaIntelligencePanel";
+import CorpusDonutCards from "./CorpusDonutCards";
 import ModuleIntelligenceView from "./ModuleIntelligenceView";
 import MonitoringCenter from "./MonitoringCenter";
 import PvComplianceCenter from "./PvComplianceCenter";
@@ -703,6 +704,7 @@ function AssistantAnswer({
 function AnalyticalAssistantAnswer({ responsePayload }) {
   const analyticalAnswer = responsePayload?.analyticalAnswer || null;
   const sections = analyticalAnswer?.sections || [];
+  const corpusSummary = sections.find(section => section.personaIntelligence?.scope === "full_corpus" && section.personaIntelligence?.corpusCharts)?.personaIntelligence;
 
   if (!analyticalAnswer) return null;
 
@@ -717,7 +719,9 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
         </p>
       </Panel>
 
-      {sections.filter((section) => section.key !== "live_data_check").map((section, index) => (
+      {corpusSummary ? <CorpusDonutCards summary={corpusSummary} /> : null}
+
+      {sections.filter((section) => section.key !== "live_data_check").filter((section) => !(corpusSummary && ["top_burdens", "market_variation"].includes(section.key))).map((section, index) => (
         <Panel
           key={`${section.key || section.title}-${index}`}
           title={section.title || "Supporting Intelligence"}

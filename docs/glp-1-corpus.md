@@ -297,3 +297,9 @@ FDA reference snapshot, a draft detection library, and governed social screening
 It requires library approval before screening and does not establish regulatory
 readiness or ODCS qualification. Tolerability themes in conversational intelligence
 remain social analysis, not an adverse-event determination.
+
+### Corpus overview donuts
+
+The analytical report replaces the burden and market bullet cards with three corpus overview donuts, retaining the detailed persona drill-down below. Burdens and markets use all 4,737 retained analytical posts; persona slices come directly from the detailed six-group composition plus the exclusion bucket across all 5,000 source rows. No values use the ranked 50-answer sample or the reference mockup percentages.
+
+The two leading burdens overlap in 20 posts. The donut partitions them into weight/metabolic only (311), appetite/eating only (45), both (20), and all other findings (4,361). Its center is the 376 unique posts mentioning either leading burden (7.9%). Market source metadata yields United States 1,687 (35.6%), South Korea 882 (18.6%), Japan 526 (11.1%), and other/unspecified 1,642 (34.7%). Persona highlights 639 patients/circle posts (12.8%). Exact counts are available through chart/legend tooltips and accessible labels. Saved full-source GLP-1 reports receive these corpus charts on read without rewriting historical narrative or stored messages.
