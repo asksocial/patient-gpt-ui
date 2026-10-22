@@ -43,6 +43,77 @@ function sourceDetails(values, count, separator = ", ") {
   return count ? `${count} (names unavailable in this saved analysis)` : "None identified";
 }
 
+function groupRelationships(nodes, edges) {
+  const cooccurrences = edges.filter((edge) => edge.relationshipType === "co_occurs_with");
+  const hub = nodes.map((node) => ({
+    ...node,
+    degree: cooccurrences.filter((edge) => edge.sourceThemeId === node.themeId || edge.targetThemeId === node.themeId).length,
+  })).sort((first, second) => second.degree - first.degree)[0];
+  const primary = hub?.degree > 1 ? cooccurrences.filter((edge) =>
+    edge.sourceThemeId === hub.themeId || edge.targetThemeId === hub.themeId
+  ) : [];
+  const remaining = edges.filter((edge) => !primary.includes(edge));
+  const byStrength = (values) => [...values].sort((first, second) => Number(second.strength || 0) - Number(first.strength || 0));
+  return [
+    ...(primary.length ? [{ title: `Co-occurs with ${hub.label}`, hubId: hub.themeId, edges: byStrength(primary) }] : []),
+    ...(remaining.length ? [{ title: primary.length ? "Other supported pairs" : "Supported pairs", edges: byStrength(remaining) }] : []),
+  ];
+}
+
+function RelationshipTable({ group, nodes }) {
+  const name = (id) => nodes.find((node) => node.themeId === id)?.label || words(id);
+  return (
+    <table aria-label={group.title} className="w-full min-w-[760px] table-fixed border-collapse text-left">
+      <colgroup><col className="w-[37%]" /><col className="w-[45%]" /><col className="w-[18%]" /></colgroup>
+      <thead>
+        <tr className="border-b border-[#cfdad4]">
+          <th scope="col" className="pb-4 pr-7 align-bottom">
+            <h3 className="max-w-sm text-lg font-bold leading-snug text-[#12352e] sm:text-xl">{group.title}</h3>
+          </th>
+          <th scope="col" className="pb-4 pr-7 align-bottom text-sm font-normal text-[#8a9993] sm:text-base">Strength</th>
+          <th scope="col" className="pb-4 align-bottom text-sm font-normal text-[#8a9993] sm:text-base">Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        {group.edges.map((relationship, index) => {
+          const source = name(relationship.sourceThemeId);
+          const target = name(relationship.targetThemeId);
+          const label = group.hubId
+            ? name(relationship.sourceThemeId === group.hubId ? relationship.targetThemeId : relationship.sourceThemeId)
+            : relationship.relationshipType === "co_occurs_with"
+              ? `${source} ↔ ${target}`
+              : `${source} ${words(relationship.relationshipType).toLowerCase()} ${target}`;
+          const strength = Math.round(Math.max(0, Math.min(1, Number(relationship.strength) || 0)) * 100);
+          const confidence = relationship.confidence || "insufficient";
+          const level = { high: 3, moderate: 2, directional: 1 }[confidence] || 0;
+          return (
+            <tr key={`${relationship.sourceThemeId}-${relationship.targetThemeId}-${index}`} className="border-b border-[#dde5e1] even:bg-[#edf2ef]">
+              <th scope="row" className="break-words py-4 pr-7 text-base font-normal leading-relaxed text-[#253b33] sm:py-5 sm:text-lg">{label}</th>
+              <td className="py-4 pr-7 sm:py-5">
+                <div className="flex items-center gap-5">
+                  <div role="meter" aria-label={`${label} relationship strength`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={strength}
+                    className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[#e1e8e5]">
+                    <div className="h-full rounded-full bg-[#209585]" style={{ width: `${strength}%` }} />
+                  </div>
+                  <span className="w-12 shrink-0 text-right text-lg font-bold tabular-nums text-[#12352e] sm:text-xl">{strength}%</span>
+                </div>
+              </td>
+              <td className="py-4 sm:py-5">
+                <div className="flex items-center gap-3 text-sm text-[#667770] sm:text-base">
+                  <span aria-hidden="true" className="inline-flex shrink-0 gap-1">
+                    {[1, 2, 3].map((dot) => <span key={dot} className={`h-2 w-2 rounded-full ${dot <= level ? "bg-[#209585]" : "bg-[#c6e9e3]"}`} />)}
+                  </span>
+                  <span>{words(confidence)}</span>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 function topSupport(values = {}, limit = 3) {
   return Object.entries(values)
     .filter(([label, count]) => label && Number(count) > 0)
@@ -365,46 +436,18 @@ export default function KnowledgeGraphView({
         })}
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
+      <section className="rounded-3xl border border-[#dde5e1] bg-[#f6f8f7] p-5 sm:p-8">
+        <h2 className="text-base font-bold uppercase tracking-[0.18em] text-[#12352e]">
           Supported relationships
         </h2>
         {edges.length ? (
-          <div className="mt-4 space-y-2">
-            {edges.map((relationship, index) => {
-              const source = nodes.find(
-                (node) => node.themeId === relationship.sourceThemeId
-              );
-              const target = nodes.find(
-                (node) => node.themeId === relationship.targetThemeId
-              );
-
-              return (
-                <div
-                  key={`${relationship.sourceThemeId}-${relationship.targetThemeId}-${index}`}
-                  className="flex flex-col justify-between gap-2 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 sm:flex-row sm:items-center"
-                >
-                  <p className="text-sm text-white/75">
-                    <span className="font-medium text-white">
-                      {source?.label || words(relationship.sourceThemeId)}
-                    </span>{" "}
-                    <span className="text-cyan-300/70">
-                      {words(relationship.relationshipType).toLowerCase()}
-                    </span>{" "}
-                    <span className="font-medium text-white">
-                      {target?.label || words(relationship.targetThemeId)}
-                    </span>
-                  </p>
-                  <p className="text-xs text-white/40">
-                    {Math.round(Number(relationship.strength || 0) * 100)}%
-                    strength · {words(relationship.confidence)} confidence
-                  </p>
-                </div>
-              );
-            })}
+          <div tabIndex={0} role="region" aria-label="Scrollable supported relationship tables" className="mt-8 space-y-8 overflow-x-auto">
+            {groupRelationships(nodes, edges).map((group) => (
+              <RelationshipTable key={group.title} group={group} nodes={nodes} />
+            ))}
           </div>
         ) : (
-          <p className="mt-3 text-sm leading-6 text-white/45">
+          <p className="mt-3 text-sm leading-6 text-[#667770]">
             Themes are available, but this analysis did not produce sufficiently supported relationship edges. AskSocial does not infer missing connections.
           </p>
         )}
