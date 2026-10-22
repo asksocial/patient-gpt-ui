@@ -105,7 +105,8 @@ export type NormalizedFaersDrug = {
   route?: string;
   therapy_start_date?: NormalizedFaersDate;
   therapy_end_date?: NormalizedFaersDate;
-  is_target_botulinum_product: boolean;
+  is_target_product?: boolean;
+  is_target_botulinum_product?: boolean;
   matched_target_product?: string;
   matched_active_ingredient?: string;
   suspect_role_if_available?: "suspect" | "concomitant" | "interacting" | "unknown";
@@ -164,7 +165,8 @@ export type NormalizedFaersRegulatoryCase = {
   reactions: NormalizedFaersReaction[];
   outcomes: NormalizedFaersOutcome[];
   concomitant_products: string[];
-  is_target_botulinum_product: boolean;
+  is_target_product?: boolean;
+  is_target_botulinum_product?: boolean;
   matched_target_products: string[];
   matched_active_ingredients: string[];
   suspect_role_if_available: Array<"suspect" | "concomitant" | "interacting" | "unknown">;

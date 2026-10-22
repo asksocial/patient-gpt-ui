@@ -43,6 +43,7 @@ if (missingEnvironment.length) {
 }
 
 const canonicalFiles = [
+  "data/glp-1.csv",
   "data/regen-aesthetics.csv",
   "data/botulinum-toxin.csv",
   "data/HepB_-_Patients__Caregivers - Mar 11, 2026 - 11 47 15 AM.csv",

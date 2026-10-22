@@ -66,6 +66,7 @@ next-env.d.ts
 !/src/ingestion/curated/hepatitis_B.json
 !/src/ingestion/curated/hepatitis_b_part1.json
 /data/*
+!/data/glp-1.csv
 !/data/regen-aesthetics.csv
 !/data/botulinum-toxin.csv
 !/data/botulinum-toxin-clinical-trials.csv

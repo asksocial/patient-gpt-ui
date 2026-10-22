@@ -7,6 +7,7 @@ import Tooltip from "./ui/Tooltip";
 import PvStructuredCaseHistory from "./PvStructuredCaseHistory";
 import PvStructuredClinicalFields from "./PvStructuredClinicalFields";
 import PvReviewedEmailQueue from "./PvReviewedEmailQueue";
+import Glp1PvReference from "./Glp1PvReference";
 
 const TABS = [
   ["overview", "Compliance Overview"],
@@ -395,6 +396,7 @@ export default function PvComplianceCenter({ initialTab = "overview", initialMes
       {message ? <div role="status" aria-live="polite" className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.06] px-4 py-3 text-sm text-cyan-100/75">{message}</div> : null}
       {error ? <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200">{error}<p className="mt-1 text-xs text-rose-200/60">Apply the PV Supabase migration before using persistent workflow features.</p></div> : null}
 
+      {therapeuticArea === "GLP-1" && (tab === "overview" || tab === "configuration") ? <Glp1PvReference libraries={libraries} busy={busy} onMutate={mutate} onConfiguration={() => navigateTab("configuration")} /> : null}
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} onSelectLifecycle={openLifecycle} onNavigate={navigateTab} /> : null}
       {tab === "lifecycle" ? <LifecycleRecords status={lifecycleStatus} expectedCount={overview?.statusCounts?.[lifecycleStatus] || 0} therapeuticArea={therapeuticArea} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onUpdateReview={updateStructuredReview} onBack={() => setTab("overview")} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}

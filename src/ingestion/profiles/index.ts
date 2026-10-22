@@ -6,6 +6,7 @@ import { geneTherapyProfile } from "./geneTherapyProfile";
 import { regenerativeAestheticsProfile } from "./regenerativeAestheticsProfile";
 import { medicalAestheticsProfile } from "./medicalAestheticsProfile";
 import { botulinumToxinProfile } from "./botulinumToxinProfile";
+import { glp1Profile } from "./glp1Profile";
 import { createGenericTherapeuticAreaProfile } from "./genericTherapeuticAreaProfile";
 
 export const DISEASE_PROFILES: Record<string, DiseaseProfile> = {
@@ -15,6 +16,7 @@ export const DISEASE_PROFILES: Record<string, DiseaseProfile> = {
   regenerative_aesthetics: regenerativeAestheticsProfile,
   medical_aesthetics: medicalAestheticsProfile,
   botulinum_toxin: botulinumToxinProfile,
+  glp_1: glp1Profile,
 };
 
 export function getDiseaseProfile(

@@ -1,0 +1,8371 @@
+{
+  "schemaVersion": "glp_1_faers_reference_v1",
+  "topic": "GLP-1",
+  "source": "FDA_FAERS_OPENFDA",
+  "configurationVersion": "glp-1-pv-2026.01.0",
+  "productRegistryVersion": "glp-1-2026.01.0",
+  "retrievedAt": "2026-10-20T16:35:46.977Z",
+  "startedAt": "2026-10-20T16:35:17.576Z",
+  "status": "partial",
+  "truncated": true,
+  "suspectOnly": true,
+  "sampling": "most_recent_1_page_per_exact_field_query",
+  "pageSize": 100,
+  "uniqueReports": 1638,
+  "duplicateObservations": 2257,
+  "malformedRecords": 0,
+  "sourceDocumentation": "https://open.fda.gov/apis/drug/event/",
+  "rawSnapshotManifestSha256": "91981e079502b88a4b75df7db2ab36f8df0dd513a44a8ff5d5afec53bba6e82b",
+  "queryRuns": [
+    {
+      "product": "OZEMPIC",
+      "queryId": "ed48b66fc91714b585bc",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22OZEMPIC%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 65913,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 87,
+      "suspectPostFilterRejected": 13,
+      "error": null
+    },
+    {
+      "product": "OZEMPIC",
+      "queryId": "2ce5c662f24aa760fc29",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22OZEMPIC%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 65913,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 13,
+      "error": null
+    },
+    {
+      "product": "WEGOVY",
+      "queryId": "b530eb1864ad558b892b",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22WEGOVY%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 20959,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 92,
+      "suspectPostFilterRejected": 3,
+      "error": null
+    },
+    {
+      "product": "WEGOVY",
+      "queryId": "ae691e6e9983a28db2d7",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22WEGOVY%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "RYBELSUS",
+      "queryId": "8fc7d01aab0fc7b4c7f2",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22RYBELSUS%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 7336,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 77,
+      "suspectPostFilterRejected": 21,
+      "error": null
+    },
+    {
+      "product": "RYBELSUS",
+      "queryId": "efe194eb637310577b19",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22RYBELSUS%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 7338,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 21,
+      "error": null
+    },
+    {
+      "product": "SEMAGLUTIDE",
+      "queryId": "a0cf841662c0d21131ce",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22SEMAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 6823,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 76,
+      "suspectPostFilterRejected": 24,
+      "error": null
+    },
+    {
+      "product": "SEMAGLUTIDE",
+      "queryId": "0b99e8b362828b561185",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.activesubstance.activesubstancename.exact%3A%22SEMAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 100153,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 10,
+      "error": null
+    },
+    {
+      "product": "SEMAGLUTIDE",
+      "queryId": "9814de028ff4ca679789",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.generic_name.exact%3A%22SEMAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "SEMAGLUTIDE",
+      "queryId": "aaed1c5d70a2a24b5948",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.substance_name.exact%3A%22SEMAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 72856,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 8,
+      "error": null
+    },
+    {
+      "product": "MOUNJARO",
+      "queryId": "6bd960aa5102193bdc5e",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22MOUNJARO%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 90629,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 78,
+      "suspectPostFilterRejected": 17,
+      "error": null
+    },
+    {
+      "product": "MOUNJARO",
+      "queryId": "f9749026122d2a2f9499",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22MOUNJARO%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 93470,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 7,
+      "suspectPostFilterRejected": 17,
+      "error": null
+    },
+    {
+      "product": "ZEPBOUND",
+      "queryId": "2f7ea4493e93359c2e49",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22ZEPBOUND%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 64874,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 97,
+      "suspectPostFilterRejected": 3,
+      "error": null
+    },
+    {
+      "product": "ZEPBOUND",
+      "queryId": "87079a5399b7847a5c52",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22ZEPBOUND%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 67703,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 3,
+      "error": null
+    },
+    {
+      "product": "TIRZEPATIDE",
+      "queryId": "d761c7ccf85635c00b42",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22TIRZEPATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 2936,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 74,
+      "suspectPostFilterRejected": 17,
+      "error": null
+    },
+    {
+      "product": "TIRZEPATIDE",
+      "queryId": "60c3e89cc4a5f0d7074d",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.activesubstance.activesubstancename.exact%3A%22TIRZEPATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 160195,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 23,
+      "suspectPostFilterRejected": 6,
+      "error": null
+    },
+    {
+      "product": "TIRZEPATIDE",
+      "queryId": "e8dab06ee1bb842b3201",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.generic_name.exact%3A%22TIRZEPATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 160201,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 6,
+      "error": null
+    },
+    {
+      "product": "TIRZEPATIDE",
+      "queryId": "4eba1c77e1fcf1cbe759",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.substance_name.exact%3A%22TIRZEPATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 160201,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 6,
+      "error": null
+    },
+    {
+      "product": "VICTOZA",
+      "queryId": "3532ebc88e46cb8ed076",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22VICTOZA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 39236,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 78,
+      "suspectPostFilterRejected": 19,
+      "error": null
+    },
+    {
+      "product": "VICTOZA",
+      "queryId": "c5da38fc9583503584ee",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22VICTOZA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 42012,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 65,
+      "suspectPostFilterRejected": 12,
+      "error": null
+    },
+    {
+      "product": "SAXENDA",
+      "queryId": "1079443cf74780871cc7",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22SAXENDA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 7099,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 94,
+      "suspectPostFilterRejected": 5,
+      "error": null
+    },
+    {
+      "product": "SAXENDA",
+      "queryId": "00f51fb87aeefc11f6ee",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22SAXENDA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 9974,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 5,
+      "error": null
+    },
+    {
+      "product": "XULTOPHY",
+      "queryId": "55bd4e3d45ae6436345d",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22XULTOPHY%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "sourceTotal": 3,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 3,
+      "error": null
+    },
+    {
+      "product": "XULTOPHY",
+      "queryId": "ceef62360504b3ab071b",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22XULTOPHY%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "XULTOPHY 100/3.6",
+      "queryId": "bf45b56782b9b7a6574e",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22XULTOPHY+100%2F3.6%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 1620,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 72,
+      "suspectPostFilterRejected": 27,
+      "error": null
+    },
+    {
+      "product": "XULTOPHY 100/3.6",
+      "queryId": "c22f56a3a5175213f0d5",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22XULTOPHY+100%2F3.6%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 1620,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 27,
+      "error": null
+    },
+    {
+      "product": "LIRAGLUTIDE",
+      "queryId": "0db7f41160fa5cd29ce5",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22LIRAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 2885,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 27,
+      "suspectPostFilterRejected": 8,
+      "error": null
+    },
+    {
+      "product": "LIRAGLUTIDE",
+      "queryId": "86934d48d4d337082bc7",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.activesubstance.activesubstancename.exact%3A%22LIRAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 36068,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 11,
+      "error": null
+    },
+    {
+      "product": "LIRAGLUTIDE",
+      "queryId": "9997cb005635fc695ecc",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.generic_name.exact%3A%22LIRAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 49025,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 11,
+      "error": null
+    },
+    {
+      "product": "LIRAGLUTIDE",
+      "queryId": "818325a1ca30ec902eb2",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.substance_name.exact%3A%22LIRAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 50604,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 11,
+      "error": null
+    },
+    {
+      "product": "TRULICITY",
+      "queryId": "2b4aedf30388573a19e5",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22TRULICITY%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 85893,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 80,
+      "suspectPostFilterRejected": 16,
+      "error": null
+    },
+    {
+      "product": "TRULICITY",
+      "queryId": "dada4ba6742070c4d3f9",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22TRULICITY%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 88033,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 5,
+      "suspectPostFilterRejected": 17,
+      "error": null
+    },
+    {
+      "product": "DULAGLUTIDE",
+      "queryId": "084844cde5ac17b7c9a8",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22DULAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 1276,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 47,
+      "suspectPostFilterRejected": 48,
+      "error": null
+    },
+    {
+      "product": "DULAGLUTIDE",
+      "queryId": "9baeba0d219218421e5d",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.activesubstance.activesubstancename.exact%3A%22DULAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 88141,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 17,
+      "error": null
+    },
+    {
+      "product": "DULAGLUTIDE",
+      "queryId": "00eccba8fae6b5d77d6d",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.generic_name.exact%3A%22DULAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 88033,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 17,
+      "error": null
+    },
+    {
+      "product": "DULAGLUTIDE",
+      "queryId": "d7447226672cc43665c6",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.substance_name.exact%3A%22DULAGLUTIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 88033,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 17,
+      "error": null
+    },
+    {
+      "product": "BYETTA",
+      "queryId": "53eae85893b18314c504",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22BYETTA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 51164,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 95,
+      "suspectPostFilterRejected": 5,
+      "error": null
+    },
+    {
+      "product": "BYETTA",
+      "queryId": "775b2eef483ac2869541",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22BYETTA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 52312,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 19,
+      "suspectPostFilterRejected": 12,
+      "error": null
+    },
+    {
+      "product": "BYDUREON",
+      "queryId": "fd885c6bf826d6dc285c",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22BYDUREON%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 21462,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 64,
+      "suspectPostFilterRejected": 30,
+      "error": null
+    },
+    {
+      "product": "BYDUREON",
+      "queryId": "53348b799b1fb709206f",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22BYDUREON%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "BYDUREON BCISE",
+      "queryId": "a8b5bee06cad3cb3825b",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22BYDUREON+BCISE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 13097,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 77,
+      "suspectPostFilterRejected": 18,
+      "error": null
+    },
+    {
+      "product": "BYDUREON BCISE",
+      "queryId": "bd611c7196476026dd99",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22BYDUREON+BCISE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "EXENATIDE",
+      "queryId": "071fd394c9f7c4529a73",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22EXENATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 1128,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 43,
+      "suspectPostFilterRejected": 38,
+      "error": null
+    },
+    {
+      "product": "EXENATIDE",
+      "queryId": "1ee0e9c09cef150062c9",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.activesubstance.activesubstancename.exact%3A%22EXENATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 34801,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 32,
+      "error": null
+    },
+    {
+      "product": "EXENATIDE",
+      "queryId": "bbe5390f99d424715e4c",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.generic_name.exact%3A%22EXENATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 52312,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 12,
+      "error": null
+    },
+    {
+      "product": "EXENATIDE",
+      "queryId": "d710d7c9024c81c87919",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.substance_name.exact%3A%22EXENATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 52312,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 12,
+      "error": null
+    },
+    {
+      "product": "ADLYXIN",
+      "queryId": "6b3b02acf6169257e381",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22ADLYXIN%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "sourceTotal": 20,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 18,
+      "suspectPostFilterRejected": 2,
+      "error": null
+    },
+    {
+      "product": "ADLYXIN",
+      "queryId": "3e1047247e2b7ee8604d",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22ADLYXIN%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "LYXUMIA",
+      "queryId": "2b5a4323d10b6bd5affa",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22LYXUMIA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 151,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 66,
+      "suspectPostFilterRejected": 34,
+      "error": null
+    },
+    {
+      "product": "LYXUMIA",
+      "queryId": "148188e4a5ea9e448656",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22LYXUMIA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "SOLIQUA",
+      "queryId": "acb4582f3b53490748ce",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22SOLIQUA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "sourceTotal": 16,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 15,
+      "suspectPostFilterRejected": 1,
+      "error": null
+    },
+    {
+      "product": "SOLIQUA",
+      "queryId": "ce419ed2c34b3bb3eae0",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22SOLIQUA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "SOLIQUA 100/33",
+      "queryId": "18eb5bebb6dfe898518c",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22SOLIQUA+100%2F33%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 3550,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 92,
+      "suspectPostFilterRejected": 8,
+      "error": null
+    },
+    {
+      "product": "SOLIQUA 100/33",
+      "queryId": "0fb9526f703c103de076",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22SOLIQUA+100%2F33%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 3552,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 8,
+      "error": null
+    },
+    {
+      "product": "SULIQUA",
+      "queryId": "26273112f20463847993",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22SULIQUA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "sourceTotal": 31,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 26,
+      "suspectPostFilterRejected": 5,
+      "error": null
+    },
+    {
+      "product": "SULIQUA",
+      "queryId": "67595b54a843d7fcaca7",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.brand_name.exact%3A%22SULIQUA%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "LIXISENATIDE",
+      "queryId": "b902ea930d2a6632eec1",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct.exact%3A%22LIXISENATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 124,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 44,
+      "suspectPostFilterRejected": 51,
+      "error": null
+    },
+    {
+      "product": "LIXISENATIDE",
+      "queryId": "6a0e28ca47323c719f93",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.activesubstance.activesubstancename.exact%3A%22LIXISENATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 291,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 40,
+      "error": null
+    },
+    {
+      "product": "LIXISENATIDE",
+      "queryId": "c1537e1fabffc24e990c",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.generic_name.exact%3A%22LIXISENATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": true,
+      "retained": 0,
+      "suspectPostFilterRejected": 0,
+      "error": null
+    },
+    {
+      "product": "LIXISENATIDE",
+      "queryId": "af57307b8ea7adff2409",
+      "query": "https://api.fda.gov/drug/event.json?search=patient.drug.openfda.substance_name.exact%3A%22LIXISENATIDE%22+AND+patient.drug.drugcharacterization%3A1&limit=100&sort=receivedate%3Adesc",
+      "completed": false,
+      "sourceTotal": 3552,
+      "apiLastUpdated": "2026-07-30",
+      "retained": 0,
+      "suspectPostFilterRejected": 8,
+      "error": null
+    }
+  ],
+  "reactions": [
+    {
+      "term": "Nausea",
+      "reportCount": 190,
+      "sampleReportIds": [
+        "12833820",
+        "12849181",
+        "13007036"
+      ]
+    },
+    {
+      "term": "Vomiting",
+      "reportCount": 132,
+      "sampleReportIds": [
+        "12849181",
+        "12913247",
+        "14193040"
+      ]
+    },
+    {
+      "term": "Impaired gastric emptying",
+      "reportCount": 112,
+      "sampleReportIds": [
+        "18457330",
+        "24162132",
+        "24198724"
+      ]
+    },
+    {
+      "term": "Diarrhoea",
+      "reportCount": 95,
+      "sampleReportIds": [
+        "15403306",
+        "15710688",
+        "15849290"
+      ]
+    },
+    {
+      "term": "No adverse event",
+      "reportCount": 92,
+      "sampleReportIds": [
+        "15722966",
+        "18572492",
+        "24744967"
+      ]
+    },
+    {
+      "term": "Off label use",
+      "reportCount": 89,
+      "sampleReportIds": [
+        "18308323",
+        "24028397",
+        "24044400"
+      ]
+    },
+    {
+      "term": "Drug ineffective",
+      "reportCount": 80,
+      "sampleReportIds": [
+        "15227542",
+        "17066818",
+        "17696790"
+      ]
+    },
+    {
+      "term": "Blood glucose increased",
+      "reportCount": 71,
+      "sampleReportIds": [
+        "12933995",
+        "13299267",
+        "13299270"
+      ]
+    },
+    {
+      "term": "Constipation",
+      "reportCount": 70,
+      "sampleReportIds": [
+        "15403306",
+        "24162132",
+        "24198724"
+      ]
+    },
+    {
+      "term": "Weight decreased",
+      "reportCount": 65,
+      "sampleReportIds": [
+        "13007036",
+        "13284239",
+        "13491720"
+      ]
+    },
+    {
+      "term": "Abdominal pain",
+      "reportCount": 52,
+      "sampleReportIds": [
+        "14214709",
+        "15807159",
+        "15849290"
+      ]
+    },
+    {
+      "term": "Recalled product administered",
+      "reportCount": 52,
+      "sampleReportIds": [
+        "26754830",
+        "26783548",
+        "26799760"
+      ]
+    },
+    {
+      "term": "Device delivery system issue",
+      "reportCount": 50,
+      "sampleReportIds": [
+        "24191497",
+        "24246406",
+        "24267121"
+      ]
+    },
+    {
+      "term": "Decreased appetite",
+      "reportCount": 47,
+      "sampleReportIds": [
+        "16878695",
+        "17848619",
+        "18884293"
+      ]
+    },
+    {
+      "term": "Emotional distress",
+      "reportCount": 46,
+      "sampleReportIds": [
+        "25949778",
+        "26412187",
+        "26694512"
+      ]
+    },
+    {
+      "term": "Product dose omission issue",
+      "reportCount": 44,
+      "sampleReportIds": [
+        "18984677",
+        "20540301",
+        "24468233"
+      ]
+    },
+    {
+      "term": "Weight increased",
+      "reportCount": 44,
+      "sampleReportIds": [
+        "19300612",
+        "24172067",
+        "24256444"
+      ]
+    },
+    {
+      "term": "Drug dose omission by device",
+      "reportCount": 43,
+      "sampleReportIds": [
+        "21060736",
+        "24183899",
+        "24252133"
+      ]
+    },
+    {
+      "term": "Incorrect dose administered",
+      "reportCount": 42,
+      "sampleReportIds": [
+        "19492883",
+        "24271303",
+        "24468233"
+      ]
+    },
+    {
+      "term": "Anxiety",
+      "reportCount": 41,
+      "sampleReportIds": [
+        "13299275",
+        "24754859",
+        "25267234"
+      ]
+    },
+    {
+      "term": "Abdominal pain upper",
+      "reportCount": 40,
+      "sampleReportIds": [
+        "15710688",
+        "16765890",
+        "17172616"
+      ]
+    },
+    {
+      "term": "Fatigue",
+      "reportCount": 40,
+      "sampleReportIds": [
+        "14074261",
+        "14146972",
+        "15368514"
+      ]
+    },
+    {
+      "term": "Dizziness",
+      "reportCount": 38,
+      "sampleReportIds": [
+        "13712726",
+        "17696790",
+        "17700213"
+      ]
+    },
+    {
+      "term": "Device malfunction",
+      "reportCount": 37,
+      "sampleReportIds": [
+        "24257115",
+        "24260983",
+        "24622945"
+      ]
+    },
+    {
+      "term": "Illness",
+      "reportCount": 37,
+      "sampleReportIds": [
+        "24622945",
+        "24732523",
+        "24780950"
+      ]
+    },
+    {
+      "term": "Incorrect dose administered by device",
+      "reportCount": 36,
+      "sampleReportIds": [
+        "24246406",
+        "24257115",
+        "24558074"
+      ]
+    },
+    {
+      "term": "Dehydration",
+      "reportCount": 33,
+      "sampleReportIds": [
+        "12849181",
+        "18308323",
+        "19914279"
+      ]
+    },
+    {
+      "term": "Drug interaction",
+      "reportCount": 33,
+      "sampleReportIds": [
+        "22782618",
+        "26906089",
+        "26907514"
+      ]
+    },
+    {
+      "term": "Abdominal distension",
+      "reportCount": 31,
+      "sampleReportIds": [
+        "20125809",
+        "21316566",
+        "24410717"
+      ]
+    },
+    {
+      "term": "Product use issue",
+      "reportCount": 31,
+      "sampleReportIds": [
+        "12833820",
+        "13299271",
+        "13299273"
+      ]
+    },
+    {
+      "term": "Dyspepsia",
+      "reportCount": 30,
+      "sampleReportIds": [
+        "13007036",
+        "24198724",
+        "24304503"
+      ]
+    },
+    {
+      "term": "Malaise",
+      "reportCount": 30,
+      "sampleReportIds": [
+        "15849290",
+        "16061400",
+        "17531665"
+      ]
+    },
+    {
+      "term": "Device issue",
+      "reportCount": 29,
+      "sampleReportIds": [
+        "24245883",
+        "24573979",
+        "24627746"
+      ]
+    },
+    {
+      "term": "Glycosylated haemoglobin increased",
+      "reportCount": 29,
+      "sampleReportIds": [
+        "14132156",
+        "14252254",
+        "14879068"
+      ]
+    },
+    {
+      "term": "Hypoglycaemia",
+      "reportCount": 29,
+      "sampleReportIds": [
+        "14729333",
+        "15277305",
+        "15357725"
+      ]
+    },
+    {
+      "term": "Device leakage",
+      "reportCount": 28,
+      "sampleReportIds": [
+        "21060736",
+        "24183899",
+        "24271303"
+      ]
+    },
+    {
+      "term": "Intestinal obstruction",
+      "reportCount": 28,
+      "sampleReportIds": [
+        "24431541",
+        "24601772",
+        "24780143"
+      ]
+    },
+    {
+      "term": "Wrong technique in product usage process",
+      "reportCount": 28,
+      "sampleReportIds": [
+        "18458112",
+        "21383156",
+        "24733795"
+      ]
+    },
+    {
+      "term": "Asthenia",
+      "reportCount": 27,
+      "sampleReportIds": [
+        "13299277",
+        "13712726",
+        "14214709"
+      ]
+    },
+    {
+      "term": "Device defective",
+      "reportCount": 27,
+      "sampleReportIds": [
+        "24191497",
+        "24680773",
+        "24683001"
+      ]
+    },
+    {
+      "term": "Gastrooesophageal reflux disease",
+      "reportCount": 27,
+      "sampleReportIds": [
+        "17696790",
+        "17700213",
+        "17707715"
+      ]
+    },
+    {
+      "term": "Injection site haemorrhage",
+      "reportCount": 27,
+      "sampleReportIds": [
+        "20794313",
+        "24183899",
+        "24191497"
+      ]
+    },
+    {
+      "term": "Acute kidney injury",
+      "reportCount": 26,
+      "sampleReportIds": [
+        "13801940",
+        "18308323",
+        "22943105"
+      ]
+    },
+    {
+      "term": "Headache",
+      "reportCount": 25,
+      "sampleReportIds": [
+        "15403306",
+        "15729673",
+        "16173990"
+      ]
+    },
+    {
+      "term": "Ileus",
+      "reportCount": 25,
+      "sampleReportIds": [
+        "24431541",
+        "24601772",
+        "25120679"
+      ]
+    },
+    {
+      "term": "Injection site pain",
+      "reportCount": 25,
+      "sampleReportIds": [
+        "13299265",
+        "24733795",
+        "25189659"
+      ]
+    },
+    {
+      "term": "Weight loss poor",
+      "reportCount": 25,
+      "sampleReportIds": [
+        "24629371",
+        "26652814",
+        "26675150"
+      ]
+    },
+    {
+      "term": "Depression",
+      "reportCount": 23,
+      "sampleReportIds": [
+        "21697840",
+        "21716700",
+        "24304503"
+      ]
+    },
+    {
+      "term": "Visual impairment",
+      "reportCount": 23,
+      "sampleReportIds": [
+        "16055957",
+        "16317658",
+        "24640867"
+      ]
+    },
+    {
+      "term": "Gastrointestinal disorder",
+      "reportCount": 22,
+      "sampleReportIds": [
+        "19064710",
+        "22943105",
+        "25074116"
+      ]
+    },
+    {
+      "term": "Condition aggravated",
+      "reportCount": 21,
+      "sampleReportIds": [
+        "13159707",
+        "13284239",
+        "15887663"
+      ]
+    },
+    {
+      "term": "Device mechanical issue",
+      "reportCount": 21,
+      "sampleReportIds": [
+        "25358103",
+        "26059525",
+        "26711154"
+      ]
+    },
+    {
+      "term": "Pancreatitis",
+      "reportCount": 21,
+      "sampleReportIds": [
+        "13184839",
+        "13763471",
+        "14214709"
+      ]
+    },
+    {
+      "term": "Wrong technique in device usage process",
+      "reportCount": 21,
+      "sampleReportIds": [
+        "20794313",
+        "24245883",
+        "24246406"
+      ]
+    },
+    {
+      "term": "Abdominal discomfort",
+      "reportCount": 20,
+      "sampleReportIds": [
+        "16812478",
+        "16828431",
+        "20044806"
+      ]
+    },
+    {
+      "term": "Accidental exposure to product",
+      "reportCount": 20,
+      "sampleReportIds": [
+        "24271361",
+        "24573979",
+        "24853048"
+      ]
+    },
+    {
+      "term": "Fall",
+      "reportCount": 20,
+      "sampleReportIds": [
+        "15277305",
+        "17913680",
+        "24256444"
+      ]
+    },
+    {
+      "term": "Product use in unapproved indication",
+      "reportCount": 20,
+      "sampleReportIds": [
+        "25628822",
+        "26076484",
+        "26571543"
+      ]
+    },
+    {
+      "term": "Syncope",
+      "reportCount": 20,
+      "sampleReportIds": [
+        "12913247",
+        "13299275",
+        "15403306"
+      ]
+    },
+    {
+      "term": "Dyspnoea",
+      "reportCount": 19,
+      "sampleReportIds": [
+        "12933995",
+        "13299270",
+        "24260983"
+      ]
+    },
+    {
+      "term": "Depressed mood",
+      "reportCount": 18,
+      "sampleReportIds": [
+        "26831399",
+        "26878689",
+        "26890519"
+      ]
+    },
+    {
+      "term": "Pain",
+      "reportCount": 18,
+      "sampleReportIds": [
+        "23684209",
+        "24558074",
+        "24993208"
+      ]
+    },
+    {
+      "term": "Blood glucose decreased",
+      "reportCount": 17,
+      "sampleReportIds": [
+        "17683893",
+        "17696790",
+        "17700213"
+      ]
+    },
+    {
+      "term": "Cholelithiasis",
+      "reportCount": 17,
+      "sampleReportIds": [
+        "12933995",
+        "16765890",
+        "17821146"
+      ]
+    },
+    {
+      "term": "Device use issue",
+      "reportCount": 17,
+      "sampleReportIds": [
+        "24191497",
+        "24267121",
+        "24468233"
+      ]
+    },
+    {
+      "term": "Death",
+      "reportCount": 16,
+      "sampleReportIds": [
+        "24527545",
+        "24537950",
+        "24588230"
+      ]
+    },
+    {
+      "term": "Injury associated with device",
+      "reportCount": 16,
+      "sampleReportIds": [
+        "24872242",
+        "25227277",
+        "25228477"
+      ]
+    },
+    {
+      "term": "Insomnia",
+      "reportCount": 16,
+      "sampleReportIds": [
+        "17696790",
+        "17700213",
+        "17707715"
+      ]
+    },
+    {
+      "term": "Device failure",
+      "reportCount": 15,
+      "sampleReportIds": [
+        "24252133",
+        "24872242",
+        "26059525"
+      ]
+    },
+    {
+      "term": "Diabetes mellitus inadequate control",
+      "reportCount": 15,
+      "sampleReportIds": [
+        "15173216",
+        "16217333",
+        "17066818"
+      ]
+    },
+    {
+      "term": "Inappropriate schedule of product administration",
+      "reportCount": 15,
+      "sampleReportIds": [
+        "16061400",
+        "19350116",
+        "24682332"
+      ]
+    },
+    {
+      "term": "Injection site pruritus",
+      "reportCount": 15,
+      "sampleReportIds": [
+        "13299265",
+        "13299268",
+        "14093007"
+      ]
+    },
+    {
+      "term": "Product storage issue",
+      "reportCount": 15,
+      "sampleReportIds": [
+        "26643716",
+        "26658564",
+        "26690947"
+      ]
+    },
+    {
+      "term": "Gastrointestinal hypomotility",
+      "reportCount": 14,
+      "sampleReportIds": [
+        "24162132",
+        "24410717",
+        "25120679"
+      ]
+    },
+    {
+      "term": "Injection site erythema",
+      "reportCount": 14,
+      "sampleReportIds": [
+        "13299265",
+        "24993208",
+        "26674948"
+      ]
+    },
+    {
+      "term": "Optic ischaemic neuropathy",
+      "reportCount": 14,
+      "sampleReportIds": [
+        "26631795",
+        "26711198",
+        "26864403"
+      ]
+    },
+    {
+      "term": "Tremor",
+      "reportCount": 14,
+      "sampleReportIds": [
+        "15403306",
+        "24552260",
+        "24622991"
+      ]
+    },
+    {
+      "term": "Blood glucose abnormal",
+      "reportCount": 13,
+      "sampleReportIds": [
+        "15403306",
+        "19350116",
+        "24613678"
+      ]
+    },
+    {
+      "term": "Cyclic vomiting syndrome",
+      "reportCount": 13,
+      "sampleReportIds": [
+        "24802335",
+        "26825161",
+        "26905144"
+      ]
+    },
+    {
+      "term": "Drug intolerance",
+      "reportCount": 13,
+      "sampleReportIds": [
+        "14093006",
+        "23342547",
+        "26355912"
+      ]
+    },
+    {
+      "term": "Eructation",
+      "reportCount": 13,
+      "sampleReportIds": [
+        "26664672",
+        "26703470",
+        "26866090"
+      ]
+    },
+    {
+      "term": "Hospitalisation",
+      "reportCount": 13,
+      "sampleReportIds": [
+        "15227542",
+        "15832058",
+        "24999587"
+      ]
+    },
+    {
+      "term": "Loss of consciousness",
+      "reportCount": 13,
+      "sampleReportIds": [
+        "14729333",
+        "15403306",
+        "16189348"
+      ]
+    },
+    {
+      "term": "Palpitations",
+      "reportCount": 13,
+      "sampleReportIds": [
+        "15729673",
+        "16469321",
+        "23100795"
+      ]
+    },
+    {
+      "term": "Alopecia",
+      "reportCount": 12,
+      "sampleReportIds": [
+        "26868164",
+        "26891857",
+        "26921319"
+      ]
+    },
+    {
+      "term": "Flatulence",
+      "reportCount": 12,
+      "sampleReportIds": [
+        "24711610",
+        "24927776",
+        "25567467"
+      ]
+    },
+    {
+      "term": "Hyperglycaemia",
+      "reportCount": 12,
+      "sampleReportIds": [
+        "13284239",
+        "13333978",
+        "13861338"
+      ]
+    },
+    {
+      "term": "Intentional product misuse",
+      "reportCount": 12,
+      "sampleReportIds": [
+        "13299270",
+        "17531665",
+        "24608329"
+      ]
+    },
+    {
+      "term": "Memory impairment",
+      "reportCount": 12,
+      "sampleReportIds": [
+        "24271225",
+        "24543247",
+        "24654143"
+      ]
+    },
+    {
+      "term": "Myocardial infarction",
+      "reportCount": 12,
+      "sampleReportIds": [
+        "17792453",
+        "17821208",
+        "19300612"
+      ]
+    },
+    {
+      "term": "Pruritus",
+      "reportCount": 12,
+      "sampleReportIds": [
+        "13597933",
+        "18606253",
+        "19200339"
+      ]
+    },
+    {
+      "term": "Urticaria",
+      "reportCount": 12,
+      "sampleReportIds": [
+        "13299264",
+        "19200339",
+        "24921520"
+      ]
+    },
+    {
+      "term": "Asthma",
+      "reportCount": 11,
+      "sampleReportIds": [
+        "24256444",
+        "25732791",
+        "26785063"
+      ]
+    },
+    {
+      "term": "Back pain",
+      "reportCount": 11,
+      "sampleReportIds": [
+        "17016543",
+        "17172616",
+        "24410717"
+      ]
+    },
+    {
+      "term": "Diabetes mellitus",
+      "reportCount": 11,
+      "sampleReportIds": [
+        "18771312",
+        "18850765",
+        "18850912"
+      ]
+    },
+    {
+      "term": "Exposure via skin contact",
+      "reportCount": 11,
+      "sampleReportIds": [
+        "26623576",
+        "26658259",
+        "26734449"
+      ]
+    },
+    {
+      "term": "Feeling abnormal",
+      "reportCount": 11,
+      "sampleReportIds": [
+        "19350116",
+        "24260983",
+        "25384382"
+      ]
+    },
+    {
+      "term": "Hypoacusis",
+      "reportCount": 11,
+      "sampleReportIds": [
+        "24260983",
+        "24654143",
+        "25181321"
+      ]
+    },
+    {
+      "term": "Lactic acidosis",
+      "reportCount": 11,
+      "sampleReportIds": [
+        "26873336",
+        "26875877",
+        "26885155"
+      ]
+    },
+    {
+      "term": "Pain in extremity",
+      "reportCount": 11,
+      "sampleReportIds": [
+        "15657846",
+        "25060762",
+        "25284245"
+      ]
+    },
+    {
+      "term": "Suicidal ideation",
+      "reportCount": 11,
+      "sampleReportIds": [
+        "21697840",
+        "21716700",
+        "24640136"
+      ]
+    },
+    {
+      "term": "Cerebrovascular accident",
+      "reportCount": 10,
+      "sampleReportIds": [
+        "13638496",
+        "15657846",
+        "24680641"
+      ]
+    },
+    {
+      "term": "Device breakage",
+      "reportCount": 10,
+      "sampleReportIds": [
+        "24715013",
+        "24939112",
+        "25181321"
+      ]
+    },
+    {
+      "term": "Diabetic ketoacidosis",
+      "reportCount": 10,
+      "sampleReportIds": [
+        "17099107",
+        "17546023",
+        "20619425"
+      ]
+    },
+    {
+      "term": "Rash",
+      "reportCount": 10,
+      "sampleReportIds": [
+        "26456465",
+        "26685804",
+        "26878738"
+      ]
+    },
+    {
+      "term": "Vision blurred",
+      "reportCount": 10,
+      "sampleReportIds": [
+        "13299272",
+        "16317658",
+        "16469321"
+      ]
+    },
+    {
+      "term": "Chest discomfort",
+      "reportCount": 9,
+      "sampleReportIds": [
+        "15256912",
+        "26801887",
+        "26858134"
+      ]
+    },
+    {
+      "term": "Cough",
+      "reportCount": 9,
+      "sampleReportIds": [
+        "13299270",
+        "19579846",
+        "24830403"
+      ]
+    },
+    {
+      "term": "Device difficult to use",
+      "reportCount": 9,
+      "sampleReportIds": [
+        "26774459",
+        "26842669",
+        "26859916"
+      ]
+    },
+    {
+      "term": "Hypersensitivity",
+      "reportCount": 9,
+      "sampleReportIds": [
+        "12833820",
+        "13299377",
+        "19200339"
+      ]
+    },
+    {
+      "term": "Hypertension",
+      "reportCount": 9,
+      "sampleReportIds": [
+        "14074261",
+        "24256444",
+        "25754673"
+      ]
+    },
+    {
+      "term": "Injection site bruising",
+      "reportCount": 9,
+      "sampleReportIds": [
+        "24257115",
+        "26758786",
+        "26905267"
+      ]
+    },
+    {
+      "term": "Migraine",
+      "reportCount": 9,
+      "sampleReportIds": [
+        "26686416",
+        "26722250",
+        "26799883"
+      ]
+    },
+    {
+      "term": "Adverse drug reaction",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "24028397",
+        "24622945",
+        "24711610"
+      ]
+    },
+    {
+      "term": "Atrial fibrillation",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "18458112",
+        "23100795",
+        "24927776"
+      ]
+    },
+    {
+      "term": "Blindness",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "17913680",
+        "24616026",
+        "24645916"
+      ]
+    },
+    {
+      "term": "Burning sensation",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "12833820",
+        "26776815",
+        "26873112"
+      ]
+    },
+    {
+      "term": "Discomfort",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "14074261",
+        "17913680",
+        "24177927"
+      ]
+    },
+    {
+      "term": "Extra dose administered",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "19490770",
+        "25081974",
+        "26913734"
+      ]
+    },
+    {
+      "term": "Feeding disorder",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "12849181",
+        "24587603",
+        "26897318"
+      ]
+    },
+    {
+      "term": "Hypotension",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "21402207",
+        "26638485",
+        "26652705"
+      ]
+    },
+    {
+      "term": "Loss of personal independence in daily activities",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "26785063",
+        "26835524",
+        "26866657"
+      ]
+    },
+    {
+      "term": "Needle issue",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "24558074",
+        "24608329",
+        "24613678"
+      ]
+    },
+    {
+      "term": "Sleep disorder",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "18503141",
+        "21115587",
+        "26707447"
+      ]
+    },
+    {
+      "term": "Therapeutic product effect incomplete",
+      "reportCount": 8,
+      "sampleReportIds": [
+        "16217333",
+        "24925937",
+        "26707758"
+      ]
+    },
+    {
+      "term": "Cardiac disorder",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "23863434",
+        "25986219",
+        "26656266"
+      ]
+    },
+    {
+      "term": "Cholecystitis",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "25089200",
+        "25559431",
+        "25791512"
+      ]
+    },
+    {
+      "term": "Frequent bowel movements",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "17696790",
+        "17700213",
+        "17707715"
+      ]
+    },
+    {
+      "term": "Gastroenteritis",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "17339664",
+        "26887692",
+        "26927225"
+      ]
+    },
+    {
+      "term": "Heart rate increased",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "14074261",
+        "18458112",
+        "26663874"
+      ]
+    },
+    {
+      "term": "Hepatic steatosis",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "24329569",
+        "24372360",
+        "24574374"
+      ]
+    },
+    {
+      "term": "Hyperhidrosis",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "17913680",
+        "18458112",
+        "26210324"
+      ]
+    },
+    {
+      "term": "Hypoaesthesia",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "24555737",
+        "26456465",
+        "26711154"
+      ]
+    },
+    {
+      "term": "Increased appetite",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "25555426",
+        "26613585",
+        "26665201"
+      ]
+    },
+    {
+      "term": "Injection site mass",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "15403306",
+        "15530526",
+        "24267121"
+      ]
+    },
+    {
+      "term": "Metabolic acidosis",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "24733817",
+        "26409592",
+        "26759745"
+      ]
+    },
+    {
+      "term": "Nephrolithiasis",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "13801940",
+        "15849290",
+        "26083764"
+      ]
+    },
+    {
+      "term": "Pancreatic carcinoma",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "13555307",
+        "15807159",
+        "23555464"
+      ]
+    },
+    {
+      "term": "Paraesthesia",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "15729673",
+        "16173990",
+        "24555737"
+      ]
+    },
+    {
+      "term": "Peripheral swelling",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "24921520",
+        "25196585",
+        "26456465"
+      ]
+    },
+    {
+      "term": "Psychotic disorder",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "26525478",
+        "26910739",
+        "26929094"
+      ]
+    },
+    {
+      "term": "Respiration abnormal",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "18771312",
+        "18850765",
+        "18850912"
+      ]
+    },
+    {
+      "term": "Therapy cessation",
+      "reportCount": 7,
+      "sampleReportIds": [
+        "19203542",
+        "24741181",
+        "25310942"
+      ]
+    },
+    {
+      "term": "Blood pressure increased",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "26126886",
+        "26290911",
+        "26693033"
+      ]
+    },
+    {
+      "term": "Cholecystectomy",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "25567291",
+        "25860510",
+        "26076484"
+      ]
+    },
+    {
+      "term": "Contusion",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "24733795",
+        "24993208",
+        "25344880"
+      ]
+    },
+    {
+      "term": "Drug hypersensitivity",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "24543247",
+        "25321554",
+        "26456465"
+      ]
+    },
+    {
+      "term": "Dry mouth",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "15403306",
+        "26707363",
+        "26842480"
+      ]
+    },
+    {
+      "term": "Erythema",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "12833820",
+        "19200339",
+        "25321554"
+      ]
+    },
+    {
+      "term": "Food craving",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "26675728",
+        "26926062",
+        "26927225"
+      ]
+    },
+    {
+      "term": "Gait disturbance",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "17940643",
+        "24555737",
+        "26707363"
+      ]
+    },
+    {
+      "term": "Gallbladder injury",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "25717981",
+        "26694512",
+        "26703523"
+      ]
+    },
+    {
+      "term": "Gastritis",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "13007036",
+        "24329569",
+        "24574374"
+      ]
+    },
+    {
+      "term": "Hyperkalaemia",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "26873336",
+        "26875877",
+        "26885155"
+      ]
+    },
+    {
+      "term": "Hypothyroidism",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "13861338",
+        "13871358",
+        "26638485"
+      ]
+    },
+    {
+      "term": "Incorrect route of product administration",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "16902967",
+        "26885155",
+        "26935304"
+      ]
+    },
+    {
+      "term": "Influenza",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "24760936",
+        "25137994",
+        "26722250"
+      ]
+    },
+    {
+      "term": "Injection site rash",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "13299265",
+        "13299269",
+        "18576523"
+      ]
+    },
+    {
+      "term": "Nasopharyngitis",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "24260983",
+        "24920866",
+        "26831399"
+      ]
+    },
+    {
+      "term": "Neuropathy peripheral",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "17071697",
+        "24935415",
+        "25196585"
+      ]
+    },
+    {
+      "term": "Pancreatitis acute",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "14070392",
+        "14660841",
+        "26878783"
+      ]
+    },
+    {
+      "term": "Product storage error",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "15368514",
+        "16063196",
+        "24555737"
+      ]
+    },
+    {
+      "term": "Suspected counterfeit product",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "26676022",
+        "26885674",
+        "26891256"
+      ]
+    },
+    {
+      "term": "Wheezing",
+      "reportCount": 6,
+      "sampleReportIds": [
+        "26456465",
+        "26785063",
+        "26879274"
+      ]
+    },
+    {
+      "term": "Aphonia",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "17696790",
+        "17700213",
+        "17707715"
+      ]
+    },
+    {
+      "term": "Balance disorder",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "16189348",
+        "17940643",
+        "26570810"
+      ]
+    },
+    {
+      "term": "Breast cancer",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "20070018",
+        "24680839",
+        "26881498"
+      ]
+    },
+    {
+      "term": "Cachexia",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "18771312",
+        "18850765",
+        "18850912"
+      ]
+    },
+    {
+      "term": "Chest pain",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "25567467",
+        "26858134",
+        "26929144"
+      ]
+    },
+    {
+      "term": "Colitis ischaemic",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "25236786",
+        "26887415",
+        "26943000"
+      ]
+    },
+    {
+      "term": "Confusional state",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "25187755",
+        "26829860",
+        "26851375"
+      ]
+    },
+    {
+      "term": "Deafness",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "24731870",
+        "24732523",
+        "26203750"
+      ]
+    },
+    {
+      "term": "Device loosening",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "24780950",
+        "26059525",
+        "26076293"
+      ]
+    },
+    {
+      "term": "Drug effect less than expected",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "25732781",
+        "26665083",
+        "26785328"
+      ]
+    },
+    {
+      "term": "Drug-induced liver injury",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "20174129",
+        "25239142",
+        "26833387"
+      ]
+    },
+    {
+      "term": "Exposure during pregnancy",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "13246369",
+        "15764904",
+        "24372360"
+      ]
+    },
+    {
+      "term": "Gallbladder disorder",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "24387123",
+        "26722481",
+        "26877785"
+      ]
+    },
+    {
+      "term": "General physical health deterioration",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "26401783",
+        "26842480",
+        "26925521"
+      ]
+    },
+    {
+      "term": "Hepatic enzyme increased",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "13159707",
+        "24329569",
+        "24574374"
+      ]
+    },
+    {
+      "term": "Hypophagia",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "26889610",
+        "26896752",
+        "26917147"
+      ]
+    },
+    {
+      "term": "Injection site urticaria",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "13299266",
+        "26845370",
+        "26864801"
+      ]
+    },
+    {
+      "term": "Lethargy",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "26740867",
+        "26940917",
+        "26941960"
+      ]
+    },
+    {
+      "term": "Lung disorder",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "25321554",
+        "25517894",
+        "26785063"
+      ]
+    },
+    {
+      "term": "Medication error",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "25176169",
+        "26644045",
+        "26863030"
+      ]
+    },
+    {
+      "term": "Mood altered",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "26570810",
+        "26613585",
+        "26685749"
+      ]
+    },
+    {
+      "term": "Muscular weakness",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "15657846",
+        "15729673",
+        "25060762"
+      ]
+    },
+    {
+      "term": "Panic attack",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "15256912",
+        "26857464",
+        "26922222"
+      ]
+    },
+    {
+      "term": "Product dispensing error",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "24412820",
+        "26643716",
+        "26921713"
+      ]
+    },
+    {
+      "term": "Product dispensing issue",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "24999587",
+        "26691084",
+        "26777088"
+      ]
+    },
+    {
+      "term": "Somnolence",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "24683001",
+        "26665083",
+        "26814501"
+      ]
+    },
+    {
+      "term": "Tachycardia",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "18458112",
+        "26582245",
+        "26834570"
+      ]
+    },
+    {
+      "term": "Toxicity to various agents",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "19914279",
+        "21402207",
+        "26889610"
+      ]
+    },
+    {
+      "term": "Weight fluctuation",
+      "reportCount": 5,
+      "sampleReportIds": [
+        "24443671",
+        "26674862",
+        "26881476"
+      ]
+    },
+    {
+      "term": "Adverse event",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "24711610",
+        "25284245",
+        "25335072"
+      ]
+    },
+    {
+      "term": "Angina pectoris",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "14074261",
+        "16812478",
+        "16828431"
+      ]
+    },
+    {
+      "term": "Arrhythmia",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "13861338",
+        "13871358",
+        "26360924"
+      ]
+    },
+    {
+      "term": "Arteriosclerosis",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26916794"
+      ]
+    },
+    {
+      "term": "Arteriosclerosis coronary artery",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "19579846",
+        "26785063",
+        "26879274"
+      ]
+    },
+    {
+      "term": "Arthralgia",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "12933995",
+        "25445950",
+        "26906118"
+      ]
+    },
+    {
+      "term": "Blood glucose fluctuation",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "25732781",
+        "26851375",
+        "26901950"
+      ]
+    },
+    {
+      "term": "Cholangitis",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "16061400",
+        "26873227",
+        "26921403"
+      ]
+    },
+    {
+      "term": "Chronic kidney disease",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26700739",
+        "26872811",
+        "26927225"
+      ]
+    },
+    {
+      "term": "Dementia",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "24587603",
+        "25212372",
+        "26913734"
+      ]
+    },
+    {
+      "term": "Diabetic retinopathy",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "15271253",
+        "15754484",
+        "26941215"
+      ]
+    },
+    {
+      "term": "Drug delivery system issue",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "24468233",
+        "24768821",
+        "25345346"
+      ]
+    },
+    {
+      "term": "Euglycaemic diabetic ketoacidosis",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "23219570",
+        "26759745",
+        "26941612"
+      ]
+    },
+    {
+      "term": "Feeling jittery",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "24744967",
+        "26685195",
+        "26700739"
+      ]
+    },
+    {
+      "term": "Hepatic function abnormal",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "20174129",
+        "24838864",
+        "25060762"
+      ]
+    },
+    {
+      "term": "Hunger",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "24921520",
+        "26882003",
+        "26943853"
+      ]
+    },
+    {
+      "term": "Ileus paralytic",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26638336",
+        "26896535",
+        "26906089"
+      ]
+    },
+    {
+      "term": "Inflammation",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26594567",
+        "26693033",
+        "26943837"
+      ]
+    },
+    {
+      "term": "Insulin resistance",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "17696790",
+        "17700213",
+        "17707715"
+      ]
+    },
+    {
+      "term": "Intentional overdose",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "19350116",
+        "26524773",
+        "26913475"
+      ]
+    },
+    {
+      "term": "Irritable bowel syndrome",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26638485",
+        "26863455",
+        "26888437"
+      ]
+    },
+    {
+      "term": "Jaundice",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "16061400",
+        "16765890",
+        "26728796"
+      ]
+    },
+    {
+      "term": "Liquid product physical issue",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "18503141",
+        "25196585",
+        "26059525"
+      ]
+    },
+    {
+      "term": "Maternal exposure during pregnancy",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26075039",
+        "26681479",
+        "26936770"
+      ]
+    },
+    {
+      "term": "Multiple fractures",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "24584074",
+        "24877729",
+        "26902252"
+      ]
+    },
+    {
+      "term": "Muscle spasms",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26675532",
+        "26928094",
+        "26931313"
+      ]
+    },
+    {
+      "term": "Myalgia",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26931640",
+        "26941221",
+        "26944087"
+      ]
+    },
+    {
+      "term": "Neoplasm malignant",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "12945609",
+        "13141156",
+        "26942222"
+      ]
+    },
+    {
+      "term": "Product quality issue",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26059525",
+        "26783711",
+        "26897682"
+      ]
+    },
+    {
+      "term": "Productive cough",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Pulmonary embolism",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26785063",
+        "26836140",
+        "26879274"
+      ]
+    },
+    {
+      "term": "Pyrexia",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "17821146",
+        "26929144",
+        "26931640"
+      ]
+    },
+    {
+      "term": "Rash erythematous",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "18606253",
+        "19200339",
+        "26674926"
+      ]
+    },
+    {
+      "term": "Rash pruritic",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "18395848",
+        "26878738",
+        "26916954"
+      ]
+    },
+    {
+      "term": "Renal disorder",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "24613678",
+        "24933808",
+        "25321554"
+      ]
+    },
+    {
+      "term": "Renal failure",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "25754673",
+        "26176735",
+        "26594567"
+      ]
+    },
+    {
+      "term": "Sleep apnoea syndrome",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "18503141",
+        "24256444",
+        "26638485"
+      ]
+    },
+    {
+      "term": "Sleep disorder due to a general medical condition",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Swelling",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "14862181",
+        "25321554",
+        "26943164"
+      ]
+    },
+    {
+      "term": "Unevaluable event",
+      "reportCount": 4,
+      "sampleReportIds": [
+        "14074261",
+        "16062957",
+        "26906639"
+      ]
+    },
+    {
+      "term": "Abnormal loss of weight",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26665245",
+        "26891256",
+        "26891269"
+      ]
+    },
+    {
+      "term": "Abortion spontaneous",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "13246369",
+        "15764904",
+        "26922221"
+      ]
+    },
+    {
+      "term": "Aggression",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26909234",
+        "26910739",
+        "26929094"
+      ]
+    },
+    {
+      "term": "Alanine aminotransferase increased",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26862989",
+        "26925955",
+        "26931640"
+      ]
+    },
+    {
+      "term": "Amaurosis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26927921",
+        "26928354",
+        "26928359"
+      ]
+    },
+    {
+      "term": "Anaphylactic reaction",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26876988",
+        "26885402",
+        "26941991"
+      ]
+    },
+    {
+      "term": "Aplastic anaemia",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26500899",
+        "26502141",
+        "26505345"
+      ]
+    },
+    {
+      "term": "Appetite disorder",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26929144",
+        "26944161",
+        "26944368"
+      ]
+    },
+    {
+      "term": "Aspartate aminotransferase increased",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26862989",
+        "26925955",
+        "26931640"
+      ]
+    },
+    {
+      "term": "Back disorder",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24555737",
+        "25223443",
+        "26376578"
+      ]
+    },
+    {
+      "term": "Bipolar disorder",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26055265",
+        "26938036",
+        "26940432"
+      ]
+    },
+    {
+      "term": "Bladder disorder",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "25321554",
+        "26083764",
+        "26882069"
+      ]
+    },
+    {
+      "term": "Blindness transient",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "17913680",
+        "25775243",
+        "26854063"
+      ]
+    },
+    {
+      "term": "Blindness unilateral",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24689065",
+        "26210324",
+        "26530307"
+      ]
+    },
+    {
+      "term": "Blood creatinine increased",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26301740",
+        "26570810",
+        "26931631"
+      ]
+    },
+    {
+      "term": "Body temperature",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24699452",
+        "25273309",
+        "25284139"
+      ]
+    },
+    {
+      "term": "Brain fog",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24744967",
+        "25986219",
+        "26663292"
+      ]
+    },
+    {
+      "term": "Cardiac failure",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "23947944",
+        "24177927",
+        "26856644"
+      ]
+    },
+    {
+      "term": "Cardiac failure congestive",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "19579846",
+        "24543247",
+        "26887897"
+      ]
+    },
+    {
+      "term": "Cerebral haemorrhage",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26913355",
+        "26922812",
+        "26948241"
+      ]
+    },
+    {
+      "term": "Chills",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26927648",
+        "26941221",
+        "26943836"
+      ]
+    },
+    {
+      "term": "Cholecystitis acute",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "14070392",
+        "17099107",
+        "26879931"
+      ]
+    },
+    {
+      "term": "Cold sweat",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "17996007",
+        "18355808",
+        "26913395"
+      ]
+    },
+    {
+      "term": "Colitis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "12833820",
+        "26886587",
+        "26948245"
+      ]
+    },
+    {
+      "term": "Colitis ulcerative",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26888437",
+        "26917649",
+        "26917892"
+      ]
+    },
+    {
+      "term": "Conjunctivitis allergic",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "COVID-19",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24733817",
+        "26753946",
+        "26931712"
+      ]
+    },
+    {
+      "term": "Deep vein thrombosis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26084197",
+        "26849514",
+        "26941197"
+      ]
+    },
+    {
+      "term": "Disability",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26571543",
+        "26652814",
+        "26910649"
+      ]
+    },
+    {
+      "term": "Drug dependence",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "17082371",
+        "25221228",
+        "26478029"
+      ]
+    },
+    {
+      "term": "Dust allergy",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Dysphonia",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24830431",
+        "26664518",
+        "26942310"
+      ]
+    },
+    {
+      "term": "Ear infection",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26660593",
+        "26676022",
+        "26948251"
+      ]
+    },
+    {
+      "term": "Erectile dysfunction",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "16299580",
+        "17975783",
+        "26934768"
+      ]
+    },
+    {
+      "term": "Expired product administered",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "25592326",
+        "25775243",
+        "26913593"
+      ]
+    },
+    {
+      "term": "Faecaloma",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26906091",
+        "26915326",
+        "26936508"
+      ]
+    },
+    {
+      "term": "Faeces discoloured",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "19274080",
+        "25986219",
+        "26903105"
+      ]
+    },
+    {
+      "term": "Full blood count abnormal",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Gait inability",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "13712726",
+        "14074261",
+        "26941409"
+      ]
+    },
+    {
+      "term": "Gamma-glutamyltransferase increased",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "14193040",
+        "26909243",
+        "26931640"
+      ]
+    },
+    {
+      "term": "Haematemesis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24760936",
+        "25120679",
+        "26943809"
+      ]
+    },
+    {
+      "term": "Haemoptysis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Haemorrhage",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24271303",
+        "24680773",
+        "25387725"
+      ]
+    },
+    {
+      "term": "Hepatitis E",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "17067090",
+        "17119562",
+        "17124815"
+      ]
+    },
+    {
+      "term": "Hypoxia",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Ill-defined disorder",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "15227542",
+        "26652814",
+        "26658765"
+      ]
+    },
+    {
+      "term": "Injection site discharge",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24677714",
+        "25204390",
+        "26943165"
+      ]
+    },
+    {
+      "term": "Injection site discolouration",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24271361",
+        "26847671",
+        "26942485"
+      ]
+    },
+    {
+      "term": "Injection site induration",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26864801",
+        "26941267",
+        "26944040"
+      ]
+    },
+    {
+      "term": "Injection site swelling",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "13299268",
+        "14093007",
+        "26940223"
+      ]
+    },
+    {
+      "term": "Intervertebral disc protrusion",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "19579846",
+        "25223443",
+        "26525478"
+      ]
+    },
+    {
+      "term": "Ketoacidosis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26908892",
+        "26913475",
+        "26934561"
+      ]
+    },
+    {
+      "term": "Knee arthroplasty",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24584074",
+        "26329190",
+        "26876988"
+      ]
+    },
+    {
+      "term": "Liver function test increased",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26456465",
+        "26501117",
+        "26504621"
+      ]
+    },
+    {
+      "term": "Mental impairment",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "19350116",
+        "26145699",
+        "26940918"
+      ]
+    },
+    {
+      "term": "Mite allergy",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Multiple use of single-use product",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24257115",
+        "26777088",
+        "26940918"
+      ]
+    },
+    {
+      "term": "Musculoskeletal stiffness",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "19350116",
+        "26852288",
+        "26943164"
+      ]
+    },
+    {
+      "term": "Mycotic allergy",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Nervousness",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "14074261",
+        "24543247",
+        "26944339"
+      ]
+    },
+    {
+      "term": "Neuritis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Neurological symptom",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Nodule",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Normochromic normocytic anaemia",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Obstructive airways disorder",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Oedema",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "20125809",
+        "26681479",
+        "26941221"
+      ]
+    },
+    {
+      "term": "Oedema peripheral",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "25795408",
+        "26885405",
+        "26936036"
+      ]
+    },
+    {
+      "term": "Optic neuritis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26859921",
+        "26942529",
+        "26943818"
+      ]
+    },
+    {
+      "term": "Overdose",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "25176169",
+        "26917428",
+        "26943218"
+      ]
+    },
+    {
+      "term": "Pancreatic neoplasm",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "17527192",
+        "23570615",
+        "23684209"
+      ]
+    },
+    {
+      "term": "Pancreatitis necrotising",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "25089200",
+        "26877785",
+        "26942231"
+      ]
+    },
+    {
+      "term": "Physical deconditioning",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "18884293",
+        "26868584",
+        "26915814"
+      ]
+    },
+    {
+      "term": "Pneumonia",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24830431",
+        "26923518",
+        "26927917"
+      ]
+    },
+    {
+      "term": "Pollakiuria",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "25344998",
+        "25616039",
+        "26456465"
+      ]
+    },
+    {
+      "term": "Presyncope",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26076293",
+        "26851934",
+        "26913395"
+      ]
+    },
+    {
+      "term": "Product distribution issue",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "16063196",
+        "24271361",
+        "25267234"
+      ]
+    },
+    {
+      "term": "Product packaging quantity issue",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26493203",
+        "26810315",
+        "26940918"
+      ]
+    },
+    {
+      "term": "Pulmonary alveolar haemorrhage",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Pulmonary fibrosis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Pulmonary vasculitis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Quadriparesis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26885674",
+        "26891256",
+        "26891269"
+      ]
+    },
+    {
+      "term": "Respiratory symptom",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Rhinorrhoea",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "13299270",
+        "26873498",
+        "26929144"
+      ]
+    },
+    {
+      "term": "Septic shock",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24731870",
+        "26906091",
+        "26936508"
+      ]
+    },
+    {
+      "term": "Sinusitis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26663744",
+        "26676022",
+        "26873498"
+      ]
+    },
+    {
+      "term": "Small intestinal obstruction",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26835524",
+        "26877762",
+        "26877908"
+      ]
+    },
+    {
+      "term": "Spirometry abnormal",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Stress",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26665245",
+        "26924941",
+        "26929144"
+      ]
+    },
+    {
+      "term": "Swelling face",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "12833820",
+        "26657930",
+        "26941221"
+      ]
+    },
+    {
+      "term": "Swollen tongue",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26918914",
+        "26931858",
+        "26944208"
+      ]
+    },
+    {
+      "term": "Taste disorder",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26911524",
+        "26941982",
+        "26944373"
+      ]
+    },
+    {
+      "term": "Therapeutic product effect decreased",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26608388",
+        "26852926",
+        "26934099"
+      ]
+    },
+    {
+      "term": "Thrombosis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Thyroid disorder",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "24256444",
+        "24925937",
+        "26914736"
+      ]
+    },
+    {
+      "term": "Vasculitis",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26785063",
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Vertigo",
+      "reportCount": 3,
+      "sampleReportIds": [
+        "26902253",
+        "26944266",
+        "26951653"
+      ]
+    },
+    {
+      "term": "Accidental overdose",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26927056",
+        "26934768"
+      ]
+    },
+    {
+      "term": "Accidental underdose",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "15254732",
+        "26909108"
+      ]
+    },
+    {
+      "term": "Activities of daily living decreased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26587366",
+        "26944375"
+      ]
+    },
+    {
+      "term": "Adjustment disorder",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24993479",
+        "26524773"
+      ]
+    },
+    {
+      "term": "Agitation",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "23684209",
+        "26707363"
+      ]
+    },
+    {
+      "term": "Agoraphobia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24754859",
+        "25567291"
+      ]
+    },
+    {
+      "term": "Allodynia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26720398",
+        "26944096"
+      ]
+    },
+    {
+      "term": "Amenorrhoea",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26925107",
+        "26944355"
+      ]
+    },
+    {
+      "term": "Amylase increased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "14660841",
+        "26902359"
+      ]
+    },
+    {
+      "term": "Anal incontinence",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "16902967",
+        "26888437"
+      ]
+    },
+    {
+      "term": "Angina unstable",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26066712",
+        "26570810"
+      ]
+    },
+    {
+      "term": "Ankle fracture",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24543247",
+        "26843565"
+      ]
+    },
+    {
+      "term": "Antineutrophil cytoplasmic antibody positive",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Atrial septal defect",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "23241933",
+        "24372421"
+      ]
+    },
+    {
+      "term": "Biliary colic",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26852593",
+        "26902443"
+      ]
+    },
+    {
+      "term": "Blood potassium decreased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26914539",
+        "26935304"
+      ]
+    },
+    {
+      "term": "Blood pressure decreased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26868845",
+        "26902252"
+      ]
+    },
+    {
+      "term": "Bone disorder",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24921520",
+        "26943173"
+      ]
+    },
+    {
+      "term": "Bowel movement irregularity",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26664672",
+        "26934565"
+      ]
+    },
+    {
+      "term": "Capillaritis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Cardiac failure chronic",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "13042251",
+        "13085917"
+      ]
+    },
+    {
+      "term": "Cardiac flutter",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26703635",
+        "26943809"
+      ]
+    },
+    {
+      "term": "Cardiac operation",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26841436",
+        "26881498"
+      ]
+    },
+    {
+      "term": "Cataract",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25472846",
+        "26319339"
+      ]
+    },
+    {
+      "term": "Catheterisation cardiac",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "15136726",
+        "26841436"
+      ]
+    },
+    {
+      "term": "Choking sensation",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26829860",
+        "26858134"
+      ]
+    },
+    {
+      "term": "Completed suicide",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26570249",
+        "26942338"
+      ]
+    },
+    {
+      "term": "Contraindicated product administered",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26881436",
+        "26906700"
+      ]
+    },
+    {
+      "term": "Coronary artery disease",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "16045271",
+        "26916794"
+      ]
+    },
+    {
+      "term": "Corrective lens user",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26676022",
+        "26940685"
+      ]
+    },
+    {
+      "term": "Counterfeit product administered",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24744967",
+        "26887897"
+      ]
+    },
+    {
+      "term": "Craniofacial fracture",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24256444",
+        "24543247"
+      ]
+    },
+    {
+      "term": "Crying",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26890519",
+        "26943797"
+      ]
+    },
+    {
+      "term": "Deafness unilateral",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26445769",
+        "26931306"
+      ]
+    },
+    {
+      "term": "Depressive symptom",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26929144",
+        "26943797"
+      ]
+    },
+    {
+      "term": "Device use error",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24711610",
+        "26076293"
+      ]
+    },
+    {
+      "term": "Diabetic nephropathy",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "15887663",
+        "26913019"
+      ]
+    },
+    {
+      "term": "Diabetic neuropathy",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26525478",
+        "26948251"
+      ]
+    },
+    {
+      "term": "Discouragement",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26831399",
+        "26915004"
+      ]
+    },
+    {
+      "term": "Diverticulitis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26915326",
+        "26941371"
+      ]
+    },
+    {
+      "term": "Drug-disease interaction",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26907514",
+        "26917147"
+      ]
+    },
+    {
+      "term": "Dry skin",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24921520",
+        "26456465"
+      ]
+    },
+    {
+      "term": "Dysgeusia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "13299276",
+        "26943713"
+      ]
+    },
+    {
+      "term": "Dysphagia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26829860",
+        "26944158"
+      ]
+    },
+    {
+      "term": "Dysstasia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26913593",
+        "26940384"
+      ]
+    },
+    {
+      "term": "Dysuria",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "15849290",
+        "26720398"
+      ]
+    },
+    {
+      "term": "Early satiety",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26925521",
+        "26941194"
+      ]
+    },
+    {
+      "term": "Eating disorder",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25445199",
+        "26860063"
+      ]
+    },
+    {
+      "term": "Electric shock sensation",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26927170",
+        "26934426"
+      ]
+    },
+    {
+      "term": "End stage renal disease",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25795408",
+        "26941977"
+      ]
+    },
+    {
+      "term": "Enteritis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26942566",
+        "26942920"
+      ]
+    },
+    {
+      "term": "Eosinophilic granulomatosis with polyangiitis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Exercise tolerance decreased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25223443",
+        "26776815"
+      ]
+    },
+    {
+      "term": "Eye haemorrhage",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26810780",
+        "26943325"
+      ]
+    },
+    {
+      "term": "Faeces hard",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24682332",
+        "26917892"
+      ]
+    },
+    {
+      "term": "Feeling cold",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "15729673",
+        "26942489"
+      ]
+    },
+    {
+      "term": "Feeling hot",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "21115587",
+        "26914751"
+      ]
+    },
+    {
+      "term": "Feeling of despair",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26890519",
+        "26948237"
+      ]
+    },
+    {
+      "term": "Fibromyalgia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26571543",
+        "26799883"
+      ]
+    },
+    {
+      "term": "Flank pain",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26929144",
+        "26941955"
+      ]
+    },
+    {
+      "term": "Fluid retention",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26852288",
+        "26856644"
+      ]
+    },
+    {
+      "term": "Foetal exposure during pregnancy",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "23241933",
+        "24372421"
+      ]
+    },
+    {
+      "term": "Food aversion",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26908892",
+        "26934561"
+      ]
+    },
+    {
+      "term": "Foot fracture",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26707367",
+        "26724260"
+      ]
+    },
+    {
+      "term": "Forced expiratory volume decreased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Fracture",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25223443",
+        "26804381"
+      ]
+    },
+    {
+      "term": "Fungal infection",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "17071697",
+        "26319339"
+      ]
+    },
+    {
+      "term": "Gastric hypomotility",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24304503",
+        "25236786"
+      ]
+    },
+    {
+      "term": "Gastrointestinal obstruction",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26906089",
+        "26943796"
+      ]
+    },
+    {
+      "term": "Glomerular filtration rate decreased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25204390",
+        "26940917"
+      ]
+    },
+    {
+      "term": "Glycosylated haemoglobin abnormal",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25540731",
+        "26936149"
+      ]
+    },
+    {
+      "term": "Glycosylated haemoglobin decreased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26910215",
+        "26931312"
+      ]
+    },
+    {
+      "term": "Goitre",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24629371",
+        "24927776"
+      ]
+    },
+    {
+      "term": "Gout",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "18308323",
+        "26594567"
+      ]
+    },
+    {
+      "term": "Haematochezia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26898244",
+        "26917649"
+      ]
+    },
+    {
+      "term": "Hepatic pain",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25060762",
+        "26942217"
+      ]
+    },
+    {
+      "term": "Hepatitis acute",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24329569",
+        "24574374"
+      ]
+    },
+    {
+      "term": "Herpes zoster",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "13861338",
+        "13871358"
+      ]
+    },
+    {
+      "term": "Hiccups",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "21316566",
+        "26594254"
+      ]
+    },
+    {
+      "term": "Hip fracture",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24584074",
+        "26655828"
+      ]
+    },
+    {
+      "term": "Hypercalcaemia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26885405",
+        "26926569"
+      ]
+    },
+    {
+      "term": "Hyperlipidaemia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26638485",
+        "26916794"
+      ]
+    },
+    {
+      "term": "Hypoaesthesia oral",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26931858",
+        "26941991"
+      ]
+    },
+    {
+      "term": "Immobile",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "15238630",
+        "26524773"
+      ]
+    },
+    {
+      "term": "Immunodeficiency",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25732791",
+        "26887692"
+      ]
+    },
+    {
+      "term": "Incorrect disposal of product",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24613678",
+        "25227277"
+      ]
+    },
+    {
+      "term": "Infection",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26851375",
+        "26902253"
+      ]
+    },
+    {
+      "term": "Influenza like illness",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26941657",
+        "26942003"
+      ]
+    },
+    {
+      "term": "Injection related reaction",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26890225",
+        "26913395"
+      ]
+    },
+    {
+      "term": "Injection site indentation",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25273309",
+        "26943080"
+      ]
+    },
+    {
+      "term": "Injection site reaction",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "13299268",
+        "24780950"
+      ]
+    },
+    {
+      "term": "Insurance issue",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25732781",
+        "26670284"
+      ]
+    },
+    {
+      "term": "Intercepted product selection error",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26932434",
+        "26941966"
+      ]
+    },
+    {
+      "term": "Intercepted product storage error",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26763457",
+        "26944576"
+      ]
+    },
+    {
+      "term": "Intestinal pseudo-obstruction",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26926917",
+        "26931717"
+      ]
+    },
+    {
+      "term": "Irritability",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "21697840",
+        "26944492"
+      ]
+    },
+    {
+      "term": "Laboratory test abnormal",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26936149",
+        "26943168"
+      ]
+    },
+    {
+      "term": "Laryngitis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26624463",
+        "26664518"
+      ]
+    },
+    {
+      "term": "Liver disorder",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26638485",
+        "26926565"
+      ]
+    },
+    {
+      "term": "Liver injury",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "17821146",
+        "26889736"
+      ]
+    },
+    {
+      "term": "Lower limb fracture",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24584074",
+        "26935515"
+      ]
+    },
+    {
+      "term": "Lower respiratory tract infection",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "15368514",
+        "26929144"
+      ]
+    },
+    {
+      "term": "Lymphoedema",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26693033",
+        "26864801"
+      ]
+    },
+    {
+      "term": "Lymphoma",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "14543949",
+        "24552260"
+      ]
+    },
+    {
+      "term": "Macular degeneration",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26876988",
+        "26913593"
+      ]
+    },
+    {
+      "term": "Meniscus injury",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24256444",
+        "26638495"
+      ]
+    },
+    {
+      "term": "Menopause",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26881498",
+        "26906446"
+      ]
+    },
+    {
+      "term": "Metabolic dysfunction-associated steatohepatitis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26638485",
+        "26927225"
+      ]
+    },
+    {
+      "term": "Metastases to liver",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "17527192",
+        "23684209"
+      ]
+    },
+    {
+      "term": "Mobility decreased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25177084",
+        "26673326"
+      ]
+    },
+    {
+      "term": "Muscle atrophy",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26673326",
+        "26877230"
+      ]
+    },
+    {
+      "term": "Nasal congestion",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26914751",
+        "26929144"
+      ]
+    },
+    {
+      "term": "Neovascular age-related macular degeneration",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25223443",
+        "26868635"
+      ]
+    },
+    {
+      "term": "Ocular hyperaemia",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "12933995",
+        "26940583"
+      ]
+    },
+    {
+      "term": "Oedematous pancreatitis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26065187",
+        "26902359"
+      ]
+    },
+    {
+      "term": "Oesophageal ulcer",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26638441",
+        "26941982"
+      ]
+    },
+    {
+      "term": "Orthostatic hypotension",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24543247",
+        "26941221"
+      ]
+    },
+    {
+      "term": "Osteoarthritis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24543247",
+        "25223443"
+      ]
+    },
+    {
+      "term": "Pancreatic disorder",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26851375",
+        "26902359"
+      ]
+    },
+    {
+      "term": "Pancreatitis chronic",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "22361469",
+        "26685465"
+      ]
+    },
+    {
+      "term": "Poor quality product administered",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26916954",
+        "26944089"
+      ]
+    },
+    {
+      "term": "Product administration error",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24654143",
+        "26943835"
+      ]
+    },
+    {
+      "term": "Product availability issue",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25166467",
+        "25321554"
+      ]
+    },
+    {
+      "term": "Product complaint",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25109807",
+        "26889349"
+      ]
+    },
+    {
+      "term": "Product label confusion",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24654143",
+        "25081974"
+      ]
+    },
+    {
+      "term": "Product leakage",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24830403",
+        "25223443"
+      ]
+    },
+    {
+      "term": "Product preparation error",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25276474",
+        "26719413"
+      ]
+    },
+    {
+      "term": "Product substitution issue",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26785328",
+        "26854726"
+      ]
+    },
+    {
+      "term": "Product use complaint",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26832412",
+        "26909682"
+      ]
+    },
+    {
+      "term": "Proteinuria",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26776815",
+        "26865811"
+      ]
+    },
+    {
+      "term": "Pulmonary oedema",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "12933995",
+        "19579846"
+      ]
+    },
+    {
+      "term": "Rebound effect",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25445950",
+        "26821672"
+      ]
+    },
+    {
+      "term": "Rectal haemorrhage",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26711092",
+        "26888437"
+      ]
+    },
+    {
+      "term": "Red blood cell count decreased",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24830403",
+        "26881722"
+      ]
+    },
+    {
+      "term": "Renal impairment",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "19914279",
+        "24627746"
+      ]
+    },
+    {
+      "term": "Retinal detachment",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26938687",
+        "26941221"
+      ]
+    },
+    {
+      "term": "Retinal haemorrhage",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "15357725",
+        "24760664"
+      ]
+    },
+    {
+      "term": "Rib fracture",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24543247",
+        "26942893"
+      ]
+    },
+    {
+      "term": "Seizure",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26707363",
+        "26942566"
+      ]
+    },
+    {
+      "term": "Sensitive skin",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26941939",
+        "26943556"
+      ]
+    },
+    {
+      "term": "Sensory disturbance",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26943221",
+        "26947148"
+      ]
+    },
+    {
+      "term": "Skin wrinkling",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26693033",
+        "26943222"
+      ]
+    },
+    {
+      "term": "Sleep disorder due to general medical condition, insomnia type",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26944493",
+        "26945314"
+      ]
+    },
+    {
+      "term": "Social avoidant behaviour",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26944389",
+        "26948237"
+      ]
+    },
+    {
+      "term": "Spinal stenosis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24539944",
+        "26525478"
+      ]
+    },
+    {
+      "term": "Suicide attempt",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26524773",
+        "26587366"
+      ]
+    },
+    {
+      "term": "Suspected product quality issue",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "19200339",
+        "26916954"
+      ]
+    },
+    {
+      "term": "Therapy change",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24622945",
+        "26890490"
+      ]
+    },
+    {
+      "term": "Tooth loss",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24543247",
+        "26924079"
+      ]
+    },
+    {
+      "term": "Total lung capacity abnormal",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26879274",
+        "26920942"
+      ]
+    },
+    {
+      "term": "Transient ischaemic attack",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24935415",
+        "26638485"
+      ]
+    },
+    {
+      "term": "Treatment failure",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24367580",
+        "26192737"
+      ]
+    },
+    {
+      "term": "Treatment noncompliance",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "17848619",
+        "23224739"
+      ]
+    },
+    {
+      "term": "Tubulointerstitial nephritis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "25795408",
+        "26941977"
+      ]
+    },
+    {
+      "term": "Type 2 diabetes mellitus",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24387123",
+        "26916794"
+      ]
+    },
+    {
+      "term": "Type I hypersensitivity",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "22006406",
+        "22006445"
+      ]
+    },
+    {
+      "term": "Upper gastrointestinal haemorrhage",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "19274080",
+        "26931721"
+      ]
+    },
+    {
+      "term": "Urinary tract infection",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26852288",
+        "26927225"
+      ]
+    },
+    {
+      "term": "Urosepsis",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "13801940",
+        "26868058"
+      ]
+    },
+    {
+      "term": "Uterine leiomyoma",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26688421",
+        "26814827"
+      ]
+    },
+    {
+      "term": "Vascular graft",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "24935415",
+        "25284139"
+      ]
+    },
+    {
+      "term": "Visual acuity reduced",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26821672",
+        "26857696"
+      ]
+    },
+    {
+      "term": "Withdrawal syndrome",
+      "reportCount": 2,
+      "sampleReportIds": [
+        "26910739",
+        "26929094"
+      ]
+    },
+    {
+      "term": "Abdominal hernia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Abdominal infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26848530"
+      ]
+    },
+    {
+      "term": "Abdominal mass",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26868897"
+      ]
+    },
+    {
+      "term": "Abdominal pain lower",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944493"
+      ]
+    },
+    {
+      "term": "Abdominal tenderness",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24733795"
+      ]
+    },
+    {
+      "term": "Abdominal wall disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Abdominal wall mass",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24927776"
+      ]
+    },
+    {
+      "term": "Abnormal dreams",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943221"
+      ]
+    },
+    {
+      "term": "Abnormal faeces",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26927225"
+      ]
+    },
+    {
+      "term": "Accident",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26935515"
+      ]
+    },
+    {
+      "term": "Acne",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19200339"
+      ]
+    },
+    {
+      "term": "Acute cholecystitis necrotic",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26879931"
+      ]
+    },
+    {
+      "term": "Acute coronary syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "17683893"
+      ]
+    },
+    {
+      "term": "Adenoma benign",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26936036"
+      ]
+    },
+    {
+      "term": "Affective disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25445950"
+      ]
+    },
+    {
+      "term": "Ageusia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26868569"
+      ]
+    },
+    {
+      "term": "Altered state of consciousness",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941612"
+      ]
+    },
+    {
+      "term": "Amnestic disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19350116"
+      ]
+    },
+    {
+      "term": "Anaemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24552260"
+      ]
+    },
+    {
+      "term": "Anger",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24993479"
+      ]
+    },
+    {
+      "term": "Anhedonia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26910388"
+      ]
+    },
+    {
+      "term": "Animal bite",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26570810"
+      ]
+    },
+    {
+      "term": "Ankle operation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26835579"
+      ]
+    },
+    {
+      "term": "Anogenital dysplasia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26936036"
+      ]
+    },
+    {
+      "term": "Antipsychotic drug level increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26938346"
+      ]
+    },
+    {
+      "term": "Appendicectomy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942089"
+      ]
+    },
+    {
+      "term": "Appendicitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26707447"
+      ]
+    },
+    {
+      "term": "Arthropathy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944401"
+      ]
+    },
+    {
+      "term": "Ascites",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26865811"
+      ]
+    },
+    {
+      "term": "Asphyxia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943797"
+      ]
+    },
+    {
+      "term": "Aspiration",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15238630"
+      ]
+    },
+    {
+      "term": "Asthenopia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26892725"
+      ]
+    },
+    {
+      "term": "Atrioventricular block",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26656135"
+      ]
+    },
+    {
+      "term": "Autism spectrum disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948227"
+      ]
+    },
+    {
+      "term": "Barrett^s oesophagus",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26921319"
+      ]
+    },
+    {
+      "term": "Bartholinitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26859259"
+      ]
+    },
+    {
+      "term": "Behaviour disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940187"
+      ]
+    },
+    {
+      "term": "Bezoar",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25075292"
+      ]
+    },
+    {
+      "term": "Biliary dilatation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16061400"
+      ]
+    },
+    {
+      "term": "Binge eating",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Bladder pain",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26720398"
+      ]
+    },
+    {
+      "term": "Blepharospasm",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944375"
+      ]
+    },
+    {
+      "term": "Blister",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941273"
+      ]
+    },
+    {
+      "term": "Blood alkaline phosphatase increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26862989"
+      ]
+    },
+    {
+      "term": "Blood corticotrophin increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940917"
+      ]
+    },
+    {
+      "term": "Blood pressure abnormal",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26681479"
+      ]
+    },
+    {
+      "term": "Blood prolactin increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26925107"
+      ]
+    },
+    {
+      "term": "Blood urea increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26301740"
+      ]
+    },
+    {
+      "term": "Blood urine present",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941169"
+      ]
+    },
+    {
+      "term": "Body mass index decreased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "22943105"
+      ]
+    },
+    {
+      "term": "Bone pain",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26873112"
+      ]
+    },
+    {
+      "term": "Brachial plexopathy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26924772"
+      ]
+    },
+    {
+      "term": "Bradycardia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "21402207"
+      ]
+    },
+    {
+      "term": "Bradykinesia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24700538"
+      ]
+    },
+    {
+      "term": "Breast operation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881498"
+      ]
+    },
+    {
+      "term": "Breast pain",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24939112"
+      ]
+    },
+    {
+      "term": "Bronchitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26887692"
+      ]
+    },
+    {
+      "term": "Burn oesophageal",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638441"
+      ]
+    },
+    {
+      "term": "Calcinosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15657313"
+      ]
+    },
+    {
+      "term": "Capillary fragility",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26868164"
+      ]
+    },
+    {
+      "term": "Cardiac failure acute",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26936036"
+      ]
+    },
+    {
+      "term": "Cardiac pacemaker insertion",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15530526"
+      ]
+    },
+    {
+      "term": "Cardiac valve disease",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26912106"
+      ]
+    },
+    {
+      "term": "Cardiovascular disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Cataract operation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881498"
+      ]
+    },
+    {
+      "term": "Cataract subcapsular",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26804658"
+      ]
+    },
+    {
+      "term": "Catheter site related reaction",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26570810"
+      ]
+    },
+    {
+      "term": "Cellulitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26864801"
+      ]
+    },
+    {
+      "term": "Cerebellar atrophy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26525478"
+      ]
+    },
+    {
+      "term": "Cerebellar infarction",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26631795"
+      ]
+    },
+    {
+      "term": "Cerebral disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25754673"
+      ]
+    },
+    {
+      "term": "Cervix carcinoma",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "14862181"
+      ]
+    },
+    {
+      "term": "Cervix haemorrhage uterine",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "14862181"
+      ]
+    },
+    {
+      "term": "Change of bowel habit",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26888437"
+      ]
+    },
+    {
+      "term": "Chikungunya virus infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "13540032"
+      ]
+    },
+    {
+      "term": "Choking",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943809"
+      ]
+    },
+    {
+      "term": "Cholangiocarcinoma",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16061400"
+      ]
+    },
+    {
+      "term": "Cholecystitis chronic",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941366"
+      ]
+    },
+    {
+      "term": "Cholestasis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24321202"
+      ]
+    },
+    {
+      "term": "Choroidal neovascularisation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26868635"
+      ]
+    },
+    {
+      "term": "Chronic gastritis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25691830"
+      ]
+    },
+    {
+      "term": "Chronic kidney disease-mineral and bone disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19579846"
+      ]
+    },
+    {
+      "term": "Chronic obstructive pulmonary disease",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26401783"
+      ]
+    },
+    {
+      "term": "Circumstance or information capable of leading to device use error",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26848423"
+      ]
+    },
+    {
+      "term": "Circumstance or information capable of leading to medication error",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26897682"
+      ]
+    },
+    {
+      "term": "Cognitive disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26921197"
+      ]
+    },
+    {
+      "term": "Colon cancer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15657313"
+      ]
+    },
+    {
+      "term": "Compression fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26083771"
+      ]
+    },
+    {
+      "term": "Contrast media allergy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25986219"
+      ]
+    },
+    {
+      "term": "Coronary artery occlusion",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26360924"
+      ]
+    },
+    {
+      "term": "Coronary artery stenosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26916794"
+      ]
+    },
+    {
+      "term": "Cortisol increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940917"
+      ]
+    },
+    {
+      "term": "Crohn^s disease",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881476"
+      ]
+    },
+    {
+      "term": "Cushing^s syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943811"
+      ]
+    },
+    {
+      "term": "Cyst",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15849290"
+      ]
+    },
+    {
+      "term": "Dark circles under eyes",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26847671"
+      ]
+    },
+    {
+      "term": "Decreased activity",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931631"
+      ]
+    },
+    {
+      "term": "Decreased interest",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948237"
+      ]
+    },
+    {
+      "term": "Defaecation urgency",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26917892"
+      ]
+    },
+    {
+      "term": "Delirium",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26927031"
+      ]
+    },
+    {
+      "term": "Dementia Alzheimer^s type",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26678824"
+      ]
+    },
+    {
+      "term": "Dental restoration failure",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26912037"
+      ]
+    },
+    {
+      "term": "Depersonalisation/derealisation disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944205"
+      ]
+    },
+    {
+      "term": "Deprescribing error",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "17546023"
+      ]
+    },
+    {
+      "term": "Depression suicidal",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26927560"
+      ]
+    },
+    {
+      "term": "Dermatitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19203542"
+      ]
+    },
+    {
+      "term": "Dermatitis allergic",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26910922"
+      ]
+    },
+    {
+      "term": "Device ineffective",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24920866"
+      ]
+    },
+    {
+      "term": "Device information output issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24640867"
+      ]
+    },
+    {
+      "term": "Device temperature issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25176169"
+      ]
+    },
+    {
+      "term": "Diabetic coma",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26066712"
+      ]
+    },
+    {
+      "term": "Diabetic metabolic decompensation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26707758"
+      ]
+    },
+    {
+      "term": "Diarrhoea haemorrhagic",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26869373"
+      ]
+    },
+    {
+      "term": "Diarrhoea infectious",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26703470"
+      ]
+    },
+    {
+      "term": "Dilated cardiomyopathy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26925067"
+      ]
+    },
+    {
+      "term": "Discoloured vomit",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19274080"
+      ]
+    },
+    {
+      "term": "Disease progression",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15849290"
+      ]
+    },
+    {
+      "term": "Disease recurrence",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "17821146"
+      ]
+    },
+    {
+      "term": "Disorientation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "23684209"
+      ]
+    },
+    {
+      "term": "Disturbance in attention",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948237"
+      ]
+    },
+    {
+      "term": "Diverticulum intestinal",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26936036"
+      ]
+    },
+    {
+      "term": "Dosing error",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944328"
+      ]
+    },
+    {
+      "term": "Drowning",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26181360"
+      ]
+    },
+    {
+      "term": "Drug abuse",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15676375"
+      ]
+    },
+    {
+      "term": "Drug effective for unapproved indication",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25445950"
+      ]
+    },
+    {
+      "term": "Drug withdrawal syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948245"
+      ]
+    },
+    {
+      "term": "Dry eye",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881498"
+      ]
+    },
+    {
+      "term": "Dysaesthesia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943221"
+      ]
+    },
+    {
+      "term": "Dysgraphia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25754673"
+      ]
+    },
+    {
+      "term": "Dyskinesia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26814501"
+      ]
+    },
+    {
+      "term": "Dyspnoea exertional",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26929144"
+      ]
+    },
+    {
+      "term": "Dystonia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25445950"
+      ]
+    },
+    {
+      "term": "Ectopic pregnancy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26922221"
+      ]
+    },
+    {
+      "term": "Electrolyte imbalance",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26929409"
+      ]
+    },
+    {
+      "term": "Emphysema",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26251894"
+      ]
+    },
+    {
+      "term": "Endometriosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26922221"
+      ]
+    },
+    {
+      "term": "Epigastric discomfort",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942565"
+      ]
+    },
+    {
+      "term": "Erosive oesophagitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25120679"
+      ]
+    },
+    {
+      "term": "Escherichia infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "13284239"
+      ]
+    },
+    {
+      "term": "Essential hypertension",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Extremity contracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26914539"
+      ]
+    },
+    {
+      "term": "Eye disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16055957"
+      ]
+    },
+    {
+      "term": "Eye infarction",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26699100"
+      ]
+    },
+    {
+      "term": "Eye infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25285956"
+      ]
+    },
+    {
+      "term": "Eye irritation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25335072"
+      ]
+    },
+    {
+      "term": "Eye movement disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26210324"
+      ]
+    },
+    {
+      "term": "Eye pruritus",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940583"
+      ]
+    },
+    {
+      "term": "Eye swelling",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941221"
+      ]
+    },
+    {
+      "term": "Facial paralysis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "13712726"
+      ]
+    },
+    {
+      "term": "Faeces pale",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26917892"
+      ]
+    },
+    {
+      "term": "Fear of death",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943797"
+      ]
+    },
+    {
+      "term": "Fear of disease",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931640"
+      ]
+    },
+    {
+      "term": "Feeding intolerance",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943836"
+      ]
+    },
+    {
+      "term": "Feeling of body temperature change",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948245"
+      ]
+    },
+    {
+      "term": "Focal segmental glomerulosclerosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26913019"
+      ]
+    },
+    {
+      "term": "Frustration tolerance decreased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26938350"
+      ]
+    },
+    {
+      "term": "Gallbladder enlargement",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16061400"
+      ]
+    },
+    {
+      "term": "Gallbladder oedema",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26879931"
+      ]
+    },
+    {
+      "term": "Gangrene",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26926565"
+      ]
+    },
+    {
+      "term": "Gastric haemorrhage",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19064710"
+      ]
+    },
+    {
+      "term": "Gastric residual increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24198724"
+      ]
+    },
+    {
+      "term": "Gastric ulcer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942566"
+      ]
+    },
+    {
+      "term": "Gastrointestinal haemorrhage",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942971"
+      ]
+    },
+    {
+      "term": "Gastrointestinal hypermotility",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24198724"
+      ]
+    },
+    {
+      "term": "Gastrointestinal pain",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25718108"
+      ]
+    },
+    {
+      "term": "Gastrointestinal sounds abnormal",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26926062"
+      ]
+    },
+    {
+      "term": "Gastrointestinal stoma complication",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26915326"
+      ]
+    },
+    {
+      "term": "Gastrointestinal viral infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26582245"
+      ]
+    },
+    {
+      "term": "General physical condition abnormal",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941194"
+      ]
+    },
+    {
+      "term": "Generalised oedema",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26657930"
+      ]
+    },
+    {
+      "term": "Glaucoma",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941628"
+      ]
+    },
+    {
+      "term": "Glucose tolerance impaired",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26675770"
+      ]
+    },
+    {
+      "term": "Glucose urine",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15849290"
+      ]
+    },
+    {
+      "term": "Haemangioma",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26901950"
+      ]
+    },
+    {
+      "term": "Haematoma",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24256444"
+      ]
+    },
+    {
+      "term": "Haemoglobin decreased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881722"
+      ]
+    },
+    {
+      "term": "Haemorrhage subcutaneous",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19203542"
+      ]
+    },
+    {
+      "term": "Hand fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26789393"
+      ]
+    },
+    {
+      "term": "Head discomfort",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943798"
+      ]
+    },
+    {
+      "term": "Head injury",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26863195"
+      ]
+    },
+    {
+      "term": "Heart rate decreased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26868569"
+      ]
+    },
+    {
+      "term": "Heart rate irregular",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26868569"
+      ]
+    },
+    {
+      "term": "Heart sounds",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26929144"
+      ]
+    },
+    {
+      "term": "Helicobacter infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26210324"
+      ]
+    },
+    {
+      "term": "Helicobacter test positive",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26924772"
+      ]
+    },
+    {
+      "term": "Hemiparesis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "13712726"
+      ]
+    },
+    {
+      "term": "Henoch-Schonlein purpura",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19203542"
+      ]
+    },
+    {
+      "term": "Hepatic cancer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942927"
+      ]
+    },
+    {
+      "term": "Hepatic cirrhosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26926565"
+      ]
+    },
+    {
+      "term": "Hepatic cytolysis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941089"
+      ]
+    },
+    {
+      "term": "Hepatic failure",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942371"
+      ]
+    },
+    {
+      "term": "Hepatic fibrosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26927225"
+      ]
+    },
+    {
+      "term": "Hepatic vascular thrombosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25472804"
+      ]
+    },
+    {
+      "term": "Hepatitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943795"
+      ]
+    },
+    {
+      "term": "Hepatitis B",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26728796"
+      ]
+    },
+    {
+      "term": "Hepatocellular injury",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941365"
+      ]
+    },
+    {
+      "term": "Hepatomegaly",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26685743"
+      ]
+    },
+    {
+      "term": "Hernia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26763457"
+      ]
+    },
+    {
+      "term": "Hiatus hernia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931721"
+      ]
+    },
+    {
+      "term": "High density lipoprotein decreased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Hormone receptor positive breast cancer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948233"
+      ]
+    },
+    {
+      "term": "Hyperacusis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24872242"
+      ]
+    },
+    {
+      "term": "Hyperchlorhydria",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638441"
+      ]
+    },
+    {
+      "term": "Hyperinsulinaemic hypoglycaemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "18355808"
+      ]
+    },
+    {
+      "term": "Hyperphagia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943569"
+      ]
+    },
+    {
+      "term": "Hypertransaminasaemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943795"
+      ]
+    },
+    {
+      "term": "Hypertriglyceridaemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Hypokalaemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26885405"
+      ]
+    },
+    {
+      "term": "Hypokinesia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944178"
+      ]
+    },
+    {
+      "term": "Hyponatraemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944436"
+      ]
+    },
+    {
+      "term": "Hypophosphataemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26885405"
+      ]
+    },
+    {
+      "term": "Hypoproteinaemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26865811"
+      ]
+    },
+    {
+      "term": "Hysterectomy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26913371"
+      ]
+    },
+    {
+      "term": "Idiopathic urticaria",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25732791"
+      ]
+    },
+    {
+      "term": "Immobilisation syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26587366"
+      ]
+    },
+    {
+      "term": "Immune thrombocytopenia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24830403"
+      ]
+    },
+    {
+      "term": "Impaired healing",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943811"
+      ]
+    },
+    {
+      "term": "Impaired work ability",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942960"
+      ]
+    },
+    {
+      "term": "Inability to afford medication",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24869409"
+      ]
+    },
+    {
+      "term": "Incontinence",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931361"
+      ]
+    },
+    {
+      "term": "Incorrect dose administered by product",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24622945"
+      ]
+    },
+    {
+      "term": "Induration",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26347891"
+      ]
+    },
+    {
+      "term": "Inguinal hernia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26858130"
+      ]
+    },
+    {
+      "term": "Injection site extravasation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "13299268"
+      ]
+    },
+    {
+      "term": "Injection site inflammation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941268"
+      ]
+    },
+    {
+      "term": "Injection site injury",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25222357"
+      ]
+    },
+    {
+      "term": "Injection site irritation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943218"
+      ]
+    },
+    {
+      "term": "Injection site nodule",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25266989"
+      ]
+    },
+    {
+      "term": "Injection site papule",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25081974"
+      ]
+    },
+    {
+      "term": "Injection site scab",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24272823"
+      ]
+    },
+    {
+      "term": "Injection site scar",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24974235"
+      ]
+    },
+    {
+      "term": "Injection site warmth",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26947276"
+      ]
+    },
+    {
+      "term": "Injury",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26929144"
+      ]
+    },
+    {
+      "term": "Intentional device use issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25212372"
+      ]
+    },
+    {
+      "term": "Intentional dose omission",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24993479"
+      ]
+    },
+    {
+      "term": "Intercepted product dispensing error",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26916052"
+      ]
+    },
+    {
+      "term": "Intercostal neuralgia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26861451"
+      ]
+    },
+    {
+      "term": "Intervertebral disc degeneration",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19579846"
+      ]
+    },
+    {
+      "term": "Intestinal haemorrhage",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26608388"
+      ]
+    },
+    {
+      "term": "Intra-abdominal fluid collection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26848530"
+      ]
+    },
+    {
+      "term": "Intraductal papillary mucinous neoplasm",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26848530"
+      ]
+    },
+    {
+      "term": "Intrusive thoughts",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26935324"
+      ]
+    },
+    {
+      "term": "Intussusception",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942566"
+      ]
+    },
+    {
+      "term": "Iron deficiency anaemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26814827"
+      ]
+    },
+    {
+      "term": "Irregular sleep wake rhythm disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25445950"
+      ]
+    },
+    {
+      "term": "Joint swelling",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Keratomileusis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940685"
+      ]
+    },
+    {
+      "term": "Ketonuria",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26842480"
+      ]
+    },
+    {
+      "term": "Ketosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26252811"
+      ]
+    },
+    {
+      "term": "Lacrimation increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26083764"
+      ]
+    },
+    {
+      "term": "Large intestinal obstruction",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25109807"
+      ]
+    },
+    {
+      "term": "Large intestine perforation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26794352"
+      ]
+    },
+    {
+      "term": "Large intestine polyp",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26936036"
+      ]
+    },
+    {
+      "term": "Laziness",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26878689"
+      ]
+    },
+    {
+      "term": "Left ventricular hypertrophy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26913019"
+      ]
+    },
+    {
+      "term": "Leukopenia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26655989"
+      ]
+    },
+    {
+      "term": "Lichen planus pemphigoides",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26822958"
+      ]
+    },
+    {
+      "term": "Ligament sprain",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26652783"
+      ]
+    },
+    {
+      "term": "Limb injury",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26825654"
+      ]
+    },
+    {
+      "term": "Limb mass",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26693033"
+      ]
+    },
+    {
+      "term": "Limb operation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26376578"
+      ]
+    },
+    {
+      "term": "Limb reconstructive surgery",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26830294"
+      ]
+    },
+    {
+      "term": "Lip pain",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931858"
+      ]
+    },
+    {
+      "term": "Lipase increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931376"
+      ]
+    },
+    {
+      "term": "Lipohypertrophy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "23356768"
+      ]
+    },
+    {
+      "term": "Lipoma",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "14862181"
+      ]
+    },
+    {
+      "term": "Liver transplant",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26405626"
+      ]
+    },
+    {
+      "term": "Loss of control of legs",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19350116"
+      ]
+    },
+    {
+      "term": "Lumbosacral radiculoplexus neuropathy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931312"
+      ]
+    },
+    {
+      "term": "Lung neoplasm malignant",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26742590"
+      ]
+    },
+    {
+      "term": "Lyme disease",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943806"
+      ]
+    },
+    {
+      "term": "Malignant melanoma",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940425"
+      ]
+    },
+    {
+      "term": "Malignant neoplasm of eye",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26693033"
+      ]
+    },
+    {
+      "term": "Malnutrition",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26925521"
+      ]
+    },
+    {
+      "term": "Mammoplasty",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941376"
+      ]
+    },
+    {
+      "term": "Mania",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26938036"
+      ]
+    },
+    {
+      "term": "Manufacturing issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26284342"
+      ]
+    },
+    {
+      "term": "Mast cell activation syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25732791"
+      ]
+    },
+    {
+      "term": "Mastectomy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881557"
+      ]
+    },
+    {
+      "term": "Medullary thyroid cancer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24234336"
+      ]
+    },
+    {
+      "term": "Meningioma",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Menstruation delayed",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948238"
+      ]
+    },
+    {
+      "term": "Metabolic alkalosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26885405"
+      ]
+    },
+    {
+      "term": "Metabolic dysfunction-associated liver disease",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26927225"
+      ]
+    },
+    {
+      "term": "Metabolic syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Metastases to adrenals",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26922263"
+      ]
+    },
+    {
+      "term": "Metastases to central nervous system",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26922263"
+      ]
+    },
+    {
+      "term": "Metastases to lung",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "17527192"
+      ]
+    },
+    {
+      "term": "Metastases to lymph nodes",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26922263"
+      ]
+    },
+    {
+      "term": "Micturition urgency",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26873498"
+      ]
+    },
+    {
+      "term": "Mitral valve stenosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26445415"
+      ]
+    },
+    {
+      "term": "Monoplegia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940200"
+      ]
+    },
+    {
+      "term": "Mood swings",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26913990"
+      ]
+    },
+    {
+      "term": "Motor dysfunction",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25445950"
+      ]
+    },
+    {
+      "term": "Mouth swelling",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941221"
+      ]
+    },
+    {
+      "term": "Movement disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15657846"
+      ]
+    },
+    {
+      "term": "Multiple organ dysfunction syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "13184839"
+      ]
+    },
+    {
+      "term": "Muscle fatigue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942814"
+      ]
+    },
+    {
+      "term": "Muscle rupture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26910922"
+      ]
+    },
+    {
+      "term": "Muscular dystrophy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24300575"
+      ]
+    },
+    {
+      "term": "Mydriasis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941957"
+      ]
+    },
+    {
+      "term": "Myocardial ischaemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26936036"
+      ]
+    },
+    {
+      "term": "Myopia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24246406"
+      ]
+    },
+    {
+      "term": "Neoplasm",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944401"
+      ]
+    },
+    {
+      "term": "Nephrotic syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26865811"
+      ]
+    },
+    {
+      "term": "Nervous system disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25060762"
+      ]
+    },
+    {
+      "term": "Neuralgia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25109807"
+      ]
+    },
+    {
+      "term": "Neuromyopathy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15238630"
+      ]
+    },
+    {
+      "term": "Neuropsychological symptoms",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940187"
+      ]
+    },
+    {
+      "term": "Neutropenia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15271251"
+      ]
+    },
+    {
+      "term": "Neutrophil percentage increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26902359"
+      ]
+    },
+    {
+      "term": "Nicotine dependence",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26897318"
+      ]
+    },
+    {
+      "term": "Night sweats",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26882003"
+      ]
+    },
+    {
+      "term": "Nightmare",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943797"
+      ]
+    },
+    {
+      "term": "Non-small cell lung cancer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26922263"
+      ]
+    },
+    {
+      "term": "Obesity",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638485"
+      ]
+    },
+    {
+      "term": "Obsessive-compulsive disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26889597"
+      ]
+    },
+    {
+      "term": "Obstructive shock",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931721"
+      ]
+    },
+    {
+      "term": "Ocular hypertension",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941995"
+      ]
+    },
+    {
+      "term": "Oesophageal pain",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26638441"
+      ]
+    },
+    {
+      "term": "Oesophagitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26936036"
+      ]
+    },
+    {
+      "term": "Onychomadesis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26898879"
+      ]
+    },
+    {
+      "term": "Ophthalmic vascular thrombosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26810780"
+      ]
+    },
+    {
+      "term": "Optic atrophy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26886756"
+      ]
+    },
+    {
+      "term": "Optic nerve disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943799"
+      ]
+    },
+    {
+      "term": "Optic neuropathy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26914901"
+      ]
+    },
+    {
+      "term": "Oral pruritus",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26878738"
+      ]
+    },
+    {
+      "term": "Oropharyngeal discomfort",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "14074261"
+      ]
+    },
+    {
+      "term": "Oropharyngeal pain",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26858134"
+      ]
+    },
+    {
+      "term": "Osteogenesis imperfecta",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24543247"
+      ]
+    },
+    {
+      "term": "Osteonecrosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943807"
+      ]
+    },
+    {
+      "term": "Ovarian neoplasm",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26814863"
+      ]
+    },
+    {
+      "term": "Overweight",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24999587"
+      ]
+    },
+    {
+      "term": "Oxygen therapy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24426106"
+      ]
+    },
+    {
+      "term": "Pain of skin",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943842"
+      ]
+    },
+    {
+      "term": "Pallor",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26831444"
+      ]
+    },
+    {
+      "term": "Pancreatic atrophy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16878695"
+      ]
+    },
+    {
+      "term": "Pancreatic carcinoma metastatic",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26935828"
+      ]
+    },
+    {
+      "term": "Pancreatic duct stenosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16878695"
+      ]
+    },
+    {
+      "term": "Pancreatic enlargement",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881476"
+      ]
+    },
+    {
+      "term": "Pancreatic enzymes increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26655935"
+      ]
+    },
+    {
+      "term": "Pancreatic injury",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931376"
+      ]
+    },
+    {
+      "term": "Pancreatic mass",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26905772"
+      ]
+    },
+    {
+      "term": "Pancreatic pseudocyst",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942650"
+      ]
+    },
+    {
+      "term": "Pancreatolithiasis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "14214709"
+      ]
+    },
+    {
+      "term": "Paraesthesia oral",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26878738"
+      ]
+    },
+    {
+      "term": "Parkinson^s disease",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25445950"
+      ]
+    },
+    {
+      "term": "Pelvic fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15277305"
+      ]
+    },
+    {
+      "term": "Pelvic pain",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26869373"
+      ]
+    },
+    {
+      "term": "Perineal swelling",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26851375"
+      ]
+    },
+    {
+      "term": "Peripheral coldness",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26870682"
+      ]
+    },
+    {
+      "term": "Peroneal nerve palsy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26913019"
+      ]
+    },
+    {
+      "term": "Pharyngo-oesophageal diverticulum",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26873433"
+      ]
+    },
+    {
+      "term": "Pityriasis lichenoides et varioliformis acuta",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948247"
+      ]
+    },
+    {
+      "term": "Platelet count decreased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24830403"
+      ]
+    },
+    {
+      "term": "Pneumonia bacterial",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16061400"
+      ]
+    },
+    {
+      "term": "Poisoning",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943825"
+      ]
+    },
+    {
+      "term": "Polyhydramnios",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26936770"
+      ]
+    },
+    {
+      "term": "Poor quality device used",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25196585"
+      ]
+    },
+    {
+      "term": "Portal venous gas",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26760150"
+      ]
+    },
+    {
+      "term": "Postoperative wound infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26926565"
+      ]
+    },
+    {
+      "term": "Postprandial hypoglycaemia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942566"
+      ]
+    },
+    {
+      "term": "Postural orthostatic tachycardia syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26846879"
+      ]
+    },
+    {
+      "term": "Pre-eclampsia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26681479"
+      ]
+    },
+    {
+      "term": "Premature delivery",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26936770"
+      ]
+    },
+    {
+      "term": "Prescription drug used without a prescription",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26929409"
+      ]
+    },
+    {
+      "term": "Primary biliary cholangitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26456465"
+      ]
+    },
+    {
+      "term": "Primary hypoparathyroidism",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931712"
+      ]
+    },
+    {
+      "term": "Proctitis ulcerative",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26888437"
+      ]
+    },
+    {
+      "term": "Product administered at inappropriate site",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26937101"
+      ]
+    },
+    {
+      "term": "Product administration interrupted",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25204390"
+      ]
+    },
+    {
+      "term": "Product communication issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940918"
+      ]
+    },
+    {
+      "term": "Product contamination with body fluid",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25035661"
+      ]
+    },
+    {
+      "term": "Product dose omission",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15781232"
+      ]
+    },
+    {
+      "term": "Product dose omission in error",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24964093"
+      ]
+    },
+    {
+      "term": "Product knowledge deficit",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26857694"
+      ]
+    },
+    {
+      "term": "Product label issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24700538"
+      ]
+    },
+    {
+      "term": "Product packaging difficult to open",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26935926"
+      ]
+    },
+    {
+      "term": "Product physical consistency issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26889349"
+      ]
+    },
+    {
+      "term": "Product physical issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26665201"
+      ]
+    },
+    {
+      "term": "Product prescribing error",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24999587"
+      ]
+    },
+    {
+      "term": "Product prescribing issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24699452"
+      ]
+    },
+    {
+      "term": "Product residue present",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25109807"
+      ]
+    },
+    {
+      "term": "Product temperature excursion issue",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24555737"
+      ]
+    },
+    {
+      "term": "Prolonged expiration",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26929144"
+      ]
+    },
+    {
+      "term": "Prostate cancer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26401783"
+      ]
+    },
+    {
+      "term": "Prostatic disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25732781"
+      ]
+    },
+    {
+      "term": "Pruritus generalised",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "12833820"
+      ]
+    },
+    {
+      "term": "Pubis fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15228033"
+      ]
+    },
+    {
+      "term": "Pulmonary thrombosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26830341"
+      ]
+    },
+    {
+      "term": "Pyelonephritis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26858130"
+      ]
+    },
+    {
+      "term": "QRS axis abnormal",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942371"
+      ]
+    },
+    {
+      "term": "Radius fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26789393"
+      ]
+    },
+    {
+      "term": "Rales",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26929144"
+      ]
+    },
+    {
+      "term": "Rash maculo-papular",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "19203542"
+      ]
+    },
+    {
+      "term": "Rash papular",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "18395848"
+      ]
+    },
+    {
+      "term": "Rectal tenesmus",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26888437"
+      ]
+    },
+    {
+      "term": "Recurrent cancer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881557"
+      ]
+    },
+    {
+      "term": "Regurgitation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26290911"
+      ]
+    },
+    {
+      "term": "Respiratory alkalosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26409592"
+      ]
+    },
+    {
+      "term": "Respiratory distress",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25732791"
+      ]
+    },
+    {
+      "term": "Respiratory rate increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941732"
+      ]
+    },
+    {
+      "term": "Retinal degeneration",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16055957"
+      ]
+    },
+    {
+      "term": "Rheumatic disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26678824"
+      ]
+    },
+    {
+      "term": "Rheumatoid arthritis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25594754"
+      ]
+    },
+    {
+      "term": "Road traffic accident",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26905297"
+      ]
+    },
+    {
+      "term": "Rotator cuff syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24543247"
+      ]
+    },
+    {
+      "term": "Sarcoidosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948242"
+      ]
+    },
+    {
+      "term": "Scatolia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26927225"
+      ]
+    },
+    {
+      "term": "Scoliosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25223443"
+      ]
+    },
+    {
+      "term": "Self esteem decreased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943797"
+      ]
+    },
+    {
+      "term": "Self-injurious ideation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26948237"
+      ]
+    },
+    {
+      "term": "Sense of oppression",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "14074261"
+      ]
+    },
+    {
+      "term": "Sepsis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26882776"
+      ]
+    },
+    {
+      "term": "Shock",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24869409"
+      ]
+    },
+    {
+      "term": "Shock haemorrhagic",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931721"
+      ]
+    },
+    {
+      "term": "Shock hypoglycaemic",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931356"
+      ]
+    },
+    {
+      "term": "Shoulder fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26935515"
+      ]
+    },
+    {
+      "term": "Sinobronchitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16043041"
+      ]
+    },
+    {
+      "term": "Skin burning sensation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943842"
+      ]
+    },
+    {
+      "term": "Skin cancer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26711148"
+      ]
+    },
+    {
+      "term": "Skin disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943694"
+      ]
+    },
+    {
+      "term": "Skin exfoliation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26785063"
+      ]
+    },
+    {
+      "term": "Skin injury",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26854291"
+      ]
+    },
+    {
+      "term": "Skin laxity",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943805"
+      ]
+    },
+    {
+      "term": "Skin lesion",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26711148"
+      ]
+    },
+    {
+      "term": "Skin swelling",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26347891"
+      ]
+    },
+    {
+      "term": "Skin weeping",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25299673"
+      ]
+    },
+    {
+      "term": "Sleeve gastrectomy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26882069"
+      ]
+    },
+    {
+      "term": "Small fibre neuropathy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26898116"
+      ]
+    },
+    {
+      "term": "Spinal fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24543247"
+      ]
+    },
+    {
+      "term": "Spinal laminectomy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881498"
+      ]
+    },
+    {
+      "term": "Spondylolisthesis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943827"
+      ]
+    },
+    {
+      "term": "Starvation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943805"
+      ]
+    },
+    {
+      "term": "Stomatitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26747570"
+      ]
+    },
+    {
+      "term": "Stress cardiomyopathy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26927605"
+      ]
+    },
+    {
+      "term": "Stress fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26881498"
+      ]
+    },
+    {
+      "term": "Stressed eating",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944355"
+      ]
+    },
+    {
+      "term": "Stupor",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26842480"
+      ]
+    },
+    {
+      "term": "Superior mesenteric artery syndrome",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942650"
+      ]
+    },
+    {
+      "term": "Supraventricular tachycardia",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24927776"
+      ]
+    },
+    {
+      "term": "Surgery",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26559427"
+      ]
+    },
+    {
+      "term": "Symptom recurrence",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "21716700"
+      ]
+    },
+    {
+      "term": "Temperature intolerance",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25175987"
+      ]
+    },
+    {
+      "term": "Tendonitis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940075"
+      ]
+    },
+    {
+      "term": "Thalamus haemorrhage",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "13712726"
+      ]
+    },
+    {
+      "term": "Therapeutic product effect delayed",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944353"
+      ]
+    },
+    {
+      "term": "Therapeutic response unexpected",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25517932"
+      ]
+    },
+    {
+      "term": "Therapy interrupted",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26800880"
+      ]
+    },
+    {
+      "term": "Therapy non-responder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26941409"
+      ]
+    },
+    {
+      "term": "Thirst",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943218"
+      ]
+    },
+    {
+      "term": "Throat clearing",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26910096"
+      ]
+    },
+    {
+      "term": "Throat tightness",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "13299377"
+      ]
+    },
+    {
+      "term": "Thrombotic microangiopathy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26913019"
+      ]
+    },
+    {
+      "term": "Thyroid cancer",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26898891"
+      ]
+    },
+    {
+      "term": "Thyroid hormones decreased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25223443"
+      ]
+    },
+    {
+      "term": "Thyroid mass",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26587804"
+      ]
+    },
+    {
+      "term": "Thyroid neoplasm",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26940366"
+      ]
+    },
+    {
+      "term": "Tinnitus",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26943798"
+      ]
+    },
+    {
+      "term": "Tongue discolouration",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26582245"
+      ]
+    },
+    {
+      "term": "Tongue discomfort",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931858"
+      ]
+    },
+    {
+      "term": "Tongue eruption",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26931858"
+      ]
+    },
+    {
+      "term": "Tooth fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26888158"
+      ]
+    },
+    {
+      "term": "Tooth infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26888158"
+      ]
+    },
+    {
+      "term": "Transaminases increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "17821146"
+      ]
+    },
+    {
+      "term": "Tricuspid valve stenosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26445415"
+      ]
+    },
+    {
+      "term": "Underdose",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "16812478"
+      ]
+    },
+    {
+      "term": "Unintended pregnancy",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26075039"
+      ]
+    },
+    {
+      "term": "Upper limb fracture",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "24543247"
+      ]
+    },
+    {
+      "term": "Upper respiratory tract infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26929144"
+      ]
+    },
+    {
+      "term": "Uterine disorder",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26703635"
+      ]
+    },
+    {
+      "term": "Uterine scar",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26865811"
+      ]
+    },
+    {
+      "term": "Vaginal haemorrhage",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26814827"
+      ]
+    },
+    {
+      "term": "Varices oesophageal",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25472804"
+      ]
+    },
+    {
+      "term": "Varicose vein",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26594567"
+      ]
+    },
+    {
+      "term": "Vascular stent stenosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26916794"
+      ]
+    },
+    {
+      "term": "Vasculitic rash",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26927600"
+      ]
+    },
+    {
+      "term": "Vasodilatation",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26693033"
+      ]
+    },
+    {
+      "term": "Venous occlusion",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26570810"
+      ]
+    },
+    {
+      "term": "Vertebral foraminal stenosis",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26525478"
+      ]
+    },
+    {
+      "term": "Viral infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26831444"
+      ]
+    },
+    {
+      "term": "Visual field defect",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26886756"
+      ]
+    },
+    {
+      "term": "Vitamin D deficiency",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25949778"
+      ]
+    },
+    {
+      "term": "Vitreous floaters",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942566"
+      ]
+    },
+    {
+      "term": "Vitreous haemorrhage",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26909247"
+      ]
+    },
+    {
+      "term": "Vomiting projectile",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26942644"
+      ]
+    },
+    {
+      "term": "White blood cell count increased",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26902359"
+      ]
+    },
+    {
+      "term": "Wound infection",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26570810"
+      ]
+    },
+    {
+      "term": "Wound secretion",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "15832058"
+      ]
+    },
+    {
+      "term": "Wrong product administered",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "25732781"
+      ]
+    },
+    {
+      "term": "Yellow skin",
+      "reportCount": 1,
+      "sampleReportIds": [
+        "26944095"
+      ]
+    }
+  ],
+  "limitations": [
+    "A bounded reference sample is not the complete FAERS dataset or a representative population.",
+    "Counts describe reaction co-occurrence in retained reports; they do not establish causality, incidence, expectedness, or final reportability.",
+    "Multiple drugs and reactions may coexist without a source-supported pairwise relationship.",
+    "FDA reports are reference evidence, not newly received social reports or sponsor submission cases."
+  ]
+}

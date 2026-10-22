@@ -720,8 +720,9 @@ export function adaptMeltwaterRows(
       if (!combinedText || combinedText.length < 20) return null;
 
       if (!relevancePrequalified) {
+        // GLP-1 treatment experiences commonly describe injections as shots or jabs.
         if (
-          isBotulinumToxinProfile(profile)
+          (isBotulinumToxinProfile(profile) || profile.profileId === "glp_1")
             ? combinedText.includes("vaccine") || combinedText.includes("vitamin k")
             : combinedText.includes("vaccine") || combinedText.includes("shot") || combinedText.includes("jab") || combinedText.includes("vitamin k")
         ) {

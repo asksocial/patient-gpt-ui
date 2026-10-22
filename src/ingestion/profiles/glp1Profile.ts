@@ -1,0 +1,41 @@
+import type { DiseaseProfile } from "./types";
+
+export const glp1Profile: DiseaseProfile = {
+  profileId: "glp_1",
+  therapeuticArea: "GLP-1",
+  diseaseNames: ["glp-1", "glp1", "glp 1", "glucagon-like peptide", "semaglutide", "tirzepatide", "liraglutide", "dulaglutide", "exenatide", "lixisenatide", "ozempic", "wegovy", "rybelsus", "mounjaro", "zepbound", "saxenda", "victoza", "trulicity", "byetta", "bydureon", "adlyxin"],
+  symptomPatterns: {
+    "digestive experiences": ["nausea", "vomiting", "constipation", "diarrhea", "diarrhoea", "bloating", "reflux", "stomach pain"],
+    "appetite and eating": ["food noise", "appetite", "cravings", "fullness", "binge eating"],
+    "energy and daily life": ["fatigue", "tired", "energy", "daily life"],
+    "weight and metabolic outcomes": ["weight loss", "weight regain", "blood sugar", "a1c", "plateau"],
+  },
+  treatmentPatterns: {
+    semaglutide: ["semaglutide", "ozempic", "wegovy", "rybelsus"],
+    tirzepatide: ["tirzepatide", "mounjaro", "zepbound"],
+    liraglutide: ["liraglutide", "saxenda", "victoza"],
+    dulaglutide: ["dulaglutide", "trulicity"],
+    exenatide: ["exenatide", "byetta", "bydureon"],
+    lixisenatide: ["lixisenatide", "adlyxin"],
+    "GLP-1 treatments": ["glp-1", "glp1", "glp 1", "glucagon-like peptide"],
+  },
+  burdenTerms: ["side effect", "nausea", "vomiting", "constipation", "fatigue", "cost", "expensive", "insurance", "shortage", "stigma", "plateau", "regain", "worried", "anxiety"],
+  patientIndicators: ["i take", "i started", "i am taking", "i'm taking", "my dose", "my injection", "my shot", "my weight", "my a1c", "my blood sugar", "food noise", "has anyone", "should i", "i lost", "i've lost"],
+  caregiverIndicators: ["my partner", "my spouse", "my mother", "my father", "my child", "caregiver"],
+  lowQualityNoisePatterns: ["buy now", "discount code", "promo code", "dm to order"],
+  hardExclusionPatterns: ["now hiring", "job opening", "securities class action", "shareholder alert", "investor alert"],
+  requirePatientVoice: false,
+  requireDiseaseContextForSymptoms: true,
+  brands: ["Ozempic", "Wegovy", "Rybelsus", "Mounjaro", "Zepbound", "Saxenda", "Victoza", "Trulicity", "Byetta", "Bydureon", "Adlyxin"],
+  journeyStages: ["Awareness", "Considering Treatment", "Consultation", "Access", "Treatment Initiation", "Dose Adjustment", "Maintenance", "Switching", "Discontinuation"],
+  emotions: ["Hope", "Anxiety", "Frustration", "Confidence", "Fear", "Relief", "Confusion"],
+  knowledgeDomains: [
+    { id: "outcomes", name: "Treatment Outcomes", type: "Treatment Theme", keywords: ["weight loss", "blood sugar", "a1c", "food noise", "appetite", "plateau", "regain"] },
+    { id: "tolerability", name: "Tolerability Experiences", type: "Experience Theme", keywords: ["side effect", "nausea", "vomiting", "constipation", "diarrhea", "fatigue"] },
+    { id: "access", name: "Access & Affordability", type: "Access Theme", keywords: ["insurance", "coverage", "prior authorization", "cost", "shortage", "compounded", "out of pocket"] },
+    { id: "journey", name: "Treatment Journey", type: "Treatment Theme", keywords: ["dose", "titration", "injection", "shot", "switching", "stopping", "maintenance"] },
+    { id: "choice", name: "Treatment Choice", type: "Competitive Theme", keywords: ["ozempic", "wegovy", "mounjaro", "zepbound", "semaglutide", "tirzepatide", "oral glp"] },
+    { id: "social", name: "Stigma & Support", type: "Experience Theme", keywords: ["stigma", "judgment", "judgement", "support", "body image", "shame"] },
+  ],
+  marketThemes: ["Treatment outcomes", "Tolerability experiences", "Access and affordability", "Treatment journey", "Treatment choice", "Stigma and support"],
+};

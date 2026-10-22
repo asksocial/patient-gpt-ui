@@ -1,3 +1,13 @@
+# Production integration — October 22, 2026
+
+The owner explicitly authorized production deployment of GLP-1 and the revised R3 email workflow, with subsequent acceptance on the live site. This supersedes the earlier Scope A-only staging plan below; historical staging results are not claimed as acceptance of this combined release.
+
+- Production base: `76f17c65462a520294cb504b6cd56fb9689c618b`, which already contains GLP-1 screening. Integrated with the reviewed email queue and PDF/logo changes through `f287c88` on `codex/glp1-r3-production`. Existing production homepage/favicon and GLP-1 implementation are preserved. Deferred ODCS/background-operation changes in the primary working folder are excluded.
+- Checks: full `test:production` including GLP-1, ICSR and isolated PostgreSQL acceptance passed; TypeScript and production build passed; lint has zero errors and one pre-existing navigation warning; production dependency audit reports zero vulnerabilities. Build includes both `/api/pv/corpora/glp-1` and `/api/pv/icsr-emails`.
+- Production database verified in the authenticated dashboard: Patient GPT, `hvnwbigjohspncdrhsjy`, main/PRODUCTION. Existing PV columns were checked, no newer ODCS audit triggers were present, and GLP-1 was registered and active.
+- Executed the equivalent DDL from `202610010001_create_pv_icsr_email_reviews.sql` and `202610200002_structured_review_email_queue.sql` as one transaction with a 10-second lock timeout; both versions were inserted into the migration ledger in that same transaction. Dashboard returned `R3 migration transaction completed`. No safety cases were created or externally transmitted by this migration.
+- Rollback baseline is `76f17c6`; retain the new tables, immutable revision history and email batches. Reconcile any pending/uncertain batches before rollback or resend. Application publication and live acceptance evidence will be recorded after deployment verification.
+
 # ICSR email release checklist
 
 ## October 20 workflow refinement — implementation in isolated checkout

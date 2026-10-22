@@ -14,6 +14,14 @@ export type TherapeuticAreaCoverage = {
 
 const COVERAGE: TherapeuticAreaCoverage[] = [
   {
+    therapeuticArea: "GLP-1",
+    therapeuticAreaId: "glp_1",
+    status: "validated",
+    executiveIntelligenceAvailable: true,
+    longitudinalIntelligenceAvailable: true,
+    sourceLabel: "GLP-1 Meltwater canonical corpus",
+  },
+  {
     therapeuticArea:
       "Regenerative Aesthetics",
     therapeuticAreaId:
@@ -96,6 +104,7 @@ export function normalizeTherapeuticAreaId(
     .replace(/^_+|_+$/g, "");
 
   const aliases: Record<string, string> = {
+    glp1: "glp_1",
     hep_b: "hepatitis_b",
     hepb: "hepatitis_b",
     hepatitisb: "hepatitis_b",

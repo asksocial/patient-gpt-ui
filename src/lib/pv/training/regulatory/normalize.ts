@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getBotulinumProductRegistry, getBotulinumRegulatoryCorpusManifest, getOpenFdaRegulatoryMapping } from "./config";
+import { botulinumRegulatoryConfiguration, type RegulatoryCorpusConfiguration } from "./config";
 import type {
   NormalizedFaersDate,
   NormalizedFaersDrug,
@@ -81,11 +81,11 @@ function targetMatch(values: string[], targets: string[]) {
   return [...targets].sort((a, b) => b.length - a.length).find((target) => values.some((value) => sourceValueMatches(value, target)));
 }
 
-function normalizeDrug(rawDrug: unknown, sourceIndex: number): NormalizedFaersDrug {
+function normalizeDrug(rawDrug: unknown, sourceIndex: number, configuration: RegulatoryCorpusConfiguration): NormalizedFaersDrug {
   const drug = object(rawDrug);
   const openfda = object(drug.openfda);
-  const registry = getBotulinumProductRegistry();
-  const mapping = getOpenFdaRegulatoryMapping();
+  const registry = configuration.productRegistry;
+  const mapping = configuration.mapping;
   const medicinalProduct = string(drug.medicinalproduct);
   const activeIngredient = string(object(drug.activesubstance).activesubstancename);
   const brandValues = unique([medicinalProduct, ...strings(openfda.brand_name)]);
@@ -119,15 +119,15 @@ function normalizeDrug(rawDrug: unknown, sourceIndex: number): NormalizedFaersDr
     route: string(drug.drugadministrationroute),
     therapy_start_date: normalizeOpenFdaDate(drug.drugstartdate),
     therapy_end_date: normalizeOpenFdaDate(drug.drugenddate),
-    is_target_botulinum_product: Boolean(matchedTargetProduct || matchedActiveIngredient),
+    ...(configuration.manifest.topic === "Botulinum toxin" ? { is_target_botulinum_product: Boolean(matchedTargetProduct || matchedActiveIngredient) } : { is_target_product: Boolean(matchedTargetProduct || matchedActiveIngredient) }),
     matched_target_product: matchedTargetProduct,
     matched_active_ingredient: matchedActiveIngredient,
     suspect_role_if_available: matchedTargetProduct || matchedActiveIngredient ? role || "unknown" : undefined,
   };
 }
 
-function normalizeReactions(rawRecord: Record<string, any>) {
-  const mapping = getOpenFdaRegulatoryMapping();
+function normalizeReactions(rawRecord: Record<string, any>, configuration: RegulatoryCorpusConfiguration) {
+  const mapping = configuration.mapping;
   const reactions: NormalizedFaersReaction[] = [];
   const outcomes: NormalizedFaersOutcome[] = [];
   array(object(rawRecord.patient).reaction).forEach((value, sourceIndex) => {
@@ -164,24 +164,25 @@ export function faersDeduplicationKey(rawRecord: unknown) {
 export function normalizeOpenFdaRegulatoryCase(
   rawRecord: unknown,
   observations: OpenFdaQueryObservation[],
+  configuration: RegulatoryCorpusConfiguration = botulinumRegulatoryConfiguration,
 ): { raw: OpenFdaRawRecordEnvelope; normalized: NormalizedFaersRegulatoryCase } {
   const record = object(rawRecord);
   const deduplicationKey = faersDeduplicationKey(record);
   const safetyReportId = string(record.safetyreportid)!;
   const safetyReportVersion = string(record.safetyreportversion);
-  const mapping = getOpenFdaRegulatoryMapping();
-  const corpusManifest = getBotulinumRegulatoryCorpusManifest();
-  const productRegistry = getBotulinumProductRegistry();
+  const mapping = configuration.mapping;
+  const corpusManifest = configuration.manifest;
+  const productRegistry = configuration.productRegistry;
   const rawSourceRecordSha256 = rawSha256(record);
   const patient = object(record.patient);
   const primarySource = object(record.primarysource);
-  const drugs = array(patient.drug).map(normalizeDrug);
-  const { reactions, outcomes } = normalizeReactions(record);
+  const drugs = array(patient.drug).map((drug, index) => normalizeDrug(drug, index, configuration));
+  const { reactions, outcomes } = normalizeReactions(record, configuration);
   const warnings: string[] = [];
   if (!drugs.length) warnings.push("NO_DRUGS_REPORTED");
   if (!reactions.length) warnings.push("NO_REACTIONS_REPORTED");
   if (!string(record.receivedate)) warnings.push("RECEIVE_DATE_MISSING");
-  if (!drugs.some((drug) => drug.is_target_botulinum_product)) warnings.push("QUERY_MATCH_NOT_CONFIRMED_ON_DRUG_OBJECT");
+  if (!drugs.some((drug) => drug.is_target_product || drug.is_target_botulinum_product)) warnings.push("QUERY_MATCH_NOT_CONFIRMED_ON_DRUG_OBJECT");
   for (const [field, value] of [["receipt_date", record.receiptdate], ["receive_date", record.receivedate], ["transmission_date", record.transmissiondate]] as const) {
     const parsed = normalizeOpenFdaDate(value);
     if (parsed?.raw && !parsed.iso) warnings.push(`${field.toUpperCase()}_MALFORMED`);
@@ -189,7 +190,7 @@ export function normalizeOpenFdaRegulatoryCase(
   const ageUnitCode = string(patient.patientonsetageunit);
   const sexCode = string(patient.patientsex);
   const reporterQualificationCode = string(primarySource.qualification);
-  const targetDrugs = drugs.filter((drug) => drug.is_target_botulinum_product);
+  const targetDrugs = drugs.filter((drug) => drug.is_target_product || drug.is_target_botulinum_product);
   const normalized: NormalizedFaersRegulatoryCase = {
     case_id: deduplicationKey,
     faers_case_id: safetyReportId,
@@ -231,7 +232,7 @@ export function normalizeOpenFdaRegulatoryCase(
     reactions,
     outcomes,
     concomitant_products: unique(drugs.filter((drug) => drug.drug_role === "concomitant").map((drug) => drug.medicinal_product)),
-    is_target_botulinum_product: targetDrugs.length > 0,
+    ...(configuration.manifest.topic === "Botulinum toxin" ? { is_target_botulinum_product: targetDrugs.length > 0 } : { is_target_product: targetDrugs.length > 0 }),
     matched_target_products: unique(targetDrugs.map((drug) => drug.matched_target_product)),
     matched_active_ingredients: unique(targetDrugs.map((drug) => drug.matched_active_ingredient)),
     suspect_role_if_available: [...new Set(targetDrugs.map((drug) => drug.suspect_role_if_available).filter(Boolean))] as NormalizedFaersRegulatoryCase["suspect_role_if_available"],

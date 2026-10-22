@@ -45,12 +45,12 @@ const conversationOnly =
   );
 
 if (
-  coverage.length !== 6 ||
-  validated.length !== 5 ||
+  coverage.length !== 7 ||
+  validated.length !== 6 ||
   conversationOnly.length !== 1
 ) {
   throw new Error(
-    "The production coverage registry must explicitly classify all six active therapeutic areas."
+    "The production coverage registry must explicitly classify all seven active topics, including GLP-1."
   );
 }
 
