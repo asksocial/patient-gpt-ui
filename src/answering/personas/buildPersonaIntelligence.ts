@@ -1,4 +1,4 @@
-import { groupClientAudiences, type ClientAudienceGroup } from "./clientAudienceGroups";
+import { groupClientAudiences, clientGroupForClassification, type ClientAudienceGroup } from "./clientAudienceGroups";
 import type { Glp1AudienceClassification } from "../../ingestion/glp1Audience";
 
 export type PersonaRecord = {
@@ -9,6 +9,7 @@ export type PersonaRecord = {
 import { AUDIENCE_ROLES, CONVERSATION_SEGMENTS, type AudienceRole, type ConversationSegment } from "../../ingestion/audienceSegments";
 
 export type PersonaIntelligenceSummary = {
+  clientGroupingVersion: 2;
   clientGroups: ClientAudienceGroup[];
   scope: "full_corpus" | "selected_findings";
   analyticalCount?: number;
@@ -61,18 +62,17 @@ export function buildPersonaIntelligence(findings: PersonaRecord[], options: { s
     group.content.set(classification.contentSegment, (group.content.get(classification.contentSegment) || 0) + 1);
     groups.set(classification.audience, group);
   }
-  const summary = {
-    scope: options.scope || "selected_findings" as const,
-    analyticalCount: options.analyticalCount,
-    excludedFromAnalysisCount: options.analyticalCount === undefined ? undefined : findings.length - options.analyticalCount,
-    patientRelated: {
-      count: patientRelatedCount, percent: percent(patientRelatedCount), likelyVoiceCount,
-      breakdown: relatedGroups.map(group => ({ ...group, count: relatedCounts.get(group.id) || 0, percent: percent(relatedCounts.get(group.id) || 0) })).filter(group => group.count),
-    },
-    denominator: findings.length,
-    classifiedCount: [...groups.values()].reduce((sum, group) => sum + group.findings.length, 0),
-    roleCount: groups.size,
-    segments: [...groups.entries()].map(([id, group]) => ({
+  const segmentsFor = (items: PersonaRecord[]) => {
+    const groups = new Map<AudienceRole, { findings: PersonaRecord[]; content: Map<ConversationSegment, number> }>();
+    for (const finding of items) {
+      const classification = finding.audienceClassification;
+      if (!classification) continue;
+      const group = groups.get(classification.audience) || { findings: [], content: new Map<ConversationSegment, number>() };
+      group.findings.push(finding);
+      group.content.set(classification.contentSegment, (group.content.get(classification.contentSegment) || 0) + 1);
+      groups.set(classification.audience, group);
+    }
+    return [...groups.entries()].map(([id, group]) => ({
       id, ...AUDIENCE_ROLES[id], count: group.findings.length,
       percent: percent(group.findings.length),
       authorOrSourceEvidenceCount: group.findings.filter(f => ["author_metadata", "professional_self_description", "publication_metadata", "relationship_self_description"].includes(f.audienceClassification!.roleBasis)).length,
@@ -90,7 +90,24 @@ export function buildPersonaIntelligence(findings: PersonaRecord[], options: { s
           roleBasis: f.audienceClassification!.roleBasis,
         };
       }),
-    })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+    })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
   };
-  return { ...summary, clientGroups: groupClientAudiences(summary.segments, summary.denominator) };
+  const summary = {
+    scope: options.scope || "selected_findings" as const,
+    analyticalCount: options.analyticalCount,
+    excludedFromAnalysisCount: options.analyticalCount === undefined ? undefined : findings.length - options.analyticalCount,
+    patientRelated: {
+      count: patientRelatedCount, percent: percent(patientRelatedCount), likelyVoiceCount,
+      breakdown: relatedGroups.map(group => ({ ...group, count: relatedCounts.get(group.id) || 0, percent: percent(relatedCounts.get(group.id) || 0) })).filter(group => group.count),
+    },
+    denominator: findings.length,
+    classifiedCount: [...groups.values()].reduce((sum, group) => sum + group.findings.length, 0),
+    roleCount: groups.size,
+    segments: segmentsFor(findings),
+  };
+  const partitions = new Map<string, PersonaIntelligenceSummary["segments"]>();
+  for (const id of new Set(findings.filter(f => f.audienceClassification).map(f => clientGroupForClassification(f.audienceClassification!)))) {
+    partitions.set(id, segmentsFor(findings.filter(f => f.audienceClassification && clientGroupForClassification(f.audienceClassification) === id)));
+  }
+  return { ...summary, clientGroupingVersion: 2, clientGroups: groupClientAudiences(summary.segments, summary.denominator, partitions) };
 }

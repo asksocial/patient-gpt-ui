@@ -1,4 +1,4 @@
-import { CLIENT_AUDIENCE_GROUPS, CLIENT_GROUP_BY_ROLE } from "../src/answering/personas/clientAudienceGroups";
+import { CLIENT_AUDIENCE_GROUPS, clientGroupForClassification } from "../src/answering/personas/clientAudienceGroups";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import path from "node:path";
@@ -20,7 +20,7 @@ const counts = (items: typeof records, field: "audience" | "designation") => ite
   const key = item.classification[field]; acc[key] = (acc[key] || 0) + 1; return acc;
 }, {});
 const summarize = (items: typeof records) => ({
-  clientAudienceCounts: items.reduce<Record<string, number>>((acc, item) => { const key = CLIENT_GROUP_BY_ROLE[item.classification.audience]; acc[key] = (acc[key] || 0) + 1; return acc; }, {}),
+  clientAudienceCounts: items.reduce<Record<string, number>>((acc, item) => { const key = clientGroupForClassification(item.classification); acc[key] = (acc[key] || 0) + 1; return acc; }, {}),
   rowCount: items.length, audienceCounts: counts(items, "audience"), designationCounts: counts(items, "designation"),
   conversationSegmentCounts: items.reduce<Record<string, number>>((acc, item) => { const key = item.classification.contentSegment; acc[key] = (acc[key] || 0) + 1; return acc; }, {}),
   roleByConversation: items.reduce<Record<string, Record<string, number>>>((acc, item) => { const c = item.classification; acc[c.audience] ||= {}; acc[c.audience][c.contentSegment] = (acc[c.audience][c.contentSegment] || 0) + 1; return acc; }, {}),
@@ -63,7 +63,7 @@ const sourceValue = (value: unknown) => {
 const csv = [originalColumns.concat(auditColumns).map(quote).join(","), ...records.map(({ source, classification: c, analyticalInclusion, sourceRow }) => [
   ...originalColumns.map(key => sourceValue(source[key])), c.audience, c.designation, c.patientContent, c.eligiblePatientVoice, c.confidence,
   c.signals.join("; "), c.matchedEvidence.join("; "), c.reviewRequired, analyticalInclusion, c.version, sourceRow,
-  AUDIENCE_ROLES[c.audience].label, c.contentSegment, CONVERSATION_SEGMENTS[c.contentSegment], c.roleBasis, c.roleEvidence.join("; "), c.previousAudience, CLIENT_GROUP_BY_ROLE[c.audience], CLIENT_AUDIENCE_GROUPS.find(group => group.id === CLIENT_GROUP_BY_ROLE[c.audience])!.label,
+  AUDIENCE_ROLES[c.audience].label, c.contentSegment, CONVERSATION_SEGMENTS[c.contentSegment], c.roleBasis, c.roleEvidence.join("; "), c.previousAudience, clientGroupForClassification(c), CLIENT_AUDIENCE_GROUPS.find(group => group.id === clientGroupForClassification(c))!.label,
 ].map(quote).join(","))].join("\r\n") + "\r\n";
 fs.writeFileSync(path.join(outputDir, "GLP-1-labeled.csv"), "\uFEFF" + csv);
 console.log(JSON.stringify({ ...summary, languages: undefined }, null, 2));

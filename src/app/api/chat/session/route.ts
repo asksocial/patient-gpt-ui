@@ -1,3 +1,4 @@
+import { refreshGlp1PersonaComposition } from "../../../../lib/answers/refreshGlp1PersonaComposition";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
@@ -84,7 +85,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       session,
-      messages: messages ?? [],
+      messages: (messages ?? []).map(message => message.role === "assistant" ? {
+        ...message,
+        content: refreshGlp1PersonaComposition(message.content, message.content?.therapeuticArea || session?.therapeutic_area || ""),
+      } : message),
     });
   } catch (error: any) {
     return NextResponse.json(

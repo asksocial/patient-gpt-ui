@@ -229,12 +229,12 @@ records. No renormalization occurs when exclusions are collapsed:
 
 | Client group | Posts | Share of 5,000 |
 | --- | ---: | ---: |
-| Patients & Their Circle | 596 | 11.92% |
+| Patients & Their Circle | 639 | 12.78% |
 | Healthcare & Science | 72 | 1.44% |
 | Health & Wellness Influencers | 75 | 1.50% |
-| Industry & Markets | 145 | 2.90% |
-| Media & Advocacy | 1,895 | 37.90% |
-| General Public | 2,043 | 40.86% |
+| Industry & Markets | 140 | 2.80% |
+| Media & Advocacy | 1,875 | 37.50% |
+| General Public | 2,025 | 40.50% |
 | Excluded / Off-topic (separate bucket) | 174 | 3.48% |
 | **Total** | **5,000** | **100%** |
 
@@ -246,9 +246,25 @@ choices, not reclassification of individual source records or credentials.
 
 The six audience groups cover 4,826 posts. The separate exclusion bucket contains
 174 off-topic posts. Another 89 spam/promotional records are excluded only from
-thematic analytics and retain their source groups in this composition. The
-broader patient-related content lens remains 639 (12.78%) with 277 likely voices;
-it overlaps source groups and does not equal Patients & Their Circle (596).
+thematic analytics and retain their source groups in this composition. All patient-related posts now belong to Patients & Their Circle, counted once.
+
+### Combined patient-related group
+
+Patients & Their Circle now combines all 639 patient-related posts (12.78%)
+into one group, with no separate patient-content card or patient-content
+breakdown. The original 596-post audience set is wholly contained within these
+639 records. The additional 43 are 20 media stories, 18 public-discussion posts
+and five commercial testimonials. A record's patient-related flag takes priority
+over its source role for client grouping, so no post appears in two client groups.
+
+The resulting counts are 639 Patients & Their Circle, 72 Healthcare & Science,
+75 Health & Wellness Influencers, 140 Industry & Markets, 1,875 Media & Advocacy,
+2,025 General Public and 174 Excluded / Off-topic, totaling 5,000. Patients & Their
+Circle expands to combined conversation types and original-source evidence,
+without separating patient voices from patient-related context. Original source
+roles remain available in audit metadata. Full-corpus saved GLP-1 compositions
+are refreshed on read to this grouping when the source denominator matches;
+stored messages, historical narrative and other answer sections are unchanged.
 
 The labeled CSV preserves all 49 source columns and now adds 19 audit columns,
 including Client Audience Group and Client Audience Group Name alongside the

@@ -1,4 +1,5 @@
-import { CLIENT_GROUP_BY_ROLE, groupClientAudiences } from "../answering/personas/clientAudienceGroups";
+import { refreshGlp1PersonaComposition } from "../lib/answers/refreshGlp1PersonaComposition";
+import { CLIENT_GROUP_BY_ROLE, groupClientAudiences, clientGroupForClassification } from "../answering/personas/clientAudienceGroups";
 import { askSocial } from "../app/api/ask";
 import { loadGlp1PersonaIntelligence } from "../lib/answers/loadGlp1PersonaIntelligence";
 import assert from "node:assert/strict";
@@ -138,18 +139,35 @@ console.log("PASS full-corpus persona composition, 639 patient-related records, 
 const grouped = loadGlp1PersonaIntelligence().clientGroups;
 assert.equal(Object.keys(CLIENT_GROUP_BY_ROLE).length, Object.keys(AUDIENCE_ROLES).length, "Every granular role has exactly one client-facing designation");
 assert.deepEqual(grouped.map(group => [group.label, group.count, group.percent]), [
-  ["Patients & Their Circle", 596, 11.92], ["Healthcare & Science", 72, 1.44],
-  ["Health & Wellness Influencers", 75, 1.5], ["Industry & Markets", 145, 2.9],
-  ["Media & Advocacy", 1895, 37.9], ["General Public", 2043, 40.86],
+  ["Patients & Their Circle", 639, 12.78], ["Healthcare & Science", 72, 1.44],
+  ["Health & Wellness Influencers", 75, 1.5], ["Industry & Markets", 140, 2.8],
+  ["Media & Advocacy", 1875, 37.5], ["General Public", 2025, 40.5],
   ["Excluded / Off-topic", 174, 3.48],
 ]);
 assert.equal(grouped.filter(group => !group.excluded).reduce((n, group) => n + group.count, 0), 4826);
 assert.equal(grouped.reduce((n, group) => n + group.count, 0), 5000);
-assert.equal(grouped.flatMap(group => group.subtypes).length, 15);
+assert.equal(loadGlp1PersonaIntelligence().segments.length, 15, "Original source roles remain available in audit metadata");
 assert.equal(new Set(grouped.flatMap(group => group.subtypes.map(subtype => subtype.id))).size, 15);
 assert.equal(CLIENT_GROUP_BY_ROLE.advocacy, "media_advocacy");
 assert.equal(CLIENT_GROUP_BY_ROLE.clinic_telehealth, "healthcare_science");
-assert.equal(grouped.find(group => group.id === "patients_circle")!.subtypes.reduce((n, subtype) => n + subtype.count, 0), 596);
+assert.equal(grouped.find(group => group.id === "patients_circle")!.subtypes.reduce((n, subtype) => n + subtype.count, 0), 639);
 assert.equal(loadGlp1PersonaIntelligence().patientRelated.count, 639, "The audience grouping must not replace the broader patient-content lens");
-assert.deepEqual(groupClientAudiences(full.segments, 5000), grouped, "Historical granular summaries can derive the same client grouping");
+for (const audience of ["news_media", "public_discussion", "company_or_commercial"] as const) {
+  assert.equal(clientGroupForClassification({ audience, patientContent: true }), "patients_circle");
+  assert.equal(clientGroupForClassification({ audience, patientContent: false }), CLIENT_GROUP_BY_ROLE[audience]);
+}
+for (const segment of loadGlp1PersonaIntelligence().segments) {
+  assert.equal(grouped.flatMap(group => group.subtypes).filter(subtype => subtype.id === segment.id).reduce((n, subtype) => n + subtype.count, 0), segment.count, "Splitting source roles across exclusive client groups must reconcile");
+}
+const current = loadGlp1PersonaIntelligence();
+const legacyPersona = { ...current, clientGroupingVersion: undefined, clientGroups: groupClientAudiences(current.segments, 5000) };
+const stored = { narrative: "Saved narrative", analyticalAnswer: { sections: [{ key: "persona_intelligence", personaIntelligence: legacyPersona }, { key: "untouched", text: "Historical evidence" }] } };
+const refreshed = refreshGlp1PersonaComposition(stored, "GLP-1");
+assert.equal(refreshed.analyticalAnswer.sections[0].personaIntelligence!.clientGroups[0].count, 639);
+assert.equal(stored.analyticalAnswer.sections[0].personaIntelligence!.clientGroups[0].count, 596, "Refreshing a view must not mutate the stored message");
+assert.deepEqual(refreshed.analyticalAnswer.sections[1], stored.analyticalAnswer.sections[1]);
+assert.equal(refreshed.narrative, stored.narrative);
+assert.equal(refreshGlp1PersonaComposition(stored, "Gene Therapy"), stored);
+assert.equal(refreshGlp1PersonaComposition(refreshed, "GLP-1"), refreshed, "Current summaries need no refresh");
+console.log("PASS 639 unique patient-related posts, no duplicate client assignment, and read-only refresh of saved full-corpus composition");
 console.log("PASS six exclusive client-facing groups, granular drill-downs, separate off-topic bucket and unchanged full-corpus denominator");

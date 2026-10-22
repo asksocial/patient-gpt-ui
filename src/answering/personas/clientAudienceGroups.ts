@@ -1,8 +1,9 @@
+import type { Glp1AudienceClassification } from "../../ingestion/glp1Audience";
 import type { AudienceRole } from "../../ingestion/audienceSegments";
 import type { PersonaIntelligenceSummary } from "./buildPersonaIntelligence";
 
 export const CLIENT_AUDIENCE_GROUPS = [
-  { id: "patients_circle", label: "Patients & Their Circle", description: "Patients, prospective patients, support communities, caregivers, family and peers. Community participation does not establish treatment use." },
+  { id: "patients_circle", label: "Patients & Their Circle", description: "All patient-related conversations, including personal accounts, support communities, caregivers and family, reported stories, reposts and testimonials." },
   { id: "healthcare_science", label: "Healthcare & Science", description: "Clinical professionals, care services and scientific organizations." },
   { id: "health_wellness_influencers", label: "Health & Wellness Influencers", description: "Health, wellness, nutrition and fitness creators without established clinical credentials." },
   { id: "industry_markets", label: "Industry & Markets", description: "Commercial organizations and financial or market commentators." },
@@ -28,11 +29,17 @@ export type ClientAudienceGroup = {
   subtypes: PersonaIntelligenceSummary["segments"];
 };
 
-/** Each granular role contributes to exactly one group. The source denominator
- * includes exclusions even when their disclosure is collapsed in the UI. */
-export function groupClientAudiences(segments: PersonaIntelligenceSummary["segments"], denominator: number): ClientAudienceGroup[] {
+/** Patient-related content takes precedence over the source role. A post
+ * about patient experience is counted once, in Patients & Their Circle. */
+export function clientGroupForClassification(classification: Pick<Glp1AudienceClassification, "audience" | "patientContent">): ClientAudienceGroupId {
+  return classification.patientContent ? "patients_circle" : CLIENT_GROUP_BY_ROLE[classification.audience];
+}
+
+/** Record partitions are summarized independently so patient-related media,
+ * commercial and public posts are removed from their former client groups. */
+export function groupClientAudiences(segments: PersonaIntelligenceSummary["segments"], denominator: number, partitions?: Map<string, PersonaIntelligenceSummary["segments"]>): ClientAudienceGroup[] {
   return CLIENT_AUDIENCE_GROUPS.map(definition => {
-    const subtypes = segments.filter(segment => CLIENT_GROUP_BY_ROLE[segment.id] === definition.id);
+    const subtypes = partitions?.get(definition.id) || (partitions ? [] : segments.filter(segment => CLIENT_GROUP_BY_ROLE[segment.id] === definition.id));
     const count = subtypes.reduce((sum, subtype) => sum + subtype.count, 0);
     return { ...definition, excluded: definition.id === "excluded_off_topic", count,
       percent: denominator ? Math.round(count / denominator * 10000) / 100 : 0, subtypes };
