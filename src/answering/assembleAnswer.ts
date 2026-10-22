@@ -1,3 +1,4 @@
+import type { PersonaIntelligenceSummary } from "./personas/buildPersonaIntelligence";
 import {
   buildRenderedAnswer,
 } from "./rendering/buildRenderedAnswer";
@@ -18,6 +19,7 @@ export function assembleAnswer(params: {
   themeRelationships?: ThemeRelationship[];
   themeLongitudinalTracking?:
     ThemeLongitudinalTracking;
+  personaSummary?: PersonaIntelligenceSummary;
   debug: any;
   liveDataStatus:
     | "not_found"
@@ -30,6 +32,7 @@ export function assembleAnswer(params: {
     themeSummary = [],
     themeRelationships = [],
     themeLongitudinalTracking,
+    personaSummary,
     debug,
     liveDataStatus,
   } = params;
@@ -41,6 +44,7 @@ export function assembleAnswer(params: {
     themeSummary,
     themeRelationships,
     intent,
-    themeLongitudinalTracking
+    themeLongitudinalTracking,
+    personaSummary
   );
 }

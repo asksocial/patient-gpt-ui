@@ -701,7 +701,8 @@ function buildThemeFirstAnswer(
     | "extends"
     | "only",
   themeLongitudinalTracking?:
-    ThemeLongitudinalTracking
+    ThemeLongitudinalTracking,
+  personaSummary?: PersonaIntelligenceSummary
 ): RenderedAnswer {
   const context =
     buildThemeAnswerContext(
@@ -712,8 +713,8 @@ function buildThemeFirstAnswer(
   const sections:
     RenderedSection[] = [];
 
-  if (findings.some(finding => finding.audienceClassification)) {
-    const personas = buildPersonaSection(findings);
+  if (personaSummary || findings.some(finding => finding.audienceClassification)) {
+    const personas = buildPersonaSection(findings, personaSummary);
     if (personas) sections.push(personas);
   }
 
@@ -980,22 +981,26 @@ function buildMarketSection(
 }
 
 function buildPersonaSection(
-  findings: CanonicalFinding[]
+  findings: CanonicalFinding[],
+  corpusSummary?: PersonaIntelligenceSummary
 ): RenderedSection | null {
-  const summary = buildPersonaIntelligence(findings);
+  const summary = corpusSummary || buildPersonaIntelligence(findings);
   if (summary.classifiedCount) {
     return {
       key: "persona_intelligence",
       title: "Persona Intelligence",
-      text: `Audience and source roles across ${summary.denominator.toLocaleString()} selected posts; ${summary.classifiedCount.toLocaleString()} have detailed classifications. Shares measure posts, and one author can contribute multiple posts. Specific professional roles require source, account or self-description evidence. ${summary.denominator < LOW_SAMPLE_THRESHOLD ? "This small sample is directional. " : ""}The main conversation types within each group are shown below.`,
-      bullets: summary.segments.flatMap(segment => {
+      text: `Audience and source roles across ${summary.denominator.toLocaleString()} ${summary.scope === "full_corpus" ? "posts in the full source corpus" : "selected posts"}; ${summary.classifiedCount.toLocaleString()} have detailed classifications. Shares measure posts, and one author can contribute multiple posts. Specific professional roles require source, account or self-description evidence. ${summary.denominator < LOW_SAMPLE_THRESHOLD ? "This small sample is directional. " : ""}The main conversation types within each group are shown below.`,
+      bullets: [
+        `Patient-related content: ${summary.patientRelated.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${summary.patientRelated.percent}%). This includes ${summary.patientRelated.likelyVoiceCount} likely patient/caregiver voices plus community context, third-party stories, reposts and commercial testimonials. This content grouping overlaps the audience rows.`,
+        ...(summary.scope === "full_corpus" ? [`Full source corpus denominator: ${summary.denominator.toLocaleString()} rows. ${summary.analyticalCount?.toLocaleString()} rows are retained for thematic analytics; ${summary.excludedFromAnalysisCount?.toLocaleString()} are excluded from thematic analytics but remain in this composition. Ranked answer examples do not determine these shares.`] : []),
+        ...summary.segments.flatMap(segment => {
         if (segment.id === "public_discussion") {
           return segment.conversations.map(item => `Public discussion · ${item.label}: ${item.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${Math.round(item.count / summary.denominator * 10000) / 100}%). The speaker's personal or professional role is not stated.`);
         }
         const activity = segment.conversations.slice(0, 2).map(item => `${item.label.toLowerCase()} (${item.count.toLocaleString()})`).join("; ");
         const boundary = segment.id === "patient_community" ? " Community participation does not establish personal treatment use." : segment.id === "patient" || segment.id === "caregiver" ? " These are likely, machine-inferred voices." : "";
         return [`${segment.label}: ${segment.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${segment.percent}%). Main activity: ${activity}.${boundary}`];
-      }),
+      })],
       personaIntelligence: summary,
       findings: [],
     };
@@ -1106,7 +1111,8 @@ export function buildRenderedAnswer(
     ThemeRelationship[] = [],
   intent?: string,
   themeLongitudinalTracking?:
-    ThemeLongitudinalTracking
+    ThemeLongitudinalTracking,
+  personaSummary?: PersonaIntelligenceSummary
 ): RenderedAnswer {
   const resolvedIntent =
     intent ||
@@ -1125,7 +1131,8 @@ export function buildRenderedAnswer(
       themeRelationships,
       debug,
       liveDataStatus,
-      themeLongitudinalTracking
+      themeLongitudinalTracking,
+      personaSummary
     );
   }
 
@@ -1159,7 +1166,7 @@ export function buildRenderedAnswer(
 
   }
 
-  const persona = buildPersonaSection(findings);
+  const persona = buildPersonaSection(findings, personaSummary);
   if (persona) sections.push(persona);
 
   sections.push(

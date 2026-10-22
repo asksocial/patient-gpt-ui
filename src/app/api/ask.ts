@@ -1,3 +1,4 @@
+import { loadGlp1PersonaIntelligence } from "../../lib/answers/loadGlp1PersonaIntelligence";
 import {
   assembleAnswer,
 } from "../../answering/assembleAnswer";
@@ -1373,6 +1374,8 @@ export function askSocial(
 
       findings:
         rankedCards,
+
+      personaSummary: /^glp[\s_-]?1$/i.test(therapeuticArea || "") ? loadGlp1PersonaIntelligence() : undefined,
 
       themeSummary,
 

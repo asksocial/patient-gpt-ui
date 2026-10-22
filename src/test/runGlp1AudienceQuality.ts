@@ -1,3 +1,5 @@
+import { askSocial } from "../app/api/ask";
+import { loadGlp1PersonaIntelligence } from "../lib/answers/loadGlp1PersonaIntelligence";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import crypto from "node:crypto";
@@ -102,3 +104,32 @@ assert(detailed.bullets!.some(bullet => bullet.startsWith("Public discussion · 
 assert(detailed.bullets!.some(bullet => bullet.startsWith("Healthcare professionals:")));
 assert(detailed.bullets!.every(bullet => !/Observer-labeled|unknown|\bother\b/i.test(bullet)));
 console.log(JSON.stringify({ sourceRows: rows.length, analyticalFindings: corpus.length, patientLabels: classified.filter(c => c.audience === "patient").length, unassigned: 0, provenanceAndAudienceConsistency: true }, null, 2));
+
+// The full source universe must survive the complete answer pipeline's ranking
+// cap and intent filtering. Retain excluded records in composition, not themes.
+const full = loadGlp1PersonaIntelligence();
+assert.equal(full.scope, "full_corpus");
+assert.equal(full.denominator, 5000);
+assert.equal(full.classifiedCount, 5000);
+assert.equal(full.analyticalCount, corpus.length);
+assert.equal(full.excludedFromAnalysisCount, 263);
+assert.equal(full.segments.reduce((n, group) => n + group.count, 0), 5000);
+assert.equal(full.segments.find(group => group.id === "off_topic")!.count, 174);
+assert.equal(full.segments.find(group => group.id === "patient")!.percent, 5.44);
+assert.equal(full.patientRelated.count, 639);
+assert.equal(full.patientRelated.percent, 12.78);
+assert.equal(full.patientRelated.likelyVoiceCount, 277);
+assert.deepEqual(full.patientRelated.breakdown.map(group => group.count), [229, 43, 5, 313, 20, 8, 5, 16]);
+assert.equal(full.patientRelated.breakdown.reduce((n, group) => n + group.count, 0), 639);
+for (const question of ["What are people saying right now?", "What education barriers drive confusion about GLP-1?"]) {
+  const result = askSocial(question, corpus);
+  const persona = result.answer.sections.find(section => section.key === "persona_intelligence")!;
+  assert(result.answer.usedFindingIds.length <= 50, "Ranked answer evidence remains bounded");
+  assert.equal(persona.personaIntelligence!.denominator, 5000, "Persona percentages must not use the ranked shortlist");
+  assert.deepEqual(persona.personaIntelligence, full, "Question intent must not change corpus composition");
+  assert(persona.text!.includes("5,000 posts in the full source corpus"));
+  assert(persona.bullets!.some(bullet => bullet.includes("639 of 5,000 posts (12.78%)")));
+}
+full.denominator = 0;
+assert.equal(loadGlp1PersonaIntelligence().denominator, 5000, "A consumer cannot mutate cached corpus composition");
+console.log("PASS full-corpus persona composition, 639 patient-related records, strict voice subset, excluded-record visibility, and ranking/intent independence");

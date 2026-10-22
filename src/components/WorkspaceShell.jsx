@@ -721,7 +721,7 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
         <Panel
           key={`${section.key || section.title}-${index}`}
           title={section.title || "Supporting Intelligence"}
-          subtitle="Derived from the validated analytical corpus"
+          subtitle={section.personaIntelligence?.scope === "full_corpus" ? "Composition of the full source corpus" : "Derived from the validated analytical corpus"}
         >
           {section.personaIntelligence ? <PersonaIntelligencePanel summary={section.personaIntelligence} /> : <>
           {section.text ? (

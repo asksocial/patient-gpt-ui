@@ -157,7 +157,7 @@ likely patient/caregiver records (272 patient and five caregiver).
 Persona Intelligence exposes all role groups with post counts, percentages,
 leading conversation types and expandable original-source examples showing the
 classification evidence. Public conversation types have their own detailed
-table. Both tables use all selected findings as the denominator; the public
+table. In the initial version 2 release, both tables used selected findings as the denominator; the public
 table is a subset of the role table and must not be added to it. Percentages use
 two decimals so small groups remain visible. Theme-first answers and small
 samples also receive the breakdown. Figures describe sample composition rather
@@ -167,6 +167,52 @@ Regenerate the CSV/JSONL/summary with `npm run analyze:glp-1-audiences`. The CSV
 preserves all 49 source fields and adds 17 audit fields, including readable role
 and conversation labels, role evidence and its basis, and previous role. The
 legacy designation is retained for traceability.
+
+## Full source corpus composition (October 22, 2026 correction)
+
+Persona Intelligence now uses **all 5,000 original source rows**, independently
+of answer intent, intelligence mode, and the renderer's 50-finding evidence cap.
+The earlier 50-post percentages were composition of a ranked shortlist and were
+incorrect for the requested corpus-level breakdown. `loadGlp1PersonaIntelligence`
+classifies every raw row before exclusions and supplies that independent summary
+to both ordinary and theme-first answer rendering. The API preserves it.
+
+The full source export has 15 audience/source groups (including the 174 off-topic
+records) and 27 conversation designations. All audience rows sum to 5,000 and
+shares use 5,000. The 4,737 retained records continue to support thematic analysis;
+263 excluded records remain visible and designated in the composition. Their
+inclusion in the composition does not add them to the thematic evidence set.
+
+The broad **patient-related content** group is explicitly displayed as a separate
+content lens that overlaps audience rows, with 639 posts (12.78% of 5,000):
+
+| Patient-related content category | Posts | Share of full corpus |
+| --- | ---: | ---: |
+| Likely personal treatment experiences | 229 | 4.58% |
+| Prospective-patient questions | 43 | 0.86% |
+| Likely caregiver experiences | 5 | 0.10% |
+| Patient support-community context | 313 | 6.26% |
+| Media-reported patient stories | 20 | 0.40% |
+| Reposted patient accounts | 8 | 0.16% |
+| Commercially influenced patient testimonials | 5 | 0.10% |
+| Family, peer or other third-party patient references | 16 | 0.32% |
+| **Total patient-related content** | **639** | **12.78%** |
+
+The likely patient/caregiver voice subset remains 277 posts (5.54% of the full
+source corpus, 5.85% of the retained analytical corpus). The broader content group
+is not a count of patient authors. The initial audience release documented 606
+patient-related posts (including 563 patient/caregiver/community posts); subsequent
+segmentation recovered additional patient diaries and relationship context.
+Those records were not deleted when the role categories were separated. Of the
+current 639 patient-related posts, 634 are retained and five commercial testimonials
+are excluded from thematic analytics. The downloadable audit still covers all
+5,000 source records unchanged.
+
+Regression coverage calls `askSocial` end to end under multiple intents and
+checks the full denominator, all-row count reconciliation, off-topic visibility,
+patient-content reconciliation and independence from the ranked evidence limit.
+Historical saved answers retain their original snapshots; new analyses use the
+corrected full-corpus composition.
 
 ## Registration and verification
 
