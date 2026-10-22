@@ -12,6 +12,8 @@ import {
 import {
   buildThemeAnswerContext,
 } from "../themes/buildThemeAnswerContext";
+import { buildPersonaIntelligence, type PersonaIntelligenceSummary } from "../personas/buildPersonaIntelligence";
+import { AUDIENCE_ROLES, type AudienceRole } from "../../ingestion/audienceSegments";
 
 export type RenderedSection = {
   key: string;
@@ -19,6 +21,7 @@ export type RenderedSection = {
   bullets?: string[];
   text?: string;
   findings?: CanonicalFinding[];
+  personaIntelligence?: PersonaIntelligenceSummary;
 };
 
 export type RenderedAnswer = {
@@ -709,6 +712,11 @@ function buildThemeFirstAnswer(
   const sections:
     RenderedSection[] = [];
 
+  if (findings.some(finding => finding.audienceClassification)) {
+    const personas = buildPersonaSection(findings);
+    if (personas) sections.push(personas);
+  }
+
   const dominantSection =
     buildThemeSection(
       context.dominantThemes
@@ -974,6 +982,24 @@ function buildMarketSection(
 function buildPersonaSection(
   findings: CanonicalFinding[]
 ): RenderedSection | null {
+  const summary = buildPersonaIntelligence(findings);
+  if (summary.classifiedCount) {
+    return {
+      key: "persona_intelligence",
+      title: "Persona Intelligence",
+      text: `Audience and source roles across ${summary.denominator.toLocaleString()} selected posts; ${summary.classifiedCount.toLocaleString()} have detailed classifications. Shares measure posts, and one author can contribute multiple posts. Specific professional roles require source, account or self-description evidence. ${summary.denominator < LOW_SAMPLE_THRESHOLD ? "This small sample is directional. " : ""}The main conversation types within each group are shown below.`,
+      bullets: summary.segments.flatMap(segment => {
+        if (segment.id === "public_discussion") {
+          return segment.conversations.map(item => `Public discussion · ${item.label}: ${item.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${Math.round(item.count / summary.denominator * 10000) / 100}%). The speaker's personal or professional role is not stated.`);
+        }
+        const activity = segment.conversations.slice(0, 2).map(item => `${item.label.toLowerCase()} (${item.count.toLocaleString()})`).join("; ");
+        const boundary = segment.id === "patient_community" ? " Community participation does not establish personal treatment use." : segment.id === "patient" || segment.id === "caregiver" ? " These are likely, machine-inferred voices." : "";
+        return [`${segment.label}: ${segment.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${segment.percent}%). Main activity: ${activity}.${boundary}`];
+      }),
+      personaIntelligence: summary,
+      findings: [],
+    };
+  }
   const personaCounts =
     sortDescending(
       countPersonas(findings)
@@ -994,15 +1020,12 @@ function buildPersonaSection(
 
     bullets:
       personaCounts
-        .slice(0, 2)
         .map(
           ([persona, count]) =>
-            `${titleCase(
-              persona
-            )}-labeled findings account for about ${percentage(
+            `${AUDIENCE_ROLES[persona as AudienceRole]?.label || titleCase(persona)}: ${count} of ${findings.length} posts (${percentage(
               count,
               findings.length
-            )}% of the selected findings (content classification, not verified people)`
+            )}%). Shares describe posts; author roles are inferred from the available evidence.`
         ),
 
     findings: [],
@@ -1134,15 +1157,10 @@ export function buildRenderedAnswer(
       sections.push(market);
     }
 
-    const persona =
-      buildPersonaSection(
-        findings
-      );
-
-    if (persona) {
-      sections.push(persona);
-    }
   }
+
+  const persona = buildPersonaSection(findings);
+  if (persona) sections.push(persona);
 
   sections.push(
     buildFindingStrategicSection(

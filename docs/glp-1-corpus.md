@@ -34,7 +34,7 @@ Injection references using “shot” or “jab” are retained when otherwise r
 Topic context is required, and promotional or unrelated content is filtered.
 Source text is evidence, not application instructions.
 
-## Audience reanalysis (October 22, 2026)
+## Initial audience reanalysis (October 22, 2026, version 1)
 
 The supplied Downloads export matches the repository source byte for byte.
 `src/ingestion/glp1Audience.ts` assigns a versioned audience and content designation
@@ -87,7 +87,7 @@ non-patient identity. Confidence scores are not calibrated probabilities.
 Run `npm run test:glp-1-audiences` for recovery, false-positive, source-integrity,
 complete-assignment, answer-denominator and cross-workflow consistency checks.
 
-### Production release
+### Initial production release
 
 The October 22 audience release is based on production commit `70ae7c1` and
 deploys classifier `glp1-audience-2026-10-22.1` with the existing, unchanged source
@@ -97,12 +97,76 @@ The audience regression is part of `test:production`. The release also updates
 the Next.js runtime to 16.4.1 to clear the newly published production dependency
 advisories, retaining the established ESLint configuration.
 
-Expected live Patient Intelligence metrics are 250 patient/caregiver records
+The initial live Patient Intelligence metrics were 250 patient/caregiver records
 (245 patient, five caregiver), all in the likely tier, representing 5.3% of the
 4,737-finding analytical corpus. All 4,737 findings have explicit audience labels.
 Fresh analyses use these rules; previously saved briefs retain their historical
 snapshots. No corpus registration, access-policy, or PV database migration is
 required for this audience update.
+
+## Persona segmentation (October 22, 2026, version 2)
+
+Classifier `glp1-audience-2026-10-22.2` replaces the broad Community Observer
+designation with independent **audience/source role** and **conversation type**
+axes. Every record receives exactly one of each. Definitions, evidence basis,
+matched source text and previous role are exported for audit. No record has an
+unknown audience or conversation designation.
+
+Of the 2,227 former Community Observer records, 190 now have more specific roles:
+40 commercial accounts, 30 news/media, 27 additional likely patient diaries,
+22 market commentators, 20 care services, 19 wellness/nutrition creators,
+16 healthcare professionals, 10 family/peers, four health educators, one research
+account and one advocacy organization. The remaining 2,037 have conversation
+classifications while their speaker role is unstated. One former professional
+record also becomes public discussion because its role evidence was insufficient.
+
+The retained corpus remains 4,737 findings:
+
+| Audience / source group | Posts |
+| --- | ---: |
+| General public discussion, broken out by conversation type | 2,038 |
+| News & media | 1,889 |
+| Patient support communities | 313 |
+| Patients & prospective patients | 272 |
+| Health educators & commentators | 53 |
+| Companies & commercial accounts | 47 |
+| Clinics, pharmacies & care services | 33 |
+| Healthcare professionals | 32 |
+| Market & investment commentators | 22 |
+| Wellness, nutrition & fitness creators | 20 |
+| Family & peers | 10 |
+| Caregivers | 5 |
+| Research & scientific organizations | 2 |
+| Advocacy & patient organizations | 1 |
+
+There are 25 nonempty conversation types across the retained corpus. Public
+discussion has 19 types, including information requests, treatment outcomes,
+administration/dosing, comparisons, affordability, safety, policy, research,
+news sharing, legal discussion, appearance, humor and brief reactions. Broader
+medication discussion remains explicit when a narrower classification is
+unsupported. Content labels do not imply professional credentials.
+
+Healthcare roles require explicit clinical credentials or practice language.
+A bare “Dr.” title becomes health educator/commentator because a doctorate
+alone does not establish a clinician. Commenters do not inherit parent-channel
+roles; reposts do not establish personal treatment use. Family/peer stories
+remain separate from supported caregiving. Recovered Japanese treatment diaries
+remain likely patient evidence. The Patient Intelligence subset is now 277
+likely patient/caregiver records (272 patient and five caregiver).
+
+Persona Intelligence exposes all role groups with post counts, percentages,
+leading conversation types and expandable original-source examples showing the
+classification evidence. Public conversation types have their own detailed
+table. Both tables use all selected findings as the denominator; the public
+table is a subset of the role table and must not be added to it. Percentages use
+two decimals so small groups remain visible. Theme-first answers and small
+samples also receive the breakdown. Figures describe sample composition rather
+than population prevalence or unique people.
+
+Regenerate the CSV/JSONL/summary with `npm run analyze:glp-1-audiences`. The CSV
+preserves all 49 source fields and adds 17 audit fields, including readable role
+and conversation labels, role evidence and its basis, and previous role. The
+legacy designation is retained for traceability.
 
 ## Registration and verification
 

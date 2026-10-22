@@ -1,8 +1,9 @@
 /** Corpus-specific audience rules. Source text is data; no instructions are executed.
  * Patient labels describe supported content, not verified author identities.
  */
-export const GLP1_AUDIENCE_VERSION = "glp1-audience-2026-10-22.1";
-export type Glp1Audience = "patient" | "caregiver" | "provider_hcp" | "company_or_commercial" | "media_or_research" | "community_observer" | "patient_community" | "general_discussion" | "off_topic" | "insufficient_context";
+import { segmentAudience, type AudienceRole, type AudienceSegmentation } from "./audienceSegments";
+export const GLP1_AUDIENCE_VERSION = "glp1-audience-2026-10-22.2";
+export type Glp1Audience = AudienceRole;
 export type Glp1AudienceClassification = {
   version: string;
   audience: Glp1Audience;
@@ -14,7 +15,7 @@ export type Glp1AudienceClassification = {
   matchedEvidence: string[];
   reviewRequired: boolean;
   topicRelevant: boolean;
-};
+} & AudienceSegmentation;
 type Source = Record<string, unknown>;
 const TOPIC = /glp[\s-]?1|glucagon.like peptide|semaglutid|tirzepatid|retatrutid|liraglutid|dulaglutid|exenatid|lixisenatid|ozempic|wegovy|rybelsus|m[oa]unjaro|manjaro|zepbound|saxenda|victoza|trulicity|byetta|bydureon|adlyxin|마운자로|만자로|위고비|오젬픽|삭센다|マンジャロ|オゼンピック|ウゴービ|リベルサス|司美格鲁肽|司美格魯肽|替尔泊肽|替爾泊肽|利拉鲁肽|利拉魯肽|مونجارو|أوزمبيك|اوزمبيك|ويجوفي/iu;
 const COMMERCIAL = /buy now|shop now|dm to order|promo code|discount code|use my code|affiliate|book now|contact us|free consultation|without (?:a )?prescription|no prescription|acquisto online|comprare online|comprar (?:ozempic|semaglutida)|купить|주문\s*문의|할인\s*코드|예약\s*문의|구매\s*링크|购买链接|購買連結|お気軽にご連絡|処方可能|\bsponsors?\b|\$\d+ off|\bcode\s*:\s*\w+|\bcode assata\b|mochipartner|glp-1 smart method|glp-1 coach|express med spas|join the glp-1 forum|at the glp-1 forum|at the glp1 forum|at the glp-1 forum|board-certified derms/iu;
@@ -42,7 +43,7 @@ const PROSPECTIVE: Array<[string, RegExp]> = [
 const REPORTED = /\b(?:patient|woman|man|she|he|they)\b.{0,60}\b(?:lost|taking|took|started|side effects|experience)|환자.{0,25}(?:경험|부작용)|女性.{0,25}(?:使用|体重|使)|患者.{0,25}(?:经历|經歷|体重|體重)/iu;
 const CLINICAL = /\b(?:study|trial|research|fda|ema|efficacy|randomized|phase [123])\b|임상|연구|臨床|研究|ensaio clínico|ensayo clínico/iu;
 
-export function classifyGlp1Audience(row: Source): Glp1AudienceClassification {
+function classifyGlp1AudienceBase(row: Source): Omit<Glp1AudienceClassification, keyof AudienceSegmentation> {
   const normalize = (x: unknown) => {
     const raw = String(x || "");
     const value = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1).replace(/""/g, '"') : raw;
@@ -58,7 +59,7 @@ export function classifyGlp1Audience(row: Source): Glp1AudienceClassification {
   const author = isComment ? "" : `${row["Author Name"] || ""} ${row["Author Handle"] || ""}`;
   const personalSource = /forum|social|review|comment|blog/.test(source);
   const topicRelevant = TOPIC.test(text) || isComment && TOPIC.test(normalize(row.Title));
-  const make = (audience: Glp1Audience, designation: string, confidence: number, signals: string[], matchedEvidence: string[] = [], patientContent = false, eligiblePatientVoice = false): Glp1AudienceClassification => ({
+  const make = (audience: Glp1Audience, designation: string, confidence: number, signals: string[], matchedEvidence: string[] = [], patientContent = false, eligiblePatientVoice = false): Omit<Glp1AudienceClassification, keyof AudienceSegmentation> => ({
     version: GLP1_AUDIENCE_VERSION, audience, designation, confidence, signals, matchedEvidence, patientContent, eligiblePatientVoice,
     reviewRequired: eligiblePatientVoice || confidence < 0.7, topicRelevant: audience !== "off_topic" && topicRelevant,
   });
@@ -106,4 +107,8 @@ export function classifyGlp1Audience(row: Source): Glp1AudienceClassification {
   if (personalSource) return make("community_observer", "general_community_commentary", 0.6, ["Community source; personal treatment status is not established"]);
   if (text.length < 35) return make("insufficient_context", "short_text_requires_review", 0.35, ["Available text is too short for a more specific attribution"]);
   return make("general_discussion", "unattributed_glp1_discussion", 0.5, ["Relevant GLP-1 content without personal or publication-role evidence"]);
+}
+
+export function classifyGlp1Audience(row: Source): Glp1AudienceClassification {
+  return segmentAudience(row, classifyGlp1AudienceBase(row));
 }

@@ -3,7 +3,7 @@ import { analyzeEvidence } from "../../answering/evidence/analyzeEvidence";
 import { normalizeEvidenceMetadata } from "../../answering/evidence/normalizeEvidenceMetadata";
 import type { EvidenceIntelligence } from "../../answering/evidence/types";
 import { getRankingProfile } from "../../answering/ranking/getRankingProfile";
-import { classifyGlp1Audience } from "../../ingestion/glp1Audience";
+import { classifyGlp1Audience, type Glp1Audience } from "../../ingestion/glp1Audience";
 
 export type PatientEvidenceTier =
   | "confirmed_patient"
@@ -13,6 +13,7 @@ export type PatientEvidenceTier =
   | "not_patient_evidence";
 
 export type ResolvedPatientAudience =
+  | Glp1Audience
   | "patient"
   | "caregiver"
   | "provider_hcp"

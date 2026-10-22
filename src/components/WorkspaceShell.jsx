@@ -10,6 +10,7 @@ import EcosystemNavigation from "./EcosystemNavigation";
 import GovernanceCenter from "./GovernanceCenter";
 import IntelligenceLibrary from "./IntelligenceLibrary";
 import PatientIntelligenceView from "./PatientIntelligenceView";
+import PersonaIntelligencePanel from "./PersonaIntelligencePanel";
 import ModuleIntelligenceView from "./ModuleIntelligenceView";
 import MonitoringCenter from "./MonitoringCenter";
 import PvComplianceCenter from "./PvComplianceCenter";
@@ -722,6 +723,7 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
           title={section.title || "Supporting Intelligence"}
           subtitle="Derived from the validated analytical corpus"
         >
+          {section.personaIntelligence ? <PersonaIntelligencePanel summary={section.personaIntelligence} /> : <>
           {section.text ? (
             <p className="text-[15px] leading-7 text-white/75">
               {section.text}
@@ -741,6 +743,7 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
               ))}
             </ul>
           ) : null}
+          </>}
         </Panel>
       ))}
     </div>
