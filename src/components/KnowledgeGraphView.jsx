@@ -1,14 +1,8 @@
 "use client";
 
 import Tooltip from "./ui/Tooltip";
-import { formatGraphMarket, graphBubble, graphSourceNames } from "../answering/knowledge/graphPresentation";
+import { formatGraphMarket, graphArcLayout, graphSourceNames } from "../answering/knowledge/graphPresentation";
 
-const NODE_TONES = {
-  high: { fill: "#0f766e", stroke: "#5eead4" },
-  moderate: { fill: "#155e75", stroke: "#67e8f9" },
-  directional: { fill: "#854d0e", stroke: "#fcd34d" },
-  insufficient: { fill: "#3f3f46", stroke: "#a1a1aa" },
-};
 
 function words(value) {
   return String(value || "")
@@ -165,7 +159,7 @@ export default function KnowledgeGraphView({
     themes,
     brief,
     longitudinalTracking,
-  }).slice(0, 10);
+  }).sort((first, second) => Number(second.eligiblePercent || 0) - Number(first.eligiblePercent || 0)).slice(0, 10);
   const edges = (snapshot?.relationships?.length
     ? snapshot.relationships
     : relationships
@@ -177,28 +171,7 @@ export default function KnowledgeGraphView({
 
   if (!nodes.length) return <EmptyState therapeuticArea={therapeuticArea} />;
 
-  const bubbles = new Map(nodes.map((node) => [
-    node.themeId, graphBubble(node.label, node.eligiblePercent),
-  ]));
-  const maxRadius = Math.max(...Array.from(bubbles.values(), (bubble) => bubble.radius));
-  const orbit = nodes.length === 1 ? 0 : Math.max(
-    200, (maxRadius + 24) / Math.sin(Math.PI / nodes.length)
-  );
-  const graphSize = Math.ceil(2 * (orbit + maxRadius + 32));
-  const centerX = graphSize / 2;
-  const centerY = graphSize / 2;
-  const positions = new Map(
-    nodes.map((node, index) => {
-      const angle = -Math.PI / 2 + (index * Math.PI * 2) / nodes.length;
-      return [
-        node.themeId,
-        {
-          x: centerX + Math.cos(angle) * orbit,
-          y: centerY + Math.sin(angle) * orbit,
-        },
-      ];
-    })
-  );
+  const { width: graphWidth, height: graphHeight, baseline, positions } = graphArcLayout(nodes);
   const corroboratedCount = nodes.filter(
     (node) =>
       !["single_source", "insufficient"].includes(node.triangulation)
@@ -241,117 +214,66 @@ export default function KnowledgeGraphView({
         ))}
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-4 md:p-6">
+      <section className="rounded-3xl border border-[#dde5e1] bg-[#f6f8f7] p-5 sm:p-8">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/70">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#087f72]">
               Evidence-qualified topology
             </p>
-            <h2 className="mt-2 text-xl font-semibold text-white">
+            <h2 className="mt-2 text-3xl font-bold text-[#12352e]">
               {therapeuticArea || snapshot?.therapeuticArea || brief?.therapeuticArea}
             </h2>
           </div>
-          <p className="text-xs text-white/35">
+          <p className="text-base text-[#667770]">
             {datasetFindingCount
               ? `${datasetFindingCount} analyzed findings`
               : "Based on the latest available analysis"}
           </p>
         </div>
 
-        <div className="mt-5 overflow-x-auto rounded-2xl border border-white/10 bg-black/35">
+        <div className="mt-5 overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable theme arc diagram">
           <svg
-            viewBox={`0 0 ${graphSize} ${graphSize}`}
+            viewBox={`0 0 ${graphWidth} ${graphHeight}`}
             role="img"
-            aria-label={`Knowledge graph containing ${nodes.length} themes and ${edges.length} supported relationships`}
-            style={{ width: graphSize, minWidth: "100%" }}
+            aria-label={`Knowledge graph containing ${nodes.length} themes and ${edges.length} supported relationships. Circle area represents eligible prevalence; arc thickness represents relationship strength.`}
+            className="block w-full"
+            style={{ minWidth: Math.min(graphWidth, Math.max(680, nodes.length * 130)) }}
           >
-            <defs>
-              <marker
-                id="knowledge-arrow"
-                viewBox="0 0 10 10"
-                refX="9"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#71717a" />
-              </marker>
-            </defs>
-
+            <line x1="48" y1={baseline} x2={graphWidth - 48} y2={baseline} stroke="#e0e7e3" strokeWidth="1.5" />
             {edges.map((relationship, index) => {
               const source = positions.get(relationship.sourceThemeId);
               const target = positions.get(relationship.targetThemeId);
-              if (!source || !target) return null;
-
+              if (!source || !target || source.x === target.x) return null;
+              const left = Math.min(source.x, target.x);
+              const right = Math.max(source.x, target.x);
+              const distance = right - left;
+              const strength = Math.max(0, Math.min(1, Number(relationship.strength) || 0));
               return (
-                <g
+                <path
                   key={`${relationship.sourceThemeId}-${relationship.targetThemeId}-${index}`}
+                  d={`M ${left} ${baseline} A ${distance / 2} ${distance * 0.31} 0 0 1 ${right} ${baseline}`}
+                  fill="none"
+                  stroke="#8e9b96"
+                  strokeWidth={1.2 + strength * 7}
+                  strokeLinecap="round"
+                  strokeDasharray={relationship.relationshipType === "contrasts_with" ? "7 6" : undefined}
                 >
-                  <title>{`${words(relationship.relationshipType)} · ${Math.round(
-                    Number(relationship.strength || 0) * 100
-                  )}% strength · ${relationship.confidence} confidence`}</title>
-                  <line
-                    x1={source.x}
-                    y1={source.y}
-                    x2={target.x}
-                    y2={target.y}
-                    stroke="#52525b"
-                    strokeWidth={
-                      1.5 + Number(relationship.strength || 0) * 4
-                    }
-                    strokeDasharray={
-                      relationship.relationshipType === "contrasts_with"
-                        ? "8 7"
-                        : undefined
-                    }
-                    markerEnd="url(#knowledge-arrow)"
-                  />
-                </g>
+                  <title>{`${source.label} → ${target.label} · ${words(relationship.relationshipType)} · ${Math.round(strength * 100)}% strength · ${relationship.confidence} confidence`}</title>
+                </path>
               );
             })}
-
-            {nodes.map((node) => {
+            {nodes.map((node, index) => {
               const position = positions.get(node.themeId);
-              const tone = NODE_TONES[node.confidence] || NODE_TONES.insufficient;
-              const { radius, lines } = bubbles.get(node.themeId);
-              const labelStart = -(lines.length * 20) / 2;
-
               return (
-                <g
-                  key={node.themeId}
-                  transform={`translate(${position.x} ${position.y})`}
-                >
-                  <title>{`${node.label} · ${node.eligiblePercent}% eligible prevalence · ${node.confidence} confidence · ${words(
-                    node.triangulation
-                  )} corroboration`}</title>
-                  <circle
-                    r={radius}
-                    fill={tone.fill}
-                    fillOpacity="0.76"
-                    stroke={tone.stroke}
-                    strokeWidth="2"
-                  />
-                  <text
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fill="white"
-                    fontSize="14"
-                    fontWeight="600"
-                  >
-                    {lines.map((line, index) => (
-                      <tspan key={index} x="0" y={labelStart + index * 20}>
-                        {line}
-                      </tspan>
+                <g key={node.themeId} transform={`translate(${position.x} ${baseline})`}>
+                  <title>{`${node.label} · ${node.eligiblePercent}% eligible prevalence · ${node.confidence} confidence · ${words(node.triangulation)} corroboration`}</title>
+                  <circle r={position.radius} fill={index === 0 ? "#0e7467" : "#209585"} stroke="#f6f8f7" strokeWidth="3" />
+                  <text textAnchor="middle" fill="#2e403a" fontSize="18" fontWeight="600">
+                    {position.lines.map((line, lineIndex) => (
+                      <tspan key={lineIndex} x="0" y={82 + lineIndex * 23}>{line}</tspan>
                     ))}
                   </text>
-                  <text
-                    y={labelStart + lines.length * 20}
-                    textAnchor="middle"
-                    fill="#d4d4d8"
-                    fontSize="12"
-                    dominantBaseline="middle"
-                  >
+                  <text x="0" y={82 + position.lines.length * 23 + 5} textAnchor="middle" fill="#667770" fontSize="18">
                     {node.eligiblePercent}%
                   </text>
                 </g>
@@ -359,9 +281,20 @@ export default function KnowledgeGraphView({
             })}
           </svg>
         </div>
-
-        <p className="mt-3 text-xs leading-5 text-white/35">
-          Bubbles fit the full theme label and grow with eligible prevalence. Lines represent detected relationships; line weight represents relationship strength. No unsupported links are inferred.
+        <div className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-[#667770] sm:text-base">
+          <span className="inline-flex items-center gap-3">
+            <span aria-hidden="true" className="h-3.5 w-3.5 rounded-full bg-[#209585]" />
+            Area = prevalence
+          </span>
+          {[["Weak", 1.5], ["Moderate", 4], ["Strong", 7]].map(([label, thickness]) => (
+            <span key={label} className="inline-flex items-center gap-3">
+              <span aria-hidden="true" className="inline-block w-10 rounded-full bg-[#8e9b96]" style={{ height: thickness }} />
+              {label}
+            </span>
+          ))}
+        </div>
+        <p className="sr-only">
+          Circle area represents eligible prevalence. Arcs represent detected relationships; arc thickness represents relationship strength. No unsupported links are inferred.
         </p>
       </section>
 

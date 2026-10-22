@@ -25,27 +25,45 @@ export function formatGraphMarket(value: string) {
   );
 }
 
-export function graphBubble(label: string, eligiblePercent: number) {
+function wrapGraphLabel(label: string): string[] {
+  const width = (text: string) => Array.from(text).reduce((sum, char) =>
+    sum + (/[MWmw]/.test(char) ? 15 : /[ilIft r.,'’]/.test(char) ? 5 : 10), 0);
   const lines: string[] = [];
-  // Bound each line conservatively at a 14px font, including wide characters.
-  for (const word of String(label || "Unnamed theme").split(/\s+/)) {
-    const chunks = word.match(/.{1,16}/gu) || [];
-    for (const chunk of chunks) {
+  for (const word of String(label || "Unnamed theme").split(/\s+/).filter(Boolean)) {
+    const chunks: string[] = [];
+    let chunk = "";
+    for (const char of Array.from(word)) {
+      if (chunk && width(chunk + char) > 138) {
+        chunks.push(chunk);
+        chunk = "";
+      }
+      chunk += char;
+    }
+    if (chunk) chunks.push(chunk);
+    for (const part of chunks) {
       const last = lines.length - 1;
-      if (last >= 0 && `${lines[last]} ${chunk}`.length <= 16) {
-        lines[last] += ` ${chunk}`;
+      if (last >= 0 && width(`${lines[last]} ${part}`) <= 138) {
+        lines[last] += ` ${part}`;
       } else {
-        lines.push(chunk);
+        lines.push(part);
       }
     }
   }
-  const halfWidth = Math.max(...lines.map((line) => Array.from(line).length * 7), 24);
-  const halfHeight = ((lines.length + 1) * 20) / 2;
-  return {
-    lines,
-    radius: Math.max(
-      Math.ceil(Math.hypot(halfWidth, halfHeight) + 16),
-      50 + Math.max(0, Math.min(100, Number(eligiblePercent) || 0)) * 0.5
-    ),
-  };
+  return lines;
+}
+
+export function graphArcLayout(nodes: Array<{ themeId: string; label: string; eligiblePercent?: number }>) {
+  const width = Math.max(760, nodes.length * 144 + 96);
+  const span = nodes.length > 1 ? width - 240 : 0;
+  const baseline = nodes.length > 1 ? Math.ceil(Math.max(250, span * 0.31 + 70)) : 150;
+  const prevalence = (value: number) => Math.max(0, Math.min(100, Number(value) || 0));
+  const largest = Math.max(1, ...nodes.map((node) => prevalence(node.eligiblePercent)));
+  const positions = new Map(nodes.map((node, index) => [node.themeId, {
+    label: node.label,
+    x: nodes.length > 1 ? 120 + (index * span) / (nodes.length - 1) : width / 2,
+    radius: 56 * Math.sqrt(prevalence(node.eligiblePercent) / largest),
+    lines: wrapGraphLabel(node.label),
+  }]));
+  const lineCount = Math.max(1, ...Array.from(positions.values(), (position) => position.lines.length));
+  return { width, height: baseline + 82 + lineCount * 23 + 50, baseline, positions };
 }
