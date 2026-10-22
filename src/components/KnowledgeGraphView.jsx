@@ -1,6 +1,7 @@
 "use client";
 
 import Tooltip from "./ui/Tooltip";
+import Badge from "./ui/Badge";
 import { formatGraphMarket, graphBubble, graphSourceNames } from "../answering/knowledge/graphPresentation";
 
 const NODE_TONES = {
@@ -353,21 +354,36 @@ export default function KnowledgeGraphView({
                 {node.eligiblePercent}%
               </span>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/55">
-              <span className="rounded-full bg-white/[0.06] px-2.5 py-1">
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Badge tone="insight">
                 {words(node.confidence)} confidence
-              </span>
-              <span className="rounded-full bg-white/[0.06] px-2.5 py-1">
+              </Badge>
+              <Badge tone="cluster">
                 {words(node.triangulation)} corroboration
-              </span>
+              </Badge>
               {node.trajectory ? (
-                <span className="rounded-full bg-white/[0.06] px-2.5 py-1">
+                <Badge tone="partial">
                   {words(node.trajectory)} trajectory
-                </span>
+                </Badge>
               ) : null}
             </div>
+            <div className="mt-3">
+              <p className="text-xs text-white/60">Independent source categories:</p>
+              {node.independentSourceCategories?.length ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {node.independentSourceCategories.map((category) => (
+                    <Badge key={category} tone="insight">{words(category)}</Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-white/40">
+                  {node.independentSourceCategoryCount
+                    ? `${node.independentSourceCategoryCount} (names unavailable in this saved analysis)`
+                    : "None identified"}
+                </p>
+              )}
+            </div>
             {[
-              ["Independent source categories", node.independentSourceCategories, node.independentSourceCategoryCount],
               ["Channels", node.channels, node.channelCount],
             ].map(([label, values, count]) => (
               <p key={label} className="mt-3 text-xs text-white/40">
