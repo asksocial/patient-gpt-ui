@@ -2,7 +2,7 @@
  * Patient labels describe supported content, not verified author identities.
  */
 import { segmentAudience, type AudienceRole, type AudienceSegmentation } from "./audienceSegments";
-export const GLP1_AUDIENCE_VERSION = "glp1-audience-2026-10-22.2";
+export const GLP1_AUDIENCE_VERSION = "glp1-audience-2026-10-22.3";
 export type Glp1Audience = AudienceRole;
 export type Glp1AudienceClassification = {
   version: string;

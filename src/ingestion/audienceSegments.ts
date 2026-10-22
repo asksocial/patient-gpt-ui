@@ -90,7 +90,7 @@ const PROMOTION = /\b(?:book (?:your|now)|call today|our price|buy now|schedule 
 const NUTRITION = /\b(?:nutrition|protein|meal plan|meal prep|recipes?|hydration|muscle maintenance|strength training|alimentação|proteína|refeições|dieta)\b|栄養|筋トレ|食事管理|식단|단백질/iu;
 const POLICY = /\b(?:regulat\w*|policy|medicare|medicaid|ethics|ethical|government|public health|ban\w*|health insurance system)\b|規制|不適正利用|보험.*부담|오남용|규제|정부|ética|anvisa/iu;
 const ACCESS = /\b(?:cost|price|afford\w*|insurance|coverage|shortage|availability|prescription|access|coupon|preço|custo|cobertura)\b|価格|処方|保険|値段|薬代|個人輸入|購入|얼마|가격|처방|재고|보험|비싸/iu;
-const CELEBRITY = /\b(?:celebrity|celebrities|hollywood|ozempic face|ariana grande|kelly osbourne|sharon osbourne|jelly roll|body image|anorexia|skinny|body.sham\w*|fatphobi\w*)\b|김정은|스윙스|노사연|연예인|여돌|아이돌|痩せすぎ|ガリガリ|芸能|恭一郎|激やせ|gordofobi|magreza/iu;
+const CELEBRITY = /\b(?:celebrity|celebrities|hollywood|ozempic face|ariana grande|miley cyrus|adele|kelly osbourne|sharon osbourne|jelly roll|body image|anorexia|skinny|body.sham\w*|fatphobi\w*)\b|김정은|스윙스|노사연|연예인|여돌|아이돌|痩せすぎ|ガリガリ|芸能|恭一郎|激やせ|gordofobi|magreza/iu;
 const HUMOR = /\b(?:lol|lmao|rofl|joke|meme|satire|who needs ozempic)\b|😂|🤣|ㅋㅋ|笑|草/iu;
 const QUESTION = /\b(?:how (?:does|do|can)|what (?:is|are|does)|does anyone|can anyone|where can|any advice|anyone know|thoughts on)\b|[?？]|궁금|질문|教えて/iu;
 const SAFETY = /\b(?:side effect|risk|danger|safe|safety|harm|concern|stigma|shouldn't|should not|against)\b|副作用|失明|危険|부작용|위험|안전|riesgo|efeitos colaterais/iu;
@@ -109,7 +109,8 @@ export function segmentAudience<T extends BaseClassification>(row: Record<string
   const forumReply = /forum post reply/i.test(decode(row["Content Type"]));
   const source = decode(row["Source Type"]);
   const author = comment ? "" : `${decode(row["Author Name"])} ${decode(row["Author Handle"])}`.trim();
-  const fields = [...new Set((comment || forumReply ? [row["Opening Text"], row["Hit Sentence"]] : [row.Title, row["Opening Text"], row["Hit Sentence"]]).map(decode).filter(Boolean))];
+  const hit = forumReply && decode(row["Hit Sentence"]) === decode(row.Title) ? "" : row["Hit Sentence"];
+  const fields = [...new Set((comment || forumReply ? [row["Opening Text"], hit] : [row.Title, row["Opening Text"], hit]).map(decode).filter(Boolean))];
   const text = fields.join(" ");
   const quoted = /^quote$/iu.test(decode(row["Content Type"])) || fields.some(field => /^\s*(?:RT|QT)\s+@/i.test(field));
   const ownText = quoted ? fields.filter(field => field.includes(";")).map(field => field.slice(field.indexOf(";") + 1)).join(" ") : text;
@@ -150,7 +151,10 @@ export function segmentAudience<T extends BaseClassification>(row: Record<string
       roleBasis = "publication_metadata"; roleEvidence = [decode(row["Source Type"]), decode(row.URL)].filter(Boolean);
     } else if (base.audience === "community_observer" || base.audience === "general_discussion") {
       audience = "public_discussion";
-      if (FAMILY.test(ownText)) {
+      const relationship = ownText.match(FAMILY);
+      const relationshipContext = relationship ? ownText.slice(relationship.index!, relationship.index! + 160) : "";
+      const treatmentRelationship = /\b(?:taking|takes|took|using|uses|started|inject\w*|dose|constipation|depression|prescrib\w*|aplicar)\b|caiu no|처방|맞|糖尿|マンジャロ/iu.test(relationshipContext);
+      if (relationship && treatmentRelationship && !CELEBRITY.test(ownText)) {
         audience = "family_peer"; roleBasis = "relationship_self_description"; roleEvidence = [ownText.match(FAMILY)![0]]; confidence = 0.66; patientContent = true;
       } else if (!quoted && FINANCIAL.test(ownText) && /\b(?:thesis|valuation|bullish|bearish|market cap|earnings|revenue|nvo|lly)\b|株価|売上|주가|매출/iu.test(ownText)) {
         audience = "investor_analyst"; roleBasis = "content_only"; roleEvidence = [ownText.match(FINANCIAL)![0]]; confidence = 0.62;

@@ -68,6 +68,10 @@ assert.equal(make("マンジャロ2.5 1日目 63.5kg トータル -9.6kg", { "Co
 assert.equal(make("QT @patient: マンジャロ2.5 1日目 63.5kg トータル -9.6kg", { "Content Type": "Quote" }).eligiblePatientVoice, false);
 assert.equal(make("Ozempic access matters. My friend is taking it.").audience, "family_peer");
 
+assert.equal(make("My friend has cable so I see commercials for GLP-1.").audience, "public_discussion");
+assert.equal(make("My wife and I went to dinner. Zepbound fixed this.").audience, "public_discussion");
+assert.equal(make("ADELE MINHA AMIGA! Mounjaro forte!").audience, "public_discussion");
+assert.equal(make("내 친구 마운자로 맞더라", { "Content Type": "Forum Post Reply", "Opening Text": "맞아", "Hit Sentence": "내 친구 마운자로 맞더라" }).audience, "public_discussion", "Replies must not inherit family claims from the thread title");
 const loaded = loadCanonicalFindingsForAsk("GLP-1");
 if (loaded.status !== "available") throw new Error(loaded.reason);
 const corpus = loaded.findings;

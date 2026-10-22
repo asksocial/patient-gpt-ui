@@ -75,6 +75,7 @@ function compactAnalyticalAnswer(
         bullets:
           section.bullets,
         text: section.text,
+        personaIntelligence: section.personaIntelligence,
       })
     ),
     usedFindingIds:
