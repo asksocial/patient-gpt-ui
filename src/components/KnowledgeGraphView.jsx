@@ -1,7 +1,6 @@
 "use client";
 
 import Tooltip from "./ui/Tooltip";
-import Badge from "./ui/Badge";
 import { formatGraphMarket, graphBubble, graphSourceNames } from "../answering/knowledge/graphPresentation";
 
 const NODE_TONES = {
@@ -17,6 +16,37 @@ function words(value) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+const CARD_STATUS_TONES = {
+  confidence: "border-[#c3e8e2] bg-[#e3f4f1] text-[#187f72]",
+  corroboration: "border-[#ded5fa] bg-[#eee9fb] text-[#6650ad]",
+  stable: "border-[#cfdef9] bg-[#e7effc] text-[#345f9b]",
+  declining: "border-[#f5d9bc] bg-[#fcf0e3] text-[#98570f]",
+  rising: "border-[#c3e8e2] bg-[#e3f4f1] text-[#187f72]",
+  unknown: "border-[#dce3e0] bg-[#edf1ef] text-[#61736d]",
+};
+
+function CardStatus({ label, value, tone, level, arrow }) {
+  return (
+    <span className={`inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-full border px-3 py-1.5 text-sm leading-5 ${CARD_STATUS_TONES[tone]}`}>
+      <span className="opacity-70">{label}</span>
+      {level !== undefined ? (
+        <span aria-hidden="true" className="inline-flex gap-1">
+          {[1, 2, 3].map((dot) => (
+            <span key={dot} className={`h-1.5 w-1.5 rounded-full bg-current ${dot <= level ? "" : "opacity-15"}`} />
+          ))}
+        </span>
+      ) : null}
+      {arrow ? <span aria-hidden="true" className="font-semibold">{arrow}</span> : null}
+      <span className="font-semibold">{words(value || "insufficient")}</span>
+    </span>
+  );
+}
+
+function sourceDetails(values, count, separator = ", ") {
+  if (values?.length) return values.map(words).join(separator);
+  return count ? `${count} (names unavailable in this saved analysis)` : "None identified";
 }
 
 function topSupport(values = {}, limit = 3) {
@@ -335,77 +365,71 @@ export default function KnowledgeGraphView({
         </p>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        {nodes.map((node) => (
-          <article
-            key={node.themeId}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="font-semibold text-white">{node.label}</h3>
+      <section className="grid gap-5 xl:grid-cols-2">
+        {nodes.map((node, index) => {
+          const percent = Math.max(0, Math.min(100, Number(node.eligiblePercent) || 0));
+          const largestPercent = Math.max(1, ...nodes.map((item) => Number(item.eligiblePercent) || 0));
+          const trajectory = node.trajectory || "insufficient";
+          const trend = /declin|fall/.test(trajectory) ? "declining"
+            : /ris|increas|emerg/.test(trajectory) ? "rising"
+            : trajectory === "stable" ? "stable" : "unknown";
+          return (
+            <article
+              key={node.themeId}
+              className="flex min-w-0 flex-col rounded-3xl border border-[#dde5e1] bg-[#f6f8f7] p-5 sm:p-7"
+            >
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-3">
+                <span aria-hidden="true" className="text-sm font-medium tabular-nums text-[#8a9993]">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h3 className="min-w-0 text-lg font-bold leading-snug text-[#12352e] sm:text-xl">{node.label}</h3>
+                <p className="whitespace-nowrap text-3xl font-bold leading-none tracking-tight tabular-nums text-[#12352e] sm:text-4xl">
+                  {percent}<span className="ml-0.5 text-lg font-semibold text-[#65746e]">%</span>
+                </p>
                 {node.description ? (
-                  <p className="mt-1 text-sm leading-5 text-white/45">
+                  <p className="col-start-2 col-end-4 mt-2 text-sm leading-6 text-[#71817b] sm:text-base">
                     {node.description}
                   </p>
                 ) : null}
               </div>
-              <span className="shrink-0 rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-xs text-white/60">
-                {node.eligiblePercent}%
-              </span>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Badge tone="insight">
-                {words(node.confidence)} confidence
-              </Badge>
-              <Badge tone="cluster">
-                {words(node.triangulation)} corroboration
-              </Badge>
-              {node.trajectory ? (
-                <Badge tone="partial">
-                  {words(node.trajectory)} trajectory
-                </Badge>
-              ) : null}
-            </div>
-            <div className="mt-3">
-              <p className="text-xs text-white/60">Independent source categories:</p>
-              {node.independentSourceCategories?.length ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {node.independentSourceCategories.map((category) => (
-                    <Badge key={category} tone="insight">{words(category)}</Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-1 text-xs text-white/40">
-                  {node.independentSourceCategoryCount
-                    ? `${node.independentSourceCategoryCount} (names unavailable in this saved analysis)`
-                    : "None identified"}
-                </p>
-              )}
-            </div>
-            {[
-              ["Channels", node.channels, node.channelCount],
-            ].map(([label, values, count]) => (
-              <p key={label} className="mt-3 text-xs text-white/40">
-                <span className="text-white/60">{label}:</span>{" "}
-                {values?.length ? values.map(words).join(", ") :
-                  count ? `${count} (names unavailable in this saved analysis)` : "None identified"}
-              </p>
-            ))}
-            {[
-              ["Audiences", node.audiences],
-              ["Markets", node.markets],
-              ["Platforms", node.platforms],
-            ].map(([label, values]) =>
-              values?.length ? (
-                <p key={label} className="mt-2 text-xs text-white/40">
-                  <span className="text-white/60">{label}:</span>{" "}
-                  {values.map(label === "Markets" ? formatGraphMarket : words).join(", ")}
-                </p>
-              ) : null
-            )}
-          </article>
-        ))}
+              <div
+                role="meter"
+                aria-label="Eligible prevalence, relative to the largest displayed theme"
+                aria-valuemin={0}
+                aria-valuemax={largestPercent}
+                aria-valuenow={percent}
+                aria-valuetext={`${percent}% eligible prevalence`}
+                className="mt-5 h-1.5 overflow-hidden rounded-full bg-[#e1e8e5]"
+              >
+                <div className="h-full rounded-full bg-[#299e8c]" style={{ width: `${(percent / largestPercent) * 100}%` }} />
+              </div>
+              <div className="mt-6 flex flex-wrap gap-2.5">
+                <CardStatus label="Confidence" value={node.confidence} tone="confidence"
+                  level={{ high: 3, moderate: 2, directional: 1 }[node.confidence] || 0} />
+                <CardStatus label="Corroboration" value={node.triangulation} tone="corroboration"
+                  level={{ strong: 3, moderate: 2, directional: 1, single_source: 1 }[node.triangulation] || 0} />
+              </div>
+              <div className="mt-2.5">
+                <CardStatus label="Trajectory" value={trajectory} tone={trend}
+                  arrow={{ declining: "↘", rising: "↗", stable: "→", unknown: "—" }[trend]} />
+              </div>
+              <dl className="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 border-t border-[#dde5e1] pt-5 text-sm leading-6">
+                {[
+                  ["Sources", sourceDetails(node.independentSourceCategories, node.independentSourceCategoryCount, " · ").replace(/\bOr\b/g, "or")],
+                  ["Channels", sourceDetails(node.channels, node.channelCount)],
+                  ["Markets", node.markets?.length ? node.markets.map(formatGraphMarket).join(", ") : null],
+                  ["Platforms", node.platforms?.length ? node.platforms.map(words).join(", ") : null],
+                  ["Audiences", node.audiences?.length ? node.audiences.map(words).join(", ") : null],
+                ].map(([label, value]) => value ? (
+                  <div key={label} className="contents">
+                    <dt className="text-[#94a29c]">{label}</dt>
+                    <dd className="min-w-0 break-words text-[#4e615a]">{value}</dd>
+                  </div>
+                ) : null)}
+              </dl>
+            </article>
+          );
+        })}
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-5">
