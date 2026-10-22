@@ -1,3 +1,4 @@
+import { buildCorpusBurdenAnswer } from "../personas/buildCorpusCharts";
 import {
   CanonicalFinding,
 } from "../models/finding";
@@ -1179,11 +1180,9 @@ export function buildRenderedAnswer(
   );
 
   return {
-    directAnswer:
-      buildFindingDirectAnswer(
-        findings,
-        lowSample
-      ),
+    directAnswer: personaSummary?.scope === "full_corpus" && personaSummary.corpusCharts
+      ? buildCorpusBurdenAnswer(personaSummary.corpusCharts.burdens)
+      : buildFindingDirectAnswer(findings, lowSample),
 
     sections,
 
