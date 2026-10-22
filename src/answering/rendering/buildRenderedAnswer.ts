@@ -305,7 +305,7 @@ function countPersonas(
   for (const finding of findings) {
     const f = finding as any;
 
-    const personas = [
+    const personas = Array.from(new Set([
       ...(Array.isArray(
         f.personas
       )
@@ -316,7 +316,7 @@ function countPersonas(
       f.persona !== "unknown"
         ? [f.persona]
         : []),
-    ];
+    ]));
 
     for (const persona of personas) {
       const key = String(persona)
@@ -999,10 +999,10 @@ function buildPersonaSection(
           ([persona, count]) =>
             `${titleCase(
               persona
-            )} audiences represent about ${percentage(
+            )}-labeled findings account for about ${percentage(
               count,
               findings.length
-            )}% of the current discussion sample`
+            )}% of the selected findings (content classification, not verified people)`
         ),
 
     findings: [],

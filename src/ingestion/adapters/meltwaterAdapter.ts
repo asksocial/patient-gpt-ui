@@ -1,6 +1,7 @@
 import fs from "fs";
 import { IngestionContext } from "../types";
 import { DiseaseProfile } from "../profiles";
+import { classifyGlp1Audience } from "../glp1Audience";
 import {
   preserveRawMetadata,
 } from "../metadata";
@@ -716,6 +717,30 @@ export function adaptMeltwaterRows(
       const tags = normalizeText(row["Document Tags"] || "");
 
       const combinedText = `${title} ${opening} ${hit}`.toLowerCase();
+
+      if (profile.profileId === "glp_1") {
+        const audienceClassification = classifyGlp1Audience(row);
+        // Classify every source row before relevance filtering. Do not apply the
+        // English-only symptom/voice gates to multilingual GLP-1 experiences.
+        if (!relevancePrequalified && (!audienceClassification.topicRelevant ||
+          ["spam_or_search_manipulation", "commercial_or_promotional", "commercial_patient_testimonial"].includes(audienceClassification.designation) ||
+          isHardExcluded(combinedText, profile))) return null;
+        const symptoms = extractByPatternMap(combinedText, profile.symptomPatterns || {});
+        const treatments = extractByPatternMap(combinedText, profile.treatmentPatterns || {});
+        return {
+          id: row["Document ID"], sourceId: row["Document ID"], sourceType: "live",
+          findingType: inferFindingType(combinedText, symptoms, treatments, hasBurdenLanguage(combinedText, profile),
+            audienceClassification.audience === "patient", audienceClassification.audience === "caregiver", profile), rawMetadata, title,
+          summary: chooseSummary(row) || title || hit, description: chooseSummary(row), text: opening, excerpt: hit,
+          labels: ["treatment"],
+          symptoms, treatments,
+          knowledgeDomains: extractKnowledgeDomains(combinedText, profile),
+          country: normalizeText(row.Country || ""), platform: normalizeText(row["Source Type"] || ""),
+          persona: audienceClassification.audience, audienceClassification,
+          url: normalizeText(row.URL || ""), therapeuticArea: profile.therapeuticArea,
+          score: Number(row.Engagement || 0), confidence: audienceClassification.confidence,
+        };
+      }
 
       if (!combinedText || combinedText.length < 20) return null;
 

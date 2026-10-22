@@ -111,6 +111,9 @@ export interface CanonicalFinding {
    */
   rawMetadata?: PreservedRawMetadata;
 
+  /** Versioned, evidence-backed audience designation for the GLP-1 export. */
+  audienceClassification?: import("../../ingestion/glp1Audience").Glp1AudienceClassification;
+
   structuredData?: {
     symptomBurden?: Array<{
       symptom: string;

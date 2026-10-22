@@ -1,0 +1,60 @@
+import fs from "node:fs";
+import crypto from "node:crypto";
+import path from "node:path";
+import { parseMeltwaterCsv, adaptMeltwaterRows } from "../src/ingestion/adapters/meltwaterAdapter";
+import { glp1Profile } from "../src/ingestion/profiles/glp1Profile";
+import { classifyGlp1Audience, GLP1_AUDIENCE_VERSION } from "../src/ingestion/glp1Audience";
+
+// This is a reproducible corpus data export, including records excluded from
+// analytics. Original source columns are preserved alongside audit columns.
+const sourcePath = process.argv[2] || "data/glp-1.csv";
+const outputDir = "artifacts/glp-1-audience-analysis";
+const rows = parseMeltwaterCsv(sourcePath);
+const retained = new Set(adaptMeltwaterRows(rows, { sourceType: "meltwater", profile: glp1Profile }).map(row => row.sourceId));
+const records = rows.map((source, index) => ({
+  sourceRow: index + 2, source, classification: classifyGlp1Audience(source), analyticalInclusion: retained.has(source["Document ID"]),
+}));
+const counts = (items: typeof records, field: "audience" | "designation") => items.reduce<Record<string, number>>((acc, item) => {
+  const key = item.classification[field]; acc[key] = (acc[key] || 0) + 1; return acc;
+}, {});
+const summarize = (items: typeof records) => ({
+  rowCount: items.length, audienceCounts: counts(items, "audience"), designationCounts: counts(items, "designation"),
+  patientLabeledCount: items.filter(x => x.classification.audience === "patient").length,
+  patientExperienceCount: items.filter(x => x.classification.designation === "likely_personal_experience").length,
+  prospectivePatientCount: items.filter(x => x.classification.designation === "prospective_patient").length,
+  patientRelatedContentCount: items.filter(x => x.classification.patientContent).length,
+  caregiverCount: items.filter(x => x.classification.audience === "caregiver").length,
+  unassignedCount: items.filter(x => !x.classification.audience || /unknown/i.test(x.classification.audience)).length,
+});
+const summary = {
+  version: GLP1_AUDIENCE_VERSION, sourcePath, sourceSha256: crypto.createHash("sha256").update(fs.readFileSync(sourcePath)).digest("hex"),
+  fullExport: summarize(records), analyticalCorpus: summarize(records.filter(x => x.analyticalInclusion)),
+  languages: Object.fromEntries([...new Set(rows.map(x => x.Language || "not_supplied"))].map(language => [language, summarize(records.filter(x => (x.source.Language || "not_supplied") === language))])),
+  limitations: [
+    "Machine classifications, not verified patient identities or a representative patient panel.",
+    "All patient/caregiver voice labels require human validation; confidence scores are heuristic, not calibrated probabilities.",
+    "Prospective-patient questions are distinct from accounts of personal use.",
+    "Patient-community membership, reshared patient speech, and media-reported patient stories are not counted as direct patient voices.",
+    "Pattern coverage is language-dependent; general commentary and insufficient-context designations do not prove non-patient identity.",
+    "One export row is one unit; reposts and repeated authors are not unique patients.",
+  ],
+};
+fs.mkdirSync(outputDir, { recursive: true });
+fs.writeFileSync(path.join(outputDir, "summary.json"), JSON.stringify(summary, null, 2) + "\n");
+fs.writeFileSync(path.join(outputDir, "all-records.jsonl"), records.map(x => JSON.stringify(x)).join("\n") + "\n");
+const originalColumns = Object.keys(rows[0]);
+const auditColumns = ["Audience Label", "Content Designation", "Patient Related Content", "Eligible Patient Voice", "Audience Confidence", "Audience Rationale", "Matched Evidence", "Human Review Required", "Analytical Inclusion", "Audience Version", "Source Row"];
+const quote = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+// The existing Meltwater reader preserves TSV cell quoting literally. Decode
+// that transport quoting when converting to a conventional CSV so values round
+// trip through standard spreadsheet readers. JSONL retains the raw cells.
+const sourceValue = (value: unknown) => {
+  const text = String(value ?? "");
+  return text.startsWith('"') && text.endsWith('"') ? text.slice(1, -1).replace(/""/g, '"') : text;
+};
+const csv = [originalColumns.concat(auditColumns).map(quote).join(","), ...records.map(({ source, classification: c, analyticalInclusion, sourceRow }) => [
+  ...originalColumns.map(key => sourceValue(source[key])), c.audience, c.designation, c.patientContent, c.eligiblePatientVoice, c.confidence,
+  c.signals.join("; "), c.matchedEvidence.join("; "), c.reviewRequired, analyticalInclusion, c.version, sourceRow,
+].map(quote).join(","))].join("\r\n") + "\r\n";
+fs.writeFileSync(path.join(outputDir, "GLP-1-labeled.csv"), "\uFEFF" + csv);
+console.log(JSON.stringify({ ...summary, languages: undefined }, null, 2));

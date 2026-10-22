@@ -12,9 +12,12 @@ its display name is `GLP-1`. `glp1` and `GLP 1` resolve to the same corpus.
 - Encoding: UTF-16LE with BOM, tab-delimited, 49 columns and 5,000 source rows.
 - Three source rows have no URL. Missing links are not fabricated.
 - The export is multilingual (2,135 rows are labeled English). Raw languages and
-  source metadata are preserved. The current keyword profiles are English-oriented;
-  this integration does not claim validated multilingual recall or translate text.
-- Standard relevance filtering currently retains 3,134 analytical findings.
+  source metadata are preserved. Audience classification now includes English,
+  Korean, Japanese, Portuguese, Spanish, French, German, and Chinese personal
+  experience patterns. Keyword themes remain English-oriented. This does not
+  establish validated multilingual recall or translate the source.
+- Standard relevance filtering now retains 4,737 analytical findings, recovering
+  multilingual experiences previously excluded by English-only voice/symptom gates.
   The retained set is not a count of patients, clinical outcomes, or safety reports.
 
 ## Functionality
@@ -30,6 +33,76 @@ monitoring endpoints.
 Injection references using “shot” or “jab” are retained when otherwise relevant.
 Topic context is required, and promotional or unrelated content is filtered.
 Source text is evidence, not application instructions.
+
+## Audience reanalysis (October 22, 2026)
+
+The supplied Downloads export matches the repository source byte for byte.
+`src/ingestion/glp1Audience.ts` assigns a versioned audience and content designation
+to every source record before analytical exclusions. The same classifier supplies
+the canonical persona and Patient Intelligence eligibility. Machine-derived
+patient/caregiver labels remain **likely**, never confirmed identities.
+
+Across all 5,000 source records:
+
+| Audience | Records |
+| --- | ---: |
+| Patient | 245 |
+| Caregiver | 5 |
+| Patient community (personal treatment status not established) | 313 |
+| Community observer | 2,227 |
+| Media or research | 1,867 |
+| Provider/HCP | 80 |
+| Company or commercial | 89 |
+| Off topic / no supported medication context | 174 |
+| Unassigned / unknown audience | 0 |
+
+The patient subset contains 202 likely personal experiences and 43 prospective
+patient questions. It represents 4.90% of the full export and 5.17% of the expanded
+analytical corpus. The previous simple pipeline retained 46 patient-labeled
+records among 3,134 findings; that denominator differs from the revised corpus.
+There are 606 patient-related records in the full export (601 in analytics),
+including community context, caregiver accounts, reported stories, reposted
+speech and five commercially influenced testimonials; this broader count is
+not a count of patient authors. No statistically representative population share
+or maximum-recall guarantee is established.
+
+Comment records are classified from comment text, using the parent title only
+for topic context. “Comment on Dr…” identifies the parent channel rather than
+the commenter. Reposts, celebrity speculation, clinic advertising, pharmacy
+spam, and Geely Monjaro automotive content do not become patient voices.
+Korean subject omission is handled with explicit medication/dosing/journey
+signals; medication-forum membership alone yields `patient_community`.
+
+Run `npm run analyze:glp-1-audiences` to regenerate the full labeled CSV, JSONL
+audit, and summary under `artifacts/glp-1-audience-analysis/`. The CSV preserves
+all 49 original columns and adds audience, designation, patient-related flag,
+eligibility, heuristic confidence, matched evidence, rationale, review status,
+analytical inclusion, classifier version and source row. Source rows excluded
+from analytics remain labeled in this export. The original CSV is unchanged.
+
+All patient/caregiver labels require human validation. Remaining general
+community records may include patients whose role is not evident in the export;
+their designation describes the available content rather than asserting a
+non-patient identity. Confidence scores are not calibrated probabilities.
+Run `npm run test:glp-1-audiences` for recovery, false-positive, source-integrity,
+complete-assignment, answer-denominator and cross-workflow consistency checks.
+
+### Production release
+
+The October 22 audience release is based on production commit `70ae7c1` and
+deploys classifier `glp1-audience-2026-10-22.1` with the existing, unchanged source
+CSV. The runtime derives the revised labels during ingestion; replacing the raw
+CSV with the audit export is unnecessary and would violate its source schema.
+The audience regression is part of `test:production`. The release also updates
+the Next.js runtime to 16.4.1 to clear the newly published production dependency
+advisories, retaining the established ESLint configuration.
+
+Expected live Patient Intelligence metrics are 250 patient/caregiver records
+(245 patient, five caregiver), all in the likely tier, representing 5.3% of the
+4,737-finding analytical corpus. All 4,737 findings have explicit audience labels.
+Fresh analyses use these rules; previously saved briefs retain their historical
+snapshots. No corpus registration, access-policy, or PV database migration is
+required for this audience update.
 
 ## Registration and verification
 

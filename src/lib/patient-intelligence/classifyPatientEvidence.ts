@@ -3,6 +3,7 @@ import { analyzeEvidence } from "../../answering/evidence/analyzeEvidence";
 import { normalizeEvidenceMetadata } from "../../answering/evidence/normalizeEvidenceMetadata";
 import type { EvidenceIntelligence } from "../../answering/evidence/types";
 import { getRankingProfile } from "../../answering/ranking/getRankingProfile";
+import { classifyGlp1Audience } from "../../ingestion/glp1Audience";
 
 export type PatientEvidenceTier =
   | "confirmed_patient"
@@ -19,6 +20,10 @@ export type ResolvedPatientAudience =
   | "media_or_research"
   | "advocacy"
   | "community_observer"
+  | "patient_community"
+  | "general_discussion"
+  | "off_topic"
+  | "insufficient_context"
   | "insufficient_personal_evidence";
 
 export type PatientEvidenceClassification = {
@@ -124,6 +129,22 @@ export function classifyPatientEvidence(
   finding: CanonicalFinding
 ): PatientEvidenceClassification {
   const intelligence = analyzeEvidence(finding);
+  // Recompute from preserved source rather than promoting machine persona
+  // labels into the ontology's "confirmed patient" tier.
+  if (/^(glp[ _-]?1)$/i.test(finding.therapeuticArea) && finding.rawMetadata?.fields) {
+    const classification = classifyGlp1Audience(finding.rawMetadata.fields);
+    return result(classification.eligiblePatientVoice ? {
+      ...intelligence, voice: classification.audience === "caregiver" ? "caregiver" : "patient",
+    } : intelligence, {
+      eligible: classification.eligiblePatientVoice,
+      tier: classification.eligiblePatientVoice
+        ? classification.audience === "caregiver" ? "likely_caregiver" : "likely_patient"
+        : "not_patient_evidence",
+      resolvedAudience: classification.audience,
+      confidence: classification.confidence,
+      signals: [classification.designation, ...classification.signals, ...classification.matchedEvidence.map(text => `Matched: ${text}`)],
+    });
+  }
   const metadata = normalizeEvidenceMetadata(finding);
   const text = normalizeText(metadata.fullText);
 
