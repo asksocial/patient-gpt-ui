@@ -87,7 +87,7 @@ function RelationshipTable({ group, nodes }) {
           const confidence = relationship.confidence || "insufficient";
           const level = { high: 3, moderate: 2, directional: 1 }[confidence] || 0;
           return (
-            <tr key={`${relationship.sourceThemeId}-${relationship.targetThemeId}-${index}`} className="border-b border-[#dde5e1] even:bg-[#edf2ef]">
+            <tr key={`${relationship.sourceThemeId}-${relationship.targetThemeId}-${index}`} className="border-b border-[#dde5e1] transition-colors hover:bg-[#edf2ef]">
               <th scope="row" className="break-words py-4 pr-7 text-base font-normal leading-relaxed text-[#253b33] sm:py-5 sm:text-lg">{label}</th>
               <td className="py-4 pr-7 sm:py-5">
                 <div className="flex items-center gap-5">
