@@ -20,15 +20,7 @@ import type {
   ThemeTriangulationLabel,
 } from "./themeModels";
 
-const INDEPENDENT_SOURCE_CATEGORIES =
-  new Set<EvidenceSourceCategory>([
-    "first_person",
-    "caregiver_voice",
-    "provider_voice",
-    "community_voice",
-    "research_or_science",
-    "independent_editorial",
-  ]);
+import { INDEPENDENT_SOURCE_CATEGORIES } from "./sourceCategories";
 
 const COMMERCIAL_SOURCE_CATEGORIES =
   new Set<EvidenceSourceCategory>([

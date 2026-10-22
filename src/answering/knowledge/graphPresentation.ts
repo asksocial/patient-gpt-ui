@@ -1,18 +1,35 @@
-import type { ThemeSourceAggregation } from "../themes/themeModels";
+import type { EvidenceSourceCategory, ThemeSourceAggregation } from "../themes/themeModels";
 
-const INDEPENDENT_CATEGORIES = new Set([
-  "first_person", "caregiver_voice", "provider_voice", "community_voice",
-  "research_or_science", "independent_editorial",
-]);
+import { INDEPENDENT_SOURCE_CATEGORIES } from "../themes/sourceCategories";
+import { normalizeTherapeuticAreaId } from "../../lib/analytics/coverage";
+
+export function graphMatchesTopic(selectedTopic?: string, ...dataTopics: Array<string | undefined>) {
+  if (!selectedTopic) return true;
+  const selected = normalizeTherapeuticAreaId(selectedTopic);
+  return dataTopics.every((topic) => !topic || normalizeTherapeuticAreaId(topic) === selected);
+}
+
+export function graphTrajectory(value?: string) {
+  switch (value) {
+    case "emerging":
+    case "accelerating":
+    case "rising": return { tone: "rising", arrow: "↗" };
+    case "declining": return { tone: "declining", arrow: "↘" };
+    case "stable": return { tone: "stable", arrow: "→" };
+    case "volatile": return { tone: "unknown", arrow: "↕" };
+    default: return { tone: "unknown", arrow: "—" };
+  }
+}
 
 export function graphSourceNames(aggregation?: ThemeSourceAggregation) {
+  if (!aggregation) return { independentSourceCategories: undefined, channels: undefined };
   const supported = (values = {}) => Object.entries(values)
     .filter(([, support]) => Number((support as { count: number }).count) > 0)
     .map(([name]) => name);
 
   return {
     independentSourceCategories: supported(aggregation?.sourceCategories)
-      .filter((name) => INDEPENDENT_CATEGORIES.has(name)),
+      .filter((name) => INDEPENDENT_SOURCE_CATEGORIES.has(name as EvidenceSourceCategory)),
     channels: supported(aggregation?.channels),
   };
 }

@@ -40,6 +40,8 @@ export type ThemeKnowledgeRecord = {
 
   channels?: string[];
 
+  isCrossSourceCorroborated?: boolean;
+
   audiences?: string[];
 
   markets?: string[];

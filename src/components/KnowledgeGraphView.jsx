@@ -1,7 +1,7 @@
 "use client";
 
 import Tooltip from "./ui/Tooltip";
-import { formatGraphMarket, graphArcLayout, graphSourceNames } from "../answering/knowledge/graphPresentation";
+import { formatGraphMarket, graphArcLayout, graphSourceNames, graphMatchesTopic, graphTrajectory } from "../answering/knowledge/graphPresentation";
 
 
 function words(value) {
@@ -40,7 +40,8 @@ function CardStatus({ label, value, tone, level, arrow }) {
 
 function sourceDetails(values, count, separator = ", ") {
   if (values?.length) return values.map(words).join(separator);
-  return count ? `${count} (names unavailable in this saved analysis)` : "None identified";
+  if (count) return `${count} (names unavailable in this saved analysis)`;
+  return Array.isArray(values) ? "None identified" : "Not available in this analysis";
 }
 
 function groupRelationships(nodes, edges) {
@@ -123,11 +124,12 @@ function topSupport(values = {}, limit = 3) {
 }
 
 function normalizeThemes({ snapshot, themes, brief, longitudinalTracking }) {
-  if (snapshot?.themeRecords?.length) {
-    return snapshot.themeRecords.map((record) => {
+  if (snapshot) {
+    return (snapshot.themeRecords || []).map((record) => {
       const theme = themes?.find((item) => item.themeId === record.themeId);
       return {
         ...record,
+        isCrossSourceCorroborated: record.isCrossSourceCorroborated ?? theme?.sourceAggregation?.isCrossSourceCorroborated,
         independentSourceCategories: record.independentSourceCategories ??
           (theme ? graphSourceNames(theme.sourceAggregation).independentSourceCategories : undefined),
         channels: record.channels ??
@@ -160,6 +162,7 @@ function normalizeThemes({ snapshot, themes, brief, longitudinalTracking }) {
           theme.sourceAggregation?.distinctIndependentSourceCategoryCount || 0,
         channelCount: theme.sourceAggregation?.distinctChannelCount || 0,
         ...graphSourceNames(theme.sourceAggregation),
+        isCrossSourceCorroborated: theme.sourceAggregation?.isCrossSourceCorroborated,
         audiences: topSupport(theme.personas),
         markets: topSupport(theme.countries),
         platforms: topSupport(theme.platforms),
@@ -171,8 +174,6 @@ function normalizeThemes({ snapshot, themes, brief, longitudinalTracking }) {
     ...theme,
     count: 0,
     description: "",
-    independentSourceCategoryCount: 0,
-    channelCount: 0,
   }));
 }
 
@@ -224,17 +225,18 @@ export default function KnowledgeGraphView({
   brief,
   longitudinalTracking,
   therapeuticArea,
+  dataTherapeuticArea,
 }) {
+  if (!graphMatchesTopic(therapeuticArea, dataTherapeuticArea, snapshot?.therapeuticArea, brief?.therapeuticArea)) {
+    return <EmptyState therapeuticArea={therapeuticArea} />;
+  }
   const nodes = normalizeThemes({
     snapshot,
     themes,
     brief,
     longitudinalTracking,
-  }).sort((first, second) => Number(second.eligiblePercent || 0) - Number(first.eligiblePercent || 0)).slice(0, 10);
-  const edges = (snapshot?.relationships?.length
-    ? snapshot.relationships
-    : relationships
-  ).filter(
+  }).sort((first, second) => Number(second.eligiblePercent || 0) - Number(first.eligiblePercent || 0));
+  const edges = (snapshot ? snapshot.relationships ?? [] : relationships).filter(
     (relationship) =>
       nodes.some((node) => node.themeId === relationship.sourceThemeId) &&
       nodes.some((node) => node.themeId === relationship.targetThemeId)
@@ -245,11 +247,11 @@ export default function KnowledgeGraphView({
   const { width: graphWidth, height: graphHeight, baseline, positions } = graphArcLayout(nodes);
   const corroboratedCount = nodes.filter(
     (node) =>
-      !["single_source", "insufficient"].includes(node.triangulation)
+      node.isCrossSourceCorroborated ?? ["strong", "moderate"].includes(node.triangulation)
   ).length;
   const datasetFindingCount =
-    snapshot?.datasetFindingCount ||
-    brief?.dataQuality?.datasetFindingCount ||
+    snapshot?.datasetFindingCount ??
+    brief?.dataQuality?.datasetFindingCount ??
     0;
 
   return (
@@ -374,9 +376,7 @@ export default function KnowledgeGraphView({
           const percent = Math.max(0, Math.min(100, Number(node.eligiblePercent) || 0));
           const largestPercent = Math.max(1, ...nodes.map((item) => Number(item.eligiblePercent) || 0));
           const trajectory = node.trajectory || "insufficient";
-          const trend = /declin|fall/.test(trajectory) ? "declining"
-            : /ris|increas|emerg/.test(trajectory) ? "rising"
-            : trajectory === "stable" ? "stable" : "unknown";
+          const trend = graphTrajectory(trajectory);
           return (
             <article
               key={node.themeId}
@@ -414,8 +414,8 @@ export default function KnowledgeGraphView({
                   level={{ strong: 3, moderate: 2, directional: 1, single_source: 1 }[node.triangulation] || 0} />
               </div>
               <div className="mt-2.5">
-                <CardStatus label="Trajectory" value={trajectory} tone={trend}
-                  arrow={{ declining: "↘", rising: "↗", stable: "→", unknown: "—" }[trend]} />
+                <CardStatus label="Trajectory" value={trajectory} tone={trend.tone}
+                  arrow={trend.arrow} />
               </div>
               <dl className="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 border-t border-[#dde5e1] pt-5 text-sm leading-6">
                 {[

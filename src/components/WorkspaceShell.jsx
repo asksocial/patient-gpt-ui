@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Tooltip from "./ui/Tooltip";
 import Badge from "./ui/Badge";
+import { graphMatchesTopic } from "../answering/knowledge/graphPresentation";
 import ExecutiveIntelligenceView from "./ExecutiveIntelligenceView";
 import EcosystemNavigation from "./EcosystemNavigation";
 import GovernanceCenter from "./GovernanceCenter";
@@ -970,6 +971,7 @@ export default function WorkspaceShell() {
   const latestKnowledgeGraph = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const payload = messages[index]?.responsePayload;
+      if (!graphMatchesTopic(therapeuticArea, payload?.therapeuticArea, payload?.knowledgeSnapshot?.therapeuticArea, payload?.executiveIntelligence?.therapeuticArea)) continue;
 
       if (
         payload?.knowledgeSnapshot ||
@@ -977,6 +979,7 @@ export default function WorkspaceShell() {
         payload?.executiveIntelligence?.topThemes?.length
       ) {
         return {
+          therapeuticArea: payload.therapeuticArea,
           snapshot: payload.knowledgeSnapshot || null,
           themes: payload.themeSummary || [],
           relationships: payload.themeRelationships || [],
@@ -987,7 +990,7 @@ export default function WorkspaceShell() {
     }
 
     return null;
-  }, [messages]);
+  }, [messages, therapeuticArea]);
 
   const latestAnalyticalStatus = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -1365,6 +1368,7 @@ export default function WorkspaceShell() {
           ? { text: message.content.text }
           : {
               responsePayload: {
+                therapeuticArea: message.content.therapeuticArea || data.session.therapeutic_area,
                 answer: message.content.answer,
                 relevantCuratedInsights:
                   message.content.relevantCuratedInsights ||
@@ -1645,6 +1649,7 @@ export default function WorkspaceShell() {
       }
 
       const responsePayload = {
+        therapeuticArea,
         answer: data.answer,
         relevantCuratedInsights: data.relevantCuratedInsights || [],
         curatedIntelligenceAvailable:
@@ -1692,6 +1697,7 @@ export default function WorkspaceShell() {
         {
           role: "assistant",
           content: {
+            therapeuticArea: responsePayload.therapeuticArea,
             answer: data.answer,
             relevantCuratedInsights: data.relevantCuratedInsights || [],
             curatedIntelligenceAvailable:
@@ -2260,6 +2266,7 @@ export default function WorkspaceShell() {
             ) : activeDestination ===
               "intelligence_graph" ? (
               <KnowledgeGraphView
+                dataTherapeuticArea={latestKnowledgeGraph?.therapeuticArea}
                 snapshot={latestKnowledgeGraph?.snapshot}
                 themes={latestKnowledgeGraph?.themes}
                 relationships={latestKnowledgeGraph?.relationships}

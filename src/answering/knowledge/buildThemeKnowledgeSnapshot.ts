@@ -151,6 +151,7 @@ function buildRecord(
       theme.sourceAggregation
         ?.distinctChannelCount || 0,
     ...graphSourceNames(theme.sourceAggregation),
+    isCrossSourceCorroborated: theme.sourceAggregation?.isCrossSourceCorroborated ?? false,
     audiences: topSupportNames(theme.personas),
     markets: topSupportNames(theme.countries),
     platforms: topSupportNames(theme.platforms),
