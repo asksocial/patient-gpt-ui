@@ -1,3 +1,4 @@
+import styles from "./PersonaIntelligencePanel.module.css";
 import { groupClientAudiences } from "../answering/personas/clientAudienceGroups";
 
 function AudienceSubtypeTable({ segments, combined = false }) {
@@ -52,11 +53,13 @@ function AudienceGroup({ group, denominator, universe }) {
     authorOrSourceEvidenceCount: group.subtypes.reduce((n, subtype) => n + subtype.authorOrSourceEvidenceCount, 0),
   };
   const publicSubtype = group.id === "general_public" ? group.subtypes.find(subtype => subtype.id === "public_discussion") : undefined;
-  return <details className="rounded-xl border border-white/10">
-    <summary className="cursor-pointer px-4 py-4 text-white/85">
-      <span className="ml-1 font-semibold">{group.label}</span>
-      <span className="ml-3 text-sm font-normal text-white/70">{group.count.toLocaleString()} posts · {group.percent}%</span>
-      <span className="ml-3 text-xs font-normal text-cyan-300">{group.excluded ? "View excluded records" : combinedPatientGroup ? "View conversations & evidence" : `View ${group.subtypes.length} ${group.subtypes.length === 1 ? "subtype" : "subtypes"}`}</span>
+  return <details className={styles.group}>
+    <summary className={styles.row}>
+      <span className={styles.name}><span className={styles.chevron} aria-hidden="true">▸</span>{group.label}</span>
+      <span className={styles.track} aria-hidden="true"><span style={{ width: `${denominator ? group.count / denominator * 100 : 0}%`, background: GROUP_COLORS[group.id] }} /></span>
+      <span className={styles.posts}><span className={styles.mobileLabel}>Posts: </span>{group.count.toLocaleString()}</span>
+      <strong className={styles.share}>{formatShare(group.count, denominator)}</strong>
+      <span className={styles.action}>{group.excluded ? "View excluded records" : combinedPatientGroup ? "View conversations" : `View ${group.subtypes.length} ${group.subtypes.length === 1 ? "subtype" : "subtypes"}`}</span>
     </summary>
     <div className="space-y-4 border-t border-white/10 p-4">
       <p className="text-sm leading-6 text-white/65">{group.description}</p>
@@ -72,29 +75,45 @@ function AudienceGroup({ group, denominator, universe }) {
   </details>;
 }
 
-/** Six client-facing voices, with granular roles and source evidence retained
- * inside native disclosures. Off-topic records are a separate, closed bucket. */
+const GROUP_COLORS = {
+  general_public: "#11766b", media_advocacy: "#289f90", patients_circle: "#4eb3a5",
+  industry_markets: "#6ac3b6", health_wellness_influencers: "#8dd1c7", healthcare_science: "#addfd7", excluded_off_topic: "#b9c4c0",
+};
+const formatShare = (count, denominator) => `${denominator ? Number((count / denominator * 100).toFixed(1)) : 0}%`;
+
+/** Corpus-wide share bars with native, keyboard-accessible evidence disclosures. */
 export default function PersonaIntelligencePanel({ summary }) {
   const groups = summary.clientGroups || groupClientAudiences(summary.segments, summary.denominator);
-  const audiences = groups.filter(group => !group.excluded);
+  const audiences = groups.filter(group => !group.excluded).sort((a, b) => b.count - a.count);
   const exclusion = groups.find(group => group.excluded);
+  const ordered = [...audiences, ...(exclusion ? [exclusion] : [])];
   const fullCorpus = summary.scope === "full_corpus";
   const universe = fullCorpus ? "corpus" : "selected";
-  return <div className="space-y-5">
-    <p className="text-sm leading-6 text-white/70">
-      {summary.denominator.toLocaleString()} {fullCorpus ? "posts in the full source corpus" : "selected posts"} · {audiences.length} audience groups, plus a separate off-topic bucket. Shares measure posts; one author can contribute more than one.
-      {summary.denominator < 20 ? " This small sample is directional." : ""}
-    </p>
-    {fullCorpus ? <p className="text-xs leading-5 text-white/55">All source rows contribute to these shares. {summary.analyticalCount.toLocaleString()} posts are retained for thematic analytics; {summary.excludedFromAnalysisCount.toLocaleString()} excluded records remain designated here. The off-topic bucket contains {exclusion.count.toLocaleString()} records. Another {(summary.excludedFromAnalysisCount - exclusion.count).toLocaleString()} spam or promotional records are excluded only from thematic analytics. Shares always use all {summary.denominator.toLocaleString()} source rows.</p> : null}
-    <section aria-label="Audience groups" className="space-y-3">
-      <h4 className="font-semibold text-white/85">Whose voice is this?</h4>
-      <p className="text-xs leading-5 text-white/55">Expand a group for conversation types and original-source evidence. Every percentage uses all {summary.denominator.toLocaleString()} {universe} posts.</p>
-      {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={summary.denominator} universe={universe} />)}
-    </section>
-    <section aria-label="Exclusion bucket" className="space-y-2">
-      <p className="text-xs text-white/50">Excluded from audience groups; included in the full denominator for reconciliation.</p>
-      <AudienceGroup group={exclusion} denominator={summary.denominator} universe={universe} />
-    </section>
-    <p className="text-xs leading-5 text-white/50">Roles and conversation types are machine-inferred from source metadata and available text. Figures describe this {fullCorpus ? "source corpus" : "selected sample"}.</p>
+  const denominator = summary.denominator;
+  const extraExcluded = Math.max(0, (summary.excludedFromAnalysisCount || 0) - (exclusion?.count || 0));
+  return <div className={styles.panel}>
+    <p className={styles.intro}>{denominator.toLocaleString()} {fullCorpus ? "posts" : "selected posts"} · {audiences.length} audience groups · shares measure posts, not authors</p>
+    <div className={styles.composition}>
+      <div className={styles.stacked} role="img" aria-label={`Audience composition across ${denominator.toLocaleString()} posts: ${ordered.map(group => `${group.label} ${formatShare(group.count, denominator)}`).join("; ")}`}>
+        {ordered.map(group => <span key={group.id} style={{ width: `${denominator ? group.count / denominator * 100 : 0}%`, background: GROUP_COLORS[group.id] }} title={`${group.label}: ${group.count.toLocaleString()} posts (${formatShare(group.count, denominator)})`} />)}
+      </div>
+      <ul className={styles.legend}>{ordered.map(group => <li key={group.id}><span style={{ background: GROUP_COLORS[group.id] }} aria-hidden="true" />{group.label} {formatShare(group.count, denominator)}</li>)}</ul>
+    </div>
+    <div role="region" aria-label="Audience groups">
+      <div className={styles.columns} aria-hidden="true"><span>Audience group</span><span className={styles.barHeading}>Share of corpus</span><span className={styles.posts}>Posts</span><span className={styles.share}>Share</span><span /></div>
+      {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={denominator} universe={universe} />)}
+    </div>
+    {exclusion ? <div role="region" aria-label="Exclusion bucket" className={styles.exclusion}>
+      <p>Excluded from audience groups; included in the {denominator.toLocaleString()} denominator.</p>
+      <AudienceGroup group={exclusion} denominator={denominator} universe={universe} />
+    </div> : null}
+    <div className={styles.footer}>
+      <p>{fullCorpus && summary.analyticalCount != null ? `${denominator.toLocaleString()} total = ${summary.analyticalCount.toLocaleString()} retained for thematic analytics + ${(exclusion?.count || 0).toLocaleString()} off-topic + ${extraExcluded.toLocaleString()} spam/promotional` : `Shares use all ${denominator.toLocaleString()} selected posts.`}</p>
+      <details className={styles.method}>
+        <summary>How shares are calculated</summary>
+        <div>Each share is the group’s post count divided by all {denominator.toLocaleString()} {universe} posts. Groups are mutually exclusive; every post is counted once. All patient-related content is combined in Patients &amp; Their Circle. Off-topic records remain in the denominator, and spam/promotional records retain their audience designation while being excluded from thematic analytics. Displayed percentages are rounded to one decimal place, so they may not sum to exactly 100%. One author can contribute multiple posts.{denominator < 20 ? " This small sample is directional." : ""}</div>
+      </details>
+    </div>
+    <p className={styles.disclaimer}>Roles and conversation types are machine-inferred from source metadata and available text.</p>
   </div>;
 }

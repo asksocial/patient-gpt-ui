@@ -127,9 +127,8 @@ for (const question of ["What are people saying right now?", "What education bar
   const result = askSocial(question, corpus);
   const persona = result.answer.sections.find(section => section.key === "persona_intelligence")!;
   if (question === "What are people saying right now?") {
-    assert.match(result.answer.directAnswer, /4,737/);
-    assert.match(result.answer.directAnswer, /311 posts \(6.6%\)/);
-    assert.ok(!result.answer.directAnswer.includes("26%"));
+    assert.match(result.answer.directAnswer, /Weight and metabolic outcomes and appetite and eating/);
+    assert.ok(!/[0-9%]/.test(result.answer.directAnswer), "Analytical overview stays qualitative");
   }
   assert(result.answer.usedFindingIds.length <= 50, "Ranked answer evidence remains bounded");
   assert.equal(persona.personaIntelligence!.denominator, 5000, "Persona percentages must not use the ranked shortlist");
@@ -197,8 +196,9 @@ console.log("PASS full-corpus donut totals, unique burden overlap, source market
 
 const staleBurdenReport = { analyticalAnswer: { directAnswer: "About 26% and 10% of high-signal findings", sections: [{ key: "top_burdens" }, { key: "persona_intelligence", personaIntelligence: current }] } };
 const reconciled = refreshGlp1PersonaComposition(staleBurdenReport, "GLP-1");
-assert.match(reconciled.analyticalAnswer.directAnswer, /4,737/);
-for (const value of ["311 posts (6.6%)", "45 posts (0.9%)", "20 posts (0.4%)", "376 unique posts (7.9%)"]) assert.ok(reconciled.analyticalAnswer.directAnswer.includes(value), value);
+assert.match(reconciled.analyticalAnswer.directAnswer, /Weight and metabolic outcomes and appetite and eating/);
+assert.ok(!/[0-9%]/.test(reconciled.analyticalAnswer.directAnswer), "Saved analytical overview stays qualitative");
+assert.deepEqual(reconciled.analyticalAnswer.sections[1].personaIntelligence.corpusCharts, current.corpusCharts, "Qualitative wording must not change any corpus chart values");
 assert.equal(staleBurdenReport.analyticalAnswer.directAnswer, "About 26% and 10% of high-signal findings");
 assert.equal(refreshGlp1PersonaComposition(reconciled, "GLP-1"), reconciled);
-console.log("PASS displayed burden answer reconciles with complete corpus donut slices without modifying saved records");
+console.log("PASS qualitative analytical overview uses corpus themes and preserves numeric charts and saved records");
