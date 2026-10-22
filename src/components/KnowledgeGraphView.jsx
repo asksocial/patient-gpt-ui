@@ -1,6 +1,7 @@
 "use client";
 
 import Tooltip from "./ui/Tooltip";
+import { formatGraphMarket, graphBubble, graphSourceNames } from "../answering/knowledge/graphPresentation";
 
 const NODE_TONES = {
   high: { fill: "#0f766e", stroke: "#5eead4" },
@@ -26,7 +27,21 @@ function topSupport(values = {}, limit = 3) {
 }
 
 function normalizeThemes({ snapshot, themes, brief, longitudinalTracking }) {
-  if (snapshot?.themeRecords?.length) return snapshot.themeRecords;
+  if (snapshot?.themeRecords?.length) {
+    return snapshot.themeRecords.map((record) => {
+      const theme = themes?.find((item) => item.themeId === record.themeId);
+      return {
+        ...record,
+        independentSourceCategories: record.independentSourceCategories ??
+          (theme ? graphSourceNames(theme.sourceAggregation).independentSourceCategories : undefined),
+        channels: record.channels ??
+          (theme ? graphSourceNames(theme.sourceAggregation).channels : undefined),
+        audiences: record.audiences ?? topSupport(theme?.personas),
+        markets: record.markets ?? topSupport(theme?.countries),
+        platforms: record.platforms ?? topSupport(theme?.platforms),
+      };
+    });
+  }
 
   if (themes?.length) {
     return themes.map((theme) => {
@@ -48,6 +63,7 @@ function normalizeThemes({ snapshot, themes, brief, longitudinalTracking }) {
         independentSourceCategoryCount:
           theme.sourceAggregation?.distinctIndependentSourceCategoryCount || 0,
         channelCount: theme.sourceAggregation?.distinctChannelCount || 0,
+        ...graphSourceNames(theme.sourceAggregation),
         audiences: topSupport(theme.personas),
         markets: topSupport(theme.countries),
         platforms: topSupport(theme.platforms),
@@ -130,18 +146,24 @@ export default function KnowledgeGraphView({
 
   if (!nodes.length) return <EmptyState therapeuticArea={therapeuticArea} />;
 
-  const centerX = 500;
-  const centerY = 270;
-  const orbitX = 355;
-  const orbitY = 190;
+  const bubbles = new Map(nodes.map((node) => [
+    node.themeId, graphBubble(node.label, node.eligiblePercent),
+  ]));
+  const maxRadius = Math.max(...Array.from(bubbles.values(), (bubble) => bubble.radius));
+  const orbit = nodes.length === 1 ? 0 : Math.max(
+    200, (maxRadius + 24) / Math.sin(Math.PI / nodes.length)
+  );
+  const graphSize = Math.ceil(2 * (orbit + maxRadius + 32));
+  const centerX = graphSize / 2;
+  const centerY = graphSize / 2;
   const positions = new Map(
     nodes.map((node, index) => {
       const angle = -Math.PI / 2 + (index * Math.PI * 2) / nodes.length;
       return [
         node.themeId,
         {
-          x: centerX + Math.cos(angle) * orbitX,
-          y: centerY + Math.sin(angle) * orbitY,
+          x: centerX + Math.cos(angle) * orbit,
+          y: centerY + Math.sin(angle) * orbit,
         },
       ];
     })
@@ -207,10 +229,10 @@ export default function KnowledgeGraphView({
 
         <div className="mt-5 overflow-x-auto rounded-2xl border border-white/10 bg-black/35">
           <svg
-            viewBox="0 0 1000 540"
+            viewBox={`0 0 ${graphSize} ${graphSize}`}
             role="img"
             aria-label={`Knowledge graph containing ${nodes.length} themes and ${edges.length} supported relationships`}
-            className="min-w-[760px]"
+            style={{ width: graphSize, minWidth: "100%" }}
           >
             <defs>
               <marker
@@ -261,14 +283,8 @@ export default function KnowledgeGraphView({
             {nodes.map((node) => {
               const position = positions.get(node.themeId);
               const tone = NODE_TONES[node.confidence] || NODE_TONES.insufficient;
-              const radius = Math.min(
-                62,
-                34 + Number(node.eligiblePercent || 0) * 0.7
-              );
-              const shortLabel =
-                String(node.label).length > 24
-                  ? `${String(node.label).slice(0, 22)}…`
-                  : node.label;
+              const { radius, lines } = bubbles.get(node.themeId);
+              const labelStart = -(lines.length * 20) / 2;
 
               return (
                 <g
@@ -292,13 +308,18 @@ export default function KnowledgeGraphView({
                     fontSize="14"
                     fontWeight="600"
                   >
-                    {shortLabel}
+                    {lines.map((line, index) => (
+                      <tspan key={index} x="0" y={labelStart + index * 20}>
+                        {line}
+                      </tspan>
+                    ))}
                   </text>
                   <text
-                    y="22"
+                    y={labelStart + lines.length * 20}
                     textAnchor="middle"
                     fill="#d4d4d8"
                     fontSize="12"
+                    dominantBaseline="middle"
                   >
                     {node.eligiblePercent}%
                   </text>
@@ -309,7 +330,7 @@ export default function KnowledgeGraphView({
         </div>
 
         <p className="mt-3 text-xs leading-5 text-white/35">
-          Node size represents eligible prevalence. Lines represent detected relationships; line weight represents relationship strength. No unsupported links are inferred.
+          Bubbles fit the full theme label and grow with eligible prevalence. Lines represent detected relationships; line weight represents relationship strength. No unsupported links are inferred.
         </p>
       </section>
 
@@ -345,11 +366,16 @@ export default function KnowledgeGraphView({
                 </span>
               ) : null}
             </div>
-            {node.independentSourceCategoryCount || node.channelCount ? (
-              <p className="mt-3 text-xs text-white/40">
-                {node.independentSourceCategoryCount || 0} independent source categories · {node.channelCount || 0} channels
+            {[
+              ["Independent source categories", node.independentSourceCategories, node.independentSourceCategoryCount],
+              ["Channels", node.channels, node.channelCount],
+            ].map(([label, values, count]) => (
+              <p key={label} className="mt-3 text-xs text-white/40">
+                <span className="text-white/60">{label}:</span>{" "}
+                {values?.length ? values.map(words).join(", ") :
+                  count ? `${count} (names unavailable in this saved analysis)` : "None identified"}
               </p>
-            ) : null}
+            ))}
             {[
               ["Audiences", node.audiences],
               ["Markets", node.markets],
@@ -358,7 +384,7 @@ export default function KnowledgeGraphView({
               values?.length ? (
                 <p key={label} className="mt-2 text-xs text-white/40">
                   <span className="text-white/60">{label}:</span>{" "}
-                  {values.join(", ")}
+                  {values.map(label === "Markets" ? formatGraphMarket : words).join(", ")}
                 </p>
               ) : null
             )}

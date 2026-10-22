@@ -36,6 +36,16 @@ export type ThemeKnowledgeRecord = {
 
   channelCount: number;
 
+  independentSourceCategories?: string[];
+
+  channels?: string[];
+
+  audiences?: string[];
+
+  markets?: string[];
+
+  platforms?: string[];
+
   trajectory:
     ThemeTrajectoryLabel;
 

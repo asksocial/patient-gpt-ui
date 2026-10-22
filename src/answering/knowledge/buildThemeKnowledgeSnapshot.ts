@@ -2,6 +2,7 @@ import type {
   ThemeKnowledgeSnapshot,
   ThemeKnowledgeRecord,
 } from "./types";
+import { graphSourceNames } from "./graphPresentation";
 import type {
   ThemeLongitudinalTracking,
   ThemeMatch,
@@ -98,6 +99,14 @@ function normalizedArea(
     .replace(/^_+|_+$/g, "");
 }
 
+function topSupportNames(values: Record<string, number> = {}): string[] {
+  return Object.entries(values)
+    .filter(([name, count]) => name && count > 0)
+    .sort((first, second) => second[1] - first[1])
+    .slice(0, 3)
+    .map(([name]) => name);
+}
+
 function buildRecord(
   theme: ThemeMatch,
   longitudinalTracking?:
@@ -141,6 +150,10 @@ function buildRecord(
     channelCount:
       theme.sourceAggregation
         ?.distinctChannelCount || 0,
+    ...graphSourceNames(theme.sourceAggregation),
+    audiences: topSupportNames(theme.personas),
+    markets: topSupportNames(theme.countries),
+    platforms: topSupportNames(theme.platforms),
     trajectory:
       longitudinal
         ?.trajectory ||
