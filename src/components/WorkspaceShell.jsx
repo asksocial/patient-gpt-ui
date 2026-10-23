@@ -479,7 +479,8 @@ function AssistantAnswer({
   const curatedInsights = responsePayload?.relevantCuratedInsights || [];
   const curatedThemes = answer?.curatedIntelligence?.themes || [];
   const liveThemes = answer?.liveData?.themes || [];
-  const emergingNarratives = answer?.liveData?.emergingNarratives || [];
+  const focusedSummary = responsePayload?.analyticalAnswer?.sections?.find(section => section.personaIntelligence?.queryContext)?.personaIntelligence;
+  const emergingNarratives = focusedSummary ? [] : answer?.liveData?.emergingNarratives || [];
   const recommendedActions = answer?.recommendedActions || [];
   const curatedMentions = responsePayload?.sourceIntelligence?.curatedMentions || [];
   const socialMentions = responsePayload?.sourceIntelligence?.socialMentions || [];
@@ -540,11 +541,11 @@ function AssistantAnswer({
         ) : null}
 
         <Panel
-          title="What’s Emerging In Social Data"
+          title={focusedSummary ? "Supporting Conversation Evidence" : "What’s Emerging In Social Data"}
           subtitle={
             emergingNarratives.length
               ? `${emergingNarratives.length} emerging narrative${emergingNarratives.length > 1 ? "s" : ""} detected`
-              : "Social themes aligned to baseline"
+              : focusedSummary ? "Source material matching the question; growth over time is not established" : "Social themes aligned to baseline"
           }
         >
           <div className="space-y-4">
@@ -598,7 +599,7 @@ function AssistantAnswer({
                           : "A structured social theme identified from clustered conversation data with clearer pattern consistency."
                       }
                     >
-                      {theme.sourceType === "noise_llm"
+                      {focusedSummary?.questionEvidence ? "Source-matched topic" : theme.sourceType === "noise_llm"
                         ? "Emerging Narrative"
                         : "Structured Social Theme"}
                     </Badge>
@@ -712,9 +713,18 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
         <p className="font-semibold">Question focus: {corpusSummary.queryContext.filters.join(" · ")}</p>
         <p className="mt-1">{corpusSummary.denominator.toLocaleString()} matching source {corpusSummary.recordUnit || "posts"} across the complete {corpusSummary.queryContext.fullSourceCount.toLocaleString()}-record corpus; {corpusSummary.analyticalCount.toLocaleString()} retained for this analysis. Charts use these matching records, before ranking.</p>
       </div> : null}
+      {corpusSummary?.questionEvidence?.examples?.length ? <Panel title="Evidence Supporting This Answer" subtitle="Original excerpts matched to the question; English examples shown first when available. Review source context before research use.">
+        <div className="grid gap-3 lg:grid-cols-2">
+          {corpusSummary.questionEvidence.examples.map(example => <article key={example.id} className="rounded-xl border border-white/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/60">{example.topic}{example.sourceCategory ? ` · ${example.sourceCategory}` : ""}{example.language ? ` · ${example.language}` : ""}</p>
+            <blockquote className="mt-2 text-sm leading-6 text-white/80">{example.excerpt}</blockquote>
+            {example.url ? <a href={example.url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs font-semibold text-cyan-200">Open original source ↗</a> : <p className="mt-3 text-xs text-white/50">Source URL was not supplied.</p>}
+          </article>)}
+        </div>
+      </Panel> : null}
       {corpusSummary ? <CorpusDonutCards summary={corpusSummary} /> : null}
 
-      {sections.filter((section) => section.key !== "live_data_check").filter((section) => section.key !== "strategic_implications" && !/^what this means$/i.test(section.title || "") && !(corpusSummary && ["top_burdens", "market_variation"].includes(section.key))).map((section, index) => (
+      {sections.filter((section) => !corpusSummary?.questionEvidence || section.personaIntelligence).filter((section) => section.key !== "live_data_check").filter((section) => section.key !== "strategic_implications" && !/^what this means$/i.test(section.title || "") && !(corpusSummary && ["top_burdens", "market_variation"].includes(section.key))).map((section, index) => (
         <Panel
           key={`${section.key || section.title}-${index}`}
           title={section.title || "Supporting Intelligence"}

@@ -23,7 +23,7 @@ const requiredContracts = [
   'title="From Curated Intelligence"',
   'typeof responsePayload?.curatedIntelligenceAvailable === "boolean"',
   "{curatedIntelligenceAvailable ? (",
-  'title="What’s Emerging In Social Data"',
+  'focusedSummary ? "Supporting Conversation Evidence" : "What’s Emerging In Social Data"',
   'title="Relevant Curated Insights"',
   'title="Recommended Actions"',
   '<span className="whitespace-nowrap">',
@@ -38,7 +38,7 @@ for (const contract of requiredContracts) {
 }
 
 if (
-  !workspaceShell.includes('sections.filter((section) => section.key !== "live_data_check")') ||
+  !workspaceShell.includes('filter((section) => section.key !== "live_data_check")') ||
   workspaceShell.includes('title="What’s Emerging In Live Data"')
 ) {
   throw new Error(

@@ -1,3 +1,4 @@
+import type { QuestionEvidence } from "../search/buildQuestionEvidence";
 import type { CorpusCharts } from "./buildCorpusCharts";
 import { groupClientAudiences, clientGroupForClassification, type ClientAudienceGroup } from "./clientAudienceGroups";
 import type { Glp1AudienceClassification } from "../../ingestion/glp1Audience";
@@ -10,6 +11,7 @@ export type PersonaRecord = {
 import { AUDIENCE_ROLES, CONVERSATION_SEGMENTS, type AudienceRole, type ConversationSegment } from "../../ingestion/audienceSegments";
 
 export type PersonaIntelligenceSummary = {
+  questionEvidence?: QuestionEvidence;
   corpusCharts?: CorpusCharts;
   clientGroupingVersion: 2;
   clientGroups: ClientAudienceGroup[];

@@ -787,7 +787,7 @@ function buildThemeFirstAnswer(
   );
 
   return {
-    directAnswer:
+    directAnswer: personaSummary?.queryContext ? buildFocusedSearchAnswer(personaSummary) :
       buildThemeDirectAnswer(
         context.dominantThemes
       ),

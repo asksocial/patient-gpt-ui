@@ -1,3 +1,5 @@
+import { buildQuestionEvidence } from "../../answering/search/buildQuestionEvidence";
+import { searchRecordText, subjectsForQuestion, topicsForQuestion } from "../../answering/search/searchSubjects";
 import { buildSearchQuestionFocus } from "../../answering/search/questionFocus";
 import fs from "node:fs";
 import { createHash } from "node:crypto";
@@ -75,7 +77,13 @@ export function selectSearchCorpusForQuestion(therapeuticArea: string, findings:
   const summary = buildPersonaIntelligence(matchingSource, { scope: "question_corpus", analyticalCount: matchingFindings.length });
   summary.recordUnit = bundle.summary.recordUnit;
   summary.additionalExclusionLabel = bundle.summary.additionalExclusionLabel;
-  summary.corpusCharts = buildCorpusCharts(matchingFindings.map(finding => ({ symptoms: finding.symptoms, country: finding.countries?.[0] || (finding as CanonicalFinding & { country?: string }).country })));
+  summary.questionEvidence = buildQuestionEvidence(question, matchingFindings);
+  const subjects = subjectsForQuestion(question);
+  summary.corpusCharts = buildCorpusCharts(matchingFindings.map(finding => ({ symptoms: subjects.length ? subjects.flatMap(subject => topicsForQuestion(subject, question).filter(topic => topic.pattern.test(searchRecordText(finding))).map(topic => topic.label)) : finding.symptoms, country: finding.countries?.[0] || (finding as CanonicalFinding & { country?: string }).country })));
+  if (subjects.length) {
+    summary.corpusCharts.burdens.segments = summary.corpusCharts.burdens.segments.map(segment => ({ ...segment, label: segment.id === "overlap" ? "Both leading topics" : segment.id === "remainder" ? "Other matching topics" : segment.label }));
+    summary.corpusCharts.burdens.note = "The leading topics and their overlap partition matching retained records. Other records may discuss additional matched topics. Shares are not patient prevalence or economic-burden estimates.";
+  }
   summary.queryContext = { question, filters: focus.labels, fullSourceCount: bundle.summary.denominator, fullAnalyticalCount: findings.length };
   summary.fullCorpus = structuredClone(bundle.summary);
   return { summary, findings: matchingFindings };

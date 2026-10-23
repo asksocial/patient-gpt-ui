@@ -1,3 +1,4 @@
+import { questionEvidenceAnswer } from "../search/buildQuestionEvidence";
 export type CorpusChart = {
   denominator: number;
   segments: Array<{ id: string; label: string; count: number }>;
@@ -53,6 +54,7 @@ export function buildCorpusBurdenAnswer(chart: CorpusChart): string {
 
 export function buildFocusedSearchAnswer(summary: import("./buildPersonaIntelligence").PersonaIntelligenceSummary): string {
   if (!summary.analyticalCount) return "No retained analytical evidence matches the interpreted question scope in this corpus. Rephrase or broaden the question if this scope differs from what you intended.";
+  if (summary.questionEvidence) return questionEvidenceAnswer(summary.questionEvidence);
   const focus = summary.queryContext?.filters.join("; ");
   const temporalNote = /\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(summary.queryContext?.question || "") ? " These are themes present in the available corpus; a time comparison is needed to establish which are newly emerging or changing." : "";
   const chart = summary.corpusCharts?.burdens;

@@ -1,3 +1,4 @@
+import { questionEvidenceAnswer, type QuestionEvidence } from "../../answering/search/buildQuestionEvidence";
 import {
   aiGateway,
   createSystemAiContext,
@@ -56,6 +57,7 @@ type CuratedInsight = {
 };
 
 export type ComposeHybridAnswerInput = {
+  questionEvidence?: QuestionEvidence;
   question: string;
   therapeuticArea: string;
   curatedThemes: CuratedTheme[];
@@ -713,6 +715,18 @@ Rules:
 /** Deterministic, evidence-grounded presentation for refreshed saved searches
  * and explicit no-match results; never invokes a model or rewrites storage. */
 export function buildSourceGroundedSearchAnswer(input: ComposeHybridAnswerInput): HybridAnswer {
+  if (input.questionEvidence?.topics.length) {
+    return {
+      directAnswer: questionEvidenceAnswer(input.questionEvidence),
+      curatedIntelligence: { themes: input.curatedThemes },
+      liveData: { themes: input.liveThemes, emergingNarratives: [] },
+      whatThisMeans: input.questionEvidence.researchUses.join(" "),
+      recommendedActions: [
+        "Review the linked original excerpts and confirm source context before using them in research.",
+        "Use the matched topics to prioritize qualitative follow-up; validate rates and economic estimates against structured study data.",
+      ],
+    };
+  }
   if (input.curatedThemes.length || input.liveThemes.length || input.curatedInsights?.length) return buildFallbackAnswer(input);
   return {
     directAnswer: "No corpus evidence matches this question.",

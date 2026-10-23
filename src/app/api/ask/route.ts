@@ -240,7 +240,7 @@ export async function POST(req: NextRequest) {
       );
     const questionCorpus = canonicalData.status === "available" ? selectSearchCorpusForQuestion(therapeuticArea, canonicalData.findings, question) : null;
     const focusedQuestion = Boolean(questionCorpus?.summary.queryContext);
-    const sourceIntelligence = buildSourceIntelligence(questionCorpus?.findings || []);
+    const sourceIntelligence = buildSourceIntelligence(questionCorpus?.findings || [], questionCorpus?.summary.questionEvidence);
 
     const [
       hybridData,
@@ -333,6 +333,7 @@ export async function POST(req: NextRequest) {
         : null);
 
     const hybridInput = {
+      questionEvidence: questionCorpus?.summary.questionEvidence,
       question,
       therapeuticArea,
       curatedThemes,
@@ -364,7 +365,7 @@ export async function POST(req: NextRequest) {
           entitlements.granted,
       },
     };
-    const hybridAnswer = focusedQuestion && !questionCorpus?.findings.length ? buildSourceGroundedSearchAnswer(hybridInput) : await composeHybridAnswer(hybridInput);
+    const hybridAnswer = focusedQuestion && (!questionCorpus?.findings.length || questionCorpus?.summary.questionEvidence) ? buildSourceGroundedSearchAnswer(hybridInput) : await composeHybridAnswer(hybridInput);
     const answer = enrichHybridAnswerWithAnalytical(
       hybridAnswer,
       intelligence

@@ -1,3 +1,4 @@
+import type { QuestionEvidence } from "../../answering/search/buildQuestionEvidence";
 import type { CanonicalFinding } from "../../answering/models/finding";
 
 export type SearchSourceMention = {
@@ -113,12 +114,13 @@ function toMention(finding: FindingLike): SearchSourceMention | null {
   };
 }
 
-function representativeMentions(findings: FindingLike[], kind: "curated" | "social") {
+function representativeMentions(findings: FindingLike[], kind: "curated" | "social", preferred: Set<string> = new Set()) {
   const seen = new Set<string>();
   return findings
     .filter((finding) => sourceType(finding) === kind)
     .sort(
       (left, right) =>
+        Number(preferred.has(right.findingId || right.id || "")) - Number(preferred.has(left.findingId || left.id || "")) ||
         Number(right.relevanceScore || right.score || right.confidence || 0) -
         Number(left.relevanceScore || left.score || left.confidence || 0)
     )
@@ -166,13 +168,19 @@ function representativeThemes(
 }
 
 export function buildSourceIntelligence(
-  findings: CanonicalFinding[] = []
+  findings: CanonicalFinding[] = [],
+  questionEvidence?: QuestionEvidence
 ): SearchSourceIntelligence {
-  const sourceFindings = findings as FindingLike[];
+  const preferred = new Set(questionEvidence?.examples.map(example => example.id));
+  const sourceFindings = [...findings as FindingLike[]].sort((a, b) => Number(preferred.has(b.findingId || b.id || "")) - Number(preferred.has(a.findingId || a.id || "")));
+  const focusedThemes = (kind: "curated" | "social") => questionEvidence?.topics.flatMap(topic => {
+    const example = questionEvidence.examples.find(e => e.topic === topic.label && sourceFindings.some(f => (f.findingId || f.id) === e.id && sourceType(f) === kind));
+    return example ? [{ name: topic.label, description: example.excerpt, sourceType: "analytical_corpus", relationship: "live" }] : [];
+  }).slice(0, 6);
   return {
-    curatedMentions: representativeMentions(sourceFindings, "curated"),
-    socialMentions: representativeMentions(sourceFindings, "social"),
-    curatedThemes: representativeThemes(sourceFindings, "curated"),
-    socialThemes: representativeThemes(sourceFindings, "social"),
+    curatedMentions: representativeMentions(sourceFindings, "curated", preferred),
+    socialMentions: representativeMentions(sourceFindings, "social", preferred),
+    curatedThemes: focusedThemes("curated") ?? representativeThemes(sourceFindings, "curated"),
+    socialThemes: focusedThemes("social") ?? representativeThemes(sourceFindings, "social"),
   };
 }

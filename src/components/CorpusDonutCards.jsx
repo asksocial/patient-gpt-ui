@@ -53,7 +53,7 @@ export default function CorpusDonutCards({ summary }) {
     highlightLabel: "Patients & Their Circle",
   };
   return <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3" aria-label="Corpus overview charts">
-    <DonutCard focused={focused} unit={unit} title="Most-Supported Burdens" chart={summary.corpusCharts.burdens} source={focused ? "Derived from matching analytical records" : "Derived from the validated analytical corpus"} />
+    <DonutCard focused={focused} unit={unit} title={summary.questionEvidence ? "Topics in This Question" : "Most-Supported Burdens"} chart={summary.corpusCharts.burdens} source={focused ? "Derived from matching analytical records" : "Derived from the validated analytical corpus"} />
     <DonutCard focused={focused} unit={unit} title="Market Intelligence" chart={summary.corpusCharts.markets} source={focused ? "Derived from matching analytical records" : "Derived from the validated analytical corpus"} />
     <DonutCard focused={focused} unit={unit} title="Persona Intelligence" chart={persona} source={focused ? "Derived from matching source records" : "Derived from the full source corpus"} />
   </div>;
