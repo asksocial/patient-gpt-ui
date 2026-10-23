@@ -3,12 +3,13 @@
 }
 
 .segmentVisual {
-  transition: transform 160ms ease, filter 160ms ease;
+  transition: transform 180ms ease, filter 180ms ease;
 }
 
 .segment[data-active="true"] .segmentVisual {
-  transform: translateY(-3px);
-  filter: drop-shadow(0 3px 2px rgb(18 59 50 / 22%));
+  transform: translateY(-2px);
+  filter: drop-shadow(0 1px 1px rgb(12 41 35 / 5%))
+    drop-shadow(0 16px 18px rgb(12 41 35 / 7%));
 }
 
 .segment:focus-visible .segmentVisual {

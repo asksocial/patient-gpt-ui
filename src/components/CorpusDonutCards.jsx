@@ -25,7 +25,7 @@ function DonutCard({ title, chart, source, unit = "posts", focused = false }) {
       <h3 className="text-sm font-semibold uppercase tracking-[0.18em]">{title}</h3>
       <p className="mt-2 text-xs leading-5" style={{ color: "#73847d" }}>{source}</p>
       <div className="relative mx-auto my-7 w-full max-w-[280px] aspect-square">
-        <svg viewBox="0 0 200 200" role="group" aria-label={`${title} interactive chart`} className="h-full w-full" onPointerLeave={() => setHoveredId(null)}>
+        <svg viewBox="0 0 200 200" role="group" aria-label={`${title} interactive chart`} className="h-full w-full overflow-visible" onPointerLeave={() => setHoveredId(null)}>
           <circle cx="100" cy="100" r="80" fill="none" stroke={REMAINDER} strokeWidth="24" />
           {segments.filter(s => s.count > 0).map(s => (
             <g
