@@ -24,10 +24,10 @@ import { getCurrentSearchResult } from "../lib/answers/currentSearchResult";
 import { sortTherapeuticAreas } from "../lib/therapeuticAreas";
 
 const QUICK_ACTIONS = [
-  "What are people saying right now?",
-  "What’s emerging in online conversations?",
-  "What themes are driving confusion or concern?",
-  "What’s changed since the last report?",
+  "What are patients saying about cost and insurance?",
+  "What are patients saying about maintenance?",
+  "What are people saying about appetite and eating?",
+  "What are people saying about cost and insurance in Asian markets?",
 ];
 
 function RailIcon({ name, className = "h-4 w-4" }) {
@@ -1871,7 +1871,7 @@ export default function WorkspaceShell() {
               </button>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 -translate-x-[10px]">
               <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                 <RailIcon name="topic" />
                 <span>Topic</span>
@@ -1909,7 +1909,7 @@ export default function WorkspaceShell() {
                     type="button"
                     onClick={() => submitQuestion(item)}
                     disabled={loading || !therapeuticArea}
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/75 transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/75 transition disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {item}
                   </button>
@@ -1934,7 +1934,7 @@ export default function WorkspaceShell() {
                       type="button"
                       onClick={() => submitQuestion(item)}
                       disabled={loading || !therapeuticArea}
-                      className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/70 transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/70 transition disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {item}
                     </button>
@@ -2177,7 +2177,7 @@ export default function WorkspaceShell() {
             ) : null}
           </header>
 
-          <div data-asksocial-workarea-content className="order-3 flex-1 px-6 py-6">
+          <div data-asksocial-workarea-content data-search-page={activeDestination === "ask" ? "true" : undefined} className="order-3 flex-1 px-6 py-6">
             {activeDestination ===
             "intelligence_reports" ? (
               <ExecutiveIntelligenceView

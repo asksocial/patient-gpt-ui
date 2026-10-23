@@ -1,0 +1,22 @@
+.segment {
+  outline: none;
+}
+
+.segmentVisual {
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.segment[data-active="true"] .segmentVisual {
+  transform: translateY(-3px);
+  filter: drop-shadow(0 3px 2px rgb(18 59 50 / 22%));
+}
+
+.segment:focus-visible .segmentVisual {
+  filter: drop-shadow(0 0 3px #123b32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmentVisual {
+    transition: none;
+  }
+}
