@@ -1,4 +1,4 @@
-import { loadGlp1PersonaIntelligence } from "../../lib/answers/loadGlp1PersonaIntelligence";
+import { selectSearchCorpusForQuestion } from "../../lib/answers/loadSearchCorpusIntelligence";
 import {
   assembleAnswer,
 } from "../../answering/assembleAnswer";
@@ -905,11 +905,9 @@ export function askSocial(
       rawCards
     );
 
-  const templateFilteredCards =
-    filterFindingsByTemplate(
-      rawCards,
-      intent
-    );
+  const questionCorpus = selectSearchCorpusForQuestion(therapeuticArea, rawCards, question);
+  const templateMatches = filterFindingsByTemplate(questionCorpus.findings, intent);
+  const templateFilteredCards = questionCorpus.summary.queryContext && !templateMatches.length ? questionCorpus.findings : templateMatches;
 
   /**
    * Evidence Intelligence, Social Evidence Recovery,
@@ -1375,7 +1373,7 @@ export function askSocial(
       findings:
         rankedCards,
 
-      personaSummary: /^glp[\s_-]?1$/i.test(therapeuticArea || "") ? loadGlp1PersonaIntelligence() : undefined,
+      personaSummary: questionCorpus.summary,
 
       themeSummary,
 

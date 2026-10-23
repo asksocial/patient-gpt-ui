@@ -1,4 +1,4 @@
-import { buildCorpusBurdenAnswer } from "../personas/buildCorpusCharts";
+import { buildCorpusBurdenAnswer, buildFocusedSearchAnswer } from "../personas/buildCorpusCharts";
 import {
   CanonicalFinding,
 } from "../models/finding";
@@ -807,7 +807,7 @@ function buildThemeFirstAnswer(
 
 function buildFindingDirectAnswer(
   findings: CanonicalFinding[],
-  lowSample: boolean
+  _lowSample: boolean
 ): string {
   const symptomCounts =
     sortDescending(
@@ -826,40 +826,10 @@ function buildFindingDirectAnswer(
   const second =
     symptomCounts[1];
 
-  if (lowSample) {
-    if (second) {
-      return `${titleCase(
-        top[0]
-      )} and ${titleCase(
-        second[0]
-      ).toLowerCase()} are the most visible day-to-day burdens in the current discussion sample.`;
-    }
-
-    return `${titleCase(
-      top[0]
-    )} is the most visible day-to-day burden in the current discussion sample.`;
-  }
-
   if (second) {
-    return `${titleCase(
-      top[0]
-    )} and ${titleCase(
-      second[0]
-    ).toLowerCase()} dominate discussion as the most immediate burdens, appearing in about ${percentage(
-      top[1],
-      findings.length
-    )}% and ${percentage(
-      second[1],
-      findings.length
-    )}% of high-signal findings.`;
+    return `${titleCase(top[0])} and ${titleCase(second[0]).toLowerCase()} are the most visible burden themes in the available corpus.`;
   }
-
-  return `${titleCase(
-    top[0]
-  )} dominates discussion as the most immediate burden, appearing in about ${percentage(
-    top[1],
-    findings.length
-  )}% of high-signal findings.`;
+  return `${titleCase(top[0])} is the most visible burden theme in the available corpus.`;
 }
 
 function buildTopBurdensSection(
@@ -986,11 +956,11 @@ export function buildPersonaSection(
   corpusSummary?: PersonaIntelligenceSummary
 ): RenderedSection | null {
   const summary = corpusSummary || buildPersonaIntelligence(findings);
-  if (summary.classifiedCount) {
+  if (summary.classifiedCount || summary.scope === "question_corpus") {
     return {
       key: "persona_intelligence",
       title: "Persona Intelligence",
-      text: `Audience and source roles across ${summary.denominator.toLocaleString()} ${summary.scope === "full_corpus" ? "posts in the full source corpus" : "selected posts"}; ${summary.classifiedCount.toLocaleString()} have detailed classifications. Shares measure posts, and one author can contribute multiple posts. Specific professional roles require source, account or self-description evidence. ${summary.denominator < LOW_SAMPLE_THRESHOLD ? "This small sample is directional. " : ""}Six client-facing audience groups provide conversation types and original-source evidence in drill-downs. Off-topic content is a separate exclusion bucket.`,
+      text: `Audience and source roles across ${summary.denominator.toLocaleString()} ${summary.scope === "full_corpus" ? "posts in the full source corpus" : summary.scope === "question_corpus" ? "source records matching the question" : "selected posts"}; ${summary.classifiedCount.toLocaleString()} have detailed classifications. Shares measure posts, and one author can contribute multiple posts. Specific professional roles require source, account or self-description evidence. ${summary.denominator < LOW_SAMPLE_THRESHOLD ? "This small sample is directional. " : ""}Six client-facing audience groups provide conversation types and original-source evidence in drill-downs. Off-topic content is a separate exclusion bucket.`,
       bullets: [
         ...(summary.scope === "full_corpus" ? [`Full source corpus denominator: ${summary.denominator.toLocaleString()} rows. ${summary.analyticalCount?.toLocaleString()} rows are retained for thematic analytics; ${summary.excludedFromAnalysisCount?.toLocaleString()} are excluded from thematic analytics but remain in this composition. Ranked answer examples do not determine these shares.`] : []),
         ...summary.clientGroups.filter(group => !group.excluded).map(group => `${group.label}: ${group.count.toLocaleString()} of ${summary.denominator.toLocaleString()} posts (${group.percent}%). ${group.id === "patients_circle" ? "All patient-related content is combined here and counted once." : `Subtypes: ${group.subtypes.map(subtype => `${subtype.label} (${subtype.count.toLocaleString()})`).join("; ")}.`}`),
@@ -1180,7 +1150,7 @@ export function buildRenderedAnswer(
   );
 
   return {
-    directAnswer: personaSummary?.scope === "full_corpus" && personaSummary.corpusCharts
+    directAnswer: personaSummary?.scope === "question_corpus" ? buildFocusedSearchAnswer(personaSummary) : personaSummary?.scope === "full_corpus" && personaSummary.corpusCharts
       ? buildCorpusBurdenAnswer(personaSummary.corpusCharts.burdens)
       : buildFindingDirectAnswer(findings, lowSample),
 

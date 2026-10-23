@@ -709,3 +709,15 @@ Rules:
     });
   }
 }
+
+/** Deterministic, evidence-grounded presentation for refreshed saved searches
+ * and explicit no-match results; never invokes a model or rewrites storage. */
+export function buildSourceGroundedSearchAnswer(input: ComposeHybridAnswerInput): HybridAnswer {
+  if (input.curatedThemes.length || input.liveThemes.length || input.curatedInsights?.length) return buildFallbackAnswer(input);
+  return {
+    directAnswer: "No corpus evidence matches this question.",
+    curatedIntelligence: { themes: [] }, liveData: { themes: [], emergingNarratives: [] },
+    whatThisMeans: "The requested focus has no matching evidence in the available corpus.",
+    recommendedActions: ["Try a broader question or a different focus within the corpus."],
+  };
+}

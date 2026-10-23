@@ -34,6 +34,7 @@ export type CanonicalFindingsLoadResult =
     };
 
 type CorpusDefinition = {
+  sourceFiles?: string[];
   source: AskAnalyticsSource;
   sourceLabel: string;
   relevancePolicy?: "standard" | "prequalified";
@@ -79,6 +80,7 @@ function discoverMeltwaterCorpus(
     : "";
 
   return {
+    sourceFiles: [relativePath],
     source: "meltwater_csv",
     sourceLabel: `${therapeuticArea}${moduleLabel} Meltwater canonical corpus`,
     load: () =>
@@ -113,6 +115,7 @@ const CORPORA: Record<
   CorpusDefinition
 > = {
   glp_1: {
+    sourceFiles: ['data/glp-1.csv'],
     source: "meltwater_csv",
     sourceLabel: "GLP-1 Meltwater canonical corpus",
     load: () => ingestMeltwaterCsv(requireFile("data/glp-1.csv"), {
@@ -123,6 +126,7 @@ const CORPORA: Record<
     }) as CanonicalFinding[],
   },
   hepatitis_b: {
+    sourceFiles: ['data/HepB_-_Patients__Caregivers - Mar 11, 2026 - 11 47 15 AM.csv'],
     source: "meltwater_csv",
     sourceLabel:
       "Hepatitis B Meltwater canonical corpus",
@@ -144,6 +148,7 @@ const CORPORA: Record<
     ] as unknown as CanonicalFinding[],
   },
   regenerative_aesthetics: {
+    sourceFiles: ['data/regen-aesthetics.csv'],
     source: "meltwater_csv",
     sourceLabel:
       "Regenerative Aesthetics Meltwater canonical corpus",
@@ -162,6 +167,7 @@ const CORPORA: Record<
       ) as CanonicalFinding[],
   },
   medical_aesthetics: {
+    sourceFiles: ['data/regen-aesthetics.csv'],
     source: "meltwater_csv",
     sourceLabel:
       "Medical Aesthetics approved shared Meltwater canonical corpus",
@@ -180,6 +186,7 @@ const CORPORA: Record<
       ) as CanonicalFinding[],
   },
   botulinum_toxin: {
+    sourceFiles: ['data/botulinum-toxin.csv'],
     source: "meltwater_csv",
     sourceLabel: "Botulinum toxin Meltwater canonical corpus",
     load: () =>
@@ -235,6 +242,12 @@ function resolveCoreCorpus(therapeuticArea: string) {
       CORPORA[therapeuticAreaId] ||
       discoverMeltwaterCorpus(therapeuticArea, therapeuticAreaId),
   };
+}
+
+/** Raw source files belong to the same registry as the analytical corpus.
+ * New discovered CSV corpora automatically carry their full source universe. */
+export function getCanonicalCorpusSourceFiles(therapeuticArea: string): string[] {
+  return (resolveCoreCorpus(therapeuticArea).corpus?.sourceFiles || []).map(file => path.resolve(process.cwd(), file));
 }
 
 export function getCanonicalCorpusAvailability(therapeuticArea: string) {

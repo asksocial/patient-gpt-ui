@@ -13,8 +13,12 @@ export type PersonaIntelligenceSummary = {
   corpusCharts?: CorpusCharts;
   clientGroupingVersion: 2;
   clientGroups: ClientAudienceGroup[];
-  scope: "full_corpus" | "selected_findings";
+  scope: "full_corpus" | "question_corpus" | "selected_findings";
+  queryContext?: { question: string; filters: string[]; fullSourceCount: number; fullAnalyticalCount: number };
+  fullCorpus?: PersonaIntelligenceSummary;
   analyticalCount?: number;
+  additionalExclusionLabel?: string;
+  recordUnit?: "posts" | "records";
   excludedFromAnalysisCount?: number;
   patientRelated: {
     count: number; percent: number; likelyVoiceCount: number;

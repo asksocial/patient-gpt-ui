@@ -20,13 +20,11 @@ const askRoute = readFileSync(
 const requiredContracts = [
   "<AnalyticalAssistantAnswer responsePayload={responsePayload} />",
   "showDirectAnswer={false}",
-  "showWhatThisMeans={!analyticalIncludesWhatThisMeans}",
   'title="From Curated Intelligence"',
   'typeof responsePayload?.curatedIntelligenceAvailable === "boolean"',
   "{curatedIntelligenceAvailable ? (",
   'title="What’s Emerging In Social Data"',
   'title="Relevant Curated Insights"',
-  'title="What This Means"',
   'title="Recommended Actions"',
   '<span className="whitespace-nowrap">',
 ];
@@ -85,10 +83,12 @@ console.log(
       curatedIntelligence: true,
       socialIntelligence: true,
       insightTags: true,
-      whatThisMeans: true,
+      whatThisMeans: false,
       recommendedActions: true,
     },
     null,
     2
   )
 );
+
+if (workspaceShell.includes('title="What This Means"') || !workspaceShell.includes('section.key !== "strategic_implications"')) throw new Error("Search must hide both What This Means render paths for every topic");

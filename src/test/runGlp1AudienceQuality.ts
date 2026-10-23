@@ -131,10 +131,13 @@ for (const question of ["What are people saying right now?", "What education bar
     assert.ok(!/[0-9%]/.test(result.answer.directAnswer), "Analytical overview stays qualitative");
   }
   assert(result.answer.usedFindingIds.length <= 50, "Ranked answer evidence remains bounded");
-  assert.equal(persona.personaIntelligence!.denominator, 5000, "Persona percentages must not use the ranked shortlist");
-  assert.deepEqual(persona.personaIntelligence, full, "Question intent must not change corpus composition");
-  assert(persona.text!.includes("5,000 posts in the full source corpus"));
-  assert(persona.bullets!.some(bullet => bullet.includes("639 of 5,000 posts (12.78%)")));
+  const overall = persona.personaIntelligence!.fullCorpus || persona.personaIntelligence!;
+  assert.equal(overall.denominator, 5000, "Overall corpus composition never uses the ranked shortlist");
+  assert.deepEqual(overall, full, "The complete corpus remains available for comparison with question-scoped analytics");
+  if (!persona.personaIntelligence!.queryContext) {
+    assert(persona.text!.includes("5,000 posts in the full source corpus"));
+    assert(persona.bullets!.some(bullet => bullet.includes("639 of 5,000 posts (12.78%)")));
+  }
 }
 full.denominator = 0;
 assert.equal(loadGlp1PersonaIntelligence().denominator, 5000, "A consumer cannot mutate cached corpus composition");

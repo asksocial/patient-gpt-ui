@@ -473,7 +473,6 @@ function SourceMentionList({ title, mentions = [] }) {
 function AssistantAnswer({
   responsePayload,
   showDirectAnswer = true,
-  showWhatThisMeans = true,
 }) {
   const answer = responsePayload?.answer || null;
   const curatedInsights = responsePayload?.relevantCuratedInsights || [];
@@ -685,17 +684,6 @@ function AssistantAnswer({
 
       <RelevantCuratedInsights insights={curatedInsights} />
 
-      {showWhatThisMeans && answer.whatThisMeans ? (
-        <Panel
-          title="What This Means"
-          subtitle="Strategic synthesis for decision-making"
-        >
-          <p className="text-[15px] leading-7 text-white/80">
-            {answer.whatThisMeans}
-          </p>
-        </Panel>
-      ) : null}
-
       <RecommendedActions actions={recommendedActions} />
     </div>
   );
@@ -704,7 +692,7 @@ function AssistantAnswer({
 function AnalyticalAssistantAnswer({ responsePayload }) {
   const analyticalAnswer = responsePayload?.analyticalAnswer || null;
   const sections = analyticalAnswer?.sections || [];
-  const corpusSummary = sections.find(section => section.personaIntelligence?.scope === "full_corpus" && section.personaIntelligence?.corpusCharts)?.personaIntelligence;
+  const corpusSummary = sections.find(section => ["full_corpus", "question_corpus"].includes(section.personaIntelligence?.scope) && section.personaIntelligence?.corpusCharts)?.personaIntelligence;
 
   if (!analyticalAnswer) return null;
 
@@ -719,9 +707,13 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
         </p>
       </Panel>
 
+      {corpusSummary?.queryContext ? <div className="rounded-xl border border-white/10 p-4 text-sm text-white/70" aria-label="Question scope">
+        <p className="font-semibold">Question focus: {corpusSummary.queryContext.filters.join(" · ")}</p>
+        <p className="mt-1">{corpusSummary.denominator.toLocaleString()} matching source {corpusSummary.recordUnit || "posts"} across the complete {corpusSummary.queryContext.fullSourceCount.toLocaleString()}-record corpus; {corpusSummary.analyticalCount.toLocaleString()} retained for this analysis. Charts use these matching records, before ranking.</p>
+      </div> : null}
       {corpusSummary ? <CorpusDonutCards summary={corpusSummary} /> : null}
 
-      {sections.filter((section) => section.key !== "live_data_check").filter((section) => !(corpusSummary && ["top_burdens", "market_variation"].includes(section.key))).map((section, index) => (
+      {sections.filter((section) => section.key !== "live_data_check").filter((section) => section.key !== "strategic_implications" && !/^what this means$/i.test(section.title || "") && !(corpusSummary && ["top_burdens", "market_variation"].includes(section.key))).map((section, index) => (
         <Panel
           key={`${section.key || section.title}-${index}`}
           title={section.title || "Supporting Intelligence"}
@@ -832,14 +824,6 @@ function AssistantMessage({ responsePayload }) {
   const hasAnalyticalAnswer =
     responsePayload?.analyticalStatus === "available" &&
     responsePayload?.analyticalAnswer?.directAnswer;
-  const analyticalIncludesWhatThisMeans =
-    responsePayload?.analyticalAnswer?.sections?.some((section) => {
-      const identity = `${section?.key || ""} ${section?.title || ""}`
-        .toLowerCase()
-        .replace(/[_-]+/g, " ");
-
-      return identity.includes("what this means");
-    }) || false;
 
   return (
     <div className="flex justify-start">
@@ -851,7 +835,6 @@ function AssistantMessage({ responsePayload }) {
             <AssistantAnswer
               responsePayload={responsePayload}
               showDirectAnswer={false}
-              showWhatThisMeans={!analyticalIncludesWhatThisMeans}
             />
           </div>
         ) : (

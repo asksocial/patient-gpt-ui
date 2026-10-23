@@ -1,6 +1,7 @@
+import { selectSearchCorpusForQuestion, filterSearchInsightsForQuestion } from "../../../lib/answers/loadSearchCorpusIntelligence";
 import { NextRequest, NextResponse } from "next/server";
 import { loadHybridData } from "../../../lib/answers/loadHybridData";
-import { composeHybridAnswer } from "../../../lib/answers/composeHybridAnswer";
+import { composeHybridAnswer, buildSourceGroundedSearchAnswer } from "../../../lib/answers/composeHybridAnswer";
 import { enrichHybridAnswerWithAnalytical } from "../../../lib/answers/enrichHybridAnswerWithAnalytical";
 import { getRelevantCuratedInsights } from "../../../lib/curated/getRelevantCuratedInsights";
 import { loadCanonicalFindingsForAsk } from "../../../lib/answers/loadCanonicalFindingsForAsk";
@@ -237,13 +238,13 @@ export async function POST(req: NextRequest) {
       loadCanonicalFindingsForAsk(
         therapeuticArea
       );
-    const sourceIntelligence = buildSourceIntelligence(
-      canonicalData.status === "available" ? canonicalData.findings : []
-    );
+    const questionCorpus = canonicalData.status === "available" ? selectSearchCorpusForQuestion(therapeuticArea, canonicalData.findings, question) : null;
+    const focusedQuestion = Boolean(questionCorpus?.summary.queryContext);
+    const sourceIntelligence = buildSourceIntelligence(questionCorpus?.findings || []);
 
     const [
       hybridData,
-      curatedInsights,
+      loadedCuratedInsights,
     ] = await Promise.all([
       loadHybridData(
         therapeuticArea
@@ -254,15 +255,16 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
+    const curatedInsights = focusedQuestion ? questionCorpus?.findings.length && canonicalData.status === "available" ? filterSearchInsightsForQuestion(therapeuticArea, canonicalData.findings, question, loadedCuratedInsights) : [] : loadedCuratedInsights;
     const loadedCuratedThemes = normalizeCuratedThemes(hybridData?.curatedThemes || []);
     const loadedSocialThemes = normalizeLiveThemes(hybridData?.liveThemes || []);
-    const curatedThemes = loadedCuratedThemes.length
+    const curatedThemes = !focusedQuestion && loadedCuratedThemes.length
       ? loadedCuratedThemes
       : sourceIntelligence.curatedThemes;
-    const liveThemes = loadedSocialThemes.length
+    const liveThemes = !focusedQuestion && loadedSocialThemes.length
       ? loadedSocialThemes
       : sourceIntelligence.socialThemes;
-    const matches = hybridData?.matches || [];
+    const matches = focusedQuestion ? [] : hybridData?.matches || [];
     const curatedIntelligenceAvailable =
       curatedThemes.length > 0 ||
       curatedInsights.length > 0 ||
@@ -330,7 +332,7 @@ export async function POST(req: NextRequest) {
           })
         : null);
 
-    const hybridAnswer = await composeHybridAnswer({
+    const hybridInput = {
       question,
       therapeuticArea,
       curatedThemes,
@@ -361,7 +363,8 @@ export async function POST(req: NextRequest) {
         permissionTags:
           entitlements.granted,
       },
-    });
+    };
+    const hybridAnswer = focusedQuestion && !questionCorpus?.findings.length ? buildSourceGroundedSearchAnswer(hybridInput) : await composeHybridAnswer(hybridInput);
     const answer = enrichHybridAnswerWithAnalytical(
       hybridAnswer,
       intelligence

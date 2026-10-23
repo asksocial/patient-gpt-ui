@@ -1,4 +1,4 @@
-import { refreshGlp1PersonaComposition } from "../../../../lib/answers/refreshGlp1PersonaComposition";
+import { refreshSearchCorpusIntelligence } from "../../../../lib/answers/refreshSearchCorpusIntelligence";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
@@ -82,13 +82,17 @@ export async function GET(req: NextRequest) {
       throw new Error(messagesError.message);
     }
 
+    let latestQuestion = "";
     return NextResponse.json({
       ok: true,
       session,
-      messages: (messages ?? []).map(message => message.role === "assistant" ? {
-        ...message,
-        content: refreshGlp1PersonaComposition(message.content, message.content?.therapeuticArea || session?.therapeutic_area || ""),
-      } : message),
+      messages: (messages ?? []).map(message => {
+        if (message.role === "user") {
+          latestQuestion = typeof message.content === "string" ? message.content : message.content?.text || "";
+          return message;
+        }
+        return message.role === "assistant" ? { ...message, content: refreshSearchCorpusIntelligence(message.content, message.content?.therapeuticArea || session?.therapeutic_area || "", latestQuestion) } : message;
+      }),
     });
   } catch (error: any) {
     return NextResponse.json(

@@ -19,7 +19,7 @@ export function buildCorpusCharts(findings: Array<{ symptoms?: string[]; country
   }
   const ranked = (counts: Map<string, number>) => [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const top = ranked(symptoms).slice(0, 2).map(([name]) => name);
-  const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const title = (s: string) => (s.charAt(0).toUpperCase() + s.slice(1)).replaceAll("_", " ");
   const counts = top.map(() => 0);
   let overlap = 0;
   for (const f of normalized) {
@@ -48,4 +48,19 @@ export function buildCorpusBurdenAnswer(chart: CorpusChart): string {
   const themes = leading.map((label, index) => index ? label.charAt(0).toLowerCase() + label.slice(1) : label).join(" and ");
   const overlap = chart.segments.some(segment => segment.id === "overlap" && segment.count > 0);
   return `${themes} ${leading.length > 1 ? "are the most frequently identified burden themes" : "is the most frequently identified burden theme"} in the corpus.${overlap ? " Some posts discuss these themes together." : ""}`;
+}
+
+
+export function buildFocusedSearchAnswer(summary: import("./buildPersonaIntelligence").PersonaIntelligenceSummary): string {
+  if (!summary.analyticalCount) return "No retained analytical evidence matches the requested focus in this corpus.";
+  const focus = summary.queryContext?.filters.join("; ");
+  const chart = summary.corpusCharts?.burdens;
+  if (chart?.segments.some(segment => segment.id !== "remainder" && segment.count)) {
+    const synthesis = buildCorpusBurdenAnswer(chart);
+    return focus ? `For ${focus}, ${synthesis.charAt(0).toLowerCase() + synthesis.slice(1)}` : synthesis;
+  }
+  const conversations = new Map<string, number>();
+  for (const group of summary.clientGroups) for (const subtype of group.subtypes) for (const item of subtype.conversations) conversations.set(item.label, (conversations.get(item.label) || 0) + item.count);
+  const leading = [...conversations].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([label]) => label.toLowerCase());
+  return `The matching conversations${focus ? ` about ${focus}` : ""} focus on ${leading.join(" and ") || "the requested topic"}.`;
 }

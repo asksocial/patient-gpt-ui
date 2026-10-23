@@ -1,13 +1,13 @@
 import styles from "./PersonaIntelligencePanel.module.css";
 import { groupClientAudiences } from "../answering/personas/clientAudienceGroups";
 
-function AudienceSubtypeTable({ segments, combined = false }) {
+function AudienceSubtypeTable({ segments, combined = false, unit = "posts" }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-white/10">
       <table className="w-full text-left text-sm">
         <caption className="px-4 py-3 text-left font-semibold text-white/85">{combined ? "Conversations and source evidence" : "Audience subtypes and classification evidence"}</caption>
         <thead className="border-y border-white/10 bg-white/[0.03] text-xs text-white/55"><tr>
-          <th scope="col" className="px-4 py-3">Audience / source</th><th scope="col" className="px-4 py-3 text-right">Posts</th><th scope="col" className="px-4 py-3 text-right">Share</th><th scope="col" className="px-4 py-3">Main conversation types</th><th scope="col" className="px-4 py-3">Classification evidence</th>
+          <th scope="col" className="px-4 py-3">Audience / source</th><th scope="col" className="px-4 py-3 text-right">{unit === "records" ? "Records" : "Posts"}</th><th scope="col" className="px-4 py-3 text-right">Share</th><th scope="col" className="px-4 py-3">Main conversation types</th><th scope="col" className="px-4 py-3">Classification evidence</th>
         </tr></thead>
         <tbody>{segments.map(segment => <tr key={segment.id} className="border-b border-white/10 align-top last:border-0">
           <th scope="row" className="min-w-48 px-4 py-3 font-medium text-white/85"><span>{segment.label}</span><p className="mt-1 text-xs font-normal leading-5 text-white/50">{segment.description}</p></th>
@@ -27,19 +27,19 @@ function AudienceSubtypeTable({ segments, combined = false }) {
   );
 }
 
-function PublicConversationBreakdown({ segment, denominator, universe }) {
+function PublicConversationBreakdown({ segment, denominator, universe, unit = "posts" }) {
   return (
     <details open className="rounded-xl border border-white/10 p-4">
-      <summary className="cursor-pointer font-semibold text-white/85">Inside public discussion · {segment.count.toLocaleString()} posts</summary>
-      <p className="mt-2 text-xs leading-5 text-white/55">These posts do not establish the writer&apos;s personal or professional role. Their content can still be segmented. Every row below is a subset of public discussion; the share uses all {denominator.toLocaleString()} {universe} posts.</p>
-      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Conversation type</th><th scope="col" className="py-2 text-right">Posts</th><th scope="col" className="py-2 text-right">Share of {universe} posts</th></tr></thead>
+      <summary className="cursor-pointer font-semibold text-white/85">Inside public discussion · {segment.count.toLocaleString()} {unit}</summary>
+      <p className="mt-2 text-xs leading-5 text-white/55">These {unit} do not establish the writer&apos;s personal or professional role. Their content can still be segmented. Every row below is a subset of public discussion; the share uses all {denominator.toLocaleString()} {universe} {unit}.</p>
+      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Conversation type</th><th scope="col" className="py-2 text-right">{unit === "records" ? "Records" : "Posts"}</th><th scope="col" className="py-2 text-right">Share of {universe} {unit}</th></tr></thead>
         <tbody>{segment.conversations.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{Math.round(item.count / denominator * 10000) / 100}%</td></tr>)}</tbody>
       </table></div>
     </details>
   );
 }
 
-function AudienceGroup({ group, denominator, universe }) {
+function AudienceGroup({ group, denominator, universe, unit = "posts" }) {
   const combinedPatientGroup = group.id === "patients_circle";
   const conversations = new Map();
   for (const subtype of group.subtypes) for (const item of subtype.conversations) {
@@ -63,14 +63,14 @@ function AudienceGroup({ group, denominator, universe }) {
     </summary>
     <div className="space-y-4 border-t border-white/10 p-4">
       <p className="text-sm leading-6 text-white/65">{group.description}</p>
-      {group.subtypes.length ? <AudienceSubtypeTable segments={combinedPatientGroup ? [combinedSegment] : group.subtypes} combined={combinedPatientGroup} /> : <p className="text-sm text-white/55">No posts in this group.</p>}
+      {group.subtypes.length ? <AudienceSubtypeTable segments={combinedPatientGroup ? [combinedSegment] : group.subtypes} combined={combinedPatientGroup} unit={unit} /> : <p className="text-sm text-white/55">No {unit} in this group.</p>}
       {combinedPatientGroup ? <details open className="rounded-xl border border-white/10 p-4">
-        <summary className="cursor-pointer font-semibold text-white/85">Conversation types · {group.count.toLocaleString()} posts</summary>
-        <table className="mt-3 w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Conversation type</th><th scope="col" className="py-2 text-right">Posts</th><th scope="col" className="py-2 text-right">Share of {universe} posts</th></tr></thead><tbody>
+        <summary className="cursor-pointer font-semibold text-white/85">Conversation types · {group.count.toLocaleString()} {unit}</summary>
+        <table className="mt-3 w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Conversation type</th><th scope="col" className="py-2 text-right">{unit === "records" ? "Records" : "Posts"}</th><th scope="col" className="py-2 text-right">Share of {universe} {unit}</th></tr></thead><tbody>
           {combinedSegment.conversations.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{Math.round(item.count / denominator * 10000) / 100}%</td></tr>)}
         </tbody></table>
       </details> : null}
-      {publicSubtype ? <PublicConversationBreakdown segment={publicSubtype} denominator={denominator} universe={universe} /> : null}
+      {publicSubtype ? <PublicConversationBreakdown segment={publicSubtype} denominator={denominator} universe={universe} unit={unit} /> : null}
     </div>
   </details>;
 }
@@ -87,33 +87,36 @@ export default function PersonaIntelligencePanel({ summary }) {
   const audiences = groups.filter(group => !group.excluded).sort((a, b) => b.count - a.count);
   const exclusion = groups.find(group => group.excluded);
   const ordered = [...audiences, ...(exclusion ? [exclusion] : [])];
-  const fullCorpus = summary.scope === "full_corpus";
+  const fullCorpus = summary.scope !== "selected_findings";
+  const focused = summary.scope === "question_corpus";
   const universe = fullCorpus ? "corpus" : "selected";
   const denominator = summary.denominator;
+  const unit = summary.recordUnit || "posts";
   const extraExcluded = Math.max(0, (summary.excludedFromAnalysisCount || 0) - (exclusion?.count || 0));
   return <div className={styles.panel}>
-    <p className={styles.intro}>{denominator.toLocaleString()} {fullCorpus ? "posts" : "selected posts"} · {audiences.length} audience groups · shares measure posts, not authors</p>
+    <p className={styles.intro}>{denominator.toLocaleString()} {focused ? `matching ${unit}` : fullCorpus ? unit : `selected ${unit}`} · {audiences.length} audience groups · shares measure {unit}, not authors</p>
     <div className={styles.composition}>
-      <div className={styles.stacked} role="img" aria-label={`Audience composition across ${denominator.toLocaleString()} posts: ${ordered.map(group => `${group.label} ${formatShare(group.count, denominator)}`).join("; ")}`}>
-        {ordered.map(group => <span key={group.id} style={{ width: `${denominator ? group.count / denominator * 100 : 0}%`, background: GROUP_COLORS[group.id] }} title={`${group.label}: ${group.count.toLocaleString()} posts (${formatShare(group.count, denominator)})`} />)}
+      <div className={styles.stacked} role="img" aria-label={`Audience composition across ${denominator.toLocaleString()} ${unit}: ${ordered.map(group => `${group.label} ${formatShare(group.count, denominator)}`).join("; ")}`}>
+        {ordered.map(group => <span key={group.id} style={{ width: `${denominator ? group.count / denominator * 100 : 0}%`, background: GROUP_COLORS[group.id] }} title={`${group.label}: ${group.count.toLocaleString()} {unit} (${formatShare(group.count, denominator)})`} />)}
       </div>
       <ul className={styles.legend}>{ordered.map(group => <li key={group.id}><span style={{ background: GROUP_COLORS[group.id] }} aria-hidden="true" />{group.label} {formatShare(group.count, denominator)}</li>)}</ul>
     </div>
     <div role="region" aria-label="Audience groups">
-      <div className={styles.columns} aria-hidden="true"><span>Audience group</span><span className={styles.barHeading}>Share of corpus</span><span className={styles.posts}>Posts</span><span className={styles.share}>Share</span><span /></div>
-      {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={denominator} universe={universe} />)}
+      <div className={styles.columns} aria-hidden="true"><span>Audience group</span><span className={styles.barHeading}>Share of corpus</span><span className={styles.posts}>{unit === "records" ? "Records" : "Posts"}</span><span className={styles.share}>Share</span><span /></div>
+      {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={denominator} universe={universe} unit={unit} />)}
     </div>
     {exclusion ? <div role="region" aria-label="Exclusion bucket" className={styles.exclusion}>
       <p>Excluded from audience groups; included in the {denominator.toLocaleString()} denominator.</p>
-      <AudienceGroup group={exclusion} denominator={denominator} universe={universe} />
+      <AudienceGroup group={exclusion} denominator={denominator} universe={universe} unit={unit} />
     </div> : null}
     <div className={styles.footer}>
-      <p>{fullCorpus && summary.analyticalCount != null ? `${denominator.toLocaleString()} total = ${summary.analyticalCount.toLocaleString()} retained for thematic analytics + ${(exclusion?.count || 0).toLocaleString()} off-topic + ${extraExcluded.toLocaleString()} spam/promotional` : `Shares use all ${denominator.toLocaleString()} selected posts.`}</p>
+      <p>{fullCorpus && summary.analyticalCount != null ? `${denominator.toLocaleString()} total = ${summary.analyticalCount.toLocaleString()} retained for thematic analytics + ${(exclusion?.count || 0).toLocaleString()} off-topic + ${extraExcluded.toLocaleString()} ${summary.additionalExclusionLabel || "spam/promotional"}` : `Shares use all ${denominator.toLocaleString()} selected ${unit}.`}</p>
       <details className={styles.method}>
         <summary>How shares are calculated</summary>
-        <div>Each share is the group’s post count divided by all {denominator.toLocaleString()} {universe} posts. Groups are mutually exclusive; every post is counted once. All patient-related content is combined in Patients &amp; Their Circle. Off-topic records remain in the denominator, and spam/promotional records retain their audience designation while being excluded from thematic analytics. Displayed percentages are rounded to one decimal place, so they may not sum to exactly 100%. One author can contribute multiple posts.{denominator < 20 ? " This small sample is directional." : ""}</div>
+        <div>Each share is the group’s record count divided by {focused ? "the matching" : "all"} {denominator.toLocaleString()} {universe} {unit}. Groups are mutually exclusive; every record is counted once. All patient-related content is combined in Patients &amp; Their Circle. Off-topic records remain in the denominator, and other filtered records retain their audience designation while being excluded from thematic analytics. Displayed percentages are rounded to one decimal place, so they may not sum to exactly 100%. One author can contribute multiple {unit}.{denominator < 20 ? " This small sample is directional." : ""}</div>
       </details>
     </div>
+    {summary.fullCorpus ? <details className="mt-6 rounded-xl border border-white/10 p-4"><summary className="cursor-pointer text-sm font-semibold text-cyan-300">View overall corpus composition · {summary.fullCorpus.denominator.toLocaleString()} {unit}</summary><div className="mt-5"><PersonaIntelligencePanel summary={summary.fullCorpus} /></div></details> : null}
     <p className={styles.disclaimer}>Roles and conversation types are machine-inferred from source metadata and available text.</p>
   </div>;
 }
