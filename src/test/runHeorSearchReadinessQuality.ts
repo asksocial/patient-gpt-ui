@@ -90,7 +90,7 @@ assert.equal(custom.findings.length, 1);
 assert.match(buildFocusedSearchAnswer(custom.summary), /insurance and coverage/);
 assert.ok(searchRecordText(custom.findings[0]).includes("insurance"));
 const shell = fs.readFileSync("src/components/WorkspaceShell.jsx", "utf8");
-assert.ok(shell.includes('title="Evidence Supporting This Answer"'));
+assert.ok(shell.includes('<ConversationThemeEvidence theme={theme.name} examples={questionExamples} />'));
 assert.ok(shell.includes('focusedSummary ? "Supporting Conversation Evidence"'));
 assert.ok(fs.readFileSync("src/components/CorpusDonutCards.jsx", "utf8").includes('"Topics in This Question"'));
 console.log(JSON.stringify({passed: true, demoPrompts: results, guards: ["qualitative question-specific summaries", "source-exact evidence", "matching topic charts", "saved answer upgrade", "thin cohorts", "unsupported rates", "unmatched concepts", "temporal limits", "future corpora"]}, null, 2));

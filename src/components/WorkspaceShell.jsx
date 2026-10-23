@@ -426,6 +426,20 @@ function RecommendedActions({ actions = [] }) {
   );
 }
 
+const evidenceTextKey = (value) => String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+function ConversationThemeEvidence({ theme, examples }) {
+  const matching = examples.filter(example => evidenceTextKey(example.topic) === evidenceTextKey(theme));
+  if (!matching.length) return null;
+  return <div className="mt-3 grid gap-3 lg:grid-cols-2">
+    {matching.map(example => <article key={example.id} className="rounded-xl border border-white/10 p-4">
+      <blockquote className="text-sm leading-6 text-white/80">{example.excerpt}</blockquote>
+      {example.sourceCategory || example.language ? <p className="mt-2 text-xs text-white/40">{[example.sourceCategory, example.language].filter(Boolean).join(" · ")}</p> : null}
+      {example.url ? <a href={example.url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs font-semibold text-cyan-200">Open original source ↗</a> : <p className="mt-3 text-xs text-white/50">Source URL was not supplied.</p>}
+    </article>)}
+  </div>;
+}
+
 function SourceMentionList({ title, mentions = [] }) {
   if (!mentions.length) return null;
 
@@ -440,9 +454,9 @@ function SourceMentionList({ title, mentions = [] }) {
             key={mention.id}
             className="rounded-xl border border-white/10 bg-black/30 p-4"
           >
-            <h5 className="text-sm font-semibold text-white">
+            {mention.title && mention.title.length <= 160 && evidenceTextKey(mention.title) !== evidenceTextKey(mention.excerpt) ? <h5 className="text-sm font-semibold text-white">
               {mention.title}
-            </h5>
+            </h5> : null}
             <p className="mt-2 text-sm leading-6 text-white/60">
               {mention.excerpt}
             </p>
@@ -452,7 +466,7 @@ function SourceMentionList({ title, mentions = [] }) {
               {mention.country ? <span>· {mention.country}</span> : null}
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs text-white/35">{mention.sourceLabel}</span>
+              {mention.sourceType !== "social" ? <span className="text-xs text-white/35">{mention.sourceLabel}</span> : null}
               {mention.url ? (
                 <a
                   href={mention.url}
@@ -480,6 +494,13 @@ function AssistantAnswer({
   const curatedThemes = answer?.curatedIntelligence?.themes || [];
   const liveThemes = answer?.liveData?.themes || [];
   const focusedSummary = responsePayload?.analyticalAnswer?.sections?.find(section => section.personaIntelligence?.queryContext)?.personaIntelligence;
+  const questionExamples = focusedSummary?.questionEvidence?.examples || [];
+  const conversationThemes = [
+    ...liveThemes,
+    ...(focusedSummary?.questionEvidence?.topics || [])
+      .filter(topic => questionExamples.some(example => evidenceTextKey(example.topic) === evidenceTextKey(topic.label)) && !liveThemes.some(theme => evidenceTextKey(theme.name) === evidenceTextKey(topic.label)))
+      .map(topic => ({ name: topic.label, relationship: "live", sourceType: "analytical_corpus" })),
+  ];
   const emergingNarratives = focusedSummary ? [] : answer?.liveData?.emergingNarratives || [];
   const recommendedActions = answer?.recommendedActions || [];
   const curatedMentions = responsePayload?.sourceIntelligence?.curatedMentions || [];
@@ -549,8 +570,8 @@ function AssistantAnswer({
           }
         >
           <div className="space-y-4">
-            {liveThemes.length ? (
-              liveThemes.map((theme, idx) => (
+            {conversationThemes.length ? (
+              conversationThemes.map((theme, idx) => (
                 <div
                   key={`${theme.name}-${idx}`}
                   className="rounded-xl border border-white/10 bg-black/30 p-4"
@@ -647,9 +668,10 @@ function AssistantAnswer({
                     ))}
                   </div>
 
-                  <p className="mt-2 text-sm leading-6 text-white/60">
+                  {theme.description && !questionExamples.some(example => evidenceTextKey(example.excerpt) === evidenceTextKey(theme.description)) ? <p className="mt-2 text-sm leading-6 text-white/60">
                     {theme.description}
-                  </p>
+                  </p> : null}
+                  <ConversationThemeEvidence theme={theme.name} examples={questionExamples} />
                 </div>
               ))
             ) : (
@@ -677,10 +699,10 @@ function AssistantAnswer({
               </div>
             </div>
           ) : null}
-          <SourceMentionList
+          {!questionExamples.length ? <SourceMentionList
             title="Representative social mentions"
             mentions={socialMentions}
-          />
+          /> : null}
         </Panel>
       </div>
 
@@ -709,19 +731,6 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
         </p>
       </Panel>
 
-      {corpusSummary?.queryContext ? <div className="rounded-xl border border-white/10 p-4 text-sm text-white/70" aria-label="Question scope">
-        <p className="font-semibold">Question focus: {corpusSummary.queryContext.filters.join(" · ")}</p>
-        <p className="mt-1">{corpusSummary.denominator.toLocaleString()} matching source {corpusSummary.recordUnit || "posts"} across the complete {corpusSummary.queryContext.fullSourceCount.toLocaleString()}-record corpus; {corpusSummary.analyticalCount.toLocaleString()} retained for this analysis. Charts use these matching records, before ranking.</p>
-      </div> : null}
-      {corpusSummary?.questionEvidence?.examples?.length ? <Panel title="Evidence Supporting This Answer" subtitle="Original excerpts matched to the question; English examples shown first when available. Review source context before research use.">
-        <div className="grid gap-3 lg:grid-cols-2">
-          {corpusSummary.questionEvidence.examples.map(example => <article key={example.id} className="rounded-xl border border-white/10 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-white/60">{example.topic}{example.sourceCategory ? ` · ${example.sourceCategory}` : ""}{example.language ? ` · ${example.language}` : ""}</p>
-            <blockquote className="mt-2 text-sm leading-6 text-white/80">{example.excerpt}</blockquote>
-            {example.url ? <a href={example.url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs font-semibold text-cyan-200">Open original source ↗</a> : <p className="mt-3 text-xs text-white/50">Source URL was not supplied.</p>}
-          </article>)}
-        </div>
-      </Panel> : null}
       {corpusSummary ? <CorpusDonutCards summary={corpusSummary} /> : null}
 
       {sections.filter((section) => !corpusSummary?.questionEvidence || section.personaIntelligence).filter((section) => section.key !== "live_data_check").filter((section) => section.key !== "strategic_implications" && !/^what this means$/i.test(section.title || "") && !(corpusSummary && ["top_burdens", "market_variation"].includes(section.key))).map((section, index) => (
@@ -1872,16 +1881,18 @@ export default function WorkspaceShell() {
             </div>
 
             <div className="mt-8 -translate-x-[10px]">
-              <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+              <label htmlFor="search-topic" className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                 <RailIcon name="topic" />
                 <span>Topic</span>
               </label>
 
+              <div className="relative">
               <select
+                id="search-topic"
                 value={therapeuticArea}
                 onChange={handleTherapeuticAreaChange}
                 disabled={loadingAreas || therapeuticAreas.length === 0}
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none transition focus:border-white/30 disabled:opacity-60"
+                className="w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.03] pl-4 pr-12 py-3 text-sm text-white outline-none transition focus:border-white/30 disabled:opacity-60"
               >
                 {loadingAreas ? (
                   <option>Loading...</option>
@@ -1895,6 +1906,8 @@ export default function WorkspaceShell() {
                   ))
                 )}
               </select>
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="pointer-events-none absolute right-[18px] top-1/2 h-4 w-4 -translate-y-1/2 text-white/60"><path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </div>
             </div>
 
             <div className="mt-8">
