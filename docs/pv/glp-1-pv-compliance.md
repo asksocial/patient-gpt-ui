@@ -101,7 +101,10 @@ Persisted results use the approved database concepts and thresholds. Source IDs 
 namespaced, inserts preserve existing review state, and re-runs deduplicate. Earlier persisted
 candidates remain historical workflow records; a changed preview does not silently
 delete or close them. Existing candidates require human reconciliation. Import
-batches bind the source hash and detection configuration for provenance. A partial
+batches bind the source hash and detection configuration for provenance. Each
+configuration fingerprint receives its own corpus batch identifier, allowing
+rescreening under the database’s principal/corpus uniqueness constraint while
+retaining earlier import history. A partial
 write can be resumed. Held rows remain counted and audited; the import is marked
 `completed_with_errors`, never presented as complete source coverage.
 

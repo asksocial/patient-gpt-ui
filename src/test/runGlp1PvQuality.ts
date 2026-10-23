@@ -119,6 +119,7 @@ async function main() {
       for (const item of Array.isArray(body) ? body : [body]) {
         const conflicts = (url.searchParams.get("on_conflict") || "").split(",").filter(Boolean);
         if (conflicts.length && tables[table].some((row) => conflicts.every((key) => row[key] === item[key]))) continue;
+        if (table === "pv_import_batches" && tables[table].some(row => row.principal_id === item.principal_id && row.corpus_id === item.corpus_id)) return Response.json({ code: "23505", message: 'duplicate key value violates unique constraint "pv_import_batches_principal_corpus_idx"' }, { status: 409 });
         const inserted = { id: randomUUID(), version: 1, status: "draft", ...item };
         tables[table].push(inserted); selected.push(inserted);
         if (table === "pv_audit_events") tables.audit.push(inserted);
@@ -146,6 +147,8 @@ async function main() {
     assert.equal(tables.pv_detection_concepts.length, GLP1_PV_CONCEPTS.length);
     await assert.rejects(screenGlp1PvCorpus(principal), /approve/);
     await activatePvDetectionLibrary(principal, library.id);
+    const historicalBatch = { id: randomUUID(), principal_id: principal.principalId, corpus_id: corpus.corpusId, file_hash: "previous-source-policy", status: "completed_with_errors" };
+    tables.pv_import_batches.push(historicalBatch);
     const imported = await screenGlp1PvCorpus(principal);
     assert(imported.newlyInserted > 0);
     const count = tables.pv_records.length;
@@ -155,7 +158,9 @@ async function main() {
     const again = await screenGlp1PvCorpus(principal);
     assert.equal(again.newlyInserted, 0);
     assert.equal(tables.pv_records.length, count);
-    assert.equal(tables.pv_import_batches.length, 1);
+    assert.equal(tables.pv_import_batches.length, 2, "New screening provenance must coexist with the earlier corpus batch.");
+    assert.equal(tables.pv_import_batches[0], historicalBatch);
+    assert(imported.corpus_id.startsWith(`${corpus.corpusId}:`));
     assert.equal(tables.pv_records[0].assigned_reviewer_id, "existing-reviewer");
     assert.equal(tables.pv_records[0].status, "in_review");
     assert(tables.audit.some((event) => (event.p_action || event.action) === "csv_import.glp1_complete"));
