@@ -5,6 +5,7 @@ import { selectSearchCorpusForQuestion } from "../lib/answers/loadSearchCorpusIn
 import { refreshSearchCorpusIntelligence } from "../lib/answers/refreshSearchCorpusIntelligence";
 import { buildSourceIntelligence } from "../lib/answers/buildSourceIntelligence";
 import { searchRecordText } from "../answering/search/searchSubjects";
+import { buildQuestionEvidence } from "../answering/search/buildQuestionEvidence";
 import { buildFocusedSearchAnswer } from "../answering/personas/buildCorpusCharts";
 import { buildSourceGroundedSearchAnswer } from "../lib/answers/composeHybridAnswer";
 import { askSocial } from "../app/api/ask";
@@ -93,3 +94,7 @@ assert.ok(shell.includes('title="Evidence Supporting This Answer"'));
 assert.ok(shell.includes('focusedSummary ? "Supporting Conversation Evidence"'));
 assert.ok(fs.readFileSync("src/components/CorpusDonutCards.jsx", "utf8").includes('"Topics in This Question"'));
 console.log(JSON.stringify({passed: true, demoPrompts: results, guards: ["qualitative question-specific summaries", "source-exact evidence", "matching topic charts", "saved answer upgrade", "thin cohorts", "unsupported rates", "unmatched concepts", "temporal limits", "future corpora"]}, null, 2));
+
+const mixedPost = { findingId: "mixed", summary: "Generated GLP-1 insurance summary", rawMetadata: { fields: { Title: "Unrelated discussion", "Opening Text": "Insurance companies are investing in AI.", "Hit Sentence": "GLP-1 is mentioned in a separate link.", Language: "English" } } } as CanonicalFinding;
+const mixedEvidence = buildQuestionEvidence("What are the insurance concerns?", [mixedPost], ["GLP-1"]);
+assert.equal(mixedEvidence!.examples.length, 0, "An unrelated clause or generated canonical summary cannot become quoted source evidence");

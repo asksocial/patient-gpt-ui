@@ -2,7 +2,7 @@ import type { CanonicalFinding } from "../models/finding";
 import { searchRecordText, subjectsForQuestion, topicsForQuestion } from "./searchSubjects";
 
 export type QuestionEvidence = {
-  version: 1;
+  version: 2;
   subjects: string[];
   topics: Array<{ id: string; label: string; count: number }>;
   examples: Array<{ id: string; excerpt: string; url?: string; topic: string; language?: string; sourceCategory?: string }>;
@@ -12,8 +12,10 @@ export type QuestionEvidence = {
 };
 const compact = (value: unknown) => String(value || "").replace(/\s+/g, " ").trim();
 
-export function buildQuestionEvidence(question: string, findings: CanonicalFinding[]): QuestionEvidence | undefined {
+export function buildQuestionEvidence(question: string, findings: CanonicalFinding[], diseaseTerms: string[] = []): QuestionEvidence | undefined {
   const subjects = subjectsForQuestion(question);
+  const escape = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const contextPattern = diseaseTerms.length ? new RegExp(diseaseTerms.map(escape).join("|"), "i") : undefined;
   if (!subjects.length) return undefined;
   const topics = subjects.flatMap(subject => topicsForQuestion(subject, question).map(t => ({ ...t, id: `${subject.id}:${t.id}` })));
   const matches = topics.map(topic => ({ topic, records: findings.filter(record => topic.pattern.test(searchRecordText(record))) })).filter(item => item.records.length);
@@ -35,12 +37,24 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
       if (examples.filter(e => e.topic === topic.label).length >= 2 || examples.length >= 6) break;
       const fields = record.rawMetadata?.fields || {};
       // Preserve original-language source wording, never generated canonical claims.
-      const parts = [fields["Opening Text"], fields["Hit Sentence"], fields.Title, ...(record.evidence || []).map(e => e.excerpt), record.summary].filter(Boolean).map(compact);
-      const text = parts.find(part => topic.pattern.test(part));
-      if (!text) continue;
-      const hit = topic.pattern.exec(text);
-      const start = Math.max(0, (hit?.index || 0) - 90);
-      const excerpt = (start ? "…" : "") + text.slice(start, start + 420) + (text.length > start + 420 ? "…" : "");
+      const original = [fields["Opening Text"], fields["Hit Sentence"], fields.Title].filter(Boolean);
+      const parts = (original.length ? original : [...(record.evidence || []).map(e => e.excerpt), record.summary]).filter(Boolean).map(compact);
+      const english = /^english$/i.test(String(fields.Language)) || (!fields.Language && /^[\x00-\x7F]/.test(parts.join(" ")));
+      const passage = parts.map(text => {
+        const hits = [...text.matchAll(new RegExp(topic.pattern.source, "gi"))];
+        const contexts = contextPattern && english ? [...text.matchAll(new RegExp(contextPattern.source, "gi"))] : [];
+        if (contextPattern && english && !contexts.length) return null;
+        for (const hit of hits) {
+          const context = contexts.length ? contexts.reduce((best, c) => Math.abs(c.index - hit.index) < Math.abs(best.index - hit.index) ? c : best) : hit;
+          if (Math.abs(context.index - hit.index) > 280) continue;
+          const start = Math.max(0, Math.min(hit.index, context.index) - 70);
+          const end = Math.min(text.length, Math.max(hit.index + hit[0].length, context.index + context[0].length) + 180);
+          return (start ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : "");
+        }
+        return null;
+      }).find(Boolean);
+      if (!passage) continue;
+      const excerpt = passage;
       const id = record.findingId || (record as CanonicalFinding & { id?: string }).id || String(fields["Document ID"] || "");
       const url = compact(fields.URL || record.evidence?.find(e => e.url)?.url);
       if (!id || seen.has(id) || seen.has(excerpt)) continue;
@@ -59,7 +73,7 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
   if (findings.length > 0 && findings.length < 20) limitations.push("The matching evidence is limited. Treat these observations as illustrative examples rather than estimates of prevalence.");
   if (/\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(question)) limitations.push("Themes present in this corpus do not establish emergence or growth without a comparable time baseline.");
   if (/\b(why|reasons?|drivers?|caus\w*)\b/i.test(question)) limitations.push("Topic mentions alone do not establish motivations or causal relationships. Reasons require explicit supporting accounts.");
-  return { version: 1, subjects: subjects.map(s => s.label), topics: matches.map(({ topic, records }) => ({ id: topic.id, label: topic.label, count: records.length })), examples, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
+  return { version: 2, subjects: subjects.map(s => s.label), topics: matches.map(({ topic, records }) => ({ id: topic.id, label: topic.label, count: records.length })), examples, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
 }
 
 export function questionEvidenceAnswer(evidence: QuestionEvidence): string {
