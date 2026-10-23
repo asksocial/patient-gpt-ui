@@ -51,7 +51,6 @@ function DonutCard({ title, chart, source, unit = "posts", focused = false }) {
         <div className="pointer-events-none absolute inset-[24%] flex flex-col items-center justify-center text-center" role="status" aria-live="polite" aria-atomic="true">
           <strong className="text-[28px] font-semibold leading-tight" style={{ color: "#123b32" }}>{formatPercent(displayed?.count || 0, chart.denominator)}</strong>
           <span className="mt-1 text-[11px] leading-tight" style={{ color: "#73847d" }}>{displayed?.label || "No findings"}</span>
-          {active ? <span className="mt-1 text-[10px] leading-tight tabular-nums" style={{ color: "#354c43" }}>{active.count.toLocaleString()} {unit}</span> : null}
         </div>
       </div>
       <ul>
