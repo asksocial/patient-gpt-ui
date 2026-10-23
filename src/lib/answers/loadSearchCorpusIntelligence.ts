@@ -39,7 +39,7 @@ function loadCorpusBundle(therapeuticArea: string, findings: CanonicalFinding[])
   for (const finding of additional) {
     const source = finding as SourceFinding;
     const fields = finding.rawMetadata?.fields || {
-      Title: source.title || finding.canonicalClaim || "", "Hit Sentence": finding.summary || "",
+      Title: source.title || finding.canonicalClaim || "", "Hit Sentence": finding.summary || "", Country: source.country || finding.countries?.[0] || "",
       URL: finding.evidence?.[0]?.url || "", "Source Type": source.platform || finding.platforms?.[0] || source.sourceType || finding.evidence?.[0]?.sourceType || "",
     };
     records.push({ findingId: finding.findingId || source.id, summary: finding.summary, rawMetadata: { fields }, audienceClassification: finding.audienceClassification || classifyCorpusAudience(fields, profile, { retained: true, persona: finding.personas || (Array.isArray(source.persona) ? source.persona : source.persona ? [source.persona] : []) }) });
@@ -68,7 +68,7 @@ export function selectSearchCorpusForQuestion(therapeuticArea: string, findings:
   const bundle = loadCorpusBundle(therapeuticArea, findings);
   if (!question.trim()) return { summary: structuredClone(bundle.summary), findings };
   const profile = getDiseaseProfile(normalizeTherapeuticAreaId(therapeuticArea), therapeuticArea);
-  const focus = buildSearchQuestionFocus(question, profile, [...bundle.records, ...bundle.findingRecords]);
+  const focus = buildSearchQuestionFocus(question, profile);
   if (!focus.labels.length) return { summary: structuredClone(bundle.summary), findings };
   const matchingSource = bundle.records.filter(focus.matches);
   const matchingFindings = findings.filter((_, index) => focus.matches(bundle.findingRecords[index]));
@@ -90,7 +90,7 @@ export function loadSearchCorpusIntelligence(therapeuticArea: string, findings: 
 export function filterSearchInsightsForQuestion(therapeuticArea: string, findings: CanonicalFinding[], question: string, insights: any[]): any[] {
   const bundle = loadCorpusBundle(therapeuticArea, findings);
   const profile = getDiseaseProfile(normalizeTherapeuticAreaId(therapeuticArea), therapeuticArea);
-  const focus = buildSearchQuestionFocus(question, profile, [...bundle.records, ...bundle.findingRecords]);
+  const focus = buildSearchQuestionFocus(question, profile);
   if (!focus.labels.length) return insights;
   return insights.filter(insight => {
     const fields = {

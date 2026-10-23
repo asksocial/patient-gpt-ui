@@ -10,7 +10,7 @@ Search uses the same components and pipeline for every therapeutic area and corp
 
 ## Question scope
 
-`selectSearchCorpusForQuestion` applies supported question facets before theme assignment, evidence selection or ranking. Facets include configured symptom/treatment language, source countries, audience roles, platforms, and shared access, safety, education, research, policy and commercial concepts. Multiple values within a dimension are alternatives; independent dimensions combine. Source attribution and topic-specific terminology come from the corpus and its configured profile. Broad overview prompts retain the overall corpus view.
+`selectSearchCorpusForQuestion` applies supported question facets before theme assignment, evidence selection or ranking. Facets include configured symptom/treatment language, source countries and regions (including Asia, Asian markets, Asian subregions and APAC), audience roles, platforms, and shared access, safety, education, research, policy and commercial concepts. Multiple values within a dimension are alternatives; independent dimensions combine. Source attribution and topic-specific terminology come from the corpus and its configured profile. Broad overview prompts retain the overall corpus view.
 
 For a focused question:
 
@@ -18,7 +18,7 @@ For a focused question:
 - A visible Question focus panel and chart subtitles identify the cohort and denominator.
 - Overall source composition remains available through a closed “View overall corpus composition” disclosure. It is never added to or confused with the matching cohort.
 - Canonical evidence, source mentions, source-derived themes, mode analysis and the hybrid answer receive the matching evidence. Precomputed topic-wide themes and relationships do not replace scoped evidence.
-- An unsupported specific concept yields an empty cohort and an explicit lack-of-evidence answer; it does not silently reuse the overall totals.
+- Unresolved meaningful qualifiers are applied as literal text filters (all remaining terms must match), including alongside recognized facets. Broad words such as “themes” or “emerging” cannot discard a geographic or topical constraint. An unsupported specific concept yields an empty cohort and an explicit lack-of-evidence answer; it does not silently reuse the overall totals.
 
 Facets are deterministic and based on available text/metadata, rather than unrestricted natural-language inference. Different phrasings that request the same scope can appropriately have the same denominators. Temporal comparisons still require the longitudinal evidence pipeline; an overall corpus chart is not a claim of a live change.
 
@@ -33,3 +33,10 @@ On read, Search upgrades presentation from the saved question and the current re
 ## One current response
 
 The Search page renders a single response selected by `getCurrentSearchResult`, rather than mapping the complete transcript into stacked answers. Submitting a new question clears the previous response from the view while loading; the new result replaces charts, narratives, evidence and actions together. A failed request shows its error without presenting the previous question's data as current. The header follows the latest submitted question, not the original conversation title or an unsubmitted draft. Persisted messages remain intact, and reopening a conversation selects its latest question/response pair.
+
+
+## Geographic and temporal interpretation
+
+Regions expand to explicit country membership before any ranking. Asian markets means source countries in East, Southeast, South, Central and West Asia; APAC also includes Oceania. This is source-market metadata, not inferred ethnicity, residence or the country mentioned in a post. Missing country metadata does not qualify. Country names and common aliases are recognized even when that country has no records, yielding an honest empty cohort. Existing saved questions are re-scoped on read.
+
+An emerging-theme question receives the requested geographic/topic cohort and a qualitative statement that themes present in a corpus do not establish newness or growth without a time comparison. This matcher does not claim unrestricted language understanding: unresolved specific language is matched literally, and absent evidence produces an explicit no-match result rather than a broad fallback. More complex analyses still need a supported analysis pipeline or clarification.

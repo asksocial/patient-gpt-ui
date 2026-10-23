@@ -1,3 +1,4 @@
+import { resolveQuestionGeography } from "../answering/search/geography";
 import { buildSourceGroundedSearchAnswer } from "../lib/answers/composeHybridAnswer";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -116,3 +117,55 @@ assert.ok(updatedFocused.sourceIntelligence.socialMentions.every((mention: any) 
 assert.ok(!updatedFocused.answer.liveData.themes.some((theme: any) => theme.name === "Unrelated global theme"));
 assert.equal(oldFocused.sourceIntelligence.socialMentions[0].country, "United States");
 console.log("PASS legacy focused reports refresh source mentions and grounded themes without changing stored evidence; unmatched requests avoid unrelated narratives");
+
+// Regions and unresolved qualifiers must narrow the complete source corpus, even
+// when the question uses broad words such as "themes" or "emerging".
+const asianQuestion = "What themes are emerging in Asian markets?";
+const asian = selectSearchCorpusForQuestion("GLP-1", glpCorpus, asianQuestion);
+assert.equal(asian.summary.scope, "question_corpus");
+assert.deepEqual(asian.summary.queryContext!.filters, ["Asia"]);
+assert.ok(asian.summary.denominator > japan.summary.denominator && asian.summary.denominator < overall.denominator);
+const asianCountries = new Set(["Japan", "South Korea", "China", "Hong Kong", "India", "Taiwan", "Indonesia", "Malaysia", "Singapore", "Philippines", "Thailand", "Vietnam", "Bangladesh", "Pakistan", "Sri Lanka", "Nepal", "United Arab Emirates", "Saudi Arabia", "Israel", "Turkey", "Türkiye", "Lebanon", "Jordan", "Bahrain", "Kuwait", "Qatar", "Oman", "Iraq", "Iran", "Armenia", "Azerbaijan", "Georgia", "Kazakhstan", "Uzbekistan", "Mongolia", "Cambodia", "Myanmar", "Laos", "Afghanistan", "Yemen", "Syria", "Cyprus", "Palestine", "Maldives", "Bhutan", "Brunei", "Timor-Leste", "Kyrgyzstan", "Tajikistan", "Turkmenistan", "North Korea", "Macao"]);
+const sourceRows = getCanonicalCorpusSourceFiles("GLP-1").flatMap(parseMeltwaterCsv);
+assert.equal(asian.summary.denominator, sourceRows.filter(row => asianCountries.has(String(row.Country))).length, "Region totals independently reconcile to every original source row");
+assert.ok(asian.findings.every(f => [f.rawMetadata?.fields?.Country, ...(f.countries || []), (f as any).country].some(country => asianCountries.has(String(country)))));
+for (const equivalent of ["What are people saying across Asia?", "Show themes in Asian markets", "What themes are emerging in Asia?"]) {
+  assert.equal(selectSearchCorpusForQuestion("GLP-1", glpCorpus, equivalent).summary.denominator, asian.summary.denominator, equivalent);
+}
+const asianAnswer = askSocial(asianQuestion, glpCorpus);
+assert.match(asianAnswer.answer.directAnswer, /For Asia/);
+assert.match(asianAnswer.answer.directAnswer, /time comparison/);
+const savedAsian = refreshSearchCorpusIntelligence(oldFocused, "GLP-1", asianQuestion) as any;
+assert.equal(savedAsian.analyticalAnswer.sections.find((s: any) => s.personaIntelligence).personaIntelligence.denominator, asian.summary.denominator);
+assert.ok(savedAsian.sourceIntelligence.socialMentions.every((m: any) => asianCountries.has(m.country)));
+for (const question of ["What themes are emerging around xylophonebarnacle?", "What themes are emerging in Asian markets about xylophonebarnacle?", "What themes are emerging in Tuvalu?"]) {
+  assert.equal(selectSearchCorpusForQuestion("GLP-1", glpCorpus, question).summary.denominator, 0, question);
+}
+for (const [question, included, excluded] of [
+  ["Southeast Asian markets", ["Singapore", "Vietnam", "Thailand"], ["Japan", "India", "Australia"]],
+  ["East Asian markets", ["South Korea", "Japan", "China", "Taiwan"], ["India", "Singapore"]],
+  ["South Asian markets", ["India", "Pakistan"], ["Japan", "Australia"]],
+  ["APAC markets", ["Japan", "Australia", "New Zealand"], ["Brazil", "United States"]],
+  ["European markets", ["United Kingdom", "France"], ["United States", "Japan"]],
+  ["Japan and Brazil", ["Japan", "Brazil"], ["United States", "China"]],
+  ["Japanese markets", ["Japan"], ["China", "Brazil"]],
+] as Array<[string, string[], string[]]>) {
+  const geography = resolveQuestionGeography(question);
+  included.forEach(country => assert.ok(geography.matchesCountry(country), `${question} includes ${country}`));
+  excluded.forEach(country => assert.ok(!geography.matchesCountry(country), `${question} excludes ${country}`));
+  assert.ok(!geography.matchesCountry(""), "Unspecified country never implies region membership");
+}
+const customAsia = selectSearchCorpusForQuestion("Entirely New Custom Topic", findings, "What themes are emerging in Asian markets?");
+assert.equal(customAsia.summary.denominator, 60, "Future imported corpora preserve country metadata for source composition");
+assert.equal(customAsia.findings.length, 60);
+console.log(`PASS Asian markets: ${asian.summary.denominator} matching source posts / ${asian.findings.length} retained records; aliases, subregions, saved reports, imported corpora and unresolved-focus safeguards`);
+
+const previousScoped = { ...oldFocused, analyticalAnswer: { directAnswer: "Old Japan-wide answer", sections: [{ key: "persona_intelligence", personaIntelligence: japan.summary }] } };
+const revisedScope = refreshSearchCorpusIntelligence(previousScoped, "GLP-1", "What themes are emerging in Japan about xylophonebarnacle?") as any;
+assert.equal(revisedScope.answer.liveData.themes.length, 0, "A changed interpretation refreshes previously scoped saved narratives too");
+assert.match(revisedScope.answer.directAnswer, /No corpus evidence/);
+const asiaSafety = selectSearchCorpusForQuestion("GLP-1", glpCorpus, "What safety concerns are people saying in Asian markets?");
+const ids = (records: CanonicalFinding[]) => new Set(records.map(f => f.findingId || (f as any).id));
+const allSafetyIds = ids(safety.findings);
+assert.deepEqual(ids(asiaSafety.findings), ids(asian.findings.filter(f => allSafetyIds.has(f.findingId || (f as any).id))), "Region and safety combine rather than dropping one constraint");
+console.log("PASS combined region/topic constraints and refreshed previously scoped saved narratives");

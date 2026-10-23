@@ -52,15 +52,16 @@ export function buildCorpusBurdenAnswer(chart: CorpusChart): string {
 
 
 export function buildFocusedSearchAnswer(summary: import("./buildPersonaIntelligence").PersonaIntelligenceSummary): string {
-  if (!summary.analyticalCount) return "No retained analytical evidence matches the requested focus in this corpus.";
+  if (!summary.analyticalCount) return "No retained analytical evidence matches the interpreted question scope in this corpus. Rephrase or broaden the question if this scope differs from what you intended.";
   const focus = summary.queryContext?.filters.join("; ");
+  const temporalNote = /\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(summary.queryContext?.question || "") ? " These are themes present in the available corpus; a time comparison is needed to establish which are newly emerging or changing." : "";
   const chart = summary.corpusCharts?.burdens;
   if (chart?.segments.some(segment => segment.id !== "remainder" && segment.count)) {
     const synthesis = buildCorpusBurdenAnswer(chart);
-    return focus ? `For ${focus}, ${synthesis.charAt(0).toLowerCase() + synthesis.slice(1)}` : synthesis;
+    return focus ? `For ${focus}, ${synthesis.charAt(0).toLowerCase() + synthesis.slice(1)}` + temporalNote : synthesis + temporalNote;
   }
   const conversations = new Map<string, number>();
   for (const group of summary.clientGroups) for (const subtype of group.subtypes) for (const item of subtype.conversations) conversations.set(item.label, (conversations.get(item.label) || 0) + item.count);
   const leading = [...conversations].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([label]) => label.toLowerCase());
-  return `The matching conversations${focus ? ` about ${focus}` : ""} focus on ${leading.join(" and ") || "the requested topic"}.`;
+  return `The matching conversations${focus ? ` about ${focus}` : ""} focus on ${leading.join(" and ") || "the requested topic"}.${temporalNote}`;
 }
