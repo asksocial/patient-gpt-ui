@@ -313,3 +313,18 @@ The detailed Persona Intelligence card uses a stacked composition bar and teal l
 ### Shared Search and question-scoped cohorts
 
 Search now uses the shared corpus pipeline described in [Shared Search corpus intelligence](search-corpus-intelligence.md). Broad GLP-1 overviews retain all 5,000 source rows and 4,737 analytical rows. Focused questions apply topic, country, audience, or platform facets across the complete source corpus before evidence ranking. Their matching denominators are shown explicitly; the unchanged overall composition remains available in a closed comparison disclosure. The Search “What This Means” card is removed from both analytical and hybrid render paths. New and saved conversations use the same topic and question scope.
+
+## Executive Brief refresh (October 23, 2026)
+
+Saved Search messages refresh their GLP-1 theme snapshot, relationships,
+longitudinal tracking, and Executive Brief from the current canonical corpus on
+read. The executive brief endpoint also rebuilds GLP-1 snapshots before generating
+its response. Question filters remain in scope; stored messages and original
+evidence are preserved. Full-corpus coverage is 5,000 source records and 4,737
+analytical findings. Coverage notes distinguish audience composition from PV
+eligibility. Executive Brief selection is topic-scoped in the workspace.
+
+`src/test/runGlp1ExecutiveRefreshQuality.ts` verifies current-corpus counts, topic
+isolation, snapshot alignment, and preservation of stored content. PV screening
+coverage and the source-attribution policy are documented in
+`docs/pv/glp-1-pv-compliance.md`.

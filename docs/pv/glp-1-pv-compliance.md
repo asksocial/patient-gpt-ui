@@ -54,7 +54,7 @@ codes and hierarchy are not invented.
 
 ## Social screening
 
-The PV reference panel appears for GLP-1 in Compliance Overview and PV Configuration.
+The PV reference panel appears for GLP-1 in Compliance Overview, Review Queue, Health Experience Detection, and PV Configuration.
 It displays reference coverage, reaction examples, FDA queries, and social screening
 eligibility. The authenticated `/api/pv/corpora/glp-1` endpoint requires both a PV
 entitlement and GLP-1 topic access.
@@ -73,8 +73,12 @@ The source export is preserved. Its 5,000 rows reconcile as:
 - 7 held for absent or unusable HTTP(S) source URLs.
 - Zero parse failures.
 
-The initial bundled rules propose six review candidates in this export. These are
-potential detections, not six confirmed cases. Rules cover product aliases,
+The updated source-text policy proposes five candidates in this export: four
+AE/ADR Review Queue candidates and one Health Experience Detection candidate.
+These are potential detections, not confirmed cases. Parent headlines no longer
+establish a commenter’s own exposure or adverse experience; their titles remain
+explicitly labeled source context. This removes one headline-derived candidate
+from the earlier six-candidate preview. Rules cover product aliases,
 curated reaction expressions, pregnancy exposure, medication error, overdose,
 misuse, lack of efficacy, and product quality. Source reaction vocabulary and
 matched curated terms are exposed separately; raw FAERS terms are not automatically
@@ -87,8 +91,16 @@ the proposed product is provisional. Unsupported languages are held rather than
 treated as negative detections. Original Date + Time are retained and interpreted
 as UTC because this export supplies no timezone; the UI discloses this assumption.
 
+Every source row receives the current audience classification before PV eligibility
+checks. Full-source audience counts and held-row reasons are displayed alongside
+the candidate preview. Audience labels do not determine PV reportability or extend
+English screening to unsupported languages. The source-text policy and audience
+version are bound into the import fingerprint and audit provenance.
+
 Persisted results use the approved database concepts and thresholds. Source IDs are
-namespaced, inserts preserve existing review state, and re-runs deduplicate. Import
+namespaced, inserts preserve existing review state, and re-runs deduplicate. Earlier persisted
+candidates remain historical workflow records; a changed preview does not silently
+delete or close them. Existing candidates require human reconciliation. Import
 batches bind the source hash and detection configuration for provenance. A partial
 write can be resumed. Held rows remain counted and audited; the import is marked
 `completed_with_errors`, never presented as complete source coverage.

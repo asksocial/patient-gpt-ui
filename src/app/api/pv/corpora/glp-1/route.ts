@@ -23,6 +23,8 @@ export async function GET() {
     return NextResponse.json({ ok: true, reference: getGlp1FaersReference(), corpus: {
       id: corpus.corpusId, therapeuticArea: corpus.therapeuticArea, rowCount: corpus.rowCount,
       screenableCount: corpus.rows.length, candidateCount: corpus.candidates.length,
+      candidateSegments: corpus.candidateSegments, audienceCounts: corpus.audienceCounts,
+      audienceVersion: corpus.audienceVersion, corpusVersion: corpus.corpusVersion,
       heldCount: corpus.held.length, holdCounts: corpus.holdCounts,
       parseFailureCount: corpus.errors.length, sourceFileHash: corpus.sourceFileHash,
       sourceTimestampPolicy: corpus.sourceTimestampPolicy,

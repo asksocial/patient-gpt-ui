@@ -1,3 +1,4 @@
+import { loadCurrentGlp1ExecutiveIntelligence } from "../../../../lib/answers/loadCurrentGlp1ExecutiveIntelligence";
 import {
   auth,
 } from "@clerk/nextjs/server";
@@ -64,7 +65,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const snapshot = body?.snapshot;
+    let snapshot = body?.snapshot;
     const baselineSnapshot =
       body?.baselineSnapshot;
 
@@ -122,6 +123,9 @@ export async function POST(
       );
     }
 
+    const current = loadCurrentGlp1ExecutiveIntelligence(snapshot.therapeuticArea, snapshot.sourceQuery || "");
+    if (current) snapshot = current.knowledgeSnapshot;
+
     const comparison =
       baselineSnapshot
         ? compareThemeKnowledgeSnapshots(
@@ -135,6 +139,8 @@ export async function POST(
         snapshot,
         comparison,
       });
+
+    if (current) brief.dataQuality.warnings = [...new Set([...brief.dataQuality.warnings, ...current.executiveIntelligence.dataQuality.warnings])];
 
     return NextResponse.json({
       ok: true,

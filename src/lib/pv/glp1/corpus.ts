@@ -4,9 +4,16 @@ import { createHash } from "node:crypto";
 import { parseMeltwaterCsv } from "../../../ingestion/adapters/meltwaterAdapter";
 import { parseCsvPostDate, type PvCsvImportRow, type PvCsvImportError } from "../csvImport";
 import { classifyGlp1PvContent } from "./detection";
+import { classifyGlp1Audience, GLP1_AUDIENCE_VERSION, type Glp1AudienceClassification } from "../../../ingestion/glp1Audience";
 import { GLP1_PV_VERSION } from "./config";
 
-export type Glp1PvRow = PvCsvImportRow & { language: "en"; sourceType: string; market?: string };
+export const GLP1_PV_CORPUS_VERSION = "glp1-social-source-2";
+export type Glp1PvRow = PvCsvImportRow & { language: "en"; sourceType: string; market?: string; audienceClassification?: Glp1AudienceClassification; sourceTitle?: string };
+
+export function glp1PvSourceText(source: Record<string, any>) {
+  const isComment = /comment/i.test(String(source["Content Type"] || "")) || /^comment on\b/i.test(String(source["Author Name"] || ""));
+  return [...new Set((isComment ? [source["Opening Text"], source["Hit Sentence"]] : [source.Title, source["Opening Text"], source["Hit Sentence"]]).filter((value) => value?.trim()))].join(" ");
+}
 
 export function loadGlp1PvCorpus() {
   const file = path.resolve(process.cwd(), "data/glp-1.csv");
@@ -20,9 +27,12 @@ export function loadGlp1PvCorpus() {
   const sourceFileHash = createHash("sha256").update(bytes).digest("hex");
   const errors: PvCsvImportError[] = [];
   const rows: Glp1PvRow[] = [];
+  const audienceCounts: Record<string, number> = {};
   const held: Array<{ rowNumber: number; reason: string }> = [];
   for (const [index, source] of sourceRows.entries()) {
     const rowNumber = index + 2;
+    const audienceClassification = classifyGlp1Audience(source);
+    audienceCounts[audienceClassification.audience] = (audienceCounts[audienceClassification.audience] || 0) + 1;
     if (String(source.Language || "").toLowerCase() !== "english") { held.push({ rowNumber, reason: "unsupported_or_unknown_language" }); continue; }
     if (!/^https?:\/\//i.test(source.URL || "")) { held.push({ rowNumber, reason: "missing_source_url" }); continue; }
     const sourceType = String(source["Source Type"] || "");
@@ -31,17 +41,21 @@ export function loadGlp1PvCorpus() {
     const authorIdentifier = String(source["Author Handle"] || source["Author Name"] || "").trim() || undefined;
     try {
       const externalId = `glp1:social:${String(source["Document ID"] || "").replace(/^"+|"+$/g, "")}`;
-      const verbatim = [...new Set([source.Title, source["Opening Text"], source["Hit Sentence"]].filter((value) => value?.trim()))].join(" ");
+      const verbatim = glp1PvSourceText(source);
       if (!verbatim || externalId === "glp1:social:") throw new Error("Missing verbatim or source identifier.");
-      rows.push({ rowNumber, externalId, verbatim, sourceUrl: source.URL, authorIdentifier, postedAt: parseCsvPostDate(timestamp), postedAtRawValue: timestamp, sourceType, language: "en", market: String(source.Country || "") || undefined });
+      rows.push({ rowNumber, externalId, verbatim, sourceUrl: source.URL, authorIdentifier, postedAt: parseCsvPostDate(timestamp), postedAtRawValue: timestamp, sourceType, audienceClassification, sourceTitle: String(source.Title || ""), language: "en", market: String(source.Country || "") || undefined });
     } catch (error) { errors.push({ rowNumber, error: error.message }); }
   }
-  const candidates = rows.filter((row) => classifyGlp1PvContent({ ...row, dataOrigin: "curated" }).shouldCreateRecord);
+  const evaluated = rows.map((row) => ({ row, result: classifyGlp1PvContent({ ...row, dataOrigin: "curated" }) }));
+  const candidates = evaluated.filter(({ result }) => result.shouldCreateRecord).map(({ row }) => row);
+  const candidateSegments = { ae_adr: 0, health_experience: 0 };
+  for (const { result } of evaluated) if (result.shouldCreateRecord) candidateSegments[result.detectionSegment]++;
+
   return {
     fileName: "glp-1.csv", rowCount: sourceRows.length, errors, contentColumns: ["Title", "Opening Text", "Hit Sentence"],
-    fileHash: createHash("sha256").update(`${sourceFileHash}:${GLP1_PV_VERSION}:social-en`).digest("hex"),
+    fileHash: createHash("sha256").update(`${sourceFileHash}:${GLP1_PV_VERSION}:${GLP1_PV_CORPUS_VERSION}:${GLP1_AUDIENCE_VERSION}:social-en`).digest("hex"),
     sourceFileHash, corpusId: "glp_1_social_pv_2026_10_20", therapeuticArea: "GLP-1",
-    rows, candidates, held, sourceTimestampPolicy: "Export date and time interpreted as UTC; source timezone not supplied.",
+    rows, candidates, candidateSegments, audienceCounts, audienceVersion: GLP1_AUDIENCE_VERSION, corpusVersion: GLP1_PV_CORPUS_VERSION, held, sourceTimestampPolicy: "Export date and time interpreted as UTC; source timezone not supplied.",
     holdCounts: held.reduce((counts, row) => ({ ...counts, [row.reason]: (counts[row.reason] || 0) + 1 }), {} as Record<string, number>),
   };
 }

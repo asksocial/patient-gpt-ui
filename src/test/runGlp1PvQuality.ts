@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { buildOpenFdaQueries, ingestOpenFda, normalizeOpenFdaRegulatoryCase } from "../lib/pv/training/regulatory";
 import { glp1RegulatoryConfiguration, GLP1_PV_LIBRARY_NAME } from "../lib/pv/glp1/config";
 import { GLP1_PV_CONCEPTS, classifyGlp1PvContent } from "../lib/pv/glp1/detection";
-import { loadGlp1PvCorpus } from "../lib/pv/glp1/corpus";
+import { glp1PvSourceText, loadGlp1PvCorpus } from "../lib/pv/glp1/corpus";
 import { getGlp1FaersReference } from "../lib/pv/glp1/reference";
 import { buildGlp1PvRecord, setupGlp1PvLibrary, screenGlp1PvCorpus } from "../lib/pv/glp1/service";
 import { activatePvDetectionLibrary } from "../lib/pv/service";
@@ -52,6 +52,11 @@ async function main() {
   assert.equal(classifyGlp1PvContent(input("I started Wegovy and developed nausea.")).ontologyExtraction.unexpectedness.value, "unclear");
   assert(!GLP1_PV_CONCEPTS.some((concept) => concept.category === "adverse_experience" && concept.terms.includes("No adverse event")));
 
+  const comment = glp1PvSourceText({ "Content Type": "comment", Title: "She took Ozempic and lost vision", "Opening Text": "My doctor warned me about this risk.", "Hit Sentence": "My doctor warned me about this risk." });
+  assert.equal(comment, "My doctor warned me about this risk.");
+  assert(!classifyGlp1PvContent(input(comment)).shouldCreateRecord, "A parent headline must not establish the commenter's adverse event.");
+  assert(classifyGlp1PvContent(input(glp1PvSourceText({ "Author Name": "Comment on Dr Example", Title: "Treatment discussion", "Hit Sentence": "I started Wegovy and developed nausea." }))).shouldCreateRecord);
+
   const queries = buildOpenFdaQueries({ suspectOnly: true }, glp1RegulatoryConfiguration);
   assert.equal(queries.length, 60);
   assert(!JSON.stringify(queries).toLowerCase().includes("botox"));
@@ -79,6 +84,9 @@ async function main() {
   assert.equal(corpus.rows.length + corpus.held.length + corpus.errors.length, 5000);
   assert.equal(corpus.holdCounts.unsupported_or_unknown_language, 2865);
   assert.equal(corpus.errors.length, 0);
+  assert.equal(Object.values(corpus.audienceCounts).reduce((sum, count) => sum + count, 0), corpus.rowCount);
+  assert.equal(corpus.candidateSegments.ae_adr + corpus.candidateSegments.health_experience, corpus.candidates.length);
+  assert(corpus.rows.every(row => row.audienceClassification?.version === corpus.audienceVersion));
   assert(corpus.candidates.length > 0);
   assert(corpus.rows.every((row) => row.language === "en" && /^https?:\/\//.test(row.sourceUrl) && row.externalId.startsWith("glp1:social:")));
   const principal = { principalId: "glp-test-principal", actorId: "test-reviewer", principalType: "user" as const };

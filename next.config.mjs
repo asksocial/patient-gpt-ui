@@ -2,6 +2,8 @@
 const nextConfig = {
   reactCompiler: true,
   outputFileTracingIncludes: {
+    "/api/executive/brief": ["./data/glp-1.csv"],
+    "/api/chat/session": ["./data/*.csv"],
     "/api/ask": [
       "./data/*.csv",
       "./src/ingestion/curated/gene_therapy.json",

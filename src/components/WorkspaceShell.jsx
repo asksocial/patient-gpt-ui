@@ -973,12 +973,14 @@ export default function WorkspaceShell() {
 
   const latestExecutiveIntelligence = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
-      const brief = messages[index]?.responsePayload?.executiveIntelligence;
+      const payload = messages[index]?.responsePayload;
+      if (!graphMatchesTopic(therapeuticArea, payload?.therapeuticArea, payload?.executiveIntelligence?.therapeuticArea)) continue;
+      const brief = payload?.executiveIntelligence;
       if (brief) return brief;
     }
 
     return null;
-  }, [messages]);
+  }, [messages, therapeuticArea]);
 
   const latestKnowledgeGraph = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {

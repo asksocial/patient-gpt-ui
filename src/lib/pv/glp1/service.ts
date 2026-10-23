@@ -30,12 +30,12 @@ export function buildGlp1PvRecord(principal: PlatformPrincipal, row: Glp1PvRow, 
     library_id: library.id, status: "new", priority: result.contextConfidence >= 70 ? "critical" : result.score >= 80 ? "high" : "standard",
     product_name: product?.canonicalTerm || null, potential_event: event?.canonicalTerm || null,
     source_type: row.sourceType, source_url: row.sourceUrl, author_identifier: row.authorIdentifier || null,
-    original_verbatim: row.verbatim, original_language: row.language, thread_context: [],
+    original_verbatim: row.verbatim, original_language: row.language, thread_context: row.sourceTitle && row.sourceTitle !== row.verbatim ? [`Source title (context only; not attributed to the author): ${row.sourceTitle}`] : [],
     evidence_hash: createHash("sha256").update(JSON.stringify({ verbatim: row.verbatim, url: row.sourceUrl, postedAt: row.postedAt })).digest("hex"),
     posted_at: row.postedAt, ingested_at: availableAt, identified_at: availableAt, algorithm_assessed_at: availableAt,
     detection_score: result.score, product_confidence: result.productConfidence, health_experience_confidence: result.healthExperienceConfidence,
     context_confidence: result.contextConfidence, matched_concepts: result.matches, proposed_classifications: result.classifications,
-    classifier_version: result.classifierVersion, library_version: result.detectionLibraryVersion, detection_rationale: result.rationale,
+    classifier_version: result.classifierVersion, library_version: result.detectionLibraryVersion, detection_rationale: [...result.rationale, ...(row.audienceClassification ? [`Source audience (${row.audienceClassification.version}): ${row.audienceClassification.audience}; ${row.audienceClassification.designation}. Audience classification is provisional and does not determine PV reportability.`] : [])],
     data_origin: "curated", ae_ontology: result.ontologyExtraction, ontology_version: result.ontologyExtraction.ontologyVersion,
     import_batch_id: batchId, source_row_number: row.rowNumber, posted_at_source_column: "Date + Time (UTC assumed)",
     posted_at_raw_value: row.postedAtRawValue, day_zero_basis: "reportability_identified_at",
@@ -63,7 +63,7 @@ export async function screenGlp1PvCorpus(principal: PlatformPrincipal) {
     if (created.error) throw new Error(created.error.message);
     batch = created.data || (await db.from("pv_import_batches").select("*").eq("principal_id", principal.principalId).eq("file_hash", fileHash).single()).data;
     if (!batch) throw new Error("Could not reconcile concurrent GLP-1 import.");
-    await appendPvAuditEvent(principal, { action: "csv_import.available", resourceType: "pv_import_batch", resourceId: batch.id, outcome: "completed", metadata: { corpusId: corpus.corpusId, sourceFileHash: corpus.sourceFileHash, configurationVersion: GLP1_PV_VERSION, sourceRows: corpus.rowCount, faersReferenceRetrievedAt: getGlp1FaersReference().retrievedAt, sourceTimestampPolicy: corpus.sourceTimestampPolicy } });
+    await appendPvAuditEvent(principal, { action: "csv_import.available", resourceType: "pv_import_batch", resourceId: batch.id, outcome: "completed", metadata: { corpusId: corpus.corpusId, sourceFileHash: corpus.sourceFileHash, corpusVersion: corpus.corpusVersion, audienceVersion: corpus.audienceVersion, audienceCounts: corpus.audienceCounts, configurationVersion: GLP1_PV_VERSION, sourceRows: corpus.rowCount, faersReferenceRetrievedAt: getGlp1FaersReference().retrievedAt, sourceTimestampPolicy: corpus.sourceTimestampPolicy } });
   }
   // Recompute against the approved database rules, never the bundled defaults.
   const records = corpus.rows.map((row) => buildGlp1PvRecord(principal, row, library, batch.id, batch.available_at, concepts)).filter(Boolean);
