@@ -20,6 +20,7 @@ import WorkspaceManager from "./WorkspaceManager";
 import {
   resolveWorkspaceNavigationDestination,
 } from "../lib/intelligence-platform/navigation";
+import { getCurrentSearchResult } from "../lib/answers/currentSearchResult";
 import { sortTherapeuticAreas } from "../lib/therapeuticAreas";
 
 const QUICK_ACTIONS = [
@@ -922,6 +923,8 @@ export default function WorkspaceShell() {
   const [workspaceCreateError, setWorkspaceCreateError] = useState("");
   const [workspaceCreateBusy, setWorkspaceCreateBusy] = useState(false);
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
+
+  const currentSearchResult = useMemo(() => getCurrentSearchResult(messages), [messages]);
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) || null,
@@ -2104,11 +2107,8 @@ export default function WorkspaceShell() {
                   {destinationCopy.eyebrow}
                 </p>
                 <h1 className="text-2xl font-semibold tracking-tight text-white">
-                  {activeDestination ===
-                    "ask" &&
-                  activeSession
-                    ? activeSession.title ||
-                      destinationCopy.title
+                  {activeDestination === "ask"
+                    ? currentSearchResult.question || activeSession?.title || destinationCopy.title
                     : destinationCopy.title}
                 </h1>
                 <p className="max-w-3xl text-sm leading-6 text-white/60">
@@ -2210,18 +2210,16 @@ export default function WorkspaceShell() {
                     </div>
                   </div>
                 ) : (
-                  messages.map(
-                    (message) =>
-                      message.role ===
-                      "assistant" ? (
-                        <AssistantMessage
-                          key={message.id}
-                          responsePayload={
-                            message.responsePayload
-                          }
-                        />
-                      ) : null
-                  )
+                  currentSearchResult.message ? (
+                    <div data-testid="search-current-response">
+                      <AssistantMessage
+                        key={currentSearchResult.message.id}
+                        responsePayload={currentSearchResult.message.responsePayload}
+                      />
+                    </div>
+                  ) : !loading && !error ? (
+                    <p className="px-4 py-5 text-sm text-white/60">No response is available for this question. Submit it again to refresh Search.</p>
+                  ) : null
                 )}
 
                 {loading ? (

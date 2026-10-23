@@ -29,3 +29,7 @@ On read, Search upgrades presentation from the saved question and the current re
 ## Validation
 
 `npm run test:search-corpus` checks every configured corpus, a new CSV topic without a registry entry, a custom imported corpus, exclusive persona reconciliation, complete donut totals, the ranked-50 boundary, qualitative summaries, country/cost/safety question differences, no-match behavior, and read-only saved-question refresh. The check is included in `test:production`.
+
+## One current response
+
+The Search page renders a single response selected by `getCurrentSearchResult`, rather than mapping the complete transcript into stacked answers. Submitting a new question clears the previous response from the view while loading; the new result replaces charts, narratives, evidence and actions together. A failed request shows its error without presenting the previous question's data as current. The header follows the latest submitted question, not the original conversation title or an unsubmitted draft. Persisted messages remain intact, and reopening a conversation selects its latest question/response pair.
