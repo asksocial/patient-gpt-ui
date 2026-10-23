@@ -2,7 +2,7 @@ import type { CanonicalFinding } from "../models/finding";
 import { searchRecordText, subjectsForQuestion, topicsForQuestion } from "./searchSubjects";
 
 export type QuestionEvidence = {
-  version: 2;
+  version: 3;
   subjects: string[];
   topics: Array<{ id: string; label: string; count: number }>;
   examples: Array<{ id: string; excerpt: string; url?: string; topic: string; language?: string; sourceCategory?: string }>;
@@ -29,7 +29,7 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
         const text = compact(fields["Opening Text"] || fields["Hit Sentence"] || r.summary);
         const source = String(fields["Source Type"] || "");
         const title = compact(fields.Title);
-        return (/^english$/i.test(String(fields.Language)) ? 2000 : 0) + (/forum|social network|comments/i.test(source) ? 500 : 0) + (topic.pattern.test(title) ? 150 : 0) + Math.min(text.length, 400);
+        return (/^english$/i.test(String(fields.Language)) ? 2000 : 0) + (r.audienceClassification?.patientContent ? 1200 : /forum|social network|comments/i.test(source) ? 200 : 0) + (topic.pattern.test(title) ? 150 : 0) + Math.min(text.length, 400);
       };
       return score(b) - score(a);
     });
@@ -73,7 +73,7 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
   if (findings.length > 0 && findings.length < 20) limitations.push("The matching evidence is limited. Treat these observations as illustrative examples rather than estimates of prevalence.");
   if (/\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(question)) limitations.push("Themes present in this corpus do not establish emergence or growth without a comparable time baseline.");
   if (/\b(why|reasons?|drivers?|caus\w*)\b/i.test(question)) limitations.push("Topic mentions alone do not establish motivations or causal relationships. Reasons require explicit supporting accounts.");
-  return { version: 2, subjects: subjects.map(s => s.label), topics: matches.map(({ topic, records }) => ({ id: topic.id, label: topic.label, count: records.length })), examples, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
+  return { version: 3, subjects: subjects.map(s => s.label), topics: matches.map(({ topic, records }) => ({ id: topic.id, label: topic.label, count: records.length })), examples, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
 }
 
 export function questionEvidenceAnswer(evidence: QuestionEvidence): string {

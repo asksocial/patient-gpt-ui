@@ -98,3 +98,6 @@ console.log(JSON.stringify({passed: true, demoPrompts: results, guards: ["qualit
 const mixedPost = { ...hypothetical[0], findingId: "mixed", summary: "Generated GLP-1 insurance summary", rawMetadata: { fields: { Title: "Unrelated discussion", "Opening Text": "Insurance companies are investing in AI.", "Hit Sentence": "GLP-1 is mentioned in a separate link.", Language: "English" } } } as unknown as CanonicalFinding;
 const mixedEvidence = buildQuestionEvidence("What are the insurance concerns?", [mixedPost], ["GLP-1"]);
 assert.equal(mixedEvidence!.examples.length, 0, "An unrelated clause or generated canonical summary cannot become quoted source evidence");
+
+const unrelatedInsurance = { ...mixedPost, rawMetadata: { fields: { Title: "Advertising discussion", "Opening Text": "You forgot accident lawyers and insurance companies but they have all been in AI. Every commercial is for alcohol, GLP-1, sports betting, or AI.", Language: "English" } } } as unknown as CanonicalFinding;
+assert.equal(buildQuestionEvidence("What are insurance concerns?", [unrelatedInsurance], ["GLP-1"])!.examples.length, 0, "A casual insurance mention next to GLP-1 is not evidence of treatment coverage");

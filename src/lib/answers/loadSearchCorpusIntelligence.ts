@@ -77,7 +77,8 @@ export function selectSearchCorpusForQuestion(therapeuticArea: string, findings:
   const summary = buildPersonaIntelligence(matchingSource, { scope: "question_corpus", analyticalCount: matchingFindings.length });
   summary.recordUnit = bundle.summary.recordUnit;
   summary.additionalExclusionLabel = bundle.summary.additionalExclusionLabel;
-  summary.questionEvidence = buildQuestionEvidence(question, matchingFindings, profile.diseaseNames);
+  const matchedRecords = bundle.findingRecords.filter(focus.matches);
+  summary.questionEvidence = buildQuestionEvidence(question, matchingFindings.map((finding, index) => ({ ...finding, audienceClassification: matchedRecords[index]?.audienceClassification })), profile.diseaseNames);
   const subjects = subjectsForQuestion(question);
   summary.corpusCharts = buildCorpusCharts(matchingFindings.map(finding => ({ symptoms: subjects.length ? subjects.flatMap(subject => topicsForQuestion(subject, question).filter(topic => topic.pattern.test(searchRecordText(finding))).map(topic => topic.label)) : finding.symptoms, country: finding.countries?.[0] || (finding as CanonicalFinding & { country?: string }).country })));
   if (subjects.length) {

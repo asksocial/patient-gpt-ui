@@ -8,7 +8,7 @@ const topic = (id: string, label: string, pattern: RegExp): SubjectTopic => ({ i
 export const SEARCH_SUBJECTS: SearchSubject[] = [
   { id: "access", label: "access and affordability", trigger: /\b(costs?|prices?|pricing|afford\w*|insurance|coverage|access|availability|shortages?|copay|out.of.pocket)\b/i,
     topics: [
-      topic("coverage", "insurance and coverage", /\b(insur\w*|coverage|copay\w*|prior authori\w*|reimbursement|medicare|medicaid)\b|保険|보험|seguro|cobertura/i),
+      topic("coverage", "insurance and coverage", /\b(insurance(?: companies)?.{0,80}(?:cover\w*|deni\w*|pay\w*|afford\w*|treatment|prescri\w*)|(?:health|drug|medical|treatment) insurance|insured|uninsured|coverage|copay\w*|prior authori\w*|reimbursement|medicare|medicaid)\b|保険|보험|seguro|cobertura/i),
       topic("prices", "prices and affordability", /\b(costs?|prices?|pricing|afford\w*|expensive|out.of.pocket|cash.pay|savings? programs?)\b|価格|費用|高額|가격|비용|비싸|\bpre[çc]os?\b|\bcustos?\b|\bprecios?\b/i),
       topic("availability", "availability and sourcing", /\b(shortages?|availability|supply|in stock|out of stock|access|sourcing|imports?)\b|品薄|品切れ|入手|공급|품절|직구|escassez|disponibilidad/i),
       topic("providers", "pharmacy and telehealth access", /\b(pharmacy|pharmacies|pharmacists?|telehealth|telemedicine|prescription denied)\b|薬局|処方|약국|처방|farm[aá]cia|farmacia/i),
@@ -79,6 +79,13 @@ export function subjectsForQuestion(question: string): SearchSubject[] {
 
 /** Narrow an explicitly named subtopic, while umbrella questions use all its topics. */
 export function topicsForQuestion(subject: SearchSubject, question: string): SubjectTopic[] {
+  if (subject.id === "access" && /insurance|coverage|copay|prior authori/i.test(question) && !/cost|price|afford|access|availability|shortage|pharmac|telehealth/i.test(question)) return subject.topics.filter(t => t.id === "coverage");
+  if (subject.id === "women" && !/women.s health|life stage|life course/i.test(question)) {
+    const selected = subject.topics.filter(t => t.pattern.test(question));
+    if (selected.length) return selected;
+  }
+  if (subject.id === "maintenance" && /restart/i.test(question) && !/stop|regain|maintenance/i.test(question)) return subject.topics.filter(t => t.id === "restart");
+  if (subject.id === "maintenance" && /\b(stop(?:ping|ped)?|discontinu\w*)\b/i.test(question) && !/restart|regain|maintenance|persist|adheren|continuation/i.test(question)) return subject.topics.filter(t => t.id === "stopping");
   if (subject.id === "appetite" && /food noise/i.test(question)) return subject.topics.filter(t => t.id === "food_noise");
   if (subject.id === "maintenance" && /regain/i.test(question) && !/stopp|maintenance|restart/i.test(question)) return subject.topics.filter(t => t.id === "regain");
   if (subject.id === "women" && /\bpcos\b/i.test(question) && !/pregnan|contracept|menopaus|postpartum|women.s health/i.test(question)) return subject.topics.filter(t => t.id === "pcos");
