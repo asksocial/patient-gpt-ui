@@ -28,5 +28,5 @@ export function refreshSearchCorpusIntelligence<T extends { analyticalAnswer?: {
   const sections = answer.sections.filter(section => section.key !== "persona_intelligence" && section.key !== "strategic_implications" && !/^what this means$/i.test(section.title || ""));
   if (persona) sections.push(persona);
   const executive = loadCurrentGlp1ExecutiveIntelligence(therapeuticArea, scopedQuestion);
-  return { ...content, ...(executive || {}), sourceIntelligence, ...(refreshedHybrid ? { answer: refreshedHybrid } : {}), ...(summary.queryContext ? { relevantCuratedInsights: insights, curatedIntelligenceAvailable: sourceIntelligence.curatedThemes.length > 0 || insights.length > 0 } : {}), analyticalAnswer: { ...answer, directAnswer, sections } };
+  return { ...content, ...(executive ? { executiveIntelligence: executive.executiveIntelligence } : {}), sourceIntelligence, ...(refreshedHybrid ? { answer: refreshedHybrid } : {}), ...(summary.queryContext ? { relevantCuratedInsights: insights, curatedIntelligenceAvailable: sourceIntelligence.curatedThemes.length > 0 || insights.length > 0 } : {}), analyticalAnswer: { ...answer, directAnswer, sections } };
 }

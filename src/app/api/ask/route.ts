@@ -1,3 +1,4 @@
+import { loadCurrentGlp1ExecutiveIntelligence } from "../../../lib/answers/loadCurrentGlp1ExecutiveIntelligence";
 import { selectSearchCorpusForQuestion, filterSearchInsightsForQuestion } from "../../../lib/answers/loadSearchCorpusIntelligence";
 import { NextRequest, NextResponse } from "next/server";
 import { loadHybridData } from "../../../lib/answers/loadHybridData";
@@ -375,6 +376,8 @@ export async function POST(req: NextRequest) {
       curatedInsights
     );
 
+    const executiveBrief = executiveGranted ? loadCurrentGlp1ExecutiveIntelligence(therapeuticArea)?.executiveIntelligence || intelligence?.executiveIntelligence || null : null;
+
     return NextResponse.json({
       ok: true,
       answer,
@@ -429,11 +432,7 @@ export async function POST(req: NextRequest) {
           ? intelligence?.knowledgeSnapshot ||
             null
           : null,
-      executiveIntelligence:
-        executiveGranted
-          ? intelligence?.executiveIntelligence ||
-            null
-          : null,
+      executiveIntelligence: executiveBrief,
       analyticalAnswer:
         compactAnalyticalAnswer(
           intelligence
@@ -460,11 +459,7 @@ export async function POST(req: NextRequest) {
         analyticalThemeCount:
           intelligence?.themeSummary.length ||
           0,
-        executiveBriefId:
-          executiveGranted
-            ? intelligence?.executiveIntelligence
-                .briefId || null
-            : null,
+        executiveBriefId: executiveBrief?.briefId || null,
       },
     });
   } catch (error: any) {

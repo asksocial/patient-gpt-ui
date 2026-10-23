@@ -182,7 +182,9 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {quality.corpusScope === "full_corpus" ? <p className="text-sm text-white/65">Full GLP-1 corpus overview. The latest Search question does not filter this brief. Source records include material excluded from thematic analysis.</p> : null}
+      <div className={`grid gap-4 sm:grid-cols-2 ${quality.corpusScope === "full_corpus" ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
+        {quality.corpusScope === "full_corpus" ? <><Metric label="Source records" value={quality.sourceRecordCount?.toLocaleString()} detail="Complete supplied corpus" /><Metric label="Excluded from analysis" value={quality.excludedRecordCount?.toLocaleString()} detail="Off-topic or filtered content retained in source" /></> : null}
         <Metric label="Findings analyzed" value={quality.datasetFindingCount ?? 0} detail="Qualifying analytical dataset" />
         <Metric label="Temporal coverage" value={`${quality.temporalCoveragePercent ?? 0}%`} detail="Findings with usable dates" />
         <Metric label="High-confidence themes" value={quality.highConfidenceThemeCount ?? 0} detail="Meets strongest evidence threshold" />

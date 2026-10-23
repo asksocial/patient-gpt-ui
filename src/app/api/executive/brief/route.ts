@@ -140,7 +140,7 @@ export async function POST(
         comparison,
       });
 
-    if (current) brief.dataQuality.warnings = [...new Set([...brief.dataQuality.warnings, ...current.executiveIntelligence.dataQuality.warnings])];
+    if (current) brief.dataQuality = { ...brief.dataQuality, corpusScope: "full_corpus", sourceRecordCount: current.executiveIntelligence.dataQuality.sourceRecordCount, excludedRecordCount: current.executiveIntelligence.dataQuality.excludedRecordCount, warnings: [...new Set([...brief.dataQuality.warnings, ...current.executiveIntelligence.dataQuality.warnings])] };
 
     return NextResponse.json({
       ok: true,

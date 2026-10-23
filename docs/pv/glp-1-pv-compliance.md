@@ -130,3 +130,19 @@ library, approve an ODCS program, send a sponsor message, or submit a case to FD
 Sources: [FDA FAERS API](https://open.fda.gov/apis/drug/event/),
 [FDA pagination](https://open.fda.gov/apis/paging/),
 [FDA field reference](https://open.fda.gov/apis/drug/event/searchable-fields/).
+
+## Coverage audit — October 23, 2026
+
+The supplied CSV is byte-identical to the original GLP-1 export. Audience
+reclassification expanded analytical inclusion; it did not add source rows or
+extend the approved PV library. Current PV eligibility remains 811/5,000 rows
+(16.22%). Language holds account for 2,865 rows, source-scope holds for 1,317,
+and absent/unusable links for seven. Held rows are unassessed, not negative.
+
+Among eligible English rows, 49 match both product and health-event vocabulary
+before context filtering. Five remain after assertion/negation, hypothetical
+language, exposure, promotional and threshold rules. These 49 co-occurrences
+are not 49 AE/ADR cases; the difference requires source-level validation to
+measure false negatives. No sensitivity or full-corpus safety-coverage claim
+is supported by the small candidate total. Multilingual screening and rule
+expansion require separately qualified detection configurations and validation.

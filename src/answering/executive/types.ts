@@ -79,6 +79,9 @@ export type ExecutiveWatchlistItem = {
 };
 
 export type ExecutiveDataQuality = {
+  corpusScope?: "full_corpus";
+  sourceRecordCount?: number;
+  excludedRecordCount?: number;
   datasetFindingCount: number;
 
   temporalCoveragePercent: number;

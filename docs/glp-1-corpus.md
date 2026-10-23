@@ -316,11 +316,13 @@ Search now uses the shared corpus pipeline described in [Shared Search corpus in
 
 ## Executive Brief refresh (October 23, 2026)
 
-Saved Search messages refresh their GLP-1 theme snapshot, relationships,
-longitudinal tracking, and Executive Brief from the current canonical corpus on
-read. The executive brief endpoint also rebuilds GLP-1 snapshots before generating
-its response. Question filters remain in scope; stored messages and original
-evidence are preserved. Full-corpus coverage is 5,000 source records and 4,737
+Saved Search messages refresh their Executive Brief from the complete GLP-1
+canonical corpus on read. Executive themes, relationships and longitudinal
+tracking are recomputed from all 4,737 analytical findings. Search retains its
+own question-scoped answer and knowledge snapshot. The executive brief endpoint also rebuilds GLP-1 snapshots before generating
+its response. The GLP-1 Executive Brief is corpus-wide even when the latest
+Search question is focused on cost, a market, or another subset. Stored messages
+and original evidence are preserved. Full-corpus coverage is 5,000 source records and 4,737
 analytical findings. Coverage notes distinguish audience composition from PV
 eligibility. Executive Brief selection is topic-scoped in the workspace.
 

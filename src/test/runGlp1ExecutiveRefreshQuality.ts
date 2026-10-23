@@ -7,10 +7,16 @@ assert.equal(current.executiveIntelligence.dataQuality.datasetFindingCount, 4737
 assert.equal(current.themeSummary.length, 8);
 assert(current.executiveIntelligence.dataQuality.warnings.some(warning => warning.includes("5,000 source records")));
 assert.equal(loadCurrentGlp1ExecutiveIntelligence("Botulinum toxin"), null);
-const saved = { analyticalAnswer: { sections: [] }, executiveIntelligence: { therapeuticArea: "GLP-1", headline: "Stale brief" } };
+const saved = { knowledgeSnapshot: { snapshotKey: "saved-question-snapshot" }, analyticalAnswer: { sections: [] }, executiveIntelligence: { therapeuticArea: "GLP-1", headline: "Stale brief" } };
 const refreshed: any = refreshSearchCorpusIntelligence(saved, "GLP-1");
 assert.notEqual(refreshed.executiveIntelligence.headline, "Stale brief");
-assert.equal(refreshed.knowledgeSnapshot.snapshotKey, current.knowledgeSnapshot.snapshotKey);
+assert.equal(refreshed.knowledgeSnapshot.snapshotKey, "saved-question-snapshot", "The question's knowledge graph must retain its own scope.");
+const focused: any = refreshSearchCorpusIntelligence(saved, "GLP-1", "What are people saying about cost and insurance?");
+assert.equal(focused.executiveIntelligence.dataQuality.datasetFindingCount, 4737, "A focused Search must not restrict the corpus-wide Executive Brief.");
+assert.equal(focused.executiveIntelligence.dataQuality.sourceRecordCount, 5000);
+assert.equal(focused.executiveIntelligence.dataQuality.excludedRecordCount, 263);
+assert.equal(focused.executiveIntelligence.dataQuality.corpusScope, "full_corpus");
+assert.equal(loadCurrentGlp1ExecutiveIntelligence("GLP-1", "Asian markets")!.knowledgeSnapshot.snapshotKey, current.knowledgeSnapshot.snapshotKey);
 assert.equal(saved.executiveIntelligence.headline, "Stale brief", "Refreshing must not mutate saved content.");
 current.executiveIntelligence.dataQuality.warnings.push("mutation probe");
 assert(!loadCurrentGlp1ExecutiveIntelligence("GLP-1")!.executiveIntelligence.dataQuality.warnings.includes("mutation probe"));
