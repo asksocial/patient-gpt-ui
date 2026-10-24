@@ -146,3 +146,78 @@ are not 49 AE/ADR cases; the difference requires source-level validation to
 measure false negatives. No sensitivity or full-corpus safety-coverage claim
 is supported by the small candidate total. Multilingual screening and rule
 expansion require separately qualified detection configurations and validation.
+
+## Held-source triage — October 24, 2026
+
+`/api/pv/corpora/glp-1/triage` assesses every previously held source row. Its
+paged panel appears alongside the GLP-1 reference in Overview, Review Queue,
+Health Experience Detection and Configuration. Every row retains its original
+hold, source row/identifier, original text/language, URL, timestamp, matched
+product and FDA reaction cues, disposition and blockers. The assessment binds
+the source SHA-256, triage version, FDA snapshot, active-library configuration,
+thresholds and vocabulary provenance. “Assess all held rows & retain audit”
+records the complete disposition counts and reproducible assessment hash.
+
+All 983 source reaction terms are available for lexical retrieval. Terms such
+as “No adverse event”, weight reduction, and indication/context vocabulary do
+not qualify an event by themselves. Korean, Japanese, Portuguese, Spanish and
+French aliases are provisional retrieval cues, linked to the observed English
+source term. Native-language assertion, negation and exposure are not adjudicated
+by these aliases. Unsupported or unknown languages are retained for qualified
+review even when no cue is found; no cue is not a negative safety finding.
+
+The current reproducible assessment of 4,189 held rows yields:
+
+| Disposition | Rows |
+| --- | ---: |
+| Approved-library English matches | 0 |
+| Provisional English source-episode candidate | 1 |
+| Related identical excerpts, not extra cases | 2 |
+| Qualified language review required | 2,830 |
+| Context review required | 71 |
+| Source evidence repair required | 19 |
+| Off-topic/promotional or spam flags | 86 |
+| No matched rule signal (not a clinical negative) | 1,180 |
+
+There are 147 product/reaction matches prioritized across these dispositions.
+The counts reconcile to all 4,189 held rows. The 19 evidence-repair dispositions
+include defects previously masked by the language-first hold ordering; no
+source links or source text have been invented or repaired automatically.
+
+Inclusion is a separate audited action requiring source eligibility and a
+rationale. Eligible English records can use the active detection library.
+A separately versioned provisional source-episode path requires a specific
+patient cue, an asserted source reaction, and product/exposure timing in the
+same sentence. It creates only a potential record for qualified review, with
+no calibrated score, no library association/version claim, and no inferred
+seriousness, causality, expectedness or reporting obligation. Identical source
+episodes are linked to the primary candidate, not counted as extra patients.
+
+Other languages require a qualified reviewer to identify the source language
+and verify an English translation against the original before either inclusion
+path can be evaluated. The original text and language remain immutable;
+`translated_text` and translation verification provenance are stored separately.
+The system does not provide or attest an automatic translation.
+
+All source/language/context checks run again on inclusion, before any write.
+Stale assessment hashes are rejected. Tenant isolation, active-library access,
+ODCS requirements, source-ID deduplication and existing review preservation
+remain enforced. Inclusion does not confirm a clinical event or start Day Zero;
+qualified minimum-criteria review remains necessary. No sponsor email is sent.
+
+Vocabulary references: [MFDS Korean product information](https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=202301388),
+[PMDA Japanese reference](https://www.pmda.go.jp/files/000281140.pdf),
+[EMA French](https://www.ema.europa.eu/fr/documents/product-information/wegovy-epar-product-information_fr.pdf),
+[EMA Portuguese](https://www.ema.europa.eu/pt/documents/product-information/wegovy-epar-product-information_pt.pdf),
+[EMA Spanish](https://www.ema.europa.eu/es/documents/product-information/wegovy-epar-product-information_es.pdf).
+These support retrieval vocabulary, not validated multilingual performance or
+case-level expectedness.
+
+`npm run test:glp-1-held-triage` checks full reconciliation, source-term boundaries,
+neutral vocabulary, native cue routing, unknown languages, missing links,
+comment/parent attribution, source-episode contrasts, related excerpts,
+translation qualification and clocks. `npm run test:glp-1-pv` also exercises
+actual inclusion-service calls through the in-memory Supabase REST transport,
+including stale evidence, approvals, tenant/ODCS guards, audit, deduplication
+and preservation of reviewed records. These checks do not establish real
+multi-connection database concurrency or native-language clinical validation.
