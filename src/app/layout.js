@@ -1,4 +1,5 @@
 import "./globals.css";
+import AppActivityIndicator from "../components/AppActivityIndicator";
 import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata = {
@@ -10,7 +11,7 @@ export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body>{children}</body>
+        <body><AppActivityIndicator />{children}</body>
       </html>
     </ClerkProvider>
   );

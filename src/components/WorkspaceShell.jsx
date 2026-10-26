@@ -1,6 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { activityFetch as fetch } from "../lib/client/requestActivity";
+
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Spinner from "./ui/Spinner";
+import { useActivity } from "./AppActivityIndicator";
 import { UserButton } from "@clerk/nextjs";
 import Tooltip from "./ui/Tooltip";
 import Badge from "./ui/Badge";
@@ -910,6 +915,8 @@ function DestinationPlaceholder({
 }
 
 export default function WorkspaceShell() {
+  const router = useRouter();
+  const [navigating, startNavigation] = useTransition();
   const [therapeuticAreas, setTherapeuticAreas] = useState([]);
   const [analyticalCoverage, setAnalyticalCoverage] = useState([]);
   const [entitlements, setEntitlements] = useState(null);
@@ -943,6 +950,8 @@ export default function WorkspaceShell() {
   const [workspaceCreateError, setWorkspaceCreateError] = useState("");
   const [workspaceCreateBusy, setWorkspaceCreateBusy] = useState(false);
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
+
+  useActivity(loading || openingSession || workspaceCreateBusy || workspaceSaveStatus === "saving" || navigating);
 
   const currentSearchResult = useMemo(() => getCurrentSearchResult(messages), [messages]);
 
@@ -1468,9 +1477,7 @@ export default function WorkspaceShell() {
       destinationId ===
       "administration"
     ) {
-      window.location.assign(
-        "/admin/entitlements"
-      );
+      startNavigation(() => router.push("/admin/entitlements"));
       return;
     }
 
@@ -2221,11 +2228,8 @@ export default function WorkspaceShell() {
                   <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
                     <div>
                       {loading || openingSession ? (
-                        <div role="status" className="mb-5 flex justify-center text-cyan-200/80" data-testid="search-loading-indicator">
-                          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-10 w-10 animate-spin motion-reduce:animate-none">
-                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" opacity="0.2" />
-                            <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                          </svg>
+                        <div role="status" className="mb-5 flex justify-center text-cyan-200/80" data-testid="search-loading-indicator" data-inline-activity>
+                          <Spinner className="h-10 w-10" />
                           <span className="sr-only">{openingSession ? "Loading saved intelligence…" : "Working on your question…"}</span>
                         </div>
                       ) : null}

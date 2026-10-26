@@ -1,5 +1,10 @@
 "use client";
 
+import { downloadFile } from "../lib/client/downloadFile";
+import DownloadLink from "./ui/DownloadLink";
+
+import { activityFetch as fetch } from "../lib/client/requestActivity";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
 import { resolvePvReviewCompletionNavigation } from "../lib/pv/reviewNavigation";
@@ -739,7 +744,7 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
       <div className="mt-5 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-medium text-white/60">Save selected mentions</p><p className="mt-1 text-[11px] text-white/30">{validSelectedIds.length} selected across the review queue</p></div><button type="button" onClick={openSaveDialog} disabled={!validSelectedIds.length || busy === "review-list:create"} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">Save review list</button></div></div>
     </Card>
 
-    <Card title="Saved aggregate review lists" subtitle="Lists are also available in their selected workspace for governed assignment and email sharing.">{reviewLists.length ? <div className="space-y-3">{reviewLists.map((list) => <div key={list.id} className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-medium text-white/75">{list.name}</p><p className="mt-1 text-xs text-white/35">{list.items?.length || 0} mentions · {list.therapeutic_area} · Assigned to {list.assigned_to || "nobody"}</p></div><div className="flex gap-2"><ToneBadge tone={list.status === "exported" ? "complete" : "neutral"}>{label(list.status)}</ToneBadge><a href={`/api/pv/review-lists/${list.id}/export`} download className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Download CSV</a></div></div><div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto]"><input value={listAssignments[list.id] ?? list.assigned_to ?? ""} onChange={(event) => setListAssignments((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Assignee email or user ID" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => assignList(list)} disabled={busy === `review-list:assign:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Assign</button><input type="email" value={shareEmails[list.id] || ""} onChange={(event) => setShareEmails((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Recipient email" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => shareList(list)} disabled={!String(shareEmails[list.id] || "").trim() || busy === `review-list:share:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Share by email</button></div></div>)}</div> : <Empty>No aggregate PV review lists have been saved.</Empty>}</Card>
+    <Card title="Saved aggregate review lists" subtitle="Lists are also available in their selected workspace for governed assignment and email sharing.">{reviewLists.length ? <div className="space-y-3">{reviewLists.map((list) => <div key={list.id} className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-medium text-white/75">{list.name}</p><p className="mt-1 text-xs text-white/35">{list.items?.length || 0} mentions · {list.therapeutic_area} · Assigned to {list.assigned_to || "nobody"}</p></div><div className="flex gap-2"><ToneBadge tone={list.status === "exported" ? "complete" : "neutral"}>{label(list.status)}</ToneBadge><DownloadLink href={`/api/pv/review-lists/${list.id}/export`} download className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Download CSV</DownloadLink></div></div><div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto]"><input value={listAssignments[list.id] ?? list.assigned_to ?? ""} onChange={(event) => setListAssignments((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Assignee email or user ID" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => assignList(list)} disabled={busy === `review-list:assign:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60">Assign</button><input type="email" value={shareEmails[list.id] || ""} onChange={(event) => setShareEmails((current) => ({ ...current, [list.id]: event.target.value }))} placeholder="Recipient email" className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white" /><button type="button" onClick={() => shareList(list)} disabled={!String(shareEmails[list.id] || "").trim() || busy === `review-list:share:${list.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-cyan-300">Share by email</button></div></div>)}</div> : <Empty>No aggregate PV review lists have been saved.</Empty>}</Card>
   </div>;
 }
 
@@ -1172,12 +1177,12 @@ function QaNotRelevantHandoff({ therapeuticArea, cases, emailDeliveryConfigured,
     if (!data) return;
     setDeliveryNotice(data.message || (data.delivery === "provider" ? "QA email sent." : "No email was sent. The PDF was prepared for a manual email draft."));
     if (data.delivery === "provider") return;
-    const download = document.createElement("a");
-    download.href = exportHref;
-    download.download = data.fileName || "asksocial-pv-qa-not-reportable-export-test.pdf";
-    document.body.appendChild(download);
-    download.click();
-    download.remove();
+    try {
+      await downloadFile(exportHref, data.fileName || "asksocial-pv-qa-not-reportable-export-test.pdf");
+    } catch (failure) {
+      setDeliveryNotice(failure.message || "The QA PDF could not be downloaded. Please try again.");
+      return;
+    }
     const subject = encodeURIComponent(`[QA TEST - NOT FOR SUBMISSION] AskSocial PV export - ${therapeuticArea || "All topics"}`);
     const body = encodeURIComponent(`QA TEST ONLY - NOT FOR SPONSOR SUBMISSION OR REGULATORY REPORTING.\n\nThe attached AskSocial PDF contains ${data.caseCount} mention${data.caseCount === 1 ? "" : "s"} closed as Not Reportable and is being used only to validate export and handoff mechanics. The PDF has been downloaded to this device; attach it before sending.`);
     window.location.href = `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
@@ -1191,7 +1196,7 @@ function QaNotRelevantHandoff({ therapeuticArea, cases, emailDeliveryConfigured,
       {deliveryNotice ? <div role="status" className={`rounded-xl border px-4 py-3 text-xs leading-5 ${emailDeliveryConfigured ? "border-cyan-400/20 bg-cyan-400/[0.06] text-cyan-100/75" : "border-amber-400/20 bg-amber-400/[0.06] text-amber-100/75"}`}>{deliveryNotice}</div> : null}
       <div className="max-h-80 overflow-auto rounded-xl border border-white/10"><table className="w-full min-w-[880px] text-left text-xs"><thead className="sticky top-0 bg-[#090909] text-white/35"><tr>{["Product / procedure", "Potential event", "Reviewer", "Review rationale", "Lifecycle status"].map((item) => <th key={item} className="px-3 py-3">{item}</th>)}</tr></thead><tbody>{cases.map((item) => <tr key={item.id} className="border-t border-white/[0.06] text-white/55"><td className="px-3 py-3 text-white/75">{item.record.product_name || "Unspecified"}</td><td className="px-3 py-3">{item.record.potential_event || "Unspecified"}</td><td className="px-3 py-3">{item.review.reviewer_id}</td><td className="max-w-[360px] px-3 py-3"><p className="line-clamp-3 leading-5">{item.review.rationale || "No rationale retained"}</p></td><td className="px-3 py-3"><ToneBadge>{label(item.record.status)}</ToneBadge></td></tr>)}</tbody></table></div>
       <div className="grid gap-3 rounded-xl border border-rose-400/15 bg-rose-400/[0.04] p-4 lg:grid-cols-[auto_1fr_auto] lg:items-end">
-        <a href={exportHref} download className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black">Create QA PDF</a>
+        <DownloadLink href={exportHref} download className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black">Create QA PDF</DownloadLink>
         <label className="text-xs text-white/40">Internal/test recipient email<input type="email" value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} placeholder="pv-qa@company.com" className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" /></label>
         <button type="button" onClick={() => { setDeliveryNotice(""); setConfirmOpen(true); }} disabled={!recipientEmail.trim() || !testRecipientConfirmed || busy === "sponsor-report:qa-share"} className="cursor-pointer rounded-xl border border-rose-300/30 px-4 py-2.5 text-sm font-semibold text-rose-200 disabled:cursor-not-allowed disabled:opacity-40">Share QA handoff</button>
       </div>

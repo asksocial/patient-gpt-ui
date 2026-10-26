@@ -1,5 +1,9 @@
 "use client";
 
+import DownloadLink from "./ui/DownloadLink";
+
+import { activityFetch as fetch } from "../lib/client/requestActivity";
+
 import { useEffect, useMemo, useState } from "react";
 
 function Panel({ children, className = "" }) {
@@ -72,7 +76,7 @@ function PvReviewListDetail({ product, candidateUsers, members, onClose }) {
           <p className="mt-1 text-xs text-white/35">{list ? `${list.items?.length || 0} mentions · ${list.therapeutic_area} · ${list.status}` : "Loading governed review list…"}</p>
         </div>
         <div className="flex gap-2">
-          {reviewListId ? <a href={`/api/pv/review-lists/${reviewListId}/export`} download className="rounded-xl border border-cyan-300/20 px-3 py-2 text-xs font-medium text-cyan-300">Download CSV</a> : null}
+          {reviewListId ? <DownloadLink href={`/api/pv/review-lists/${reviewListId}/export`} download className="rounded-xl border border-cyan-300/20 px-3 py-2 text-xs font-medium text-cyan-300">Download CSV</DownloadLink> : null}
           <button type="button" onClick={onClose} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</button>
         </div>
       </div>

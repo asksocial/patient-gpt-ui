@@ -1,4 +1,6 @@
 "use client";
+
+import { activityFetch as fetch } from "../lib/client/requestActivity";
 import {useEffect,useState} from "react";
 const allowed=/^(patient\.(age|ageGroup|sex|weight|medicalHistory|pregnancyStatus)|reporter\.(qualification|country)|identification\.country|suspectProducts\.\d+\.(genericName|activeIngredient|indication|dose|frequency|route|therapyStartDate|therapyEndDate|batchLot)|events\.\d+\.(onset|end|outcome|medicalIntervention|meddraTerm|meddraVersion|seriousness\.(death|lifeThreatening|hospitalization|disability|congenitalAnomaly|otherMedicallyImportant))|concomitantProducts\.\d+\.[^.]+|medicalHistory\.[^.]+|pvAssessment\.meddraCoding)$/;
 export default function PvStructuredClinicalFields({recordId,onChange,initialReviewedFields={}}){

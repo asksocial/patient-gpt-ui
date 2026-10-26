@@ -736,3 +736,30 @@ body {
 ) {
   cursor: not-allowed;
 }
+
+/* Pending data activity stays visible above dialogs without blocking input. */
+.asksocial-activity-notice {
+  position: fixed;
+  z-index: 100;
+  top: calc(env(safe-area-inset-top, 0px) + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.7rem 1.15rem;
+  border: 1px solid var(--as-sage-line);
+  border-radius: 999px;
+  background: var(--as-sage-paper);
+  color: var(--as-sage-active);
+  box-shadow: 0 8px 28px rgba(7, 19, 16, 0.16);
+  font-size: 0.875rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* Search already places this same wheel above its workspace heading. */
+body:has([data-inline-activity]) .asksocial-activity-notice {
+  display: none;
+}

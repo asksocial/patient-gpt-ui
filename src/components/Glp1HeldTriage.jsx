@@ -1,4 +1,6 @@
 "use client";
+
+import { activityFetch as fetch } from "../lib/client/requestActivity";
 import { useEffect, useState } from "react";
 const ENDPOINT = "/api/pv/corpora/glp-1/triage";
 const STATUS = {

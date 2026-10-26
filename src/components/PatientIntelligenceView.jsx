@@ -1,5 +1,7 @@
 "use client";
 
+import { activityFetch as fetch } from "../lib/client/requestActivity";
+
 import { useEffect, useState } from "react";
 import EvidenceMentionCard from "./EvidenceMentionCard";
 

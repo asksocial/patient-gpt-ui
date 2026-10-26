@@ -1,5 +1,7 @@
 "use client";
 
+import { activityFetch as fetch } from "../lib/client/requestActivity";
+
 import { useCallback, useEffect, useState } from "react";
 import { caseFields } from "../lib/pv/icsr/case";
 import { fieldLabel } from "../lib/pv/icsr/email";

@@ -1,4 +1,8 @@
 "use client";
+
+import DownloadLink from "./ui/DownloadLink";
+
+import { activityFetch as fetch } from "../lib/client/requestActivity";
 import { useCallback, useEffect, useState } from "react";
 const control="mt-1 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white";
 const button="rounded-xl border border-cyan-300/30 px-4 py-2 text-sm text-cyan-100 disabled:opacity-40";
@@ -28,7 +32,7 @@ export default function PvReviewedEmailQueue({therapeuticArea,onOpenRecord}) {
  <label className="block text-sm text-white/70">Subject<input className={control} value={email.subject} onChange={e=>change("subject",e.target.value)} disabled={busy}/></label>
  <label className="block text-sm text-white/70">Email content<textarea className={control} rows={12} value={email.body} onChange={e=>change("body",e.target.value)} disabled={busy}/></label>
  <button type="button" className={button} onClick={compose} disabled={busy||!chosen.length}>Prepare current preview and PDF</button>
- {draft?<><div className="space-y-2 text-sm text-cyan-200"><a className="underline" download href={`/api/pv/icsr-emails?batchId=${encodeURIComponent(draft.id)}`}>Review / download {draft.attachment.fileName}</a><p className="break-all text-xs text-white/40">SHA-256 {draft.attachment.hash}</p><ul>{draft.attachment.ranges.map(r=><li key={r.recordId}>Case {r.recordId}: page {r.firstPage}{r.lastPage!==r.firstPage?` through ${r.lastPage} (continued)`:""}</li>)}</ul></div>
+ {draft?<><div className="space-y-2 text-sm text-cyan-200"><DownloadLink className="underline" download href={`/api/pv/icsr-emails?batchId=${encodeURIComponent(draft.id)}`}>Review / download {draft.attachment.fileName}</DownloadLink><p className="break-all text-xs text-white/40">SHA-256 {draft.attachment.hash}</p><ul>{draft.attachment.ranges.map(r=><li key={r.recordId}>Case {r.recordId}: page {r.firstPage}{r.lastPage!==r.firstPage?` through ${r.lastPage} (continued)`:""}</li>)}</ul></div>
  <button type="button" className={button} onClick={async()=>{try{await navigator.clipboard.writeText(`Subject: ${email.subject}\nTo: ${email.recipients}\n\n${email.body}`);setNotice("Email copied. Download and attach the case PDF when using your approved email client.");}catch{setError("Clipboard unavailable; select and copy the preview manually.");}}}>Copy email</button>
  {!draft.deliveryConfigured?<p className="text-sm text-amber-100">Direct email is not configured. Download the case PDF and send using your approved channel. No email has been sent by AskSocial.</p>:null}
  <label className="flex items-start gap-2 text-sm text-white/70"><input type="checkbox" checked={attested} onChange={e=>setAttested(e.target.checked)} disabled={busy}/><span>I reviewed the recipients, email content and the attached case PDF, and authorize sending this notification.</span></label>

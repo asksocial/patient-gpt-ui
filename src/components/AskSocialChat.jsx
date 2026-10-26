@@ -1,5 +1,7 @@
 "use client";
 
+import { activityFetch as fetch } from "../lib/client/requestActivity";
+
 import { useState } from "react";
 
 const STARTER_QUESTIONS = [
