@@ -929,6 +929,7 @@ export default function WorkspaceShell() {
   const [editingTitle, setEditingTitle] = useState("");
   const [sessionSearch, setSessionSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [openingSession, setOpeningSession] = useState(false);
   const [loadingAreas, setLoadingAreas] = useState(true);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [error, setError] = useState("");
@@ -1202,8 +1203,8 @@ export default function WorkspaceShell() {
   }, []);
 
   const canSubmit = useMemo(() => {
-    return !!question.trim() && !!therapeuticArea && !loading;
-  }, [question, therapeuticArea, loading]);
+    return !!question.trim() && !!therapeuticArea && !loading && !openingSession;
+  }, [question, therapeuticArea, loading, openingSession]);
 
   function pushRecentQuestion(q) {
     setRecentQuestions((prev) => {
@@ -1362,6 +1363,9 @@ export default function WorkspaceShell() {
   }
 
   async function openSession(sessionId) {
+    if (loading || openingSession) return;
+    setOpeningSession(true);
+    setActiveDestination("ask");
     try {
       setError("");
       const res = await fetch(`/api/chat/session?sessionId=${sessionId}`);
@@ -1426,6 +1430,8 @@ export default function WorkspaceShell() {
       setTherapeuticArea(data.session.therapeutic_area);
     } catch (err) {
       setError(err?.message || "Failed to open session");
+    } finally {
+      setOpeningSession(false);
     }
   }
 
@@ -1611,7 +1617,7 @@ export default function WorkspaceShell() {
 
   async function submitQuestion(rawQuestion) {
     const trimmed = rawQuestion.trim();
-    if (!trimmed || loading || !therapeuticArea) return;
+    if (!trimmed || loading || openingSession || !therapeuticArea) return;
 
     setError("");
     setLoading(true);
@@ -2028,6 +2034,7 @@ export default function WorkspaceShell() {
                           <button
                             type="button"
                             onClick={() => openSession(session.id)}
+                            disabled={loading || openingSession}
                             className="w-full text-left"
                           >
                             <div className="flex items-center gap-2">
@@ -2210,9 +2217,18 @@ export default function WorkspaceShell() {
               "ask" ? (
               <div className="space-y-4">
               <section className="asksocial-answer-canvas flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
-                {messages.length === 0 ? (
+                {messages.length === 0 || loading || openingSession ? (
                   <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
                     <div>
+                      {loading || openingSession ? (
+                        <div role="status" className="mb-5 flex justify-center text-cyan-200/80" data-testid="search-loading-indicator">
+                          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-10 w-10 animate-spin motion-reduce:animate-none">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" opacity="0.2" />
+                            <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                          </svg>
+                          <span className="sr-only">{openingSession ? "Loading saved intelligence…" : "Working on your question…"}</span>
+                        </div>
+                      ) : null}
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/60">
                         Intelligence workspace
                       </p>
