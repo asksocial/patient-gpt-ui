@@ -44,8 +44,8 @@ export default function Glp1HeldTriage({ busy, onMutate }) {
     const result = await onMutate(ENDPOINT, { payload: { action: "include", assessmentHash: assessment.assessmentHash, rowNumbers, sourceScopeConfirmed: scopeConfirmed, rationale, ...(verifiedTranslation ? { translation: { text: translation, languageCode, verifiedByQualifiedReviewer: qualified } } : {}) } }, "glp1-held-include", "Eligible held-source candidates included in PV Compliance. Existing records and decisions were preserved.");
     if (result) { setRevision(value => value + 1); setSelected(null); setScopeConfirmed(false); setRationale(""); }
   }
-  return <section aria-label="GLP-1 held-source triage" className="mt-5 rounded-xl border border-white/15 p-4">
-    <h4 className="text-sm font-semibold text-white">Held-source assessment & inclusion</h4>
+  return <details aria-label="GLP-1 held-source triage" className="mt-5 rounded-xl border border-white/15 p-4">
+    <summary className="cursor-pointer text-sm font-semibold text-white">Held-source assessment & inclusion</summary>
     <p className="mt-2 text-xs leading-5 text-white/55">Every held row is assessed for source completeness, product cues, and the FDA reaction vocabulary. Localized cues prioritize language review; they do not establish an event, validated translation, causality, or expectedness. No matched cue is not a negative safety determination.</p>
     {error ? <p role="alert" className="mt-3 text-sm text-rose-200">{error}</p> : null}
     {!assessment ? <p className="mt-3 text-xs text-white/50">Loading held-source assessment…</p> : <>
@@ -61,5 +61,5 @@ export default function Glp1HeldTriage({ busy, onMutate }) {
       </div> : null}
       <details className="mt-4 text-xs text-white/45"><summary className="cursor-pointer">Triage provenance and vocabulary sources</summary><p className="mt-2 break-all">Assessment {assessment.assessmentHash} · original source SHA-256 {assessment.sourceFileHash} · FDA snapshot {assessment.faersRetrievedAt}</p>{Object.entries(assessment.vocabularySources).map(([lang, url]) => <a key={lang} href={url} target="_blank" rel="noreferrer" className="mr-3 mt-2 inline-block text-cyan-200 underline">{lang} vocabulary reference</a>)}<p className="mt-2">Localized aliases are provisional retrieval cues. No validated multilingual recall is claimed. Inclusion uses approved English rules or the separately identified provisional source-episode triage path. Other languages require a qualified reviewer’s verified English translation. Source-episode candidates have no calibrated screening score and no inferred clinical determinations. Original text and prior review decisions remain preserved.</p></details>
     </>}
-  </section>;
+  </details>;
 }
