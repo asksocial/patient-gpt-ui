@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import EvidenceMentionCard from "./EvidenceMentionCard";
 import ModuleShell from "./ModuleShell";
 import Tooltip from "./ui/Tooltip";
+import { moduleExecutiveSummary } from "../lib/module-intelligence/summaryCopy";
 
 function SignalCard({ section }) {
   return (
@@ -359,7 +360,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
       />
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         <h2 className="text-xl font-semibold text-white">{result.headline}</h2>
-        <p className="mt-3 max-w-5xl text-sm leading-6 text-white/65">{result.executiveSummary}</p>
+        <p className="mt-3 max-w-5xl text-sm leading-6 text-white/65">{moduleExecutiveSummary(result.moduleId, result.therapeuticArea, result.executiveSummary)}</p>
         <ActionButton type="button" onClick={runAnalysis} disabled={loading} className="mt-5 rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-white/65 hover:bg-white/[0.06] disabled:opacity-40">
           {loading ? "Refreshing…" : `Regenerate ${module.name} Intelligence`}
         </ActionButton>

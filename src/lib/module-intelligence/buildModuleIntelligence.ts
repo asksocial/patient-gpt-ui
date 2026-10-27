@@ -1,4 +1,5 @@
 import { applyEvidenceClassQualityCap } from "../../answering/evidence/config/evidenceQualityConfig";
+import { moduleExecutiveSummary } from "./summaryCopy";
 import { sourceContext, matchesContextSignal, hasTrialContext, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
 import { classifyGlp1Audience, GLP1_AUDIENCE_VERSION } from "../../ingestion/glp1Audience";
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
@@ -716,7 +717,7 @@ export function buildModuleIntelligence(
     headline: leading?.findingCount
       ? `${leading.label} is the most prevalent ${profile.label} signal in the available ${therapeuticArea} evidence.`
       : `The available ${therapeuticArea} evidence does not yet support a clear ${profile.label} priority signal.`,
-    executiveSummary: `${profile.label} Intelligence evaluated ${selected.length} eligible findings from ${findings.length} corpus records for ${profile.purpose}. Results are evidence-qualified and should be interpreted with the stated coverage limitations.`,
+    executiveSummary: moduleExecutiveSummary(moduleId, therapeuticArea, `${profile.label} Intelligence evaluated ${selected.length} eligible findings from ${findings.length} corpus records for ${profile.purpose}. Results are evidence-qualified and should be interpreted with the stated coverage limitations.`),
     dataQuality: {
       contextRulesVersion: CONTEXT_RULES_VERSION,
       corpusFindingCount: findings.length,
