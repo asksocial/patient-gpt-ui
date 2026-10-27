@@ -244,7 +244,7 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/70">{module.name} Intelligence</p>
           <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea}</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/50">
+          <p className="mx-auto mt-3 text-sm leading-6 text-white/50">
             Generate evidence-qualified {module.description.charAt(0).toLowerCase() + module.description.slice(1)} The analysis applies this module’s audience, source, taxonomy, and decision lens.
           </p>
           <ActionButton
@@ -271,15 +271,15 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
         />
 
         <section className="min-h-[70vh] rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6" aria-label={`${module.name} evidence table`}>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            <div className="min-w-0 flex-1 basis-64">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/70">{module.name} Intelligence</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">{evidenceFilter ? `${evidenceFilter.label} mentions` : contextualOnly ? "Module-related evidence" : "All retained corpus evidence"}</h2>
-              <p className="mt-2 text-sm leading-6 text-white/45">
-                {evidenceFilter ? `Review the ${therapeuticArea} mentions behind this ${module.name} count.` : contextualOnly ? `Review every retained ${therapeuticArea} mention matching this module’s topics and source policy.` : `Browse the complete retained ${therapeuticArea} corpus, including records outside this module’s topics.`} Select a label or mention to open the complete record.
-              </p>
             </div>
             <BackButton onClick={() => navigation.back(() => setEvidenceBrowserOpen(false))} label={`Back to ${module.name}`} />
+            <p className="basis-full text-sm leading-6 text-white/45">
+              {evidenceFilter ? `Review the ${therapeuticArea} mentions behind this ${module.name} count.` : contextualOnly ? `Review every retained ${therapeuticArea} mention matching this module’s topics and source policy.` : `Browse the complete retained ${therapeuticArea} corpus, including records outside this module’s topics.`} Select a label or mention to open the complete record.
+            </p>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2" aria-label="Module evidence scope">
@@ -381,7 +381,7 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
       />
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         <h2 className="text-xl font-semibold text-white">{result.headline}</h2>
-        <p className="mt-3 max-w-5xl text-sm leading-6 text-white/65">{moduleExecutiveSummary(result.executiveSummary)}</p>
+        <p className="mt-3 text-sm leading-6 text-white/65">{moduleExecutiveSummary(result.executiveSummary)}</p>
         <ActionButton type="button" onClick={runAnalysis} disabled={loading} className="mt-5 rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-white/65 hover:bg-white/[0.06] disabled:opacity-40">
           {loading ? "Refreshing…" : `Regenerate ${module.name} Intelligence`}
         </ActionButton>

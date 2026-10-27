@@ -209,7 +209,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/70">Patient Intelligence</p>
         <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea}</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/50">{isGlp1 ? "Analyze patient-related mentions across personal accounts, support communities, reported stories and family references. Patient/caregiver voices remain separately identified." : "Analyze journey stages, treatment barriers, emotional burden, treatments, and unmet needs using the evidence-qualified patient and caregiver subset."}</p>
+        <p className="mx-auto mt-3 text-sm leading-6 text-white/50">{isGlp1 ? "Analyze patient-related mentions across personal accounts, support communities, reported stories and family references. Patient/caregiver voices remain separately identified." : "Analyze journey stages, treatment barriers, emotional burden, treatments, and unmet needs using the evidence-qualified patient and caregiver subset."}</p>
         <ActionButton onClick={() => runAnalysis()} disabled={loading || !therapeuticArea} className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
           {loading ? "Analyzing…" : "Generate Patient Intelligence"}
         </ActionButton>
@@ -223,13 +223,13 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
       <div className="space-y-5">
         <PatientEvidenceDialog evidence={selectedEvidence} onClose={closeMention} />
         <section className="min-h-[70vh] rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6" aria-label={`${evidenceDimension.label} patient evidence table`}>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            <div className="min-w-0 flex-1 basis-64">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/70">Patient Intelligence</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">{evidenceDimension.label} evidence</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">Every retained {result.dataQuality.evidenceScope === "patient_related" ? "patient-related" : "patient or caregiver"} mention supporting this dimension for {therapeuticArea}. Select a mention to review the complete evidence.</p>
             </div>
             <BackButton onClick={closeEvidenceBrowser} label="Back to Patient Intelligence" />
+            <p className="basis-full text-sm leading-6 text-white/45">Every retained {result.dataQuality.evidenceScope === "patient_related" ? "patient-related" : "patient or caregiver"} mention supporting this dimension for {therapeuticArea}. Select a mention to review the complete evidence.</p>
           </div>
 
           <ActionForm className="mt-6 flex flex-col gap-3 sm:flex-row" role="search" onSubmit={(event) => { event.preventDefault(); return loadEvidencePage(evidenceDimension.id, 1); }}>
@@ -287,7 +287,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
           <ActionButton type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_voice"} disabled={loading} onClick={() => runAnalysis("patient_voice")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">Patient/caregiver voice only</ActionButton>
         </div> : null}
         <h2 className={`${isGlp1 ? "mt-4 " : ""}text-xl font-semibold text-white`}>{result.headline}</h2>
-        <p className="mt-3 max-w-4xl text-sm leading-6 text-white/65">{moduleExecutiveSummary(result.executiveSummary)}</p>
+        <p className="mt-3 text-sm leading-6 text-white/65">{moduleExecutiveSummary(result.executiveSummary)}</p>
         <ActionButton type="button" onClick={() => openEvidenceBrowser("all", "All analyzed mentions")} className="mt-4 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-cyan-200">View all {result.dataQuality.analyzedFindingCount} analyzed mentions</ActionButton>
       </section>
       <div className="grid gap-4 xl:grid-cols-2">
