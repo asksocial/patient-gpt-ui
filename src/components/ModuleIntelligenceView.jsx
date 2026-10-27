@@ -351,17 +351,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
         onClose={() => setSelectedEvidence(null)}
       />
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-200/70">
-          <span className="rounded-full border border-cyan-300/20 px-2 py-1">{result.dataQuality.assessment} coverage</span>
-          {result.dataQuality.relevancePolicy === "prequalified" ? <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] px-2 py-1">Meltwater relevance pre-qualified</span> : null}
-          <span>{result.dataQuality.selectedFindingCount} selected findings</span>
-          <span>{result.dataQuality.contextualEvidenceFindingCount} context-matched findings</span>
-          <span>{result.dataQuality.corpusFindingCount} corpus findings</span>
-          {result.dataQuality.lowQualityFindingCount ? <span>{result.dataQuality.lowQualityFindingCount} lower-quality mentions retained</span> : null}
-          {result.dataQuality.unclassifiedFindingCount ? <span>{result.dataQuality.unclassifiedFindingCount} unclassified mentions retained</span> : null}
-          {result.dataQuality.promotionalContextCount ? <span>{result.dataQuality.promotionalContextCount} promotional context records</span> : null}
-        </div>
-        <h2 className="mt-4 text-xl font-semibold text-white">{result.headline}</h2>
+        <h2 className="text-xl font-semibold text-white">{result.headline}</h2>
         <p className="mt-3 max-w-5xl text-sm leading-6 text-white/65">{result.executiveSummary}</p>
         <ActionButton type="button" onClick={runAnalysis} disabled={loading} className="mt-5 rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-white/65 hover:bg-white/[0.06] disabled:opacity-40">
           {loading ? "Refreshing…" : `Regenerate ${module.name} Intelligence`}

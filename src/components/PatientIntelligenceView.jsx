@@ -265,26 +265,11 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
     <div className="space-y-4">
       <PatientEvidenceDialog evidence={selectedEvidence} onClose={() => setSelectedEvidence(null)} />
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-200/70">
-          <span className="rounded-full border border-cyan-300/20 px-2 py-1">{result.dataQuality.assessment} coverage</span>
-          {isGlp1 ? <>
-            <span>{result.dataQuality.sourcePatientRelatedCount ?? result.dataQuality.patientRelatedFindingCount} patient-related source mentions</span>
-            <span>{result.dataQuality.analyzedFindingCount} analyzed</span>
-            <span>{result.dataQuality.patientVoiceFindingCount} likely patient/caregiver voice records</span>
-            <span>{result.dataQuality.analyzedCoveragePercent}% of analytical corpus</span>
-          </> : <>
-            <span>{result.dataQuality.patientVoiceFindingCount} patient/caregiver records</span>
-            <span>{(Number(result.dataQuality.confirmedPatientFindingCount || 0) + Number(result.dataQuality.confirmedCaregiverFindingCount || 0)).toLocaleString()} direct</span>
-            <span>{(Number(result.dataQuality.likelyPatientFindingCount || 0) + Number(result.dataQuality.likelyCaregiverFindingCount || 0)).toLocaleString()} likely</span>
-            <span>{result.dataQuality.patientVoiceCoveragePercent}% of corpus</span>
-          </>}
-        </div>
-        {isGlp1 ? <div className="mt-4 flex flex-wrap gap-2" aria-label="Patient evidence scope">
+        {isGlp1 ? <div className="flex flex-wrap gap-2" aria-label="Patient evidence scope">
           <ActionButton type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_related"} disabled={loading} onClick={() => runAnalysis("patient_related")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">All patient-related mentions</ActionButton>
           <ActionButton type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_voice"} disabled={loading} onClick={() => runAnalysis("patient_voice")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">Patient/caregiver voice only</ActionButton>
         </div> : null}
-        {Boolean(result.dataQuality.excludedPatientRelatedCount) ? <p className="mt-3 text-xs text-white/45">{result.dataQuality.excludedPatientRelatedCount} patient-related source mentions are excluded by corpus filters.</p> : null}
-        <h2 className="mt-4 text-xl font-semibold text-white">{result.headline}</h2>
+        <h2 className={`${isGlp1 ? "mt-4 " : ""}text-xl font-semibold text-white`}>{result.headline}</h2>
         <p className="mt-3 max-w-4xl text-sm leading-6 text-white/65">{result.executiveSummary}</p>
         <ActionButton type="button" onClick={() => openEvidenceBrowser("all", "All analyzed mentions")} className="mt-4 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-cyan-200">View all {result.dataQuality.analyzedFindingCount} analyzed mentions</ActionButton>
       </section>
