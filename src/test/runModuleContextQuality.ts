@@ -40,6 +40,13 @@ const empty=buildPatientIntelligence('GLP-1',[]);
 assert.match(empty.headline,/No supported/);
 assert.equal(empty.recommendations.length,0);
 assert.equal(buildModuleIntelligence('commercial','GLP-1',[]).recommendations.length,0);
+const company=finding('company','Clinical study results show effective Mounjaro treatment.');
+company.audienceClassification={...company.audienceClassification!, audience:'company_or_commercial',eligiblePatientVoice:false};
+const companyContext=buildModuleIntelligence('commercial','GLP-1',[company]);
+assert.equal(companyContext.evidence[0].evidenceClass,'corporate_pr');
+assert.equal(companyContext.evidence[0].promotionalContext,true);
+assert.ok(companyContext.evidence[0].qualityScore<=40,'Company context must respect its evidence-class quality cap.');
+assert.equal(buildModuleIntelligence('medical_affairs','GLP-1',[company]).evidence.length,0,'Stale news labels must not bypass independent-source policy.');
 const routine=buildModuleIntelligence('clinical_trials','GLP-1',[finding('routine','I take a weekly injection and visit my doctor. Insurance access is difficult.')]);
 for(const id of ['recruitment','site_experience','eligibility','retention','awareness_trust']) assert.equal(routine.sections.find(s=>s.id===id)?.findingCount,0,`${id} needs actual research context.`);
 const patient=buildPatientIntelligence('GLP-1',[

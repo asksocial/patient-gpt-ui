@@ -429,7 +429,7 @@
         "id": "scientific_perception",
         "label": "Scientific perception",
         "description": "How mechanisms, evidence, and clinical claims are being interpreted.",
-        "findingCount": 626,
+        "findingCount": 621,
         "evidenceIds": [
           "1789781400000_uEZErCCrSoH5waUv8EKDYui76QU",
           "vPHXv_foCEQIyN4ZiEREd17YFbk",
@@ -445,7 +445,7 @@
         "id": "safety_discussion",
         "label": "Safety and tolerability",
         "description": "Safety-related discussion requiring medical or PV-aware interpretation.",
-        "findingCount": 342,
+        "findingCount": 340,
         "evidenceIds": [
           "yt-l-O-OgmZpjE",
           "1785942000000_7Bxc2_cSY-pZ3HRF0dUgdpmwIGY",
@@ -461,7 +461,7 @@
         "id": "medical_questions",
         "label": "Medical questions",
         "description": "Recurring treatment, selection, outcome, and education questions.",
-        "findingCount": 235,
+        "findingCount": 233,
         "evidenceIds": [
           "1789272840000_a06t5sWVAa_aGkuqaglyT9KK2ZE",
           "vPHXv_foCEQIyN4ZiEREd17YFbk",
@@ -654,7 +654,7 @@
         "id": "outcomes_endpoints",
         "label": "Treatment outcomes and study endpoints",
         "description": "Reported treatment results and study endpoints, with routine-care discussion retained as design context rather than trial efficacy evidence.",
-        "findingCount": 1085,
+        "findingCount": 1082,
         "evidenceIds": [
           "yt-t-tGmHLFyQ8",
           "vPHXv_foCEQIyN4ZiEREd17YFbk",
@@ -686,7 +686,7 @@
         "id": "safety_tolerability",
         "label": "Safety and tolerability",
         "description": "Adverse events, tolerability, complications, discontinuation, and safety monitoring.",
-        "findingCount": 280,
+        "findingCount": 279,
         "evidenceIds": [
           "yt-l-O-OgmZpjE",
           "1785942000000_7Bxc2_cSY-pZ3HRF0dUgdpmwIGY",
@@ -1489,26 +1489,6 @@
         ]
       },
       {
-        "id": "1789280920000_gH-12GY5v_1qcDQB0pE2ypnM9zsA",
-        "url": "https://x.com/nowclinic_avo/status/2099022430345859516",
-        "topics": [
-          "landscape",
-          "positioning",
-          "switching",
-          "white_space"
-        ]
-      },
-      {
-        "id": "1789775808000_7oOGWC2QKjOhe6fErmajlBV13LMA",
-        "url": "https://x.com/C0VJ1BcWIJZ5cXS/status/2101098143056322887",
-        "topics": [
-          "landscape",
-          "positioning",
-          "switching",
-          "white_space"
-        ]
-      },
-      {
         "id": "Qq9wFWdd3KQ9SCZjonfx5cZCzn0",
         "url": "https://cafe.naver.com/moneyinfou/33",
         "topics": [
@@ -1559,7 +1539,27 @@
         ]
       },
       {
+        "id": "1789280920000_gH-12GY5v_1qcDQB0pE2ypnM9zsA",
+        "url": "https://x.com/nowclinic_avo/status/2099022430345859516",
+        "topics": [
+          "landscape",
+          "positioning",
+          "switching",
+          "white_space"
+        ]
+      },
+      {
         "id": "MzsSLfI2JY7GjfNVpA2jUDdtodM",
+        "topics": [
+          "landscape",
+          "positioning",
+          "switching",
+          "white_space"
+        ]
+      },
+      {
+        "id": "1789775808000_7oOGWC2QKjOhe6fErmajlBV13LMA",
+        "url": "https://x.com/C0VJ1BcWIJZ5cXS/status/2101098143056322887",
         "topics": [
           "landscape",
           "positioning",
@@ -1628,7 +1628,7 @@
         "id": "community_priorities",
         "label": "Community priorities",
         "description": "Needs, burdens, and desired support expressed by affected communities.",
-        "findingCount": 590,
+        "findingCount": 588,
         "evidenceIds": [
           "1789272840000_a06t5sWVAa_aGkuqaglyT9KK2ZE",
           "giAd4ibha9d3c6Dcg0EcW2e9Xmc",
@@ -1644,7 +1644,7 @@
         "id": "access_equity",
         "label": "Access and equity",
         "description": "Access, affordability, inclusion, representation, and equity signals.",
-        "findingCount": 306,
+        "findingCount": 305,
         "evidenceIds": [
           "1789272840000_a06t5sWVAa_aGkuqaglyT9KK2ZE",
           "IDKlXpuPzA5CcN6ownvhdeQpK0Q",
@@ -1660,7 +1660,7 @@
         "id": "policy_awareness",
         "label": "Policy and awareness",
         "description": "Policy, public awareness, education, and institutional response.",
-        "findingCount": 173,
+        "findingCount": 172,
         "evidenceIds": [
           "VtxSoZQzq9b7n8u5N2rPVm3FZsQ",
           "yT491yL05WiNRWRooV32Cm__Sgk",

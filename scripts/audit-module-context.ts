@@ -4,7 +4,7 @@ import {loadCanonicalFindingsForModule} from '../src/lib/answers/loadCanonicalFi
 import {buildModuleIntelligence,MODULE_INTELLIGENCE_PROFILES} from '../src/lib/module-intelligence/buildModuleIntelligence';
 import {buildPatientIntelligence} from '../src/lib/patient-intelligence/buildPatientIntelligence';
 const report:any[]=[];
-for(const area of ['GLP-1','Medical Aesthetics','Botulinum toxin','Hepatitis B','Gene Therapy','Regenerative Aesthetics','Uterine Fibroids']) {
+for(const area of (process.env.AUDIT_AREAS?.split(',') || ['GLP-1','Medical Aesthetics','Botulinum toxin','Hepatitis B','Gene Therapy','Regenerative Aesthetics','Uterine Fibroids'])) {
  for(const moduleId of ['patient',...Object.keys(MODULE_INTELLIGENCE_PROFILES)]) {
   const corpus=loadCanonicalFindingsForModule(area,moduleId);if(corpus.status!=='available'){report.push({area,moduleId,status:corpus.status});continue;}
   const result=moduleId==='patient'?buildPatientIntelligence(area,corpus.findings):buildModuleIntelligence(moduleId as any,area,corpus.findings,undefined,{relevancePolicy:corpus.relevancePolicy});

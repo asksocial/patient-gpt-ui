@@ -27,6 +27,9 @@ evidence rather than invent results.
   remain directional. Medical/Clinical/Advocacy source exclusions remain enforced; Commercial and
   Competitive keep promotional context labeled. Dedicated pre-qualified Clinical
   Trials records remain retained, quality-ranked and fully reviewable.
+- Current GLP-1 commercial, clinic and influencer roles now also update their
+  evidence classes, promotional flags and class-specific quality caps, preventing
+  older news classifications from bypassing module source exclusions.
 - Trial-specific recruitment, eligibility, retention, site and trust signals now
   require research context. Routine medication, safety and outcome discussions
   remain clearly labeled design context and do not establish trial participation.
@@ -55,12 +58,12 @@ of records containing a particular signal.
 | Module | Input findings | Previous matched context | Audited matched context |
 | --- | ---: | ---: | ---: |
 | Patient | 4737 | 634 in patient scope | 634 in patient scope |
-| Medical Affairs | 4737 | 23 | 1127 |
-| Clinical Trials | 4737 | 43 | 1676 |
+| Medical Affairs | 4737 | 23 | 1120 |
+| Clinical Trials | 4737 | 43 | 1673 |
 | Corporate Affairs | 4737 | 480 | 1209 |
 | Commercial | 4737 | 2119 | 2001 |
 | Competitive | 4737 | 1425 | 1009 |
-| Advocacy | 4737 | 528 | 940 |
+| Advocacy | 4737 | 528 | 936 |
 
 Counts can rise through recovered context or fall when weak/unrelated matches
 are removed. They are audit diagnostics, not measured precision/recall against a
@@ -84,5 +87,5 @@ Run `tsx scripts/audit-module-context.ts` to re-audit every configured module an
 assert complete input accounting and representative section coverage. The JSON
 output defaults to `/private/tmp/module-context-latest.json`; `AUDIT_OUTPUT` can
 choose another audit output path. Original exports and PV screening/detection
-rules are unchanged. New or regenerated reports use `source_context_v1`; saved
+rules are unchanged. New or regenerated reports use `source_context_v2`; saved
 historical report payloads remain preserved.

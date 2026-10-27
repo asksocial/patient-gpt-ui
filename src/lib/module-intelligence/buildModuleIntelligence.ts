@@ -1,3 +1,4 @@
+import { applyEvidenceClassQualityCap } from "../../answering/evidence/config/evidenceQualityConfig";
 import { sourceContext, matchesContextSignal, hasTrialContext, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
 import { classifyGlp1Audience, GLP1_AUDIENCE_VERSION } from "../../ingestion/glp1Audience";
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
@@ -477,11 +478,17 @@ function applyModuleEvidenceClassification(
       const roleClasses: Partial<Record<EvidenceVoice, EvidenceClass>> = {
         patient: "patient_conversation", caregiver: "caregiver_conversation", provider: "provider_conversation",
         journalist: "consumer_news", corporate: "corporate_pr", clinic: "clinic_marketing",
-        advocacy: "advocacy_organization", community: "community_conversation",
+        advocacy: "advocacy_organization", community: "community_conversation", influencer: "influencer_content",
       };
+      const commercialRole = ["corporate", "clinic", "influencer"].includes(voice);
+      const evidenceClass = commercialRole || conversationClasses.has(intelligence.evidenceClass)
+        ? roleClasses[voice] || intelligence.evidenceClass : intelligence.evidenceClass;
+      const qualityScore = commercialRole ? applyEvidenceClassQualityCap(evidenceClass, intelligence.qualityScore) : intelligence.qualityScore;
+      const qualityBand: EvidenceIntelligence["qualityBand"] = qualityScore >= 90 ? "very_high" : qualityScore >= 75 ? "high" : qualityScore >= 55 ? "moderate" : qualityScore >= 35 ? "low" : "very_low";
       intelligence = {
-        ...intelligence, voice,
-        evidenceClass: conversationClasses.has(intelligence.evidenceClass) ? roleClasses[voice] || intelligence.evidenceClass : intelligence.evidenceClass,
+        ...intelligence, voice, evidenceClass, qualityScore, qualityBand,
+        isPromotional: commercialRole || intelligence.isPromotional,
+        isFirstParty: ["corporate", "clinic"].includes(voice) || intelligence.isFirstParty,
         reasons: [...intelligence.reasons, `Current GLP-1 audience classification: ${audience.audience} (${audience.version})`],
       };
     }

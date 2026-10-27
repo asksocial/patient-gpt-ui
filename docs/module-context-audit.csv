@@ -1,11 +1,11 @@
 therapeutic_area,module,status,input_findings,before_selected,before_topic_matched,after_selected,after_topic_matched,lower_quality_context,representative_examples
 GLP-1,patient,available,4737,634,,634,,,20
-GLP-1,medical_affairs,available,4737,213,23,1127,1127,794,16
-GLP-1,clinical_trials,available,4737,312,43,1676,1676,126,16
-GLP-1,corporate_affairs,available,4737,4490,480,1209,1209,96,16
-GLP-1,commercial,available,4737,4520,2119,2001,2001,103,16
-GLP-1,competitive,available,4737,2155,1425,1009,1009,49,16
-GLP-1,advocacy,available,4737,4459,528,940,940,15,16
+GLP-1,medical_affairs,available,4737,213,23,1120,1120,787,16
+GLP-1,clinical_trials,available,4737,312,43,1673,1673,126,16
+GLP-1,corporate_affairs,available,4737,4490,480,1209,1209,108,16
+GLP-1,commercial,available,4737,4520,2119,2001,2001,122,16
+GLP-1,competitive,available,4737,2155,1425,1009,1009,67,16
+GLP-1,advocacy,available,4737,4459,528,936,936,15,16
 Medical Aesthetics,patient,available,592,11,,11,,,11
 Medical Aesthetics,medical_affairs,available,592,85,51,238,238,182,16
 Medical Aesthetics,clinical_trials,available,592,87,66,219,219,16,16

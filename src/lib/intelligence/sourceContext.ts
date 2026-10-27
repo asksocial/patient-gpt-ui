@@ -1,6 +1,6 @@
 import type { CanonicalFinding } from '../../answering/models/finding';
 
-export const CONTEXT_RULES_VERSION = 'source_context_v1';
+export const CONTEXT_RULES_VERSION = 'source_context_v2';
 
 /** Match original content, never platform names, URLs or derived taxonomy labels. */
 export function cleanSourceText(value: unknown): string {

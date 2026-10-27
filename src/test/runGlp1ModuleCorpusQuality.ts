@@ -32,6 +32,9 @@ for (const moduleId of moduleIds) {
   assert.equal(result.dataQuality.patientRelatedFindingCount, 634, `${moduleId} must retain the current patient-related content in its input corpus.`);
   assert.equal(result.dataQuality.audienceClassificationVersion, GLP1_AUDIENCE_VERSION);
   assert((result.audienceSignals.find(group => group.label === "provider")?.count || 0) <= 32, "Quoted doctors and parent-channel titles must not inflate the current HCP audience.");
+  if (!MODULE_INTELLIGENCE_PROFILES[moduleId].allowPromotionalContext) {
+    assert(result.audienceSignals.every(group => !["corporate", "clinic", "influencer"].includes(group.label)), "Current commercial source roles must not retain an older independent-news classification.");
+  }
   assert(result.evidence.length > 0 && result.evidence.every(item => ids.has(item.findingId)));
   const catalog = buildModuleEvidenceCatalog(moduleId, "GLP-1", moduleCorpus.findings, { contextualOnly: true });
   assert.equal(catalog.total, result.dataQuality.contextualEvidenceFindingCount, "Scoped evidence browsing and module statistics must reconcile.");
