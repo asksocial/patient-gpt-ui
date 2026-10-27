@@ -32,7 +32,40 @@ for (const [moduleId,text] of Object.entries(fixtures)) {
   const catalog=buildModuleEvidenceCatalog(moduleId as GeneratableModuleId,'GLP-1',records,{contextualOnly:true});
   assert.equal(catalog.total,result.dataQuality.contextualEvidenceFindingCount,'Report and scoped evidence table must use the same policy.');
   assert.equal(buildModuleEvidenceCatalog(moduleId as GeneratableModuleId,'GLP-1',records).total,records.length,'The full retained corpus remains reviewable.');
+  // Every drilldown must recover the full population behind its displayed count.
+  for (const relevancePolicy of ['standard', 'prequalified'] as const) {
+    const options = { relevancePolicy };
+    const report = buildModuleIntelligence(moduleId as GeneratableModuleId, 'GLP-1', records, undefined, options);
+    const drilldown = (filter: { sectionId?: string; audience?: string; evidenceClass?: string }) =>
+      buildModuleEvidenceCatalog(moduleId as GeneratableModuleId, 'GLP-1', records, { analysisOnly: true, ...filter }, options);
+    for (const section of report.sections) {
+      const mentions = drilldown({ sectionId: section.id });
+      assert.equal(mentions.total, section.findingCount, `${moduleId}/${relevancePolicy}/${section.id} findings count`);
+      assert.ok(mentions.items.every(item => item.matchedSectionIds.includes(section.id)));
+    }
+    for (const audience of report.audienceSignals) {
+      const mentions = drilldown({ audience: audience.label });
+      assert.equal(mentions.total, audience.count, `${moduleId}/${relevancePolicy}/${audience.label} audience count`);
+      assert.ok(mentions.items.every(item => item.voice === audience.label));
+    }
+    for (const evidenceClass of report.sourceSignals) {
+      const mentions = drilldown({ evidenceClass: evidenceClass.label });
+      assert.equal(mentions.total, evidenceClass.count, `${moduleId}/${relevancePolicy}/${evidenceClass.label} evidence class count`);
+      assert.ok(mentions.items.every(item => item.evidenceClass === evidenceClass.label));
+    }
+    assert.equal(drilldown({ sectionId: 'nonexistent' }).total, 0);
+    assert.equal(drilldown({ audience: 'nonexistent' }).total, 0);
+  }
 }
+const paginatedRecords = Array.from({ length: 31 }, (_, i) => finding(`drilldown-${i}`, `I have a question about Mounjaro side effects, vomiting and constipation. Record ${i}.`));
+const paginatedReport = buildModuleIntelligence('medical_affairs', 'GLP-1', paginatedRecords);
+const section = paginatedReport.sections.find(item => item.findingCount === 31)!;
+assert.ok(section, 'Pagination fixture must match a report section.');
+const paginatedMentions = [1, 2].map(page => buildModuleEvidenceCatalog('medical_affairs', 'GLP-1', paginatedRecords, { analysisOnly: true, sectionId: section.id, pageSize: 25, page }));
+assert.equal(paginatedMentions[0].total, section.findingCount);
+assert.equal(paginatedMentions[0].pageCount, 2);
+assert.equal(new Set(paginatedMentions.flatMap(page => page.items.map(item => item.findingId))).size, 31, 'Drilldowns include every matching mention beyond representative examples and the first page.');
+assert.equal(buildModuleEvidenceCatalog('medical_affairs', 'GLP-1', paginatedRecords, { analysisOnly: true, sectionId: section.id, query: 'no matching phrase' }).total, 0, 'Keyword searches remain constrained by the drilldown.');
 const preferred = Array.from({length:8},(_,i)=>finding(`preferred-${i}`, 'I am taking Mounjaro and have a question about clinical research and side effects.'));
 const additional = finding('additional-relevant','마운자로 구토 부작용 질문이 있어요.');
 assert.ok(buildModuleIntelligence('medical_affairs','GLP-1',[...preferred, additional]).evidence.some(e=>e.findingId==='additional-relevant'),'Eight preferred findings must not suppress another relevant source.');

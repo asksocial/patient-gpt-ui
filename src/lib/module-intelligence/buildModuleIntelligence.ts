@@ -751,6 +751,9 @@ export function buildModuleEvidenceCatalog(
     page?: number;
     pageSize?: number;
     contextualOnly?: boolean;
+    analysisOnly?: boolean;
+    sectionId?: string;
+    audience?: string;
   } = {},
   options: ModuleIntelligenceBuildOptions = {}
 ): ModuleEvidenceCatalogResult {
@@ -772,6 +775,15 @@ export function buildModuleEvidenceCatalog(
 
   const filtered = contextualized
     .filter(({ finding, intelligence, matchedSections }) => {
+      // Drilldowns use the same population as the report's counts, including
+      // prequalified records without a taxonomy match.
+      if (params.analysisOnly && relevancePolicy !== "prequalified") {
+        if (!sourceContext(finding) || !matchedSections.length) return false;
+        if (!profile.allowPromotionalContext &&
+          (intelligence.isPromotional || PROMOTIONAL_CLASSES.has(intelligence.evidenceClass) || intelligence.evidenceClass === "corporate_pr")) return false;
+      }
+      if (params.sectionId && !matchedSections.some(section => section.id === params.sectionId)) return false;
+      if (params.audience && resolvedAudienceLabel(intelligence) !== params.audience) return false;
       if (params.contextualOnly) {
         if (!matchedSections.length) return false;
         if (relevancePolicy !== "prequalified" && !profile.allowPromotionalContext &&

@@ -2180,7 +2180,15 @@ export default function WorkspaceShell() {
             ) : null}
           </header>
 
-          <div data-asksocial-workarea-content data-search-page={activeDestination === "ask" ? "true" : undefined} className="order-3 flex-1 px-6 pt-3 pb-6">
+          <div data-asksocial-workarea-content data-search-page={activeDestination === "ask" ? "true" : undefined} className="relative order-3 flex-1 px-6 pt-3 pb-6">
+            {activeDestination === "ask" && (loading || openingSession) ? (
+              <div className="pointer-events-none absolute top-1.5 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2" data-inline-activity data-testid="search-loading-indicator">
+                <div role="status" aria-live="polite" className="inline-flex items-center gap-2.5 whitespace-nowrap rounded-full border border-[#dce5e1] bg-white px-6 py-3.5 text-base font-semibold text-[#087f72] shadow-md">
+                  <Spinner className="h-6 w-6" />
+                  <span>Working…</span>
+                </div>
+              </div>
+            ) : null}
             {activeDestination ===
             "intelligence_reports" ? (
               <ExecutiveIntelligenceView
@@ -2201,14 +2209,6 @@ export default function WorkspaceShell() {
                 {messages.length === 0 || loading || openingSession ? (
                   <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
                     <div>
-                      {loading || openingSession ? (
-                        <div className="mb-5 flex justify-center" data-inline-activity data-testid="search-loading-indicator">
-                          <div role="status" aria-live="polite" className="inline-flex items-center gap-2 rounded-full border border-[#dce5e1] bg-white px-5 py-3 text-sm font-semibold text-[#087f72] shadow-sm">
-                            <Spinner className="h-5 w-5" />
-                            <span>Working…</span>
-                          </div>
-                        </div>
-                      ) : null}
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/60">
                         Intelligence workspace
                       </p>

@@ -10,7 +10,7 @@ import ModuleShell from "./ModuleShell";
 import Tooltip from "./ui/Tooltip";
 import { moduleExecutiveSummary } from "../lib/module-intelligence/summaryCopy";
 
-function SignalCard({ section }) {
+function SignalCard({ section, onOpen }) {
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="flex items-start justify-between gap-4">
@@ -24,7 +24,9 @@ function SignalCard({ section }) {
       </div>
       <div className="mt-4 flex items-end justify-between gap-3">
         <span className="text-2xl font-semibold text-white">{section.prevalencePercent}%</span>
-        <span className="text-xs text-white/35">{section.findingCount} findings</span>
+        <ActionButton type="button" onClick={onOpen} aria-label={`View ${section.findingCount} findings for ${section.label}`} className="text-xs text-cyan-200 underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+          {section.findingCount} findings ↗
+        </ActionButton>
       </div>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/5">
         <div className="h-full rounded-full bg-cyan-300/70" style={{ width: `${Math.min(100, section.prevalencePercent)}%` }} />
@@ -33,16 +35,16 @@ function SignalCard({ section }) {
   );
 }
 
-function CountList({ title, items }) {
+function CountList({ title, items, onOpen }) {
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">{title}</h3>
       <div className="mt-4 space-y-2">
         {items.length ? items.map((item) => (
-          <div key={item.label} className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm">
+          <ActionButton key={item.label} type="button" onClick={() => onOpen(item)} aria-label={`View ${item.count} mentions for ${item.label.replaceAll("_", " ")}`} className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-left text-sm hover:border-cyan-300/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
             <span className="text-white/60">{item.label.replaceAll("_", " ")}</span>
             <span className="text-white/35">{item.count}</span>
-          </div>
+          </ActionButton>
         )) : <p className="text-sm text-white/35">No supported signals were identified.</p>}
       </div>
     </section>
@@ -131,6 +133,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
   const [evidenceBrowserOpen, setEvidenceBrowserOpen] = useState(false);
   const [evidenceCatalog, setEvidenceCatalog] = useState(null);
   const [evidenceQuery, setEvidenceQuery] = useState("");
+  const [evidenceFilter, setEvidenceFilter] = useState(null);
   const [contextualOnly, setContextualOnly] = useState(true);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceError, setEvidenceError] = useState("");
@@ -143,6 +146,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
     setEvidenceBrowserOpen(false);
     setEvidenceCatalog(null);
     setEvidenceQuery("");
+    setEvidenceFilter(null);
     setContextualOnly(true);
     setEvidenceError("");
     setError("");
@@ -180,7 +184,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
     }
   }
 
-  async function loadEvidencePage(page = 1, queryOverride, contextOverride = contextualOnly) {
+  async function loadEvidencePage(page = 1, queryOverride, contextOverride = contextualOnly, filterOverride = evidenceFilter) {
     const query = typeof queryOverride === "string" ? queryOverride : evidenceQuery;
     setEvidenceLoading(true);
     setEvidenceError("");
@@ -190,8 +194,12 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
         therapeuticArea,
         page: String(page),
         pageSize: "25",
-        contextualOnly: String(contextOverride),
+        contextualOnly: String(filterOverride ? false : contextOverride),
       });
+      if (filterOverride) {
+        search.set("analysisOnly", "true");
+        search.set(filterOverride.key, filterOverride.value);
+      }
       if (query.trim()) search.set("q", query.trim());
       const response = await fetch(`/api/module-intelligence/evidence?${search.toString()}`);
       const data = await response.json();
@@ -204,14 +212,18 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
     }
   }
 
-  function openEvidenceBrowser() {
+  function openEvidenceBrowser(filter = null) {
+    setEvidenceFilter(filter);
+    setEvidenceQuery("");
+    setEvidenceCatalog(null);
     setEvidenceBrowserOpen(true);
-    if (!evidenceCatalog) loadEvidencePage(1);
+    return loadEvidencePage(1, "", contextualOnly, filter);
   }
 
   function clearEvidenceFilters() {
     setEvidenceQuery("");
-    loadEvidencePage(1, "");
+    setEvidenceFilter(null);
+    return loadEvidencePage(1, "", contextualOnly, null);
   }
 
   if (!result) {
@@ -251,9 +263,9 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/70">{module.name} Intelligence</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">{contextualOnly ? "Module-related evidence" : "All retained corpus evidence"}</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">{evidenceFilter ? `${evidenceFilter.label} mentions` : contextualOnly ? "Module-related evidence" : "All retained corpus evidence"}</h2>
               <p className="mt-2 text-sm leading-6 text-white/45">
-                {contextualOnly ? `Review every retained ${therapeuticArea} mention matching this module’s topics and source policy.` : `Browse the complete retained ${therapeuticArea} corpus, including records outside this module’s topics.`} Select a label or mention to open the complete record.
+                {evidenceFilter ? `Review the ${therapeuticArea} mentions behind this ${module.name} count.` : contextualOnly ? `Review every retained ${therapeuticArea} mention matching this module’s topics and source policy.` : `Browse the complete retained ${therapeuticArea} corpus, including records outside this module’s topics.`} Select a label or mention to open the complete record.
               </p>
             </div>
             <ActionButton type="button" onClick={() => setEvidenceBrowserOpen(false)} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06]">
@@ -262,8 +274,8 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2" aria-label="Module evidence scope">
-            <ActionButton type="button" disabled={evidenceLoading} aria-pressed={contextualOnly} onClick={() => { setContextualOnly(true); return loadEvidencePage(1, undefined, true); }} className="rounded-xl border border-white/15 px-3 py-2 text-sm aria-pressed:bg-cyan-300/15">Module-related mentions</ActionButton>
-            <ActionButton type="button" disabled={evidenceLoading} aria-pressed={!contextualOnly} onClick={() => { setContextualOnly(false); return loadEvidencePage(1, undefined, false); }} className="rounded-xl border border-white/15 px-3 py-2 text-sm aria-pressed:bg-cyan-300/15">All retained corpus</ActionButton>
+            <ActionButton type="button" disabled={evidenceLoading} aria-pressed={!evidenceFilter && contextualOnly} onClick={() => { setContextualOnly(true); setEvidenceFilter(null); return loadEvidencePage(1, undefined, true, null); }} className="rounded-xl border border-white/15 px-3 py-2 text-sm aria-pressed:bg-cyan-300/15">Module-related mentions</ActionButton>
+            <ActionButton type="button" disabled={evidenceLoading} aria-pressed={!evidenceFilter && !contextualOnly} onClick={() => { setContextualOnly(false); setEvidenceFilter(null); return loadEvidencePage(1, undefined, false, null); }} className="rounded-xl border border-white/15 px-3 py-2 text-sm aria-pressed:bg-cyan-300/15">All retained corpus</ActionButton>
           </div>
           <ActionForm
             className="mt-6 flex flex-col gap-3 sm:flex-row"
@@ -282,7 +294,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
             <ActionButton type="submit" disabled={evidenceLoading} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
               {evidenceLoading ? "Searching…" : "Search"}
             </ActionButton>
-            <ActionButton type="button" onClick={clearEvidenceFilters} disabled={evidenceLoading || !evidenceQuery} className="rounded-xl border border-white/10 px-5 py-3 text-sm text-white/55 disabled:opacity-30">
+            <ActionButton type="button" onClick={clearEvidenceFilters} disabled={evidenceLoading || (!evidenceQuery && !evidenceFilter)} className="rounded-xl border border-white/10 px-5 py-3 text-sm text-white/55 disabled:opacity-30">
               Clear
             </ActionButton>
           </ActionForm>
@@ -367,12 +379,12 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {result.sections.map((section) => <SignalCard key={section.id} section={section} />)}
+        {result.sections.map((section) => <SignalCard key={section.id} section={section} onOpen={() => openEvidenceBrowser({ key: "sectionId", value: section.id, label: section.label })} />)}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <CountList title="Audience coverage" items={result.audienceSignals} />
-        <CountList title="Evidence classes" items={result.sourceSignals} />
+        <CountList title="Audience coverage" items={result.audienceSignals} onOpen={(item) => openEvidenceBrowser({ key: "audience", value: item.label, label: item.label.replaceAll("_", " ") })} />
+        <CountList title="Evidence classes" items={result.sourceSignals} onOpen={(item) => openEvidenceBrowser({ key: "evidenceClass", value: item.label, label: item.label.replaceAll("_", " ") })} />
       </div>
 
       <RecommendedActions actions={result.recommendations} />
@@ -383,7 +395,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
             <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">Representative module evidence</h3>
             <p className="mt-2 text-xs text-white/35">Ranked examples across the module taxonomy. Evidence quality is labeled and used for ordering.</p>
           </div>
-          <ActionButton type="button" onClick={openEvidenceBrowser} className="rounded-xl border border-cyan-300/30 bg-cyan-300/[0.08] px-4 py-2.5 text-xs font-semibold text-cyan-200 transition hover:border-cyan-200/55 hover:bg-cyan-300/[0.14]">
+          <ActionButton type="button" onClick={() => openEvidenceBrowser()} className="rounded-xl border border-cyan-300/30 bg-cyan-300/[0.08] px-4 py-2.5 text-xs font-semibold text-cyan-200 transition hover:border-cyan-200/55 hover:bg-cyan-300/[0.14]">
             View all evidence
           </ActionButton>
         </div>

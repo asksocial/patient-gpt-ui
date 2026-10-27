@@ -71,6 +71,8 @@ export default function ModuleShell({
     [module, agents, workflows]
   );
 
+  if (module.id === "medical_affairs") return null;
+
   return (
     <div className="space-y-5">
       {module.id !== "medical_affairs" ? <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.025] p-1.5">
