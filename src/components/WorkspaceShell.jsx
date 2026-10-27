@@ -2090,7 +2090,7 @@ export default function WorkspaceShell() {
         </aside>
 
         <main data-asksocial-workarea className="flex min-h-screen min-w-0 flex-col">
-          <header className="asksocial-topbar order-1 sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 py-5 backdrop-blur-xl">
+          <header className="asksocial-topbar order-1 sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 pt-5 pb-2.5 backdrop-blur-xl">
             <div className="mb-5 flex items-start gap-3 border-b border-white/10 pb-4">
               <div className="min-w-0 flex-1">
                 <EcosystemNavigation
@@ -2180,7 +2180,7 @@ export default function WorkspaceShell() {
             ) : null}
           </header>
 
-          <div data-asksocial-workarea-content data-search-page={activeDestination === "ask" ? "true" : undefined} className="order-3 flex-1 px-6 py-6">
+          <div data-asksocial-workarea-content data-search-page={activeDestination === "ask" ? "true" : undefined} className="order-3 flex-1 px-6 pt-3 pb-6">
             {activeDestination ===
             "intelligence_reports" ? (
               <ExecutiveIntelligenceView
@@ -2338,7 +2338,7 @@ export default function WorkspaceShell() {
           {activeDestination === "ask" ? (
           <div
             data-testid="primary-search-composer"
-            className="order-2 px-6 pt-6"
+            className="order-2 px-6 pt-3"
           >
             <ActionForm onSubmit={handleSubmit}>
               <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
