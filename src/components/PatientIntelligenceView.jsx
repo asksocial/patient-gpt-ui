@@ -208,7 +208,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/70">Patient Intelligence</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">{evidenceDimension.label} evidence</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">Every retained patient or caregiver mention supporting this dimension for {therapeuticArea}. Select a mention to review the complete evidence.</p>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">Every retained {result.dataQuality.evidenceScope === "patient_related" ? "patient-related" : "patient or caregiver"} mention supporting this dimension for {therapeuticArea}. Select a mention to review the complete evidence.</p>
             </div>
             <button type="button" onClick={closeEvidenceBrowser} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06]">← Back to Patient Intelligence</button>
           </div>
