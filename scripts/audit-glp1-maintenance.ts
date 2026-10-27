@@ -1,0 +1,11 @@
+import {writeFileSync} from 'node:fs';
+import {loadCanonicalFindingsForAsk} from '../src/lib/answers/loadCanonicalFindingsForAsk';
+import {selectSearchCorpusForQuestion} from '../src/lib/answers/loadSearchCorpusIntelligence';
+import {searchRecordText,SEARCH_SUBJECTS} from '../src/answering/search/searchSubjects';
+const corpus=loadCanonicalFindingsForAsk('GLP-1');if(corpus.status!=='available')throw Error('no corpus');
+const all=selectSearchCorpusForQuestion('GLP-1',corpus.findings,'What are patients saying?');
+const selected=selectSearchCorpusForQuestion('GLP-1',corpus.findings,'What are patients saying about maintenance?');
+const key=(f:any)=>f.findingId||f.id||f.rawMetadata?.fields?.URL;
+const rows=selected.findings.map(f=>{const fields=f.rawMetadata?.fields||{};const text=searchRecordText(f);return {id:key(f),url:String(fields.URL||''),language:String(fields.Language||'Unknown'),topics:SEARCH_SUBJECTS.find(s=>s.id==='maintenance')!.topics.filter(t=>t.pattern.test(text)).map(t=>t.label)};});
+writeFileSync('docs/glp1-maintenance-search-audit.csv', ['source_id,url,language,matched_topics',...rows.map(r=>[r.id,r.url,r.language,r.topics.join('; ')].map(v=>'"'+String(v).replaceAll('"','""')+'"').join(','))].join('\n')+'\n');
+console.log(JSON.stringify({source:all.summary.denominator,patientAnalytical:all.findings.length,querySource:selected.summary.denominator,queryAnalytical:selected.findings.length,topics:selected.summary.questionEvidence?.topics},null,2));

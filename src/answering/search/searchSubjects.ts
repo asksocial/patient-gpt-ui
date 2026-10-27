@@ -28,12 +28,14 @@ export const SEARCH_SUBJECTS: SearchSubject[] = [
       topic("nutrition", "nutrition and protein", /\b(protein|nutrition|dietary|eating)\b|タンパク|たんぱく|食事|단백질|식사|prote[ií]na/i),
       topic("daily_life", "exercise and everyday routines", /\b(exercise|daily life|quality of life|social eating|clothing)\b|運動|운동|exerc[ií]cio/i),
     ], researchUse: "Patient language can suggest concepts for qualitative interviews and patient-reported outcome development. It does not constitute a validated outcome measure." },
-  { id: "maintenance", label: "continuation, stopping and maintenance", trigger: /\b(maintenance|persist\w*|discontinu\w*|stop(?:ping|ped)?|restart\w*|regain\w*|continuation|adherence)\b/i,
+  { id: "maintenance", label: "continuation, stopping and maintenance", trigger: /\b(maintenance|plateaus?|taper\w*|wean\w*|persist\w*|discontinu\w*|stop(?:ping|ped)?|restart\w*|regain\w*|continuation|adherence)\b/i,
     topics: [
-      topic("stopping", "stopping and treatment breaks", /\b(discontinu\w*|stopp(?:ed|ing) (?:taking |using )?(?:my |the )?(?:treatment|medication|glp.?1|semaglutide|tirzepatide|ozempic|wegovy|mounjaro|zepbound)|stop taking (?:my |the )?(?:treatment|medication|glp.?1|semaglutide|tirzepatide|ozempic|wegovy|mounjaro|zepbound)|treatment break|come off)\b|中止|断薬|やめた|단약|중단|interromp\w*|parar de/i),
-      topic("restart", "restarting treatment", /restart\w*|再開|다시 시작|재시작|reinici\w*/i),
+      topic("stopping", "stopping and treatment breaks", /\b(discontinu\w*|stopp(?:ed|ing) (?:taking |using )?(?:my |the )?(?:treatment|medication|glp.?1|semaglutide|tirzepatide|ozempic|wegovy|mounjaro|zepbound)|stop taking (?:my |the )?(?:treatment|medication|glp.?1|semaglutide|tirzepatide|ozempic|wegovy|mounjaro|zepbound)|treatment break|come off)\b|中止|断薬|(?:マンジャロ|ウゴービ|リベルサス).{0,15}(?:やめる|やめた|止める|止めた)|やめた|단약|중단|(?:약(?:을|은|도)?|마운자로(?:를|는|도)?|위고비(?:를|는|도)?)\s*(?:못\s*|안\s*)?끊|끊자마자|interromp\w*|parar de/i),
+      topic("restart", "restarting treatment", /restart\w*|再開|(?:단약|중단|끊|요요).{0,60}다시.{0,8}(?:시작|맞|투여)|재시작|reinici\w*/i),
       topic("regain", "weight regain", /\b(weight regain|regain\w*)\b|リバウンド|요요|체중 재증가|recuper\w*.{0,15}peso/i),
-      topic("maintenance", "maintenance and continued use", /\b(maintenance|persist\w*|adherence|continuation|long.term use)\b|維持|유지|manuten[çc][ãa]o|mantenimiento/i),
+      topic("maintenance", "maintenance and continued use", /\b(maintenance|persist\w*|adherence|continuation|long.term use)\b|体(?:重|型).{0,12}維持|維持.{0,12}(?:用量|投与)|(?:체중|몸무게|감량|체지방|용량).{0,25}유지|\d+\s*(?:kg|키로|정도)?\s*유지|유지\s*(?:용량|목표)|유지(?:용|자|차원|량|가능|가|할|하|해|중|나|는|를| 몇개월)|manuten[çc][ãa]o|mantenimiento|\bmaintain(?:ing)? (?:my |the )?(?:weight|weight loss)|keep(?:ing)? (?:the |my )?weight off|long.term (?:treatment|therapy|medication)/i),
+      topic("plateau", "weight plateaus during continued treatment", /\bplateaus?\b|정체(?:기|되)|체중.{0,12}정체|体重.{0,12}停滞|停滞期|(?:[2-9]|\d{2,})\s*주(?:째|동안).{0,15}그대로/i),
+      topic("tapering", "dose reduction and spacing", /\b(?:taper\w*|wean\w*).{0,30}(?:dose|off|treatment|medication|ozempic|wegovy|mounjaro|zepbound|glp.?1)|\b(?:dose|doses|shots?|injections?).{0,20}(?:taper\w*|spac\w*)|한\s*달에\s*한\s*번|(?:용량|mg).{0,25}(?:줄이|줄였|내렸)|減薬|投与間隔.{0,12}(?:延|広)/i),
     ], researchUse: "These accounts can generate hypotheses about continuation and maintenance. A cross-sectional discussion corpus cannot estimate persistence rates or individual treatment trajectories." },
   { id: "dosing", label: "dosing and administration", trigger: /\b(dos(?:e|es|ing)|microdos\w*|titration|exposure|splitting|stretching)\b/i,
     topics: [
@@ -70,7 +72,9 @@ export const SEARCH_SUBJECTS: SearchSubject[] = [
 export function searchRecordText(record: PersonaRecord & { title?: string; canonicalClaim?: string }): string {
   const fields = record.rawMetadata?.fields || {};
   const source = [fields.Title, fields["Opening Text"], fields["Hit Sentence"]].filter(Boolean).join(" ");
-  return (source || [record.title, record.summary, record.canonicalClaim].filter(Boolean).join(" ")).normalize("NFKC");
+  return (source || [record.title, record.summary, record.canonicalClaim].filter(Boolean).join(" "))
+    .normalize("NFKC")
+    .replace(/💙 제목에[\s\S]*?(?:---|부작용으로 트림이 너무 심해요|직접 찍은 사진\(권장\) 또는 체중 기록 사진 등을 넣어주세요!)/g, " ");
 }
 
 export function subjectsForQuestion(question: string): SearchSubject[] {

@@ -2,7 +2,7 @@ import type { CanonicalFinding } from "../models/finding";
 import { searchRecordText, subjectsForQuestion, topicsForQuestion } from "./searchSubjects";
 
 export type QuestionEvidence = {
-  version: 3;
+  version: 4;
   subjects: string[];
   topics: Array<{ id: string; label: string; count: number }>;
   examples: Array<{ id: string; excerpt: string; url?: string; topic: string; language?: string; sourceCategory?: string }>;
@@ -73,7 +73,7 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
   if (findings.length > 0 && findings.length < 20) limitations.push("The matching evidence is limited. Treat these observations as illustrative examples rather than estimates of prevalence.");
   if (/\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(question)) limitations.push("Themes present in this corpus do not establish emergence or growth without a comparable time baseline.");
   if (/\b(why|reasons?|drivers?|caus\w*)\b/i.test(question)) limitations.push("Topic mentions alone do not establish motivations or causal relationships. Reasons require explicit supporting accounts.");
-  return { version: 3, subjects: subjects.map(s => s.label), topics: matches.map(({ topic, records }) => ({ id: topic.id, label: topic.label, count: records.length })), examples, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
+  return { version: 4, subjects: subjects.map(s => s.label), topics: matches.map(({ topic, records }) => ({ id: topic.id, label: topic.label, count: records.length })), examples, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
 }
 
 export function questionEvidenceAnswer(evidence: QuestionEvidence): string {
