@@ -6,7 +6,8 @@ import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
 import EvidenceMentionCard from "./EvidenceMentionCard";
-import ModuleShell from "./ModuleShell";
+import BackButton from "./ui/BackButton";
+import useDrilldownNavigation from "../lib/client/useDrilldownNavigation";
 import Tooltip from "./ui/Tooltip";
 import { moduleExecutiveSummary } from "../lib/module-intelligence/summaryCopy";
 
@@ -42,7 +43,7 @@ function CountList({ title, items, onOpen }) {
       <div className="mt-4 space-y-2">
         {items.length ? items.map((item) => (
           <ActionButton key={item.label} type="button" onClick={() => onOpen(item)} aria-label={`View ${item.count} mentions for ${item.label.replaceAll("_", " ")}`} className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-left text-sm hover:border-cyan-300/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
-            <span className="text-white/60">{item.label.replaceAll("_", " ")}</span>
+            <span className="text-white/60 underline decoration-current underline-offset-4">{item.label.replaceAll("_", " ")}</span>
             <span className="text-white/35">{item.count}</span>
           </ActionButton>
         )) : <p className="text-sm text-white/35">No supported signals were identified.</p>}
@@ -103,9 +104,7 @@ function FullMentionDialog({ evidence, moduleName, onClose }) {
               {evidenceDisplayTitle(evidence, moduleName)}
             </h2>
           </div>
-          <ActionButton type="button" onClick={onClose} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.06]">
-            Close
-          </ActionButton>
+          <BackButton onClick={onClose} aria-label="Back to previous screen" />
         </div>
         <blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">
           {evidence.fullMention || evidence.quote}
@@ -127,7 +126,7 @@ function FullMentionDialog({ evidence, moduleName, onClose }) {
   );
 }
 
-export default function ModuleIntelligenceView({ module, agents, workflows, therapeuticArea, workspaceId }) {
+export default function ModuleIntelligenceView({ module, therapeuticArea, workspaceId }) {
   const [result, setResult] = useState(null);
   const [selectedEvidence, setSelectedEvidence] = useState(null);
   const [evidenceBrowserOpen, setEvidenceBrowserOpen] = useState(false);
@@ -139,6 +138,19 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
   const [evidenceError, setEvidenceError] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigation = useDrilldownNavigation(
+    selectedEvidence ? "mention" : evidenceBrowserOpen ? "evidence" : "overview",
+    `${module.id}:${therapeuticArea}`
+  );
+
+  function openMention(item) {
+    navigation.forward(() => setSelectedEvidence(item));
+  }
+
+  function closeMention() {
+    navigation.back(() => setSelectedEvidence(null));
+  }
+
 
   useEffect(() => {
     setResult(null);
@@ -155,11 +167,11 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
   useEffect(() => {
     if (!selectedEvidence) return undefined;
     function closeOnEscape(event) {
-      if (event.key === "Escape") setSelectedEvidence(null);
+      if (event.key === "Escape") closeMention();
     }
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [selectedEvidence]);
+  });
 
   async function runAnalysis() {
     setLoading(true);
@@ -216,7 +228,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
     setEvidenceFilter(filter);
     setEvidenceQuery("");
     setEvidenceCatalog(null);
-    setEvidenceBrowserOpen(true);
+    navigation.forward(() => setEvidenceBrowserOpen(true), true);
     return loadEvidencePage(1, "", contextualOnly, filter);
   }
 
@@ -245,7 +257,6 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
           </ActionButton>
           {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
         </section>
-        <ModuleShell module={module} agents={agents} workflows={workflows} />
       </div>
     );
   }
@@ -256,7 +267,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
         <FullMentionDialog
           evidence={selectedEvidence}
           moduleName={module.name}
-          onClose={() => setSelectedEvidence(null)}
+          onClose={closeMention}
         />
 
         <section className="min-h-[70vh] rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6" aria-label={`${module.name} evidence table`}>
@@ -268,9 +279,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
                 {evidenceFilter ? `Review the ${therapeuticArea} mentions behind this ${module.name} count.` : contextualOnly ? `Review every retained ${therapeuticArea} mention matching this module’s topics and source policy.` : `Browse the complete retained ${therapeuticArea} corpus, including records outside this module’s topics.`} Select a label or mention to open the complete record.
               </p>
             </div>
-            <ActionButton type="button" onClick={() => setEvidenceBrowserOpen(false)} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06]">
-              ← Back to {module.name}
-            </ActionButton>
+            <BackButton onClick={() => navigation.back(() => setEvidenceBrowserOpen(false))} label={`Back to ${module.name}`} />
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2" aria-label="Module evidence scope">
@@ -325,12 +334,12 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
                     {evidenceCatalog.items.map((item) => (
                       <tr key={item.id} className="align-top text-white/60 transition hover:bg-white/[0.025]">
                         <td className="px-4 py-4">
-                          <ActionButton type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left font-semibold leading-5 text-white/80 hover:text-cyan-200" title={evidenceDisplayTitle(item, module.name)}>
+                          <ActionButton type="button" onClick={() => openMention(item)} className="line-clamp-2 text-left font-semibold leading-5 text-white/80 hover:text-cyan-200" title={evidenceDisplayTitle(item, module.name)}>
                             {evidenceDisplayTitle(item, module.name)}
                           </ActionButton>
                         </td>
                         <td className="px-4 py-4">
-                          <ActionButton type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75" title={item.quote}>
+                          <ActionButton type="button" onClick={() => openMention(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75" title={item.quote}>
                             {item.quote}
                           </ActionButton>
                         </td>
@@ -368,7 +377,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
       <FullMentionDialog
         evidence={selectedEvidence}
         moduleName={module.name}
-        onClose={() => setSelectedEvidence(null)}
+        onClose={closeMention}
       />
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         <h2 className="text-xl font-semibold text-white">{result.headline}</h2>
@@ -415,7 +424,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
                 { label: "Evidence quality", value: `${Math.round(Number(item.qualityScore) || 0)} / 100` },
               ]}
               url={item.url}
-              onOpen={() => setSelectedEvidence(item)}
+              onOpen={() => openMention(item)}
             />
           ))}
         </div>

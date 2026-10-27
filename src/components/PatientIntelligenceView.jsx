@@ -8,6 +8,8 @@ import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
 import EvidenceMentionCard from "./EvidenceMentionCard";
+import BackButton from "./ui/BackButton";
+import useDrilldownNavigation from "../lib/client/useDrilldownNavigation";
 
 function SignalList({ title, signals = [], evidenceCount, onOpenEvidence }) {
   const content = (
@@ -70,7 +72,7 @@ function PatientEvidenceDialog({ evidence, onClose }) {
       <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{patientEvidenceTitle(evidence)}</h2></div>
-          <ActionButton type="button" onClick={onClose} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.06]">Close</ActionButton>
+          <BackButton onClick={onClose} aria-label="Back to previous screen" />
         </div>
         <blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{evidence.fullMention || evidence.quote}</blockquote>
         <div className="mt-5 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-5">
@@ -100,6 +102,19 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceError, setEvidenceError] = useState("");
   const [selectedEvidence, setSelectedEvidence] = useState(null);
+  const navigation = useDrilldownNavigation(
+    selectedEvidence ? "mention" : evidenceDimension ? "evidence" : "overview",
+    therapeuticArea
+  );
+
+  function openMention(item) {
+    navigation.forward(() => setSelectedEvidence(item));
+  }
+
+  function closeMention() {
+    navigation.back(() => setSelectedEvidence(null));
+  }
+
 
   useEffect(() => {
     setEvidenceScope(isGlp1 ? "patient_related" : "patient_voice");
@@ -114,11 +129,11 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
   useEffect(() => {
     if (!selectedEvidence) return undefined;
     function closeOnEscape(event) {
-      if (event.key === "Escape") setSelectedEvidence(null);
+      if (event.key === "Escape") closeMention();
     }
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [selectedEvidence]);
+  });
 
   async function runAnalysis(requestedScope = evidenceScope) {
     setEvidenceScope(requestedScope);
@@ -169,7 +184,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
 
   function openEvidenceBrowser(dimension, label) {
     const nextDimension = { id: dimension, label };
-    setEvidenceDimension(nextDimension);
+    navigation.forward(() => setEvidenceDimension(nextDimension), true);
     setEvidenceCatalog(null);
     setEvidenceQuery("");
     setEvidenceError("");
@@ -178,7 +193,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
   }
 
   function closeEvidenceBrowser() {
-    setEvidenceDimension(null);
+    navigation.back(() => setEvidenceDimension(null));
     setEvidenceCatalog(null);
     setEvidenceQuery("");
     setEvidenceError("");
@@ -206,7 +221,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
   if (evidenceDimension) {
     return (
       <div className="space-y-5">
-        <PatientEvidenceDialog evidence={selectedEvidence} onClose={() => setSelectedEvidence(null)} />
+        <PatientEvidenceDialog evidence={selectedEvidence} onClose={closeMention} />
         <section className="min-h-[70vh] rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6" aria-label={`${evidenceDimension.label} patient evidence table`}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -214,7 +229,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
               <h2 className="mt-2 text-2xl font-semibold text-white">{evidenceDimension.label} evidence</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">Every retained {result.dataQuality.evidenceScope === "patient_related" ? "patient-related" : "patient or caregiver"} mention supporting this dimension for {therapeuticArea}. Select a mention to review the complete evidence.</p>
             </div>
-            <ActionButton type="button" onClick={closeEvidenceBrowser} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06]">← Back to Patient Intelligence</ActionButton>
+            <BackButton onClick={closeEvidenceBrowser} label="Back to Patient Intelligence" />
           </div>
 
           <ActionForm className="mt-6 flex flex-col gap-3 sm:flex-row" role="search" onSubmit={(event) => { event.preventDefault(); return loadEvidencePage(evidenceDimension.id, 1); }}>
@@ -238,8 +253,8 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
                   <tbody className="divide-y divide-white/[0.07]">
                     {evidenceCatalog.items.map((item) => (
                       <tr key={item.id} className="align-top text-white/60 transition hover:bg-white/[0.025]">
-                        <td className="px-4 py-4"><ActionButton type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left font-semibold leading-5 text-white/80 hover:text-cyan-200">{patientEvidenceTitle(item)}</ActionButton></td>
-                        <td className="px-4 py-4"><ActionButton type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75">{item.quote}</ActionButton></td>
+                        <td className="px-4 py-4"><ActionButton type="button" onClick={() => openMention(item)} className="line-clamp-2 text-left font-semibold leading-5 text-white/80 hover:text-cyan-200">{patientEvidenceTitle(item)}</ActionButton></td>
+                        <td className="px-4 py-4"><ActionButton type="button" onClick={() => openMention(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75">{item.quote}</ActionButton></td>
                         <td className="px-4 py-4">{item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="font-medium text-cyan-300/85 underline decoration-cyan-300/30 underline-offset-4 hover:text-cyan-200">{item.sourceLabel} ↗</a> : <span className="text-white/35">{item.sourceLabel}</span>}</td>
                         <td className="px-4 py-4 capitalize">{readableLabel(item.audienceLabel || item.voice)}</td>
                         <td className="px-4 py-4 text-xs leading-5 text-cyan-200/75">{item.evidenceTierLabel || "Direct patient evidence"}{item.patientContentLabel ? <span className="mt-1 block text-white/50">{item.patientContentLabel}</span> : null}<span className="mt-1 block text-white/30">{Math.round((item.classificationConfidence || 0) * 100)}% confidence</span></td>
@@ -265,7 +280,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
 
   return (
     <div className="space-y-4">
-      <PatientEvidenceDialog evidence={selectedEvidence} onClose={() => setSelectedEvidence(null)} />
+      <PatientEvidenceDialog evidence={selectedEvidence} onClose={closeMention} />
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         {isGlp1 ? <div className="flex flex-wrap gap-2" aria-label="Patient evidence scope">
           <ActionButton type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_related"} disabled={loading} onClick={() => runAnalysis("patient_related")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">All patient-related mentions</ActionButton>
@@ -306,7 +321,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
                 { label: "Evidence quality", value: Math.round(item.qualityScore) },
               ]}
               url={item.url}
-              onOpen={() => setSelectedEvidence(item)}
+              onOpen={() => openMention(item)}
             />
           ))}
         </div>
