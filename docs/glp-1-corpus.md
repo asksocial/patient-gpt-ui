@@ -350,3 +350,27 @@ preserved. PV continues to apply its approved source/language eligibility rules.
 `npm run test:glp-1-modules` checks every module and its evidence browser against
 the current source IDs and classifier, then replaces an isolated fixture export
 to verify refresh across workflows without modifying the real corpus.
+
+## Patient-related module scope (October 27, 2026)
+
+Patient Intelligence now defaults to the broad GLP-1 patient-related content
+lens. The header reconciles 639 patient-related source mentions, 634 retained
+analytical mentions, and 277 likely patient/caregiver voice records. Five
+commercially influenced testimonials remain excluded by the corpus filters.
+The 277 figure is a narrower voice subset, not the size of the patient-related
+corpus. Support-community discussion, reported and reposted patient accounts,
+and family/peer references now contribute to the broad analysis and keep their
+source-role and content labels. They are not labeled as direct patient authors.
+
+A voice-only scope remains available. Reports and evidence browsing share the
+scope, including an all-mentions catalog exposing all 634 analyzed mentions
+without requiring an English signal-pattern match. Requests can choose
+`evidenceScope: patient_related` (the GLP-1 default) or `patient_voice`; the evidence
+GET endpoint accepts the same scope parameter. Other therapeutic areas retain
+their existing patient/caregiver evidence gate.
+
+The six specialist modules continue to receive all 4,737 analytical findings.
+Their audience selection and evidence labels now use the current GLP-1 role
+classification, preventing quoted patient/doctor language and parent-channel
+metadata from overriding the updated source role. Each module records the
+classifier version and the 634 patient-related findings in its input corpus.

@@ -2,6 +2,7 @@ import type { CanonicalFinding, EvidenceRef } from "../../answering/models/findi
 import {
   classifyPatientEvidence,
   patientEvidenceTierLabel,
+  patientContentTypeLabel,
   type PatientEvidenceTier,
 } from "./classifyPatientEvidence";
 
@@ -14,7 +15,20 @@ export type PatientSignal = {
   evidenceIds: string[];
 };
 
+export type PatientEvidenceScope = "patient_related" | "patient_voice";
+
+export type PatientIntelligenceBuildOptions = {
+  evidenceScope?: PatientEvidenceScope;
+  sourceComposition?: { sourceRecordCount: number; patientRelatedCount: number };
+};
+
+export function resolvePatientEvidenceScope(therapeuticArea: string, requested?: string): PatientEvidenceScope {
+  if (!/^glp[ _-]?1$/i.test(therapeuticArea)) return "patient_voice";
+  return requested === "patient_voice" ? "patient_voice" : "patient_related";
+}
+
 export type PatientEvidenceDimension =
+  | "all"
   | "journey"
   | "treatment_barriers"
   | "emotional_burden"
@@ -34,6 +48,7 @@ export type PatientEvidenceItem = {
   country?: string;
   voice: string;
   audienceLabel: string;
+  patientContentLabel?: string;
   evidenceTier: PatientEvidenceTier;
   evidenceTierLabel: string;
   classificationConfidence: number;
@@ -45,6 +60,7 @@ export type PatientEvidenceItem = {
 
 export type PatientEvidenceCatalogResult = {
   therapeuticArea: string;
+  evidenceScope: PatientEvidenceScope;
   dimension: PatientEvidenceDimension;
   dimensionLabel: string;
   query: string;
@@ -62,6 +78,13 @@ export type PatientIntelligenceResult = {
   headline: string;
   executiveSummary: string;
   dataQuality: {
+    evidenceScope: PatientEvidenceScope;
+    analyzedFindingCount: number;
+    analyzedCoveragePercent: number;
+    patientRelatedFindingCount: number;
+    sourceRecordCount?: number;
+    sourcePatientRelatedCount?: number;
+    excludedPatientRelatedCount?: number;
     corpusFindingCount: number;
     patientVoiceFindingCount: number;
     caregiverVoiceFindingCount: number;
@@ -99,6 +122,7 @@ export type PatientIntelligenceResult = {
     country?: string;
     voice: string;
     audienceLabel: string;
+    patientContentLabel?: string;
     evidenceTier: PatientEvidenceTier;
     evidenceTierLabel: string;
     classificationConfidence: number;
@@ -149,6 +173,7 @@ const PATIENT_EVIDENCE_DIMENSIONS: Record<
     patterns: readonly (readonly [string, string, RegExp])[];
   }
 > = {
+  all: { label: "All analyzed mentions", patterns: [] },
   journey: { label: "Patient journey", patterns: JOURNEY_PATTERNS },
   treatment_barriers: { label: "Treatment barriers", patterns: BARRIER_PATTERNS },
   emotional_burden: { label: "Emotional burden", patterns: EMOTION_PATTERNS },
@@ -274,15 +299,19 @@ function classifyPatientCorpus(findings: CanonicalFinding[]) {
     }));
 }
 
-function patientEvidenceSubset(findings: CanonicalFinding[]) {
-  return classifyPatientCorpus(findings)
-    .filter(({ classification }) => classification.eligible);
+function selectPatientEvidence(classified: ReturnType<typeof classifyPatientCorpus>, scope: PatientEvidenceScope) {
+  return classified
+    .filter(({ classification }) => classification.eligible || scope === "patient_related" && classification.patientRelated && classification.patientContentType !== "commercial_patient_testimonial")
+    .map(item => item.classification.eligible ? item : {
+      ...item, classification: { ...item.classification, tier: "patient_related_context" as PatientEvidenceTier },
+    });
 }
 
 function matchedPatientSignals(
   finding: CanonicalFinding,
   dimension: PatientEvidenceDimension
 ) {
+  if (dimension === "all") return [{ id: "all", label: "All analyzed mentions" }];
   const text = findingText(finding);
   return PATIENT_EVIDENCE_DIMENSIONS[dimension].patterns
     .filter(([, , pattern]) => pattern.test(text))
@@ -290,7 +319,7 @@ function matchedPatientSignals(
 }
 
 function allMatchedPatientSignals(finding: CanonicalFinding) {
-  const signals = (Object.keys(PATIENT_EVIDENCE_DIMENSIONS) as PatientEvidenceDimension[])
+  const signals = (Object.keys(PATIENT_EVIDENCE_DIMENSIONS) as PatientEvidenceDimension[]).filter(dimension => dimension !== "all")
     .flatMap((dimension) => matchedPatientSignals(finding, dimension));
   return [...new Map(signals.map((signal) => [signal.id, signal])).values()];
 }
@@ -317,6 +346,7 @@ function buildPatientEvidenceItem(
     country: source?.country,
     voice: intelligence.voice,
     audienceLabel: classification.resolvedAudience,
+    patientContentLabel: classification.patientContentType ? patientContentTypeLabel(classification.patientContentType) : undefined,
     evidenceTier: classification.tier,
     evidenceTierLabel: patientEvidenceTierLabel(classification.tier),
     classificationConfidence: classification.confidence,
@@ -335,13 +365,14 @@ export function buildPatientEvidenceCatalog(
   therapeuticArea: string,
   findings: CanonicalFinding[],
   dimension: PatientEvidenceDimension,
-  params: { query?: string; page?: number; pageSize?: number } = {}
+  params: { query?: string; page?: number; pageSize?: number; evidenceScope?: PatientEvidenceScope } = {}
 ): PatientEvidenceCatalogResult {
   const query = String(params.query || "").trim();
   const normalizedQuery = query.toLowerCase();
   const pageSize = Math.min(50, Math.max(10, Math.floor(Number(params.pageSize) || 20)));
   const seen = new Set<string>();
-  const matching = patientEvidenceSubset(findings)
+  const evidenceScope = resolvePatientEvidenceScope(therapeuticArea, params.evidenceScope);
+  const matching = selectPatientEvidence(classifyPatientCorpus(findings), evidenceScope)
     .filter(({ finding }) => matchedPatientSignals(finding, dimension).length > 0)
     .filter(({ finding }) => {
       if (normalizedQuery && ![
@@ -365,6 +396,7 @@ export function buildPatientEvidenceCatalog(
   const offset = (page - 1) * pageSize;
   return {
     therapeuticArea,
+    evidenceScope,
     dimension,
     dimensionLabel: PATIENT_EVIDENCE_DIMENSIONS[dimension].label,
     query,
@@ -381,12 +413,16 @@ export function buildPatientEvidenceCatalog(
 export function buildPatientIntelligence(
   therapeuticArea: string,
   findings: CanonicalFinding[],
-  generatedAt = new Date().toISOString()
+  generatedAt = new Date().toISOString(),
+  options: PatientIntelligenceBuildOptions = {}
 ): PatientIntelligenceResult {
   const classifiedCorpus = classifyPatientCorpus(findings);
-  const patient = classifiedCorpus.filter(({ classification }) => classification.eligible);
+  const evidenceScope = resolvePatientEvidenceScope(therapeuticArea, options.evidenceScope);
+  const voice = classifiedCorpus.filter(({ classification }) => classification.eligible);
+  const related = selectPatientEvidence(classifiedCorpus, "patient_related");
+  const patient = selectPatientEvidence(classifiedCorpus, evidenceScope);
   const patientFindings = patient.map(({ finding }) => finding);
-  const tierCount = (tier: PatientEvidenceTier) => patient.filter(({ classification }) => classification.tier === tier).length;
+  const tierCount = (tier: PatientEvidenceTier) => voice.filter(({ classification }) => classification.tier === tier).length;
   const confirmedPatientCount = tierCount("confirmed_patient");
   const confirmedCaregiverCount = tierCount("confirmed_caregiver");
   const likelyPatientCount = tierCount("likely_patient");
@@ -397,7 +433,8 @@ export function buildPatientIntelligence(
     counts[audience] = (counts[audience] || 0) + 1;
     return counts;
   }, {});
-  const coverage = findings.length ? (patientFindings.length / findings.length) * 100 : 0;
+  const coverage = findings.length ? (voice.length / findings.length) * 100 : 0;
+  const analyzedCoverage = findings.length ? (patientFindings.length / findings.length) * 100 : 0;
   const assessment = patientFindings.length >= 30 ? "adequate" : patientFindings.length >= 5 ? "limited" : "insufficient";
   const journeyStages = buildSignals(patientFindings, JOURNEY_PATTERNS);
   const treatmentBarriers = buildSignals(patientFindings, BARRIER_PATTERNS);
@@ -455,6 +492,7 @@ export function buildPatientIntelligence(
       country: source?.country,
       voice: intelligence.voice,
       audienceLabel: classification.resolvedAudience,
+      patientContentLabel: classification.patientContentType ? patientContentTypeLabel(classification.patientContentType) : undefined,
       evidenceTier: classification.tier,
       evidenceTierLabel: patientEvidenceTierLabel(classification.tier),
       classificationConfidence: classification.confidence,
@@ -470,11 +508,20 @@ export function buildPatientIntelligence(
     schemaVersion: "patient_intelligence_v1",
     therapeuticArea,
     generatedAt,
-    headline: `${topBarrier} is the leading patient-experience signal in the available ${therapeuticArea} evidence.`,
-    executiveSummary: `Patient Intelligence identified ${patientFindings.length} patient or caregiver voice records from ${findings.length} corpus findings. The strongest supported opportunity is ${topNeed.toLowerCase()}. Findings should be interpreted with the stated coverage limitations.`,
+    headline: `${topBarrier} is the leading ${evidenceScope === "patient_related" ? "patient-related discussion" : "patient-experience"} signal in the available ${therapeuticArea} evidence.`,
+    executiveSummary: `Patient Intelligence analyzed ${patientFindings.length} ${evidenceScope === "patient_related" ? "patient-related mentions, including community and third-party context," : "patient or caregiver voice records"} from ${findings.length} corpus findings. The strongest supported opportunity is ${topNeed.toLowerCase()}. Findings should be interpreted with the stated coverage limitations.`,
     dataQuality: {
+      evidenceScope,
+      analyzedFindingCount: patientFindings.length,
+      analyzedCoveragePercent: Math.round(analyzedCoverage * 10) / 10,
+      patientRelatedFindingCount: related.length,
+      ...(options.sourceComposition ? {
+        sourceRecordCount: options.sourceComposition.sourceRecordCount,
+        sourcePatientRelatedCount: options.sourceComposition.patientRelatedCount,
+        excludedPatientRelatedCount: Math.max(0, options.sourceComposition.patientRelatedCount - related.length),
+      } : {}),
       corpusFindingCount: findings.length,
-      patientVoiceFindingCount: patientFindings.length,
+      patientVoiceFindingCount: voice.length,
       caregiverVoiceFindingCount: caregiverCount,
       confirmedPatientFindingCount: confirmedPatientCount,
       confirmedCaregiverFindingCount: confirmedCaregiverCount,
@@ -484,6 +531,7 @@ export function buildPatientIntelligence(
       patientVoiceCoveragePercent: Math.round(coverage * 10) / 10,
       assessment,
       limitations: [
+        ...(evidenceScope === "patient_related" ? ["Patient-related mentions include support-community discussion, media/reposted accounts and family or peer references. These are not counts of patient authors."] : []),
         "Direct labels come from the evidence ontology; likely patient and caregiver labels are machine-derived from personal-experience signals and require human validation.",
         `The current ${therapeuticArea} corpus is not a statistically representative patient panel.`,
         caregiverCount ? "Caregiver findings are reported separately where present." : "No confidently classified caregiver evidence was available.",

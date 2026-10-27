@@ -85,6 +85,8 @@ function PatientEvidenceDialog({ evidence, onClose }) {
 }
 
 export default function PatientIntelligenceView({ therapeuticArea, workspaceId }) {
+  const isGlp1 = /^glp[ _-]?1$/i.test(therapeuticArea || "");
+  const [evidenceScope, setEvidenceScope] = useState(isGlp1 ? "patient_related" : "patient_voice");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -96,13 +98,14 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
   const [selectedEvidence, setSelectedEvidence] = useState(null);
 
   useEffect(() => {
+    setEvidenceScope(isGlp1 ? "patient_related" : "patient_voice");
     setResult(null);
     setEvidenceDimension(null);
     setEvidenceCatalog(null);
     setEvidenceQuery("");
     setEvidenceError("");
     setSelectedEvidence(null);
-  }, [therapeuticArea]);
+  }, [therapeuticArea, isGlp1]);
 
   useEffect(() => {
     if (!selectedEvidence) return undefined;
@@ -113,14 +116,18 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [selectedEvidence]);
 
-  async function runAnalysis() {
+  async function runAnalysis(requestedScope = evidenceScope) {
+    setEvidenceScope(requestedScope);
+    setEvidenceCatalog(null);
+    setEvidenceDimension(null);
+    setSelectedEvidence(null);
     setLoading(true);
     setError("");
     try {
       const response = await fetch("/api/patient-intelligence", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ therapeuticArea, workspaceId: workspaceId || undefined }),
+        body: JSON.stringify({ therapeuticArea, workspaceId: workspaceId || undefined, evidenceScope: requestedScope }),
       });
       const data = await response.json();
       if (!response.ok || !data.ok) throw new Error(data.error || "Analysis failed");
@@ -140,6 +147,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
       const search = new URLSearchParams({
         therapeuticArea,
         dimension,
+        evidenceScope: result?.dataQuality.evidenceScope || evidenceScope,
         page: String(page),
         pageSize: "20",
       });
@@ -182,8 +190,8 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/70">Patient Intelligence</p>
         <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea}</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/50">Analyze journey stages, treatment barriers, emotional burden, treatments, and unmet needs using the evidence-qualified patient and caregiver subset.</p>
-        <button onClick={runAnalysis} disabled={loading || !therapeuticArea} className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/50">{isGlp1 ? "Analyze patient-related mentions across personal accounts, support communities, reported stories and family references. Patient/caregiver voices remain separately identified." : "Analyze journey stages, treatment barriers, emotional burden, treatments, and unmet needs using the evidence-qualified patient and caregiver subset."}</p>
+        <button onClick={() => runAnalysis()} disabled={loading || !therapeuticArea} className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
           {loading ? "Analyzing…" : "Generate Patient Intelligence"}
         </button>
         {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
@@ -230,7 +238,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
                         <td className="px-4 py-4"><button type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75">{item.quote}</button></td>
                         <td className="px-4 py-4">{item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="font-medium text-cyan-300/85 underline decoration-cyan-300/30 underline-offset-4 hover:text-cyan-200">{item.sourceLabel} ↗</a> : <span className="text-white/35">{item.sourceLabel}</span>}</td>
                         <td className="px-4 py-4 capitalize">{readableLabel(item.audienceLabel || item.voice)}</td>
-                        <td className="px-4 py-4 text-xs leading-5 text-cyan-200/75">{item.evidenceTierLabel || "Direct patient evidence"}<span className="mt-1 block text-white/30">{Math.round((item.classificationConfidence || 0) * 100)}% confidence</span></td>
+                        <td className="px-4 py-4 text-xs leading-5 text-cyan-200/75">{item.evidenceTierLabel || "Direct patient evidence"}{item.patientContentLabel ? <span className="mt-1 block text-white/50">{item.patientContentLabel}</span> : null}<span className="mt-1 block text-white/30">{Math.round((item.classificationConfidence || 0) * 100)}% confidence</span></td>
                         <td className="px-4 py-4 text-xs leading-5">{item.matchedSignalLabels.join(", ")}</td>
                         <td className="px-4 py-4">{Math.round(item.qualityScore)}</td>
                       </tr>
@@ -257,13 +265,26 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-200/70">
           <span className="rounded-full border border-cyan-300/20 px-2 py-1">{result.dataQuality.assessment} coverage</span>
-          <span>{result.dataQuality.patientVoiceFindingCount} patient/caregiver records</span>
-          <span>{(Number(result.dataQuality.confirmedPatientFindingCount || 0) + Number(result.dataQuality.confirmedCaregiverFindingCount || 0)).toLocaleString()} direct</span>
-          <span>{(Number(result.dataQuality.likelyPatientFindingCount || 0) + Number(result.dataQuality.likelyCaregiverFindingCount || 0)).toLocaleString()} likely</span>
-          <span>{result.dataQuality.patientVoiceCoveragePercent}% of corpus</span>
+          {isGlp1 ? <>
+            <span>{result.dataQuality.sourcePatientRelatedCount ?? result.dataQuality.patientRelatedFindingCount} patient-related source mentions</span>
+            <span>{result.dataQuality.analyzedFindingCount} analyzed</span>
+            <span>{result.dataQuality.patientVoiceFindingCount} likely patient/caregiver voice records</span>
+            <span>{result.dataQuality.analyzedCoveragePercent}% of analytical corpus</span>
+          </> : <>
+            <span>{result.dataQuality.patientVoiceFindingCount} patient/caregiver records</span>
+            <span>{(Number(result.dataQuality.confirmedPatientFindingCount || 0) + Number(result.dataQuality.confirmedCaregiverFindingCount || 0)).toLocaleString()} direct</span>
+            <span>{(Number(result.dataQuality.likelyPatientFindingCount || 0) + Number(result.dataQuality.likelyCaregiverFindingCount || 0)).toLocaleString()} likely</span>
+            <span>{result.dataQuality.patientVoiceCoveragePercent}% of corpus</span>
+          </>}
         </div>
+        {isGlp1 ? <div className="mt-4 flex flex-wrap gap-2" aria-label="Patient evidence scope">
+          <button type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_related"} disabled={loading} onClick={() => runAnalysis("patient_related")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">All patient-related mentions</button>
+          <button type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_voice"} disabled={loading} onClick={() => runAnalysis("patient_voice")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">Patient/caregiver voice only</button>
+        </div> : null}
+        {Boolean(result.dataQuality.excludedPatientRelatedCount) ? <p className="mt-3 text-xs text-white/45">{result.dataQuality.excludedPatientRelatedCount} patient-related source mentions are excluded by corpus filters.</p> : null}
         <h2 className="mt-4 text-xl font-semibold text-white">{result.headline}</h2>
         <p className="mt-3 max-w-4xl text-sm leading-6 text-white/65">{result.executiveSummary}</p>
+        <button type="button" onClick={() => openEvidenceBrowser("all", "All analyzed mentions")} className="mt-4 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-cyan-200">View all {result.dataQuality.analyzedFindingCount} analyzed mentions</button>
       </section>
       <div className="grid gap-4 xl:grid-cols-2">
         <SignalList title="Patient journey" signals={result.journeyStages} evidenceCount={evidenceCount("journey")} onOpenEvidence={() => openEvidenceBrowser("journey", "Patient journey")} />
@@ -289,7 +310,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
             <EvidenceMentionCard
               key={item.id}
               eyebrow="Patient evidence"
-              badge={item.evidenceTierLabel || "Direct patient evidence"}
+              badge={item.patientContentLabel || item.evidenceTierLabel || "Direct patient evidence"}
               title={patientEvidenceTitle(item)}
               preview={item.fullMention || item.quote}
               tags={item.matchedSignalLabels || []}

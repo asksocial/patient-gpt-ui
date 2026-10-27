@@ -10,6 +10,7 @@ export type PatientEvidenceTier =
   | "confirmed_caregiver"
   | "likely_patient"
   | "likely_caregiver"
+  | "patient_related_context"
   | "not_patient_evidence";
 
 export type ResolvedPatientAudience =
@@ -29,6 +30,8 @@ export type ResolvedPatientAudience =
 
 export type PatientEvidenceClassification = {
   eligible: boolean;
+  patientRelated: boolean;
+  patientContentType?: string;
   tier: PatientEvidenceTier;
   resolvedAudience: ResolvedPatientAudience;
   confidence: number;
@@ -110,10 +113,11 @@ function hasNearbyTherapeuticContext(text: string, profileTerms: string[]) {
 
 function result(
   intelligence: EvidenceIntelligence,
-  params: Omit<PatientEvidenceClassification, "intelligence" | "rationale">
+  params: Omit<PatientEvidenceClassification, "intelligence" | "rationale" | "patientRelated"> & { patientRelated?: boolean }
 ): PatientEvidenceClassification {
   return {
     ...params,
+    patientRelated: params.patientRelated ?? params.eligible,
     confidence: Number(Math.max(0, Math.min(1, params.confidence)).toFixed(2)),
     rationale: params.signals.join("; "),
     intelligence,
@@ -138,6 +142,8 @@ export function classifyPatientEvidence(
       ...intelligence, voice: classification.audience === "caregiver" ? "caregiver" : "patient",
     } : intelligence, {
       eligible: classification.eligiblePatientVoice,
+      patientRelated: classification.patientContent,
+      patientContentType: classification.designation,
       tier: classification.eligiblePatientVoice
         ? classification.audience === "caregiver" ? "likely_caregiver" : "likely_patient"
         : "not_patient_evidence",
@@ -346,6 +352,20 @@ export function patientEvidenceTierLabel(tier: PatientEvidenceTier) {
     case "confirmed_caregiver": return "Direct caregiver evidence";
     case "likely_patient": return "Likely patient evidence";
     case "likely_caregiver": return "Likely caregiver evidence";
+    case "patient_related_context": return "Patient-related context";
     default: return "Not patient evidence";
   }
+}
+
+export function patientContentTypeLabel(designation?: string) {
+  const labels: Record<string, string> = {
+    likely_personal_experience: "Likely personal treatment experience",
+    prospective_patient: "Prospective-patient question",
+    likely_caregiver_experience: "Likely caregiver experience",
+    patient_community_discussion: "Patient support-community context",
+    reported_patient_story: "Media-reported patient story",
+    reshared_patient_account: "Reposted patient account",
+    commercial_patient_testimonial: "Commercially influenced testimonial",
+  };
+  return labels[designation || ""] || "Family, peer or third-party patient reference";
 }

@@ -29,19 +29,47 @@ for (const moduleId of moduleIds) {
   assert.deepEqual(moduleCorpus.findings.map(sourceId), corpus.findings.map(sourceId), `${moduleId} must use the same current source records as Search.`);
   const result = buildModuleIntelligence(moduleId, "GLP-1", moduleCorpus.findings);
   assert.equal(result.dataQuality.corpusFindingCount, 4737);
+  assert.equal(result.dataQuality.patientRelatedFindingCount, 634, `${moduleId} must retain the current patient-related content in its input corpus.`);
+  assert.equal(result.dataQuality.audienceClassificationVersion, GLP1_AUDIENCE_VERSION);
+  assert((result.audienceSignals.find(group => group.label === "provider")?.count || 0) <= 32, "Quoted doctors and parent-channel titles must not inflate the current HCP audience.");
   assert(result.evidence.length > 0 && result.evidence.every(item => ids.has(item.findingId)));
   const catalog = buildModuleEvidenceCatalog(moduleId, "GLP-1", moduleCorpus.findings);
   assert(catalog.total > 0 && catalog.items.every(item => ids.has(item.findingId)), `${moduleId} evidence browsing must use the same updated corpus.`);
+  for (const item of [...result.evidence, ...catalog.items]) {
+    const source = moduleCorpus.findings.find(finding => sourceId(finding) === item.findingId)!;
+    if (item.voice === "patient" || item.voice === "caregiver") assert(source.audienceClassification?.eligiblePatientVoice, "Patient-related references must not be promoted into personal patient voices in specialist modules.");
+    if (item.voice === "provider") assert.equal(source.audienceClassification?.audience, "provider_hcp");
+  }
   report.push({ module: result.moduleLabel, corpusFindings: result.dataQuality.corpusFindingCount, selectedFindings: result.dataQuality.selectedFindingCount, browsableEvidence: catalog.total });
 }
-const patient = buildPatientIntelligence("GLP-1", corpus.findings);
+const composition = loadGlp1PersonaIntelligence();
+const patient = buildPatientIntelligence("GLP-1", corpus.findings, undefined, {
+  sourceComposition: { sourceRecordCount: composition.denominator, patientRelatedCount: composition.patientRelated.count },
+});
 assert.equal(patient.dataQuality.corpusFindingCount, 4737);
 assert.equal(patient.dataQuality.patientVoiceFindingCount, 277);
+assert.equal(patient.dataQuality.evidenceScope, "patient_related");
+assert.equal(patient.dataQuality.analyzedFindingCount, 634);
+assert.equal(patient.dataQuality.patientRelatedFindingCount, 634);
+assert.equal(patient.dataQuality.sourcePatientRelatedCount, 639);
+assert.equal(patient.dataQuality.excludedPatientRelatedCount, 5);
+assert.equal(patient.dataQuality.sourceRecordCount, 5000);
+const voiceOnly = buildPatientIntelligence("GLP-1", corpus.findings, undefined, { evidenceScope: "patient_voice" });
+assert.equal(voiceOnly.dataQuality.analyzedFindingCount, 277);
+assert.equal(voiceOnly.dataQuality.patientRelatedFindingCount, 634);
+const relatedCatalog = buildPatientEvidenceCatalog("GLP-1", corpus.findings, "all", { pageSize: 50 });
+const contextPage = buildPatientEvidenceCatalog("GLP-1", corpus.findings, "all", { pageSize: 50, page: relatedCatalog.pageCount });
+assert.equal(relatedCatalog.total, 634, "Every retained patient-related mention must be browsable, even with no English signal match.");
+assert(contextPage.items.some(item => item.evidenceTier === "patient_related_context" && item.patientContentLabel));
+assert(contextPage.items.every(item => item.evidenceTier !== "confirmed_patient" && item.evidenceTier !== "confirmed_caregiver"));
+const voiceCatalog = buildPatientEvidenceCatalog("GLP-1", corpus.findings, "all", { evidenceScope: "patient_voice" });
+assert.equal(voiceCatalog.total, 277);
+assert(voiceCatalog.items.every(item => item.evidenceTier !== "patient_related_context"));
 for (const dimension of patient.evidenceDimensions) {
   const catalog = buildPatientEvidenceCatalog("GLP-1", corpus.findings, dimension.id);
   assert(catalog.items.every(item => ids.has(item.findingId)));
+  assert.equal(catalog.total, dimension.findingCount, "Reports and evidence browsing must use the same patient-related scope.");
 }
-const composition = loadGlp1PersonaIntelligence();
 assert.equal(composition.denominator, 5000);
 assert.equal(composition.analyticalCount, 4737);
 assert.equal(loadCurrentGlp1ExecutiveIntelligence("GLP-1")!.executiveIntelligence.dataQuality.datasetFindingCount, 4737);
@@ -85,4 +113,4 @@ try {
 }
 assert.equal(loadCanonicalFindingsForAsk("GLP-1").findings.length, 4737);
 assert.equal(loadGlp1PersonaIntelligence().denominator, 5000);
-console.log(JSON.stringify({ sourceRows: 5000, analyticalFindings: 4737, modules: report, patientVoiceFindings: 277, warmCacheRefresh: "passed" }, null, 2));
+console.log(JSON.stringify({ sourceRows: 5000, analyticalFindings: 4737, modules: report, patientRelatedSourceMentions: 639, patientRelatedAnalyzedMentions: 634, patientVoiceFindings: 277, warmCacheRefresh: "passed" }, null, 2));

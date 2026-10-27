@@ -1,3 +1,4 @@
+import { classifyGlp1Audience, GLP1_AUDIENCE_VERSION } from "../../ingestion/glp1Audience";
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
 import { analyzeEvidence } from "../../answering/evidence/analyzeEvidence";
 import type {
@@ -64,6 +65,8 @@ export type ModuleIntelligenceResult = {
   executiveSummary: string;
   dataQuality: {
     corpusFindingCount: number;
+    patientRelatedFindingCount?: number;
+    audienceClassificationVersion?: string;
     eligibleFindingCount: number;
     selectedFindingCount: number;
     contextualEvidenceFindingCount: number;
@@ -468,6 +471,33 @@ function applyModuleEvidenceClassification(
   finding: CanonicalFinding,
   intelligence: EvidenceIntelligence
 ): EvidenceIntelligence {
+  if (/^glp[ _-]?1$/i.test(finding.therapeuticArea)) {
+    const audience = finding.audienceClassification?.version === GLP1_AUDIENCE_VERSION
+      ? finding.audienceClassification
+      : finding.rawMetadata?.fields ? classifyGlp1Audience(finding.rawMetadata.fields) : null;
+    if (audience) {
+      // Preserve the updated source role instead of re-inferring a patient/HCP
+      // author from quoted speech or a parent post's title.
+      const roleVoices: Record<string, EvidenceVoice> = {
+        patient: "patient", caregiver: "caregiver", provider_hcp: "provider",
+        news_media: "journalist", media_or_research: "journalist", researcher: "researcher",
+        company_or_commercial: "corporate", clinic_telehealth: "clinic", advocacy: "advocacy",
+        wellness_creator: "influencer",
+      };
+      const voice = roleVoices[audience.audience] || "community";
+      const conversationClasses = new Set<EvidenceClass>(["patient_conversation", "caregiver_conversation", "provider_conversation", "community_conversation", "unknown"]);
+      const roleClasses: Partial<Record<EvidenceVoice, EvidenceClass>> = {
+        patient: "patient_conversation", caregiver: "caregiver_conversation", provider: "provider_conversation",
+        journalist: "consumer_news", corporate: "corporate_pr", clinic: "clinic_marketing",
+        advocacy: "advocacy_organization", community: "community_conversation",
+      };
+      intelligence = {
+        ...intelligence, voice,
+        evidenceClass: conversationClasses.has(intelligence.evidenceClass) ? roleClasses[voice] || intelligence.evidenceClass : intelligence.evidenceClass,
+        reasons: [...intelligence.reasons, `Current GLP-1 audience classification: ${audience.audience} (${audience.version})`],
+      };
+    }
+  }
   if (moduleId !== "clinical_trials" || intelligence.evidenceClass !== "unknown") return intelligence;
   const evidenceClass = clinicalTrialsEvidenceClass(finding, intelligence);
   if (evidenceClass === "unknown") return intelligence;
@@ -691,6 +721,7 @@ export function buildModuleIntelligence(
     executiveSummary: `${profile.label} Intelligence evaluated ${selected.length} eligible findings from ${findings.length} corpus records for ${profile.purpose}. Results are evidence-qualified and should be interpreted with the stated coverage limitations.`,
     dataQuality: {
       corpusFindingCount: findings.length,
+      ...(/^glp[ _-]?1$/i.test(therapeuticArea) ? { patientRelatedFindingCount: findings.filter(finding => finding.audienceClassification?.patientContent).length, audienceClassificationVersion: GLP1_AUDIENCE_VERSION } : {}),
       eligibleFindingCount: eligible.length,
       selectedFindingCount: selected.length,
       contextualEvidenceFindingCount: contextualEvidence.length,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { loadGlp1PersonaIntelligence } from "../../../lib/answers/loadGlp1PersonaIntelligence";
 import { loadCanonicalFindingsForAsk } from "../../../lib/answers/loadCanonicalFindingsForAsk";
 import { getCurrentEntitlements } from "../../../lib/entitlements/server";
 import { platformPrincipalFromEntitlements, saveIntelligenceWorkProduct } from "../../../lib/intelligence-platform";
@@ -6,6 +7,7 @@ import {
   buildPatientEvidenceCatalog,
   buildPatientIntelligence,
   isPatientEvidenceDimension,
+  resolvePatientEvidenceScope,
 } from "../../../lib/patient-intelligence/buildPatientIntelligence";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +34,7 @@ export async function GET(request: NextRequest) {
         query: request.nextUrl.searchParams.get("q") || "",
         page: Number(request.nextUrl.searchParams.get("page") || 1),
         pageSize: Number(request.nextUrl.searchParams.get("pageSize") || 20),
+        evidenceScope: resolvePatientEvidenceScope(therapeuticArea, request.nextUrl.searchParams.get("evidenceScope") || undefined),
       }
     );
     return NextResponse.json({ ok: true, evidence });
@@ -52,7 +55,11 @@ export async function POST(request: NextRequest) {
     if (!therapeuticArea) return NextResponse.json({ ok: false, error: "therapeuticArea is required" }, { status: 400 });
     const corpus = loadCanonicalFindingsForAsk(therapeuticArea);
     if (corpus.status !== "available") return NextResponse.json({ ok: false, error: corpus.reason }, { status: 422 });
-    const intelligence = buildPatientIntelligence(therapeuticArea, corpus.findings);
+    const composition = /^glp[ _-]?1$/i.test(therapeuticArea) ? loadGlp1PersonaIntelligence() : null;
+    const intelligence = buildPatientIntelligence(therapeuticArea, corpus.findings, new Date().toISOString(), {
+      evidenceScope: resolvePatientEvidenceScope(therapeuticArea, body?.evidenceScope),
+      ...(composition ? { sourceComposition: { sourceRecordCount: composition.denominator, patientRelatedCount: composition.patientRelated.count } } : {}),
+    });
 
     let workProductId: string | null = null;
     if (body?.workspaceId) {
@@ -64,7 +71,7 @@ export async function POST(request: NextRequest) {
         moduleId: "patient",
         status: "ready",
         payload: intelligence,
-        provenance: { corpus: corpus.sourceLabel, generatedAt: intelligence.generatedAt },
+        provenance: { corpus: corpus.sourceLabel, generatedAt: intelligence.generatedAt, evidenceScope: intelligence.dataQuality.evidenceScope },
       });
       workProductId = String(product.id);
     }
