@@ -275,7 +275,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
       </section>
       <div className="grid gap-4 xl:grid-cols-2">
         <SignalList title="Patient journey" signals={result.journeyStages} evidenceCount={evidenceCount("journey")} onOpenEvidence={() => openEvidenceBrowser("journey", "Patient journey")} />
-        <SignalList title="Treatment barriers" signals={result.treatmentBarriers} evidenceCount={evidenceCount("treatment_barriers")} onOpenEvidence={() => openEvidenceBrowser("treatment_barriers", "Treatment barriers")} />
+        <SignalList title="Treatment considerations" signals={result.treatmentBarriers} evidenceCount={evidenceCount("treatment_barriers")} onOpenEvidence={() => openEvidenceBrowser("treatment_barriers", "Treatment considerations")} />
         <SignalList title="Emotional burden" signals={result.emotionalBurden} evidenceCount={evidenceCount("emotional_burden")} onOpenEvidence={() => openEvidenceBrowser("emotional_burden", "Emotional burden")} />
         <SignalList title="Unmet needs" signals={result.unmetNeeds} evidenceCount={evidenceCount("unmet_needs")} onOpenEvidence={() => openEvidenceBrowser("unmet_needs", "Unmet needs")} />
         <SignalList title="Treatment signals" signals={result.treatmentSignals} />

@@ -33,7 +33,8 @@ for (const moduleId of moduleIds) {
   assert.equal(result.dataQuality.audienceClassificationVersion, GLP1_AUDIENCE_VERSION);
   assert((result.audienceSignals.find(group => group.label === "provider")?.count || 0) <= 32, "Quoted doctors and parent-channel titles must not inflate the current HCP audience.");
   assert(result.evidence.length > 0 && result.evidence.every(item => ids.has(item.findingId)));
-  const catalog = buildModuleEvidenceCatalog(moduleId, "GLP-1", moduleCorpus.findings);
+  const catalog = buildModuleEvidenceCatalog(moduleId, "GLP-1", moduleCorpus.findings, { contextualOnly: true });
+  assert.equal(catalog.total, result.dataQuality.contextualEvidenceFindingCount, "Scoped evidence browsing and module statistics must reconcile.");
   assert(catalog.total > 0 && catalog.items.every(item => ids.has(item.findingId)), `${moduleId} evidence browsing must use the same updated corpus.`);
   for (const item of [...result.evidence, ...catalog.items]) {
     const source = moduleCorpus.findings.find(finding => sourceId(finding) === item.findingId)!;

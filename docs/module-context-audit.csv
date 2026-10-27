@@ -1,0 +1,50 @@
+therapeutic_area,module,status,input_findings,before_selected,before_topic_matched,after_selected,after_topic_matched,lower_quality_context,representative_examples
+GLP-1,patient,available,4737,634,,634,,,20
+GLP-1,medical_affairs,available,4737,213,23,1127,1127,794,16
+GLP-1,clinical_trials,available,4737,312,43,1676,1676,126,16
+GLP-1,corporate_affairs,available,4737,4490,480,1209,1209,96,16
+GLP-1,commercial,available,4737,4520,2119,2001,2001,103,16
+GLP-1,competitive,available,4737,2155,1425,1009,1009,49,16
+GLP-1,advocacy,available,4737,4459,528,940,940,15,16
+Medical Aesthetics,patient,available,592,11,,11,,,11
+Medical Aesthetics,medical_affairs,available,592,85,51,238,238,182,16
+Medical Aesthetics,clinical_trials,available,592,87,66,219,219,16,16
+Medical Aesthetics,corporate_affairs,available,592,456,176,308,308,68,16
+Medical Aesthetics,commercial,available,592,456,340,418,418,99,16
+Medical Aesthetics,competitive,available,592,400,267,316,316,73,16
+Medical Aesthetics,advocacy,available,592,457,132,139,139,13,16
+Botulinum toxin,patient,available,3814,343,,343,,,20
+Botulinum toxin,medical_affairs,available,3814,2701,390,536,536,149,16
+Botulinum toxin,clinical_trials,available,4850,4850,4299,4850,4263,4019,16
+Botulinum toxin,corporate_affairs,available,3814,3238,540,772,772,197,16
+Botulinum toxin,commercial,available,3814,3238,1235,1343,1343,305,16
+Botulinum toxin,competitive,available,3814,2749,869,976,976,243,16
+Botulinum toxin,advocacy,available,3814,3257,592,604,604,69,16
+Hepatitis B,patient,available,1573,89,,89,,,20
+Hepatitis B,medical_affairs,available,1573,415,126,253,253,126,16
+Hepatitis B,clinical_trials,available,1573,485,180,178,178,5,16
+Hepatitis B,corporate_affairs,available,1573,1517,359,402,402,6,16
+Hepatitis B,commercial,available,1573,1516,511,403,403,13,16
+Hepatitis B,competitive,available,1573,470,115,228,228,8,16
+Hepatitis B,advocacy,available,1573,1539,346,323,323,4,16
+Gene Therapy,patient,available,16,1,,1,,,1
+Gene Therapy,medical_affairs,available,16,1,1,5,5,4,5
+Gene Therapy,clinical_trials,available,16,2,2,9,9,9,9
+Gene Therapy,corporate_affairs,available,16,5,5,8,8,4,8
+Gene Therapy,commercial,available,16,5,4,9,9,6,9
+Gene Therapy,competitive,available,16,5,5,8,8,5,8
+Gene Therapy,advocacy,available,16,5,3,7,7,6,7
+Regenerative Aesthetics,patient,available,602,17,,17,,,17
+Regenerative Aesthetics,medical_affairs,available,602,85,50,236,236,181,16
+Regenerative Aesthetics,clinical_trials,available,602,87,63,222,222,17,16
+Regenerative Aesthetics,corporate_affairs,available,602,467,152,303,303,63,16
+Regenerative Aesthetics,commercial,available,602,467,351,418,418,95,16
+Regenerative Aesthetics,competitive,available,602,403,257,314,314,68,16
+Regenerative Aesthetics,advocacy,available,602,470,135,142,142,14,16
+Uterine Fibroids,patient,unavailable,,,,,,,0
+Uterine Fibroids,medical_affairs,unavailable,,,,,,,0
+Uterine Fibroids,clinical_trials,unavailable,,,,,,,0
+Uterine Fibroids,corporate_affairs,unavailable,,,,,,,0
+Uterine Fibroids,commercial,unavailable,,,,,,,0
+Uterine Fibroids,competitive,unavailable,,,,,,,0
+Uterine Fibroids,advocacy,unavailable,,,,,,,0

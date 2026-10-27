@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       corpus.findings,
       {
         query: request.nextUrl.searchParams.get("q") || "",
+        contextualOnly: request.nextUrl.searchParams.get("contextualOnly") === "true",
         qualityBand: request.nextUrl.searchParams.get("qualityBand") || "",
         evidenceClass: request.nextUrl.searchParams.get("evidenceClass") || "",
         page: Number(request.nextUrl.searchParams.get("page") || 1),

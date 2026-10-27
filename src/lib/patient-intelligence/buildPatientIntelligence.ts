@@ -1,3 +1,5 @@
+import { sourceContext, matchesContextSignal, expressesInformationNeed, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
+import { SEARCH_SUBJECTS } from "../../answering/search/searchSubjects";
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
 import {
   classifyPatientEvidence,
@@ -78,6 +80,7 @@ export type PatientIntelligenceResult = {
   headline: string;
   executiveSummary: string;
   dataQuality: {
+    contextRulesVersion?: string;
     evidenceScope: PatientEvidenceScope;
     analyzedFindingCount: number;
     analyzedCoveragePercent: number;
@@ -138,12 +141,12 @@ const JOURNEY_PATTERNS = [
   ["provider_selection", "Provider selection", /provider|injector|doctor|dermatologist|clinic|consultation/i],
   ["treatment", "Treatment experience", /i got|i had|procedure|injected|treated|after my/i],
   ["recovery", "Recovery and follow-up", /recovery|downtime|swelling|bruising|follow.?up|healing/i],
-  ["maintenance", "Maintenance or switching", /maintenance|wears off|lasted|switch|dissolv|stopped|again/i],
+  ["maintenance", "Maintenance, continuation or switching", /maintenance|wears off|lasted|switch|dissolv|stopped taking/i],
 ] as const;
 
 const BARRIER_PATTERNS = [
-  ["trust_safety", "Trust and safety", /safe|risk|fake|counterfeit|complication|botched|migration|legal|approved/i],
-  ["expectations", "Outcome uncertainty", /natural|overdone|regret|result|work|effective|worth it|pillow face/i],
+  ["trust_safety", "Trust and safety discussion", /safe|risk|fake|counterfeit|complication|botched|migration|legal|approved/i],
+  ["expectations", "Treatment outcomes and expectations", /natural|overdone|regret|result|worked for me|works for me|didn.t work|doesn.t work|effective|worth it|pillow face/i],
   ["reversibility", "Duration and reversibility", /permanent|revers|dissolv|wears off|duration|lasted/i],
   ["cost_access", "Cost and access", /cost|price|expensive|afford|access|available/i],
   ["provider_choice", "Provider selection", /provider|injector|doctor|clinic|qualified|credential/i],
@@ -175,24 +178,12 @@ const PATIENT_EVIDENCE_DIMENSIONS: Record<
 > = {
   all: { label: "All analyzed mentions", patterns: [] },
   journey: { label: "Patient journey", patterns: JOURNEY_PATTERNS },
-  treatment_barriers: { label: "Treatment barriers", patterns: BARRIER_PATTERNS },
+  treatment_barriers: { label: "Treatment considerations", patterns: BARRIER_PATTERNS },
   emotional_burden: { label: "Emotional burden", patterns: EMOTION_PATTERNS },
   unmet_needs: { label: "Unmet needs", patterns: UNMET_NEED_PATTERNS },
 };
 
-function findingText(finding: CanonicalFinding) {
-  const raw = finding as any;
-  return [
-    finding.canonicalClaim,
-    finding.summary,
-    raw.title,
-    raw.description,
-    raw.text,
-    raw.excerpt,
-    ...(finding.evidence || []).map((item) => item.excerpt),
-    ...(finding.normalizedLabels || []),
-  ].filter(Boolean).join(" ");
-}
+function findingText(finding: CanonicalFinding) { return sourceContext(finding); }
 
 function findingId(finding: CanonicalFinding) {
   const raw = finding as any;
@@ -205,13 +196,21 @@ function confidence(count: number, denominator: number): PatientSignal["confiden
   return count >= 5 && ratio >= 0.2 ? "high" : count >= 2 ? "moderate" : "directional";
 }
 
+function matchesPatientSignal(id: string, pattern: RegExp, text: string) {
+  if (id === "maintenance" && SEARCH_SUBJECTS.find(subject => subject.id === "maintenance")!.topics.some(topic => topic.pattern.test(text))) return true;
+  return matchesContextSignal(id, pattern, text);
+}
+
 function buildSignals(
   findings: CanonicalFinding[],
   patterns: readonly (readonly [string, string, RegExp])[]
 ): PatientSignal[] {
   return patterns
     .map(([id, label, pattern]) => {
-      const matching = findings.filter((finding) => pattern.test(findingText(finding)));
+      const matching = findings.filter((finding) => {
+        const text = findingText(finding);
+        return (patterns !== UNMET_NEED_PATTERNS || expressesInformationNeed(text)) && matchesPatientSignal(id, pattern, text);
+      });
       return {
         id,
         label,
@@ -313,8 +312,9 @@ function matchedPatientSignals(
 ) {
   if (dimension === "all") return [{ id: "all", label: "All analyzed mentions" }];
   const text = findingText(finding);
+  if (dimension === "unmet_needs" && !expressesInformationNeed(text)) return [];
   return PATIENT_EVIDENCE_DIMENSIONS[dimension].patterns
-    .filter(([, , pattern]) => pattern.test(text))
+    .filter(([id, , pattern]) => matchesPatientSignal(id, pattern, text))
     .map(([id, label]) => ({ id, label }));
 }
 
@@ -502,15 +502,16 @@ export function buildPatientIntelligence(
     };
   });
 
-  const topBarrier = treatmentBarriers[0]?.label || "trust and outcome uncertainty";
-  const topNeed = unmetNeeds[0]?.label || "clear, evidence-backed education";
+  const topBarrier = treatmentBarriers[0]?.label;
+  const topNeed = unmetNeeds[0]?.label;
   return {
     schemaVersion: "patient_intelligence_v1",
     therapeuticArea,
     generatedAt,
-    headline: `${topBarrier} is the leading ${evidenceScope === "patient_related" ? "patient-related discussion" : "patient-experience"} signal in the available ${therapeuticArea} evidence.`,
-    executiveSummary: `Patient Intelligence analyzed ${patientFindings.length} ${evidenceScope === "patient_related" ? "patient-related mentions, including community and third-party context," : "patient or caregiver voice records"} from ${findings.length} corpus findings. The strongest supported opportunity is ${topNeed.toLowerCase()}. Findings should be interpreted with the stated coverage limitations.`,
+    headline: topBarrier ? `${topBarrier} is the leading ${evidenceScope === "patient_related" ? "patient-related discussion" : "patient-experience"} signal in the available ${therapeuticArea} evidence.` : `No supported treatment-consideration priority was identified in the available ${therapeuticArea} patient evidence.`,
+    executiveSummary: `Patient Intelligence analyzed ${patientFindings.length} ${evidenceScope === "patient_related" ? "patient-related mentions, including community and third-party context," : "patient or caregiver voice records"} from ${findings.length} corpus findings. ${topNeed ? `The strongest supported information need is ${topNeed.toLowerCase()}.` : "No explicit unmet-information need was identified in the available source wording."} Findings should be interpreted with the stated coverage limitations.`,
     dataQuality: {
+      contextRulesVersion: CONTEXT_RULES_VERSION,
       evidenceScope,
       analyzedFindingCount: patientFindings.length,
       analyzedCoveragePercent: Math.round(analyzedCoverage * 10) / 10,
@@ -543,11 +544,11 @@ export function buildPatientIntelligence(
     treatmentSignals,
     unmetNeeds,
     evidenceDimensions,
-    recommendations: [
-      `Develop plain-language content addressing ${topBarrier.toLowerCase()} with explicit evidence and limitations.`,
-      `Create decision support for ${topNeed.toLowerCase()} across consultation and follow-up touchpoints.`,
+    recommendations: patientFindings.length ? [
+      ...(topBarrier ? [`Develop plain-language content addressing ${topBarrier.toLowerCase()} with explicit evidence and limitations.`] : []),
+      ...(topNeed ? [`Create decision support for ${topNeed.toLowerCase()} across consultation and follow-up touchpoints.`] : []),
       "Validate the highest-priority signals with human-reviewed patient/HCP labels before external activation.",
-    ],
+    ] : [],
     evidence,
   };
 }

@@ -1,3 +1,4 @@
+import { sourceContext, matchesContextSignal, hasTrialContext, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
 import { classifyGlp1Audience, GLP1_AUDIENCE_VERSION } from "../../ingestion/glp1Audience";
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
 import { analyzeEvidence } from "../../answering/evidence/analyzeEvidence";
@@ -64,6 +65,7 @@ export type ModuleIntelligenceResult = {
   headline: string;
   executiveSummary: string;
   dataQuality: {
+    contextRulesVersion?: string;
     corpusFindingCount: number;
     patientRelatedFindingCount?: number;
     audienceClassificationVersion?: string;
@@ -148,14 +150,14 @@ export const MODULE_INTELLIGENCE_PROFILES: Record<GeneratableModuleId, ModuleInt
     preferredClasses: ["clinical_study", "research_journal", "patient_conversation", "caregiver_conversation", "provider_conversation", "medical_society", "government_or_regulator"],
     allowPromotionalContext: false,
     sections: [
-      { id: "awareness_trust", label: "Trial awareness and trust", description: "Awareness, understanding, confidence, and trust signals that shape trial consideration.", pattern: /clinical trial|clinical study|research study|awareness|learn about|heard about|trust|concern|experimental|investigational/i },
+      { id: "awareness_trust", label: "Trial discussion and trust signals", description: "Discussion of research availability, understanding and trust; mentions do not measure public awareness or willingness to participate.", pattern: /clinical trial|clinical study|research study|awareness|learn about|heard about|trust|concern|experimental|investigational/i },
       { id: "recruitment", label: "Recruitment and enrollment", description: "Discovery, referral, enrollment, and access factors affecting recruitment.", pattern: /enroll|enrol|recruit|participant|volunteer|referral|screening|access|availability|join (the|a) study/i },
       { id: "eligibility", label: "Eligibility and patient selection", description: "Inclusion, exclusion, diagnosis, age, treatment-history, and selection considerations.", pattern: /eligible|eligibility|inclusion|exclusion|criteria|candidate|patient selection|diagnosis|treatment history|age (range|limit)/i },
-      { id: "protocol", label: "Protocol and procedure burden", description: "Procedures, schedules, visits, randomization, controls, and treatment burdens relevant to protocol design.", pattern: /protocol|visit|procedure|schedule|randomi[sz]|placebo|control group|washout|dose|injection|assessment|questionnaire/i },
+      { id: "protocol", label: "Protocol and treatment procedures", description: "Study procedures and routine treatment administration relevant to design. Routine-use mentions are context, not reports of trial participation.", pattern: /protocol|visit|procedure|schedule|randomi[sz]|placebo|control group|washout|dose|injection|assessment|questionnaire/i },
       { id: "retention", label: "Retention and follow-up", description: "Continued participation, withdrawal, adherence, follow-up, and completion signals.", pattern: /retention|withdraw|drop.?out|discontinu|continue|completion|follow.?up|lost to follow|adherence|commitment|remain in/i },
       { id: "site_experience", label: "Site and investigator experience", description: "Site access, investigator relationships, coordination, communication, travel, and operational experience.", pattern: /site|investigator|clinic|hospital|doctor|physician|coordinator|research team|communication|travel|location|distance/i },
-      { id: "participant_experience", label: "Participant experience and burden", description: "Lived experience, convenience, emotional burden, quality of life, and practical participation needs.", pattern: /participant experience|patient experience|burden|convenien|quality of life|daily life|anxiety|fear|hope|support|time commitment|transport/i },
-      { id: "outcomes_endpoints", label: "Outcomes and endpoints", description: "Efficacy, benefit, response, endpoints, measures, and longer-term results.", pattern: /outcome|endpoint|efficacy|effective|response|improvement|benefit|result|follow-up result|primary outcome|secondary outcome|long.?term/i },
+      { id: "participant_experience", label: "Patient and participant experience", description: "Lived experience, emotional burden and practical needs that may inform study design; these do not establish actual trial participation.", pattern: /participant experience|patient experience|burden|convenien|quality of life|daily life|anxiety|fear|hope|support|time commitment|transport/i },
+      { id: "outcomes_endpoints", label: "Treatment outcomes and study endpoints", description: "Reported treatment results and study endpoints, with routine-care discussion retained as design context rather than trial efficacy evidence.", pattern: /outcome|endpoint|efficacy|effective|response|improvement|benefit|result|follow-up result|primary outcome|secondary outcome|long.?term/i },
       { id: "safety_tolerability", label: "Safety and tolerability", description: "Adverse events, tolerability, complications, discontinuation, and safety monitoring.", pattern: /safety|safe|adverse|side effect|tolerab|complication|serious event|reaction|toxicity|hospitali[sz]|monitoring/i },
     ],
     recommendations: [
@@ -196,7 +198,7 @@ export const MODULE_INTELLIGENCE_PROFILES: Record<GeneratableModuleId, ModuleInt
       { id: "brand_perception", label: "Brand and category perception", description: "Perceptions of treatments, brands, categories, and expected outcomes.", pattern: /brand|product|treatment|procedure|result|quality|effective|popular|preference/i },
       { id: "adoption", label: "Adoption drivers and barriers", description: "Trust, price, access, safety, and outcome factors affecting adoption.", pattern: /adopt|try|consider|barrier|cost|price|access|trust|safe|risk|worth/i },
       { id: "message_response", label: "Message and claim response", description: "Response to benefits, claims, education, and promotional language.", pattern: /message|claim|benefit|education|awareness|promise|natural|lasting|proven|hype/i },
-      { id: "opportunity", label: "Market opportunities", description: "Unmet needs, audience demand, and potential white-space signals.", pattern: /need|demand|opportunity|gap|unmet|looking for|want|alternative|new|emerging/i },
+      { id: "opportunity", label: "Market opportunities", description: "Unmet needs, audience demand, and potential white-space signals.", pattern: /need|demand|opportunity|gap|unmet|looking for|want|alternative|emerging/i },
     ],
     recommendations: [
       "Use independent patient and provider evidence to validate market signals before activation.",
@@ -214,7 +216,7 @@ export const MODULE_INTELLIGENCE_PROFILES: Record<GeneratableModuleId, ModuleInt
     allowPromotionalContext: true,
     sections: [
       { id: "landscape", label: "Competitive landscape", description: "Treatments, brands, modalities, and alternatives appearing in the conversation.", pattern: /brand|compet|alternative|versus|compare|option|treatment|product|market/i },
-      { id: "positioning", label: "Positioning signals", description: "Claims and attributes used to differentiate available options.", pattern: /position|different|unique|better|best|first|leading|innovative|premium|natural/i },
+      { id: "positioning", label: "Positioning signals", description: "Claims and attributes used to differentiate available options.", pattern: /positioning|differentiat|unique|better than|more effective than|first.in.class|leading option|innovative|premium/i },
       { id: "switching", label: "Preference and switching", description: "Preference, substitution, switching, and dissatisfaction signals.", pattern: /prefer|switch|replace|instead|moving to|stopped|dissatisf|regret|recommend/i },
       { id: "white_space", label: "White-space opportunities", description: "Unmet needs and gaps not clearly addressed by current options.", pattern: /unmet|gap|need|missing|lack|wish|looking for|opportunity|concern|barrier/i },
     ],
@@ -246,21 +248,7 @@ export const MODULE_INTELLIGENCE_PROFILES: Record<GeneratableModuleId, ModuleInt
   },
 };
 
-function findingText(finding: CanonicalFinding) {
-  const raw = finding as CanonicalFinding & Record<string, unknown>;
-  return [
-    finding.canonicalClaim,
-    finding.summary,
-    raw.title,
-    raw.description,
-    raw.text,
-    raw.excerpt,
-    ...(finding.normalizedLabels || []),
-    ...(finding.symptoms || []),
-    ...(finding.treatments || []),
-    ...(finding.evidence || []).map((item) => item.excerpt),
-  ].filter(Boolean).join(" ");
-}
+function findingText(finding: CanonicalFinding) { return sourceContext(finding); }
 
 function findingId(finding: CanonicalFinding) {
   const raw = finding as CanonicalFinding & {
@@ -281,8 +269,8 @@ function bestEvidence(
   matchedSections: SectionDefinition[]
 ): EvidenceRef | undefined {
   return [...(finding.evidence || [])].sort((left, right) => {
-    const leftMatches = matchedSections.filter((section) => section.pattern.test(left.excerpt || "")).length;
-    const rightMatches = matchedSections.filter((section) => section.pattern.test(right.excerpt || "")).length;
+    const leftMatches = matchedSections.filter((section) => matchesContextSignal(section.id, section.pattern, left.excerpt || "")).length;
+    const rightMatches = matchedSections.filter((section) => matchesContextSignal(section.id, section.pattern, right.excerpt || "")).length;
     return rightMatches - leftMatches || (right.score || 0) - (left.score || 0);
   })[0];
 }
@@ -516,7 +504,10 @@ function contextualizeFinding(
   item: { finding: CanonicalFinding; intelligence: EvidenceIntelligence }
 ) {
   const text = findingText(item.finding);
-  const matchedSections = profile.sections.filter((section) => section.pattern.test(text));
+  const trialSpecific = new Set(["awareness_trust", "recruitment", "eligibility", "retention", "site_experience"]);
+  const matchedSections = profile.sections.filter((section) =>
+    (!trialSpecific.has(section.id) || item.intelligence.evidenceClass === "clinical_study" || item.intelligence.evidenceClass === "research_journal" || hasTrialContext(text)) && matchesContextSignal(section.id, section.pattern, text)
+  );
   const sectionPriorityScore = matchedSections.reduce((total, section) => {
     const index = profile.sections.findIndex((candidate) => candidate.id === section.id);
     return total + Math.max(1, profile.sections.length - index);
@@ -566,10 +557,10 @@ function buildEvidenceItem(
 
 function normalizeMention(value: string) {
   return value
-    .normalize("NFKD")
+    .normalize("NFKC")
     .toLowerCase()
     .replace(/https?:\/\/\S+/g, " ")
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
     .replace(/\s+/g, " ");
 }
@@ -626,23 +617,18 @@ export function buildModuleIntelligence(
     finding,
     intelligence: applyModuleEvidenceClassification(moduleId, finding, analyzeEvidence(finding)),
   }));
-  const qualityEligible = analyzed.filter(({ intelligence }) => intelligence.qualityScore >= profile.minimumQualityScore);
-  const eligible = relevancePrequalified
-    ? analyzed
-    : qualityEligible.filter(({ intelligence }) =>
-        profile.allowPromotionalContext || !PROMOTIONAL_CLASSES.has(intelligence.evidenceClass)
-      );
-  const preferred = eligible.filter(({ intelligence }) =>
-    profile.preferredVoices.includes(resolvedAudienceLabel(intelligence) as EvidenceVoice) ||
-    profile.preferredClasses.includes(intelligence.evidenceClass)
+  // Preferences and quality rank evidence; they must not silently discard a
+  // contextually relevant source merely because eight preferred records exist.
+  const eligible = relevancePrequalified ? analyzed : analyzed.filter(({ finding, intelligence }) =>
+    Boolean(sourceContext(finding)) && (profile.allowPromotionalContext ||
+      !intelligence.isPromotional && !PROMOTIONAL_CLASSES.has(intelligence.evidenceClass) && intelligence.evidenceClass !== "corporate_pr")
   );
-  const selected = relevancePrequalified ? eligible : preferred.length >= 8 ? preferred : eligible;
+  const contextualized = eligible.map((item) => contextualizeFinding(profile, item));
+  const contextualEvidence = contextualized.filter((item) => item.matchedSections.length > 0);
+  const selected = relevancePrequalified ? contextualized : contextualEvidence;
   const promotionalContextCount = selected.filter(({ intelligence }) =>
     intelligence.isPromotional || intelligence.evidenceClass === "corporate_pr"
   ).length;
-
-  const contextualized = selected.map((item) => contextualizeFinding(profile, item));
-  const contextualEvidence = contextualized.filter((item) => item.matchedSections.length > 0);
 
   const sections = profile.sections.map((section) => {
     const matching = contextualized.filter(({ matchedSections }) =>
@@ -654,7 +640,9 @@ export function buildModuleIntelligence(
       description: section.description,
       findingCount: matching.length,
       prevalencePercent: selected.length ? Math.round((matching.length / selected.length) * 1000) / 10 : 0,
-      confidence: confidence(matching.length, selected.length),
+      confidence: matching.length && !matching.some(item => item.intelligence.qualityScore >= profile.minimumQualityScore)
+        ? "directional" as const
+        : confidence(matching.filter(item => item.intelligence.qualityScore >= profile.minimumQualityScore).length, selected.length),
       evidenceIds: matching.slice(0, 8).map(({ finding }) => findingId(finding)),
     };
   }).sort((left, right) => right.findingCount - left.findingCount);
@@ -665,20 +653,21 @@ export function buildModuleIntelligence(
   function appendEvidenceCandidate(item: (typeof contextualEvidence)[number]) {
     const id = findingId(item.finding);
     const normalizedMention = mentionKey(item.finding, item.matchedSections);
-    if (usedFindingIds.has(id) || usedMentionKeys.has(normalizedMention)) return;
+    if (usedFindingIds.has(id) || usedMentionKeys.has(normalizedMention)) return false;
     usedFindingIds.add(id);
     usedMentionKeys.add(normalizedMention);
     evidenceItems.push(item);
+    return true;
   }
   for (const section of profile.sections) {
+    if (evidenceItems.some(item => item.matchedSections.some(matched => matched.id === section.id))) continue;
     const sectionCandidates = contextualEvidence
       .filter((item) => item.matchedSections.some((matched) => matched.id === section.id))
       .sort((left, right) =>
         right.contextualRelevanceScore - left.contextualRelevanceScore ||
         right.intelligence.qualityScore - left.intelligence.qualityScore
-      )
-      .slice(0, 4);
-    for (const item of sectionCandidates) appendEvidenceCandidate(item);
+      );
+    for (const item of sectionCandidates) if (appendEvidenceCandidate(item)) break;
   }
   for (const item of [...contextualEvidence].sort((left, right) =>
     right.contextualRelevanceScore - left.contextualRelevanceScore ||
@@ -698,6 +687,8 @@ export function buildModuleIntelligence(
   const leading = sections[0];
   const limitations = [
     "Audience and evidence classifications are machine-derived and should be human-reviewed for consequential use.",
+    "Module topics match original source wording; quality and source preferences rank rather than truncate contextually relevant evidence. Lower-quality records remain explicitly labeled.",
+    ...(moduleId === "clinical_trials" ? ["General treatment, safety and outcome discussions can inform trial-design questions but do not establish actual trial participation. Recruitment, eligibility, retention and site signals require explicit research context."] : []),
     `This analysis reflects the available ${therapeuticArea} corpus and is not a statistically representative market sample.`,
     relevancePrequalified
       ? "The dedicated Meltwater export is treated as pre-qualified for relevance; evidence-quality labels rank mentions without removing them from analysis."
@@ -720,6 +711,7 @@ export function buildModuleIntelligence(
       : `The available ${therapeuticArea} evidence does not yet support a clear ${profile.label} priority signal.`,
     executiveSummary: `${profile.label} Intelligence evaluated ${selected.length} eligible findings from ${findings.length} corpus records for ${profile.purpose}. Results are evidence-qualified and should be interpreted with the stated coverage limitations.`,
     dataQuality: {
+      contextRulesVersion: CONTEXT_RULES_VERSION,
       corpusFindingCount: findings.length,
       ...(/^glp[ _-]?1$/i.test(therapeuticArea) ? { patientRelatedFindingCount: findings.filter(finding => finding.audienceClassification?.patientContent).length, audienceClassificationVersion: GLP1_AUDIENCE_VERSION } : {}),
       eligibleFindingCount: eligible.length,
@@ -736,7 +728,7 @@ export function buildModuleIntelligence(
     sections,
     audienceSignals: countLabels(selected.map(({ intelligence }) => resolvedAudienceLabel(intelligence))),
     sourceSignals: countLabels(selected.map(({ intelligence }) => intelligence.evidenceClass)),
-    recommendations: profile.recommendations,
+    recommendations: contextualEvidence.length ? profile.recommendations : [],
     evidence,
   };
 }
@@ -751,6 +743,7 @@ export function buildModuleEvidenceCatalog(
     evidenceClass?: string;
     page?: number;
     pageSize?: number;
+    contextualOnly?: boolean;
   } = {},
   options: ModuleIntelligenceBuildOptions = {}
 ): ModuleEvidenceCatalogResult {
@@ -772,6 +765,11 @@ export function buildModuleEvidenceCatalog(
 
   const filtered = contextualized
     .filter(({ finding, intelligence, matchedSections }) => {
+      if (params.contextualOnly) {
+        if (!matchedSections.length) return false;
+        if (relevancePolicy !== "prequalified" && !profile.allowPromotionalContext &&
+          (intelligence.isPromotional || PROMOTIONAL_CLASSES.has(intelligence.evidenceClass) || intelligence.evidenceClass === "corporate_pr")) return false;
+      }
       if (qualityBand && intelligence.qualityBand !== qualityBand) return false;
       if (evidenceClass && intelligence.evidenceClass !== evidenceClass) return false;
       if (!normalizedQuery) return true;

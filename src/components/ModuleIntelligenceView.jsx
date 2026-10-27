@@ -130,6 +130,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
   const [evidenceBrowserOpen, setEvidenceBrowserOpen] = useState(false);
   const [evidenceCatalog, setEvidenceCatalog] = useState(null);
   const [evidenceQuery, setEvidenceQuery] = useState("");
+  const [contextualOnly, setContextualOnly] = useState(true);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceError, setEvidenceError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -141,6 +142,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
     setEvidenceBrowserOpen(false);
     setEvidenceCatalog(null);
     setEvidenceQuery("");
+    setContextualOnly(true);
     setEvidenceError("");
     setError("");
   }, [module.id, therapeuticArea]);
@@ -177,7 +179,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
     }
   }
 
-  async function loadEvidencePage(page = 1, queryOverride) {
+  async function loadEvidencePage(page = 1, queryOverride, contextOverride = contextualOnly) {
     const query = typeof queryOverride === "string" ? queryOverride : evidenceQuery;
     setEvidenceLoading(true);
     setEvidenceError("");
@@ -187,6 +189,7 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
         therapeuticArea,
         page: String(page),
         pageSize: "25",
+        contextualOnly: String(contextOverride),
       });
       if (query.trim()) search.set("q", query.trim());
       const response = await fetch(`/api/module-intelligence/evidence?${search.toString()}`);
@@ -247,9 +250,9 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/70">{module.name} Intelligence</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">All evidence</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">{contextualOnly ? "Module-related evidence" : "All retained corpus evidence"}</h2>
               <p className="mt-2 text-sm leading-6 text-white/45">
-                Search and review every retained {therapeuticArea} mention. Select a label or mention to open the complete record.
+                {contextualOnly ? `Review every retained ${therapeuticArea} mention matching this module’s topics and source policy.` : `Browse the complete retained ${therapeuticArea} corpus, including records outside this module’s topics.`} Select a label or mention to open the complete record.
               </p>
             </div>
             <ActionButton type="button" onClick={() => setEvidenceBrowserOpen(false)} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06]">
@@ -257,6 +260,10 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
             </ActionButton>
           </div>
 
+          <div className="mt-5 flex flex-wrap gap-2" aria-label="Module evidence scope">
+            <ActionButton type="button" disabled={evidenceLoading} aria-pressed={contextualOnly} onClick={() => { setContextualOnly(true); return loadEvidencePage(1, undefined, true); }} className="rounded-xl border border-white/15 px-3 py-2 text-sm aria-pressed:bg-cyan-300/15">Module-related mentions</ActionButton>
+            <ActionButton type="button" disabled={evidenceLoading} aria-pressed={!contextualOnly} onClick={() => { setContextualOnly(false); return loadEvidencePage(1, undefined, false); }} className="rounded-xl border border-white/15 px-3 py-2 text-sm aria-pressed:bg-cyan-300/15">All retained corpus</ActionButton>
+          </div>
           <ActionForm
             className="mt-6 flex flex-col gap-3 sm:flex-row"
             role="search"
