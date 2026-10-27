@@ -8,6 +8,7 @@ import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
 import EvidenceMentionCard from "./EvidenceMentionCard";
+import RecommendedActions from "./RecommendedActions";
 import BackButton from "./ui/BackButton";
 import useDrilldownNavigation from "../lib/client/useDrilldownNavigation";
 
@@ -295,14 +296,11 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
         <SignalList title="Treatment considerations" signals={result.treatmentBarriers} evidenceCount={evidenceCount("treatment_barriers")} onOpenEvidence={() => openEvidenceBrowser("treatment_barriers", "Treatment considerations")} />
         <SignalList title="Emotional burden" signals={result.emotionalBurden} evidenceCount={evidenceCount("emotional_burden")} onOpenEvidence={() => openEvidenceBrowser("emotional_burden", "Emotional burden")} />
         <SignalList title="Unmet needs" signals={result.unmetNeeds} evidenceCount={evidenceCount("unmet_needs")} onOpenEvidence={() => openEvidenceBrowser("unmet_needs", "Unmet needs")} />
-        <SignalList title="Treatment signals" signals={result.treatmentSignals} />
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Recommendations</h3>
-          <ul className="mt-4 space-y-3 text-sm leading-6 text-white/65">
-            {result.recommendations.map((recommendation) => <li key={recommendation} className="flex gap-3"><span className="text-cyan-300">→</span><span>{recommendation}</span></li>)}
-          </ul>
-        </section>
+        <div className="xl:col-span-2">
+          <SignalList title="Treatment signals" signals={result.treatmentSignals} />
+        </div>
       </div>
+      <RecommendedActions actions={result.recommendations} />
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Patient evidence</h3>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
