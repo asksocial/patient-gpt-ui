@@ -1373,6 +1373,12 @@ export default function WorkspaceShell() {
 
   async function openSession(sessionId) {
     if (loading || openingSession) return;
+    const selectedSession = sessions.find((session) => session.id === sessionId);
+    const selectedQuestion = selectedSession?.title || "";
+    setActiveSessionId(sessionId);
+    setMessages([]);
+    setQuestion(selectedQuestion);
+    if (selectedSession?.therapeutic_area) setTherapeuticArea(selectedSession.therapeutic_area);
     setOpeningSession(true);
     setActiveDestination("ask");
     try {
@@ -1392,7 +1398,7 @@ export default function WorkspaceShell() {
         id: message.id,
         role: message.role,
         ...(message.role === "user"
-          ? { text: message.content.text }
+          ? { text: typeof message.content === "string" ? message.content : message.content?.text || "" }
           : {
               responsePayload: {
                 therapeuticArea: message.content.therapeuticArea || data.session.therapeutic_area,
@@ -1434,7 +1440,7 @@ export default function WorkspaceShell() {
       setMessages(restoredMessages);
       const latestUserQuestion = [...restoredMessages]
         .reverse()
-        .find((message) => message.role === "user")?.text || "";
+        .find((message) => message.role === "user")?.text || selectedQuestion;
       setQuestion(latestUserQuestion);
       setTherapeuticArea(data.session.therapeutic_area);
     } catch (err) {
