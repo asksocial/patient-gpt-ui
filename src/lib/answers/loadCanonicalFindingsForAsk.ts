@@ -216,6 +216,7 @@ const MODULE_CORPORA: Record<
 > = {
   botulinum_toxin: {
     clinical_trials: {
+      sourceFiles: ["data/botulinum-toxin-clinical-trials.csv"],
       source: "meltwater_csv",
       sourceLabel: "Botulinum toxin Clinical Trials Meltwater corpus",
       relevancePolicy: "prequalified",
@@ -248,6 +249,30 @@ function resolveCoreCorpus(therapeuticArea: string) {
  * New discovered CSV corpora automatically carry their full source universe. */
 export function getCanonicalCorpusSourceFiles(therapeuticArea: string): string[] {
   return (resolveCoreCorpus(therapeuticArea).corpus?.sourceFiles || []).map(file => path.resolve(process.cwd(), file));
+}
+
+/** Fingerprint the files actually used by a corpus, including the working root.
+ * Warm workers must not reuse findings from a replaced or removed export. */
+function sourceFilesRevision(sourceFiles: string[] = []) {
+  return JSON.stringify(sourceFiles.map(file => {
+    const absolutePath = path.resolve(process.cwd(), file);
+    try {
+      const stat = fs.statSync(absolutePath, { bigint: true });
+      return [absolutePath, String(stat.size), String(stat.mtimeNs), String(stat.ctimeNs)];
+    } catch {
+      // A missing file must miss the cache and follow the normal load error path.
+      return [absolutePath, "unavailable"];
+    }
+  }));
+}
+
+export function getCanonicalCorpusRevision(therapeuticArea: string) {
+  return sourceFilesRevision(resolveCoreCorpus(therapeuticArea).corpus?.sourceFiles);
+}
+
+function cacheCorpus(key: string, findings: CanonicalFinding[]) {
+  cachedCorpora.set(key, findings);
+  if (cachedCorpora.size > 16) cachedCorpora.delete(cachedCorpora.keys().next().value!);
 }
 
 export function getCanonicalCorpusAvailability(therapeuticArea: string) {
@@ -317,10 +342,8 @@ export function loadCanonicalFindingsForAsk(
     };
   }
 
-  let findings =
-    cachedCorpora.get(
-      therapeuticAreaId
-    );
+  const cacheKey = `${therapeuticAreaId}:${sourceFilesRevision(corpus.sourceFiles)}`;
+  let findings = cachedCorpora.get(cacheKey);
 
   if (!findings) {
     try {
@@ -353,10 +376,7 @@ export function loadCanonicalFindingsForAsk(
       };
     }
 
-    cachedCorpora.set(
-      therapeuticAreaId,
-      findings
-    );
+    cacheCorpus(cacheKey, findings);
   }
 
   return {
@@ -388,7 +408,7 @@ export function loadCanonicalFindingsForModule(
     return loadCanonicalFindingsForAsk(therapeuticArea);
   }
 
-  const cacheKey = `${therapeuticAreaId}:module:${moduleId}`;
+  const cacheKey = `${therapeuticAreaId}:module:${moduleId}:${sourceFilesRevision(moduleCorpus.sourceFiles)}`;
   let findings = cachedCorpora.get(cacheKey);
 
   if (!findings) {
@@ -417,7 +437,7 @@ export function loadCanonicalFindingsForModule(
       };
     }
 
-    cachedCorpora.set(cacheKey, findings);
+    cacheCorpus(cacheKey, findings);
   }
 
   return {

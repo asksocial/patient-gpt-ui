@@ -1,5 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
 import { enrichFindingsWithEvidenceIntelligence } from "../../answering/evidence";
 import { assignThemesToFindings } from "../../answering/themes/assignThemes";
 import { aggregateThemes } from "../../answering/themes/aggregateThemes";
@@ -8,7 +6,7 @@ import { buildThemeStrategicImplications } from "../../answering/themes/buildThe
 import { buildThemeLongitudinalTracking } from "../../answering/themes/buildThemeLongitudinalTracking";
 import { buildThemeKnowledgeSnapshot } from "../../answering/knowledge";
 import { buildExecutiveIntelligenceBrief } from "../../answering/executive";
-import { loadCanonicalFindingsForAsk } from "./loadCanonicalFindingsForAsk";
+import { getCanonicalCorpusRevision, loadCanonicalFindingsForAsk } from "./loadCanonicalFindingsForAsk";
 import { loadGlp1PersonaIntelligence } from "./loadGlp1PersonaIntelligence";
 
 const cache = new Map<string, ReturnType<typeof buildCurrentGlp1ExecutiveIntelligence>>();
@@ -16,8 +14,7 @@ const cache = new Map<string, ReturnType<typeof buildCurrentGlp1ExecutiveIntelli
 /** Rebuild derived presentation from current evidence; never rewrite saved evidence. */
 export function loadCurrentGlp1ExecutiveIntelligence(therapeuticArea: string, _question = "") {
   if (!/^glp[\s_-]?1$/i.test(therapeuticArea || "")) return null;
-  const stat = fs.statSync(path.resolve(process.cwd(), "data/glp-1.csv"));
-  const key = JSON.stringify([stat.mtimeMs, stat.size, "full_corpus"]);
+  const key = getCanonicalCorpusRevision(therapeuticArea);
   if (cache.has(key)) return structuredClone(cache.get(key)!);
   const current = buildCurrentGlp1ExecutiveIntelligence();
   if (current) {

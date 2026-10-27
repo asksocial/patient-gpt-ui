@@ -330,3 +330,23 @@ eligibility. Executive Brief selection is topic-scoped in the workspace.
 isolation, snapshot alignment, and preservation of stored content. PV screening
 coverage and the source-attribution policy are documented in
 `docs/pv/glp-1-pv-compliance.md`.
+
+## Module corpus consistency (October 27, 2026)
+
+All six specialist modules (Medical Affairs, Clinical Trials, Corporate Affairs,
+Commercial, Competitive, and Advocacy) and Patient Intelligence read the current
+GLP-1 canonical corpus: 5,000 original source rows and 4,737 retained analytical
+findings. Each module applies its existing evidence-selection rules to that shared
+universe, so selected counts vary by module. Patient Intelligence identifies 277
+likely patient/caregiver findings under the current audience classifier.
+
+Canonical findings, full-source persona summaries, Search composition, and
+Executive Intelligence now use the same source-file revision when caching data.
+Replacing an export invalidates warm-process results, including a same-size
+replacement with a preserved modification time. Module-specific exports also
+invalidate their own caches. Historical reports and source verbatims remain
+preserved. PV continues to apply its approved source/language eligibility rules.
+
+`npm run test:glp-1-modules` checks every module and its evidence browser against
+the current source IDs and classifier, then replaces an isolated fixture export
+to verify refresh across workflows without modifying the real corpus.

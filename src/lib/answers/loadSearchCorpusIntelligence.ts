@@ -1,7 +1,6 @@
 import { buildQuestionEvidence } from "../../answering/search/buildQuestionEvidence";
 import { searchRecordText, subjectsForQuestion, topicsForQuestion } from "../../answering/search/searchSubjects";
 import { buildSearchQuestionFocus } from "../../answering/search/questionFocus";
-import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { parseMeltwaterCsv } from "../../ingestion/adapters/meltwaterAdapter";
 import { getDiseaseProfile } from "../../ingestion/profiles";
@@ -10,7 +9,7 @@ import { buildPersonaIntelligence, type PersonaRecord, type PersonaIntelligenceS
 import { buildCorpusCharts } from "../../answering/personas/buildCorpusCharts";
 import type { CanonicalFinding } from "../../answering/models/finding";
 import { normalizeTherapeuticAreaId } from "../analytics/coverage";
-import { getCanonicalCorpusSourceFiles } from "./loadCanonicalFindingsForAsk";
+import { getCanonicalCorpusRevision, getCanonicalCorpusSourceFiles } from "./loadCanonicalFindingsForAsk";
 import { classifyGlp1Audience } from "../../ingestion/glp1Audience";
 type CorpusBundle = { summary: PersonaIntelligenceSummary; records: PersonaRecord[]; findingRecords: PersonaRecord[] };
 const cache = new Map<string, CorpusBundle>();
@@ -22,7 +21,7 @@ function loadCorpusBundle(therapeuticArea: string, findings: CanonicalFinding[])
   type SourceFinding = CanonicalFinding & { id?: string; title?: string; country?: string; persona?: string | string[]; platform?: string; sourceType?: string; };
   const sourceFindings = findings as SourceFinding[];
   const files = getCanonicalCorpusSourceFiles(therapeuticArea);
-  const key = area + createHash("sha256").update(JSON.stringify(findings)).update(JSON.stringify(files.map(file => [file, fs.statSync(file).mtimeMs]))).digest("hex");
+  const key = area + createHash("sha256").update(JSON.stringify(findings)).update(getCanonicalCorpusRevision(therapeuticArea)).digest("hex");
   const existing = cache.get(key);
   if (existing) return existing;
   const profile = getDiseaseProfile(area, therapeuticArea);
