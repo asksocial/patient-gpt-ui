@@ -294,20 +294,6 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
         )}
       </Section>
 
-      <Section title="Evidence guardrails" subtitle="Coverage and limitations carried into the leadership interpretation">
-        <div className="grid gap-4">
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-            {warnings.length ? (
-              <ul className="space-y-2 text-sm leading-6 text-amber-200/70">
-                {warnings.map((warning) => <li key={warning}>• {warning}</li>)}
-              </ul>
-            ) : (
-              <p className="text-sm leading-6 text-emerald-300/70">No material data-quality warnings were identified for this snapshot.</p>
-            )}
-          </div>
-        </div>
-      </Section>
-
       <Section title="Recommended actions" subtitle="Actions inherited from supported strategic implications">
         {actions.length ? (
           <div className="space-y-3">
@@ -328,6 +314,20 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
         ) : (
           <p className="text-sm leading-6 text-white/45">No action currently clears both the priority and evidence-confidence thresholds.</p>
         )}
+      </Section>
+
+      <Section title="Evidence guardrails" subtitle="Coverage and limitations carried into the leadership interpretation">
+        <div className="grid gap-4">
+          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+            {warnings.length ? (
+              <ul className="space-y-2 text-sm leading-6 text-amber-200/70">
+                {warnings.map((warning) => <li key={warning}>• {warning}</li>)}
+              </ul>
+            ) : (
+              <p className="text-sm leading-6 text-emerald-300/70">No material data-quality warnings were identified for this snapshot.</p>
+            )}
+          </div>
+        </div>
       </Section>
     </div>
   );
