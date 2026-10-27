@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton, { ActionForm } from "./ui/ActionButton";
+
 import DownloadLink from "./ui/DownloadLink";
 
 import { activityFetch as fetch } from "../lib/client/requestActivity";
@@ -77,7 +79,7 @@ function PvReviewListDetail({ product, candidateUsers, members, onClose }) {
         </div>
         <div className="flex gap-2">
           {reviewListId ? <DownloadLink href={`/api/pv/review-lists/${reviewListId}/export`} download className="rounded-xl border border-cyan-300/20 px-3 py-2 text-xs font-medium text-cyan-300">Download CSV</DownloadLink> : null}
-          <button type="button" onClick={onClose} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</button>
+          <ActionButton type="button" onClick={onClose} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</ActionButton>
         </div>
       </div>
 
@@ -93,14 +95,14 @@ function PvReviewListDetail({ product, candidateUsers, members, onClose }) {
               {assignedTo && !members.some((member) => member.userId === assignedTo) ? <option value={assignedTo}>{assignedTo} · current assignee</option> : null}
               {members.map((member) => <option key={member.userId} value={member.userId}>{workspaceMemberLabel(member.userId)} · {member.role}</option>)}
             </select>
-            <button type="button" onClick={assignList} disabled={busy === "assign"} className="mt-3 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-40">{busy === "assign" ? "Assigning…" : "Assign list"}</button>
+            <ActionButton type="button" onClick={assignList} disabled={busy === "assign"} className="mt-3 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-40">{busy === "assign" ? "Assigning…" : "Assign list"}</ActionButton>
           </div>
 
           <div className="rounded-xl border border-white/10 bg-black/25 p-4">
             <h4 className="text-sm font-semibold text-white/70">Send by email</h4>
             <p className="mt-1 text-xs text-white/35">Record the recipient in the audit trail and prepare an email from your configured mail client.</p>
             <input type="email" value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} placeholder="Recipient email address" className="mt-4 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white" />
-            <button type="button" onClick={shareList} disabled={!recipientEmail.trim() || busy === "share"} className="mt-3 rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-semibold text-cyan-300 disabled:opacity-40">{busy === "share" ? "Preparing email…" : "Send list by email"}</button>
+            <ActionButton type="button" onClick={shareList} disabled={!recipientEmail.trim() || busy === "share"} className="mt-3 rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-semibold text-cyan-300 disabled:opacity-40">{busy === "share" ? "Preparing email…" : "Send list by email"}</ActionButton>
             {list.shared_emails?.length ? <p className="mt-3 text-xs leading-5 text-white/35">Previously shared: {list.shared_emails.join(", ")}</p> : null}
           </div>
         </div>
@@ -121,7 +123,7 @@ function ProductDetail({ product, onClose }) {
           <h3 className="mt-2 text-lg font-semibold text-white">{product.title}</h3>
           <p className="mt-1 text-xs text-white/35">{product.therapeutic_area || "Cross-therapeutic"} · {new Date(product.created_at).toLocaleString()}</p>
         </div>
-        <button type="button" onClick={onClose} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</button>
+        <ActionButton type="button" onClick={onClose} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</ActionButton>
       </div>
       {summary ? <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-white/70">{typeof summary === "string" ? summary : JSON.stringify(summary, null, 2)}</p> : null}
       <details className="mt-5 rounded-xl border border-white/10 bg-black/30 p-4">
@@ -284,10 +286,10 @@ export default function WorkspaceManager({
             <h2 className="text-lg font-semibold text-white">Workspace manager</h2>
             <p className="mt-1 text-sm text-white/45">Create governed spaces, organize saved intelligence, and control access.</p>
           </div>
-          <form onSubmit={createWorkspace} className="flex gap-2">
+          <ActionForm onSubmit={createWorkspace} className="flex gap-2">
             <input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="New workspace name" className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none" />
-            <button type="submit" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Create</button>
-          </form>
+            <ActionButton type="submit" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Create</ActionButton>
+          </ActionForm>
         </div>
       </Panel>
 
@@ -301,10 +303,10 @@ export default function WorkspaceManager({
           </label>
           <div className="mt-4 space-y-2">
             {visibleWorkspaces.map((workspace) => (
-              <button key={workspace.id} type="button" onClick={() => chooseWorkspace(workspace)} className={`w-full rounded-xl border p-3 text-left ${workspace.id === selectedId ? "border-white/30 bg-white/10" : "border-white/10 bg-black/20"}`}>
+              <ActionButton key={workspace.id} type="button" onClick={() => chooseWorkspace(workspace)} className={`w-full rounded-xl border p-3 text-left ${workspace.id === selectedId ? "border-white/30 bg-white/10" : "border-white/10 bg-black/20"}`}>
                 <span className="block text-sm font-medium text-white/80">{workspace.name}</span>
                 <span className="mt-1 block text-xs text-white/35">{workspace.role} · {workspace.archivedAt ? "Archived" : "Active"}</span>
-              </button>
+              </ActionButton>
             ))}
             {!visibleWorkspaces.length ? <p className="text-sm text-white/35">No workspaces available.</p> : null}
           </div>
@@ -323,13 +325,13 @@ export default function WorkspaceManager({
                   <textarea value={draft.description} disabled={selected.role === "viewer"} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} placeholder="Workspace description" rows={3} className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white md:col-span-2" />
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {selected.role !== "viewer" ? <button type="button" onClick={() => updateWorkspace(draft)} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Save changes</button> : null}
+                  {selected.role !== "viewer" ? <ActionButton type="button" onClick={() => updateWorkspace(draft)} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Save changes</ActionButton> : null}
                   {selected.role !== "viewer" && !selected.archivedAt ? (
-                    <button type="button" onClick={async () => { await onSelectWorkspace(selected.id); setMessage("Workspace selected for new work."); }} className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/70">Use workspace</button>
+                    <ActionButton type="button" onClick={async () => { await onSelectWorkspace(selected.id); setMessage("Workspace selected for new work."); }} className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/70">Use workspace</ActionButton>
                   ) : null}
                   {selected.role === "viewer" ? <p className="self-center text-xs text-white/35">View-only access</p> : null}
-                  {selected.role === "owner" ? <button type="button" onClick={() => updateWorkspace({ archived: !selected.archivedAt })} className="rounded-xl border border-amber-400/20 px-4 py-2 text-sm text-amber-200/70">{selected.archivedAt ? "Restore" : "Archive"}</button> : null}
-                  {selected.role === "owner" ? <button type="button" onClick={deleteWorkspace} className="rounded-xl border border-rose-400/20 px-4 py-2 text-sm text-rose-200/70">Delete permanently</button> : null}
+                  {selected.role === "owner" ? <ActionButton type="button" onClick={() => updateWorkspace({ archived: !selected.archivedAt })} className="rounded-xl border border-amber-400/20 px-4 py-2 text-sm text-amber-200/70">{selected.archivedAt ? "Restore" : "Archive"}</ActionButton> : null}
+                  {selected.role === "owner" ? <ActionButton type="button" onClick={deleteWorkspace} className="rounded-xl border border-rose-400/20 px-4 py-2 text-sm text-rose-200/70">Delete permanently</ActionButton> : null}
                 </div>
               </Panel>
 
@@ -338,10 +340,10 @@ export default function WorkspaceManager({
                 {loading ? <p className="mt-3 text-sm text-white/35">Loading workspace…</p> : null}
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   {products.map((product) => (
-                    <button key={product.id} type="button" onClick={() => setSelectedProduct(product)} className="rounded-xl border border-white/10 bg-black/20 p-3 text-left hover:border-white/25">
+                    <ActionButton key={product.id} type="button" onClick={() => setSelectedProduct(product)} className="rounded-xl border border-white/10 bg-black/20 p-3 text-left hover:border-white/25">
                       <span className="text-xs uppercase text-white/35">{product.payload?.type === "pv_review_list" ? "PV review list" : product.kind}</span>
                       <span className="mt-1 block text-sm font-medium text-white/75">{product.title}</span>
-                    </button>
+                    </ActionButton>
                   ))}
                   {!loading && !products.length ? <p className="text-sm text-white/35">No saved work yet.</p> : null}
                 </div>
@@ -359,19 +361,19 @@ export default function WorkspaceManager({
                   {members.map((member) => (
                     <div key={member.userId} className="flex items-center justify-between rounded-xl border border-white/10 px-3 py-2">
                       <div><p className="text-sm text-white/70">{memberLabel(member.userId)}</p><p className="text-xs text-white/35">{member.role}</p></div>
-                      {selected.role === "owner" ? <button type="button" onClick={() => removeMember(member.userId)} className="text-xs text-rose-300/70">Remove</button> : null}
+                      {selected.role === "owner" ? <ActionButton type="button" onClick={() => removeMember(member.userId)} className="text-xs text-rose-300/70">Remove</ActionButton> : null}
                     </div>
                   ))}
                 </div>
                 {selected.role === "owner" ? (
-                  <form onSubmit={saveMember} className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <ActionForm onSubmit={saveMember} className="mt-4 flex flex-col gap-2 sm:flex-row">
                     <select value={memberUserId} onChange={(event) => setMemberUserId(event.target.value)} className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white">
                       <option value="">Select an organization user</option>
                       {candidateUsers.map((user) => <option key={user.userId} value={user.userId}>{user.name} · {user.identifier}</option>)}
                     </select>
                     <select value={memberRole} onChange={(event) => setMemberRole(event.target.value)} className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"><option value="viewer">Viewer</option><option value="editor">Editor</option><option value="owner">Owner</option></select>
-                    <button type="submit" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Add or update</button>
-                  </form>
+                    <ActionButton type="submit" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Add or update</ActionButton>
+                  </ActionForm>
                 ) : null}
               </Panel>
             </>

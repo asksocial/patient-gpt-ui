@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton, { ActionForm } from "../../../components/ui/ActionButton";
+
 import { activityFetch as fetch } from "../../../lib/client/requestActivity";
 
 import {
@@ -76,7 +78,7 @@ function AccessSelector({
     <div className="grid grid-cols-3 rounded-xl border border-white/10 bg-black p-1">
       {(["inherit", "grant", "deny"] as AccessState[]).map(
         (state) => (
-          <button
+          <ActionButton
             key={state}
             type="button"
             disabled={disabled}
@@ -96,7 +98,7 @@ function AccessSelector({
               : state === "deny"
                 ? "Disable"
                 : "Inherit"}
-          </button>
+          </ActionButton>
         )
       )}
     </div>
@@ -463,7 +465,7 @@ export default function EntitlementsAdminPage() {
         </p>
 
         <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-          <form
+          <ActionForm
             onSubmit={(event) => {
               event.preventDefault();
               loadSubject();
@@ -531,7 +533,7 @@ export default function EntitlementsAdminPage() {
               />
             )}
 
-            <button
+            <ActionButton
               type="submit"
               disabled={loading || !subjectId.trim()}
               className="cursor-pointer rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
@@ -541,8 +543,8 @@ export default function EntitlementsAdminPage() {
                 : subjectType === "user"
                   ? "Load user access"
                   : "Load organization access"}
-            </button>
-          </form>
+            </ActionButton>
+          </ActionForm>
           <p className="mt-3 text-sm leading-6 text-white/50">
             {displayName
               ? `Access controls are ready for ${displayName}.`
@@ -569,7 +571,7 @@ export default function EntitlementsAdminPage() {
                   </p>
                 ) : null}
               </div>
-              <button
+              <ActionButton
                 type="button"
                 onClick={save}
                 disabled={loading}
@@ -580,7 +582,7 @@ export default function EntitlementsAdminPage() {
                   : subjectType === "user"
                     ? "Save user access"
                     : "Save organization access"}
-              </button>
+              </ActionButton>
             </div>
           ) : (
             <div className="border-b border-white/10 pb-5">

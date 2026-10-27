@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton from "./ui/ActionButton";
+
 function displayValue(value, fallback = "Not available") {
   const normalized = String(value ?? "").trim();
   return normalized || fallback;
@@ -20,7 +22,7 @@ export default function EvidenceMentionCard({
 
   return (
     <article className="rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-cyan-300/20 hover:bg-cyan-300/[0.025]">
-      <button
+      <ActionButton
         type="button"
         onClick={onOpen}
         aria-label={`View full evidence mention: ${displayValue(title, eyebrow)}`}
@@ -32,7 +34,7 @@ export default function EvidenceMentionCard({
         </div>
         <h4 className="mt-3 line-clamp-2 text-sm font-semibold leading-5 text-white/85">{displayValue(title, eyebrow)}</h4>
         <blockquote className="mt-4 line-clamp-4 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-6 text-white/65">{displayValue(preview, "Evidence preview unavailable")}</blockquote>
-      </button>
+      </ActionButton>
 
       {visibleTags.length ? (
         <div className="mt-4 flex flex-wrap gap-1.5">
@@ -51,7 +53,7 @@ export default function EvidenceMentionCard({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={onOpen} className="rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black">View full mention</button>
+        <ActionButton type="button" onClick={onOpen} className="rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black">View full mention</ActionButton>
         {url ? <a href={url} target="_blank" rel="noreferrer noopener" className="inline-flex items-center rounded-xl border border-cyan-300/35 bg-cyan-300/[0.10] px-4 py-2.5 text-xs font-semibold text-cyan-200 transition hover:border-cyan-200/60 hover:bg-cyan-300/[0.16]">Open original source ↗</a> : null}
       </div>
     </article>

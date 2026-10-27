@@ -57,7 +57,7 @@ assert(
       'className="order-4 border-t border-white/10 px-6 py-4"'
     ) &&
     workspaceShell.includes(
-      "Report-backed insights + structured curated intelligence + social"
+      "(c) 2026 Eavesdrop LLC. All Rights Reserved."
     ),
   "The Search evidence-basis footer must remain below the primary content."
 );

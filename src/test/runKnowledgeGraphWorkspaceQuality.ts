@@ -38,15 +38,14 @@ for (const contract of [
   "Audiences",
   "Markets",
   "Platforms",
-  "MetricLabel",
-  "This does not count mentions, citations, posts, or sources.",
-  "supported across more than one independent source category or channel",
 ]) {
   assert(
     graph.includes(contract),
     `Knowledge Graph view is missing the required evidence contract: ${contract}`
   );
 }
+
+assert(!graph.includes("function MetricLabel"), "Graph summary metric cards must stay removed.");
 
 console.log(
   JSON.stringify(

@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton from "./ui/ActionButton";
+
 import {
   useEffect,
   useRef,
@@ -47,7 +49,7 @@ function NavigationItem({
   compact = false,
 }) {
   return (
-    <button
+    <ActionButton
       type="button"
       onClick={() => onNavigate(item.id)}
       aria-current={
@@ -73,7 +75,7 @@ function NavigationItem({
           aria-label="Selected module"
         />
       ) : null}
-    </button>
+    </ActionButton>
   );
 }
 
@@ -155,7 +157,7 @@ export default function EcosystemNavigation({
       aria-label="Platform navigation"
       className="as-platform-nav flex flex-wrap items-center gap-1"
     >
-      <button
+      <ActionButton
         type="button"
         onClick={() => navigate("ask")}
         aria-current={activeItem === "ask" ? "page" : undefined}
@@ -167,7 +169,7 @@ export default function EcosystemNavigation({
       >
         <span className="as-nav-symbol" aria-hidden="true">✦</span>
         <span>Ask</span>
-      </button>
+      </ActionButton>
       {navigationGroups.map((group) => {
         const presentation = NAVIGATION_PRESENTATION[group.id] || {
           label: group.label,
@@ -187,7 +189,7 @@ export default function EcosystemNavigation({
             key={group.id}
             className="relative"
           >
-            <button
+            <ActionButton
               type="button"
               aria-expanded={expanded}
               aria-controls={`navigation-group-${group.id}`}
@@ -223,7 +225,7 @@ export default function EcosystemNavigation({
                   strokeLinejoin="round"
                 />
               </svg>
-            </button>
+            </ActionButton>
 
             {expanded ? (
               <div

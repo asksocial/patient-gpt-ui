@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton from "./ui/ActionButton";
+
 const REGION_COPY = {
   conversation: {
     title: "Conversation",
@@ -121,18 +123,18 @@ export default function AgentWorkspaceRegions({
             in context
           </p>
           <div className="mt-3 flex gap-2">
-            <button
+            <ActionButton
               type="button"
               className="text-xs text-violet-200/70"
             >
               View evidence
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               className="text-xs text-violet-200/70"
             >
               Why this answer?
-            </button>
+            </ActionButton>
           </div>
         </RegionCard>
         <RegionCard region="deliverable">

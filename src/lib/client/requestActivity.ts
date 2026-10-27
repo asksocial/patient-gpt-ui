@@ -1,5 +1,25 @@
 // Shared by client request helpers and React's external-store subscriber.
 // Track requests individually so one completion cannot hide another operation.
+type ActivityOwner = () => () => void;
+let activeOwner: ActivityOwner | undefined;
+
+// Bind synchronous request starts and an action's entire returned promise to
+// its control. Each action owns its counter, so concurrent buttons stay local.
+export function runAction<T>(owner: ActivityOwner, operation: () => T): T {
+  const previous = activeOwner;
+  activeOwner = owner;
+  try {
+    const result = operation();
+    if (result && typeof (result as { then?: unknown }).then === "function") {
+      const finish = owner();
+      Promise.resolve(result).then(finish, finish);
+    }
+    return result;
+  } finally {
+    activeOwner = previous;
+  }
+}
+
 let pending = 0;
 const listeners = new Set<() => void>();
 
@@ -13,12 +33,14 @@ export function subscribeToActivity(listener: () => void) {
 }
 
 export function beginActivity() {
+  const finishOwner = activeOwner?.();
   pending += 1;
   listeners.forEach(listener => listener());
   let finished = false;
   return () => {
     if (finished) return;
     finished = true;
+    finishOwner?.();
     pending -= 1;
     listeners.forEach(listener => listener());
   };

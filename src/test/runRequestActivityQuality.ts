@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { activityFetch, beginActivity, getPendingActivity, subscribeToActivity, withActivity } from "../lib/client/requestActivity";
+import { activityFetch, beginActivity, getPendingActivity, subscribeToActivity, withActivity, runAction } from "../lib/client/requestActivity";
 import { downloadFile, getDownloadFileName } from "../lib/client/downloadFile";
 
 function deferred<T>() {
@@ -23,6 +23,36 @@ async function run() {
     assert.equal(getPendingActivity(), 1, "Cleanup is idempotent and leaves overlapping work visible.");
     finishSecond();
     assert.equal(getPendingActivity(), 0);
+
+    let firstOwner = 0;
+    let secondOwner = 0;
+    const ownerA = () => { firstOwner++; return () => { firstOwner--; }; };
+    const ownerB = () => { secondOwner++; return () => { secondOwner--; }; };
+    const ownedA = deferred<Response>();
+    const ownedB = deferred<Response>();
+    globalThis.fetch = (input) => String(input).endsWith("owned-a") ? ownedA.promise : ownedB.promise;
+    const actionA = runAction(ownerA, () => activityFetch("/owned-a"));
+    const actionB = runAction(ownerB, () => { void activityFetch("/owned-b"); });
+    assert.equal(actionB, undefined);
+    assert.ok(firstOwner > 0 && secondOwner > 0, "Each initiating control owns its request, including void handlers.");
+    ownedA.resolve(Response.json({ ok: true }));
+    await actionA; await tick();
+    assert.equal(firstOwner, 0);
+    assert.equal(secondOwner, 1, "Completing one button must leave the other button working.");
+    ownedB.resolve(new Response(null, { status: 204 })); await tick(); await tick();
+    assert.equal(secondOwner, 0);
+    const multiStep = deferred<void>();
+    const action = runAction(ownerA, async () => { await tick(); await multiStep.promise; });
+    await tick();
+    assert.equal(firstOwner, 1, "The returned promise tracks the full action between requests.");
+    multiStep.resolve(); await action; await tick();
+    assert.equal(firstOwner, 0);
+    await assert.rejects(runAction(ownerA, async () => { throw new Error("Owned failure"); }), /Owned failure/);
+    await tick(); assert.equal(firstOwner, 0);
+    assert.throws(() => runAction(ownerA, () => { throw new Error("Synchronous failure"); }), /Synchronous failure/);
+    const unrelated = beginActivity();
+    assert.equal(firstOwner, 0, "Action ownership is cleared after an event and does not capture background work.");
+    unrelated();
 
     const first = deferred<Response>();
     const second = deferred<Response>();
@@ -110,6 +140,16 @@ async function run() {
     }
     inspect(join(process.cwd(), "src/components")); inspect(join(process.cwd(), "src/app"));
     assert.ok(trackedFiles > 0, "The client request coverage audit must inspect data-fetching screens.");
+    const buttonSource = readFileSync("src/components/ui/ActionButton.jsx", "utf8");
+    assert.match(buttonSource, /event.nativeEvent.submitter/);
+    assert.match(buttonSource, /disabled=\{disabled \|\| busy\}/);
+    assert.match(buttonSource, /<WorkingLabel/);
+    const searchSource = readFileSync("src/components/WorkspaceShell.jsx", "utf8");
+    assert.doesNotMatch(searchSource, /RecommendedActions|search-loading-indicator/);
+    assert.match(searchSource, /return submitQuestion\(question\)/);
+    assert.match(searchSource, /\(c\) 2026 Eavesdrop LLC. All Rights Reserved./);
+    assert.doesNotMatch(readFileSync("src/components/ExecutiveIntelligenceView.jsx", "utf8"), />Directional themes</);
+    assert.doesNotMatch(readFileSync("src/components/KnowledgeGraphView.jsx", "utf8"), /label: "Themes"|label: "Supported links"|label: "Corroborated themes"/);
     assert.match(readFileSync("src/app/layout.js", "utf8"), /<AppActivityIndicator \/>/);
     assert.match(readFileSync("src/app/loading.jsx", "utf8"), /<ActivityNotice/);
     assert.ok(snapshots.includes(2) && snapshots.at(-1) === 0);

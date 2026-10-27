@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton, { ActionForm } from "./ui/ActionButton";
+
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
@@ -98,9 +100,9 @@ function FullMentionDialog({ evidence, moduleName, onClose }) {
               {evidenceDisplayTitle(evidence, moduleName)}
             </h2>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.06]">
+          <ActionButton type="button" onClick={onClose} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.06]">
             Close
-          </button>
+          </ActionButton>
         </div>
         <blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">
           {evidence.fullMention || evidence.quote}
@@ -217,14 +219,14 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/50">
             Generate evidence-qualified {module.description.charAt(0).toLowerCase() + module.description.slice(1)} The analysis applies this module’s audience, source, taxonomy, and decision lens.
           </p>
-          <button
+          <ActionButton
             type="button"
             onClick={runAnalysis}
             disabled={loading || !therapeuticArea}
             className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40"
           >
             {loading ? "Analyzing…" : `Generate ${module.name} Intelligence`}
-          </button>
+          </ActionButton>
           {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
         </section>
         <ModuleShell module={module} agents={agents} workflows={workflows} />
@@ -250,15 +252,15 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
                 Search and review every retained {therapeuticArea} mention. Select a label or mention to open the complete record.
               </p>
             </div>
-            <button type="button" onClick={() => setEvidenceBrowserOpen(false)} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06]">
+            <ActionButton type="button" onClick={() => setEvidenceBrowserOpen(false)} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06]">
               ← Back to {module.name}
-            </button>
+            </ActionButton>
           </div>
 
-          <form
+          <ActionForm
             className="mt-6 flex flex-col gap-3 sm:flex-row"
             role="search"
-            onSubmit={(event) => { event.preventDefault(); loadEvidencePage(1); }}
+            onSubmit={(event) => { event.preventDefault(); return loadEvidencePage(1); }}
           >
             <label className="sr-only" htmlFor="module-evidence-search">Search evidence by keyword</label>
             <input
@@ -269,13 +271,13 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
               placeholder="Search mentions by keyword…"
               className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-cyan-300/40"
             />
-            <button type="submit" disabled={evidenceLoading} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
+            <ActionButton type="submit" disabled={evidenceLoading} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
               {evidenceLoading ? "Searching…" : "Search"}
-            </button>
-            <button type="button" onClick={clearEvidenceFilters} disabled={evidenceLoading || !evidenceQuery} className="rounded-xl border border-white/10 px-5 py-3 text-sm text-white/55 disabled:opacity-30">
+            </ActionButton>
+            <ActionButton type="button" onClick={clearEvidenceFilters} disabled={evidenceLoading || !evidenceQuery} className="rounded-xl border border-white/10 px-5 py-3 text-sm text-white/55 disabled:opacity-30">
               Clear
-            </button>
-          </form>
+            </ActionButton>
+          </ActionForm>
 
           {evidenceError ? <p className="mt-4 text-sm text-rose-300">{evidenceError}</p> : null}
           {evidenceLoading && !evidenceCatalog ? <p className="mt-6 text-sm text-white/40">Loading the retained evidence corpus…</p> : null}
@@ -303,14 +305,14 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
                     {evidenceCatalog.items.map((item) => (
                       <tr key={item.id} className="align-top text-white/60 transition hover:bg-white/[0.025]">
                         <td className="px-4 py-4">
-                          <button type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left font-semibold leading-5 text-white/80 hover:text-cyan-200" title={evidenceDisplayTitle(item, module.name)}>
+                          <ActionButton type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left font-semibold leading-5 text-white/80 hover:text-cyan-200" title={evidenceDisplayTitle(item, module.name)}>
                             {evidenceDisplayTitle(item, module.name)}
-                          </button>
+                          </ActionButton>
                         </td>
                         <td className="px-4 py-4">
-                          <button type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75" title={item.quote}>
+                          <ActionButton type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75" title={item.quote}>
                             {item.quote}
-                          </button>
+                          </ActionButton>
                         </td>
                         <td className="px-4 py-4">
                           {item.url ? (
@@ -330,9 +332,9 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
               </div>
 
               <div className="mt-5 flex items-center justify-between">
-                <button type="button" onClick={() => loadEvidencePage(evidenceCatalog.page - 1)} disabled={evidenceLoading || evidenceCatalog.page <= 1} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-30">← Previous</button>
+                <ActionButton type="button" onClick={() => loadEvidencePage(evidenceCatalog.page - 1)} disabled={evidenceLoading || evidenceCatalog.page <= 1} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-30">← Previous</ActionButton>
                 <span className="text-xs text-white/35">Page {evidenceCatalog.page} of {evidenceCatalog.pageCount}</span>
-                <button type="button" onClick={() => loadEvidencePage(evidenceCatalog.page + 1)} disabled={evidenceLoading || evidenceCatalog.page >= evidenceCatalog.pageCount} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-30">Next →</button>
+                <ActionButton type="button" onClick={() => loadEvidencePage(evidenceCatalog.page + 1)} disabled={evidenceLoading || evidenceCatalog.page >= evidenceCatalog.pageCount} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-30">Next →</ActionButton>
               </div>
             </>
           ) : null}
@@ -361,9 +363,9 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
         </div>
         <h2 className="mt-4 text-xl font-semibold text-white">{result.headline}</h2>
         <p className="mt-3 max-w-5xl text-sm leading-6 text-white/65">{result.executiveSummary}</p>
-        <button type="button" onClick={runAnalysis} disabled={loading} className="mt-5 rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-white/65 hover:bg-white/[0.06] disabled:opacity-40">
+        <ActionButton type="button" onClick={runAnalysis} disabled={loading} className="mt-5 rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-white/65 hover:bg-white/[0.06] disabled:opacity-40">
           {loading ? "Refreshing…" : `Regenerate ${module.name} Intelligence`}
-        </button>
+        </ActionButton>
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -383,9 +385,9 @@ export default function ModuleIntelligenceView({ module, agents, workflows, ther
             <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">Representative module evidence</h3>
             <p className="mt-2 text-xs text-white/35">Ranked examples across the module taxonomy. Evidence quality is labeled and used for ordering.</p>
           </div>
-          <button type="button" onClick={openEvidenceBrowser} className="rounded-xl border border-cyan-300/30 bg-cyan-300/[0.08] px-4 py-2.5 text-xs font-semibold text-cyan-200 transition hover:border-cyan-200/55 hover:bg-cyan-300/[0.14]">
+          <ActionButton type="button" onClick={openEvidenceBrowser} className="rounded-xl border border-cyan-300/30 bg-cyan-300/[0.08] px-4 py-2.5 text-xs font-semibold text-cyan-200 transition hover:border-cyan-200/55 hover:bg-cyan-300/[0.14]">
             View all evidence
-          </button>
+          </ActionButton>
         </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {result.evidence.map((item) => (

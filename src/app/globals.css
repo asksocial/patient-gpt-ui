@@ -759,7 +759,31 @@ body {
   pointer-events: none;
 }
 
-/* Search already places this same wheel above its workspace heading. */
-body:has([data-inline-activity]) .asksocial-activity-notice {
-  display: none;
+/* Keep the initiating control's footprint while replacing its label in place. */
+.asksocial-action-content { display: contents; }
+.asksocial-working-action {
+  position: relative;
+  min-width: 7rem;
+  min-height: 2.5rem;
+  border-radius: 999px !important;
+  background: var(--as-sage-paper) !important;
+  color: var(--as-sage-active) !important;
+  border-color: var(--as-sage-line) !important;
+  opacity: 1 !important;
+  cursor: wait !important;
 }
+.asksocial-working-action > .asksocial-action-content { visibility: hidden; }
+.asksocial-working-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+body:has([data-working-action]) .asksocial-activity-notice { display: none; }

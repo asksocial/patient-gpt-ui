@@ -1,5 +1,6 @@
 "use client";
 
+import { WorkingLabel } from "./ActionButton";
 import { useState } from "react";
 import { downloadFile } from "../../lib/client/downloadFile";
 
@@ -21,7 +22,7 @@ export default function DownloadLink({ href, download, children, ...props }) {
     }
   }
   return <>
-    <a {...props} href={href} download={download} onClick={handleDownload} aria-disabled={busy || undefined} aria-busy={busy || undefined}>{children}</a>
+    <a {...props} href={href} download={download} onClick={handleDownload} aria-disabled={busy || undefined} aria-busy={busy || undefined} data-working-action={busy || undefined} className={`${props.className || ""}${busy ? " asksocial-working-action" : ""}`}><span className="asksocial-action-content" aria-hidden={busy || undefined}>{children}</span>{busy ? <WorkingLabel /> : null}</a>
     {error ? <span role="alert" className="block text-xs text-rose-400">{error}</span> : null}
   </>;
 }

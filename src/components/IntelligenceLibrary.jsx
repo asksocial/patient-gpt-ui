@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton, { ActionForm } from "./ui/ActionButton";
+
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
@@ -90,20 +92,20 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
     return (
       <div className="space-y-4">
         <Card>
-          <form onSubmit={runSearch} className="flex flex-col gap-3 sm:flex-row">
+          <ActionForm onSubmit={runSearch} className="flex flex-col gap-3 sm:flex-row">
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search evidence, reports, answers, and patient intelligence across workspaces"
               className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-cyan-400/40"
             />
-            <button type="submit" disabled={loading} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-50">
+            <ActionButton type="submit" disabled={loading} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-50">
               {loading ? "Searching…" : "Search"}
-            </button>
-            <button type="button" onClick={saveCurrentSearch} disabled={!query.trim()} className="rounded-xl border border-white/10 px-5 py-3 text-sm text-white/70 disabled:opacity-30">
+            </ActionButton>
+            <ActionButton type="button" onClick={saveCurrentSearch} disabled={!query.trim()} className="rounded-xl border border-white/10 px-5 py-3 text-sm text-white/70 disabled:opacity-30">
               Save search
-            </button>
-          </form>
+            </ActionButton>
+          </ActionForm>
           <p className="mt-3 text-xs text-white/35">Results are restricted to your organization, licensed modules, and persisted work products.</p>
         </Card>
         {message ? <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/55">{message}</p> : null}
@@ -119,9 +121,9 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
               <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/50">
                 {result.payload?.summary || result.payload?.directAnswer || result.payload?.answer?.directAnswer || "Open the persisted work product to inspect its complete evidence-backed output."}
               </p>
-              <button type="button" onClick={() => setSelectedResult(result)} className="mt-4 rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-white/65 hover:border-white/25 hover:text-white">
+              <ActionButton type="button" onClick={() => setSelectedResult(result)} className="mt-4 rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-white/65 hover:border-white/25 hover:text-white">
                 Open complete saved work
-              </button>
+              </ActionButton>
             </Card>
           ))}
         </div>
@@ -132,7 +134,7 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
                 <p className="text-xs uppercase tracking-[0.14em] text-white/40">{selectedResult.kind} · {selectedResult.intelligence_workspaces?.name || "Workspace"}</p>
                 <h3 className="mt-2 text-lg font-semibold text-white">{selectedResult.title}</h3>
               </div>
-              <button type="button" onClick={() => setSelectedResult(null)} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</button>
+              <ActionButton type="button" onClick={() => setSelectedResult(null)} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</ActionButton>
             </div>
             <pre className="mt-5 max-h-[36rem] overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/30 p-4 text-xs leading-5 text-white/60">{JSON.stringify(selectedResult.payload, null, 2)}</pre>
           </Card>
@@ -147,27 +149,27 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
         <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Saved searches</h2>
         <div className="mt-4 space-y-2">
           {savedSearches.length ? savedSearches.map((search) => (
-            <button key={search.id} onClick={() => { setQuery(search.query); onUsePrompt?.(search.query); }} className="block w-full rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-white/20">
+            <ActionButton key={search.id} onClick={() => { setQuery(search.query); return onUsePrompt?.(search.query); }} className="block w-full rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-white/20">
               <span className="block text-sm font-medium text-white/75">{search.name}</span>
               <span className="mt-1 block text-xs text-white/35">{search.query}</span>
-            </button>
+            </ActionButton>
           )) : <p className="text-sm text-white/40">No saved searches yet.</p>}
         </div>
       </Card>
 
       <Card>
         <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Prompt library</h2>
-        <form onSubmit={saveNewPrompt} className="mt-4 space-y-3">
+        <ActionForm onSubmit={saveNewPrompt} className="mt-4 space-y-3">
           <input value={promptName} onChange={(event) => setPromptName(event.target.value)} placeholder="Prompt name" className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none" />
           <textarea value={promptText} onChange={(event) => setPromptText(event.target.value)} placeholder="Reusable AskSocial prompt" rows={3} className="w-full resize-none rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none" />
-          <button type="submit" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Save prompt</button>
-        </form>
+          <ActionButton type="submit" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Save prompt</ActionButton>
+        </ActionForm>
         <div className="mt-5 space-y-2">
           {prompts.map((prompt) => (
-            <button key={prompt.id} onClick={() => onUsePrompt?.(prompt.prompt)} className="block w-full rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-white/20">
+            <ActionButton key={prompt.id} onClick={() => onUsePrompt?.(prompt.prompt)} className="block w-full rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-white/20">
               <span className="block text-sm font-medium text-white/75">{prompt.name}</span>
               <span className="mt-1 line-clamp-2 block text-xs leading-5 text-white/35">{prompt.prompt}</span>
-            </button>
+            </ActionButton>
           ))}
         </div>
         {message ? <p className="mt-3 text-xs text-white/45">{message}</p> : null}

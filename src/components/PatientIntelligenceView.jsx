@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton, { ActionForm } from "./ui/ActionButton";
+
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
@@ -33,14 +35,14 @@ function SignalList({ title, signals = [], evidenceCount, onOpenEvidence }) {
 
   if (onOpenEvidence) {
     return (
-      <button
+      <ActionButton
         type="button"
         onClick={onOpenEvidence}
         aria-label={`View all evidence supporting ${title}`}
         className="w-full rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
       >
         {content}
-      </button>
+      </ActionButton>
     );
   }
 
@@ -66,7 +68,7 @@ function PatientEvidenceDialog({ evidence, onClose }) {
       <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{patientEvidenceTitle(evidence)}</h2></div>
-          <button type="button" onClick={onClose} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.06]">Close</button>
+          <ActionButton type="button" onClick={onClose} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.06]">Close</ActionButton>
         </div>
         <blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{evidence.fullMention || evidence.quote}</blockquote>
         <div className="mt-5 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-5">
@@ -170,7 +172,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
     setEvidenceQuery("");
     setEvidenceError("");
     setSelectedEvidence(null);
-    void loadEvidencePage(dimension, 1, "");
+    return loadEvidencePage(dimension, 1, "");
   }
 
   function closeEvidenceBrowser() {
@@ -191,9 +193,9 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/70">Patient Intelligence</p>
         <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea}</h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/50">{isGlp1 ? "Analyze patient-related mentions across personal accounts, support communities, reported stories and family references. Patient/caregiver voices remain separately identified." : "Analyze journey stages, treatment barriers, emotional burden, treatments, and unmet needs using the evidence-qualified patient and caregiver subset."}</p>
-        <button onClick={() => runAnalysis()} disabled={loading || !therapeuticArea} className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
+        <ActionButton onClick={() => runAnalysis()} disabled={loading || !therapeuticArea} className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
           {loading ? "Analyzing…" : "Generate Patient Intelligence"}
-        </button>
+        </ActionButton>
         {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
       </section>
     );
@@ -210,15 +212,15 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
               <h2 className="mt-2 text-2xl font-semibold text-white">{evidenceDimension.label} evidence</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">Every retained {result.dataQuality.evidenceScope === "patient_related" ? "patient-related" : "patient or caregiver"} mention supporting this dimension for {therapeuticArea}. Select a mention to review the complete evidence.</p>
             </div>
-            <button type="button" onClick={closeEvidenceBrowser} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06]">← Back to Patient Intelligence</button>
+            <ActionButton type="button" onClick={closeEvidenceBrowser} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/65 transition hover:bg-white/[0.06]">← Back to Patient Intelligence</ActionButton>
           </div>
 
-          <form className="mt-6 flex flex-col gap-3 sm:flex-row" role="search" onSubmit={(event) => { event.preventDefault(); void loadEvidencePage(evidenceDimension.id, 1); }}>
+          <ActionForm className="mt-6 flex flex-col gap-3 sm:flex-row" role="search" onSubmit={(event) => { event.preventDefault(); return loadEvidencePage(evidenceDimension.id, 1); }}>
             <label className="sr-only" htmlFor="patient-evidence-search">Search patient evidence by keyword</label>
             <input id="patient-evidence-search" type="search" value={evidenceQuery} onChange={(event) => setEvidenceQuery(event.target.value)} placeholder={`Search ${evidenceDimension.label.toLowerCase()} mentions…`} className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-cyan-300/40" />
-            <button type="submit" disabled={evidenceLoading} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">{evidenceLoading ? "Searching…" : "Search"}</button>
-            <button type="button" onClick={() => { setEvidenceQuery(""); void loadEvidencePage(evidenceDimension.id, 1, ""); }} disabled={evidenceLoading || !evidenceQuery} className="rounded-xl border border-white/10 px-5 py-3 text-sm text-white/55 disabled:opacity-30">Clear</button>
-          </form>
+            <ActionButton type="submit" disabled={evidenceLoading} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">{evidenceLoading ? "Searching…" : "Search"}</ActionButton>
+            <ActionButton type="button" onClick={() => { setEvidenceQuery(""); return loadEvidencePage(evidenceDimension.id, 1, ""); }} disabled={evidenceLoading || !evidenceQuery} className="rounded-xl border border-white/10 px-5 py-3 text-sm text-white/55 disabled:opacity-30">Clear</ActionButton>
+          </ActionForm>
 
           {evidenceError ? <p className="mt-4 text-sm text-rose-300">{evidenceError}</p> : null}
           {evidenceLoading && !evidenceCatalog ? <p className="mt-6 text-sm text-white/40">Loading supporting patient evidence…</p> : null}
@@ -234,8 +236,8 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
                   <tbody className="divide-y divide-white/[0.07]">
                     {evidenceCatalog.items.map((item) => (
                       <tr key={item.id} className="align-top text-white/60 transition hover:bg-white/[0.025]">
-                        <td className="px-4 py-4"><button type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left font-semibold leading-5 text-white/80 hover:text-cyan-200">{patientEvidenceTitle(item)}</button></td>
-                        <td className="px-4 py-4"><button type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75">{item.quote}</button></td>
+                        <td className="px-4 py-4"><ActionButton type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left font-semibold leading-5 text-white/80 hover:text-cyan-200">{patientEvidenceTitle(item)}</ActionButton></td>
+                        <td className="px-4 py-4"><ActionButton type="button" onClick={() => setSelectedEvidence(item)} className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75">{item.quote}</ActionButton></td>
                         <td className="px-4 py-4">{item.url ? <a href={item.url} target="_blank" rel="noreferrer noopener" className="font-medium text-cyan-300/85 underline decoration-cyan-300/30 underline-offset-4 hover:text-cyan-200">{item.sourceLabel} ↗</a> : <span className="text-white/35">{item.sourceLabel}</span>}</td>
                         <td className="px-4 py-4 capitalize">{readableLabel(item.audienceLabel || item.voice)}</td>
                         <td className="px-4 py-4 text-xs leading-5 text-cyan-200/75">{item.evidenceTierLabel || "Direct patient evidence"}{item.patientContentLabel ? <span className="mt-1 block text-white/50">{item.patientContentLabel}</span> : null}<span className="mt-1 block text-white/30">{Math.round((item.classificationConfidence || 0) * 100)}% confidence</span></td>
@@ -248,9 +250,9 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
                 {!evidenceCatalog.items.length ? <p className="p-6 text-sm text-white/40">No supporting evidence matches the current keyword search.</p> : null}
               </div>
               <div className="mt-5 flex items-center justify-between">
-                <button type="button" onClick={() => void loadEvidencePage(evidenceDimension.id, evidenceCatalog.page - 1)} disabled={evidenceLoading || evidenceCatalog.page <= 1} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-30">← Previous</button>
+                <ActionButton type="button" onClick={() => loadEvidencePage(evidenceDimension.id, evidenceCatalog.page - 1)} disabled={evidenceLoading || evidenceCatalog.page <= 1} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-30">← Previous</ActionButton>
                 <span className="text-xs text-white/35">Page {evidenceCatalog.page} of {evidenceCatalog.pageCount}</span>
-                <button type="button" onClick={() => void loadEvidencePage(evidenceDimension.id, evidenceCatalog.page + 1)} disabled={evidenceLoading || evidenceCatalog.page >= evidenceCatalog.pageCount} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-30">Next →</button>
+                <ActionButton type="button" onClick={() => loadEvidencePage(evidenceDimension.id, evidenceCatalog.page + 1)} disabled={evidenceLoading || evidenceCatalog.page >= evidenceCatalog.pageCount} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-30">Next →</ActionButton>
               </div>
             </>
           ) : null}
@@ -278,13 +280,13 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
           </>}
         </div>
         {isGlp1 ? <div className="mt-4 flex flex-wrap gap-2" aria-label="Patient evidence scope">
-          <button type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_related"} disabled={loading} onClick={() => runAnalysis("patient_related")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">All patient-related mentions</button>
-          <button type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_voice"} disabled={loading} onClick={() => runAnalysis("patient_voice")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">Patient/caregiver voice only</button>
+          <ActionButton type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_related"} disabled={loading} onClick={() => runAnalysis("patient_related")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">All patient-related mentions</ActionButton>
+          <ActionButton type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_voice"} disabled={loading} onClick={() => runAnalysis("patient_voice")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">Patient/caregiver voice only</ActionButton>
         </div> : null}
         {Boolean(result.dataQuality.excludedPatientRelatedCount) ? <p className="mt-3 text-xs text-white/45">{result.dataQuality.excludedPatientRelatedCount} patient-related source mentions are excluded by corpus filters.</p> : null}
         <h2 className="mt-4 text-xl font-semibold text-white">{result.headline}</h2>
         <p className="mt-3 max-w-4xl text-sm leading-6 text-white/65">{result.executiveSummary}</p>
-        <button type="button" onClick={() => openEvidenceBrowser("all", "All analyzed mentions")} className="mt-4 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-cyan-200">View all {result.dataQuality.analyzedFindingCount} analyzed mentions</button>
+        <ActionButton type="button" onClick={() => openEvidenceBrowser("all", "All analyzed mentions")} className="mt-4 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-cyan-200">View all {result.dataQuality.analyzedFindingCount} analyzed mentions</ActionButton>
       </section>
       <div className="grid gap-4 xl:grid-cols-2">
         <SignalList title="Patient journey" signals={result.journeyStages} evidenceCount={evidenceCount("journey")} onOpenEvidence={() => openEvidenceBrowser("journey", "Patient journey")} />

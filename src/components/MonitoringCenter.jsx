@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton, { ActionForm } from "./ui/ActionButton";
+
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
@@ -78,7 +80,7 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Schedule intelligence</h2>
         <p className="mt-1 text-sm text-white/45">Create a governed recurring profile. In-app delivery is active; external channels queue until their enterprise connectors are configured.</p>
-        <form onSubmit={createProfile} className="mt-5 grid gap-3 lg:grid-cols-2">
+        <ActionForm onSubmit={createProfile} className="mt-5 grid gap-3 lg:grid-cols-2">
           <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Profile name" className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white outline-none" />
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Monitoring question" className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white outline-none" />
           <div className="grid grid-cols-2 gap-3">
@@ -92,8 +94,8 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
               </label>
             ))}
           </div>
-          <button type="submit" disabled={busy === "create" || !name.trim()} className="w-fit rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-40">{busy === "create" ? "Scheduling…" : "Create monitor"}</button>
-        </form>
+          <ActionButton type="submit" disabled={busy === "create" || !name.trim()} className="w-fit rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-40">{busy === "create" ? "Scheduling…" : "Create monitor"}</ActionButton>
+        </ActionForm>
         {message ? <p className="mt-4 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/55">{message}</p> : null}
       </section>
 
@@ -108,7 +110,7 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
                   <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[11px] text-emerald-300">{profile.status}</span>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-white/35"><span>{profile.cadence}</span><span>{profile.threshold} point threshold</span><span>Next {new Date(profile.next_run_at).toLocaleString()}</span></div>
-                <button onClick={() => runNow(profile.id)} disabled={busy === profile.id} className="mt-3 text-xs font-medium text-cyan-300 disabled:opacity-40">{busy === profile.id ? "Running…" : "Run now"}</button>
+                <ActionButton onClick={() => runNow(profile.id)} disabled={busy === profile.id} className="mt-3 text-xs font-medium text-cyan-300 disabled:opacity-40">{busy === profile.id ? "Running…" : "Run now"}</ActionButton>
               </article>
             )) : <p className="text-sm text-white/35">No monitoring profiles yet.</p>}
           </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton from "./ui/ActionButton";
+
 import Tooltip from "./ui/Tooltip";
 
 const SIGNAL_STYLES = {
@@ -97,7 +99,7 @@ function TableHeading({ label, tooltip }) {
         side="bottom"
         align="start"
       >
-        <button
+        <ActionButton
           type="button"
           aria-label={`${label}: ${tooltip}`}
           className="inline-flex cursor-help items-center gap-1.5 text-left uppercase tracking-[0.14em] text-white/35 transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"
@@ -109,7 +111,7 @@ function TableHeading({ label, tooltip }) {
           >
             ?
           </span>
-        </button>
+        </ActionButton>
       </Tooltip>
     </th>
   );
@@ -317,11 +319,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
       </div>
 
       <Section title="Evidence guardrails" subtitle="Coverage and limitations carried into the leadership interpretation">
-        <div className="grid gap-4 md:grid-cols-[220px_1fr]">
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-            <p className="text-xs uppercase tracking-[0.15em] text-white/35">Directional themes</p>
-            <p className="mt-2 text-2xl font-semibold text-white">{quality.directionalThemeCount ?? 0}</p>
-          </div>
+        <div className="grid gap-4">
           <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
             {warnings.length ? (
               <ul className="space-y-2 text-sm leading-6 text-amber-200/70">

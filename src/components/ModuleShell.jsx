@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton from "./ui/ActionButton";
+
 import {
   useMemo,
   useState,
@@ -75,7 +77,7 @@ export default function ModuleShell({
         <div className="flex min-w-max gap-1">
           {experience.tabs.map(
             (tab) => (
-              <button
+              <ActionButton
                 key={tab}
                 type="button"
                 onClick={() =>
@@ -88,7 +90,7 @@ export default function ModuleShell({
                 }`}
               >
                 {labelTab(tab)}
-              </button>
+              </ActionButton>
             )
           )}
         </div>

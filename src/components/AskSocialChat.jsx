@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton, { ActionForm } from "./ui/ActionButton";
+
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useState } from "react";
@@ -292,7 +294,7 @@ export default function AskSocialChat() {
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-2xl shadow-black/20">
           <div className="flex flex-wrap gap-2">
             {STARTER_QUESTIONS.map((item) => (
-              <button
+              <ActionButton
                 key={item}
                 type="button"
                 onClick={() => submitQuestion(item)}
@@ -300,7 +302,7 @@ export default function AskSocialChat() {
                 className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {item}
-              </button>
+              </ActionButton>
             ))}
           </div>
         </section>
@@ -338,7 +340,7 @@ export default function AskSocialChat() {
           ) : null}
         </section>
 
-        <form
+        <ActionForm
           onSubmit={handleSubmit}
           className="sticky bottom-4 rounded-3xl border border-white/10 bg-black/95 p-4 shadow-2xl shadow-black/30 backdrop-blur"
         >
@@ -357,18 +359,18 @@ export default function AskSocialChat() {
 
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-white/40">
-                Report-backed insights + social narrative discovery
+                (c) 2026 Eavesdrop LLC. All Rights Reserved.
               </p>
-              <button
+              <ActionButton
                 type="submit"
                 disabled={!question.trim() || loading}
                 className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Analyzing..." : "Ask"}
-              </button>
+              </ActionButton>
             </div>
           </div>
-        </form>
+        </ActionForm>
       </div>
     </div>
   );

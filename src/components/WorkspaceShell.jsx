@@ -1,10 +1,11 @@
 "use client";
 
+import ActionButton, { ActionForm } from "./ui/ActionButton";
+
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Spinner from "./ui/Spinner";
 import { useActivity } from "./AppActivityIndicator";
 import { UserButton } from "@clerk/nextjs";
 import Tooltip from "./ui/Tooltip";
@@ -64,7 +65,7 @@ function RailIcon({ name, className = "h-4 w-4" }) {
 
 function RailDockButton({ label, icon, onClick }) {
   return (
-    <button
+    <ActionButton
       type="button"
       onClick={onClick}
       aria-label={label}
@@ -72,7 +73,7 @@ function RailDockButton({ label, icon, onClick }) {
       className="asksocial-rail-dock-button inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-transparent text-white/48 transition hover:border-cyan-200/15 hover:bg-cyan-200/[0.07] hover:text-cyan-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
     >
       <RailIcon name={icon} className="h-[19px] w-[19px]" />
-    </button>
+    </ActionButton>
   );
 }
 
@@ -399,38 +400,6 @@ function RelevantCuratedInsights({ insights = [] }) {
   );
 }
 
-function RecommendedActions({ actions = [] }) {
-  if (!actions.length) return null;
-
-  return (
-    <Panel
-      title="Recommended Actions"
-      subtitle="Suggested next moves based on the strongest current signals"
-    >
-      <div className="space-y-3">
-        {actions.map((action, idx) => (
-          <div
-            key={`${action}-${idx}`}
-            className="rounded-xl border border-white/10 bg-black/30 px-4 py-3"
-          >
-            <div className="flex items-start gap-3">
-              <Badge
-                tone="action"
-                tooltip="A practical next step derived from the strongest curated and social signals."
-              >
-                <span className="whitespace-nowrap">
-                  Action {idx + 1}
-                </span>
-              </Badge>
-              <p className="text-sm leading-6 text-white/75">{action}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
 const evidenceTextKey = (value) => String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
 
 function ConversationThemeEvidence({ theme, examples }) {
@@ -507,7 +476,6 @@ function AssistantAnswer({
       .map(topic => ({ name: topic.label, relationship: "live", sourceType: "analytical_corpus" })),
   ];
   const emergingNarratives = focusedSummary ? [] : answer?.liveData?.emergingNarratives || [];
-  const recommendedActions = answer?.recommendedActions || [];
   const curatedMentions = responsePayload?.sourceIntelligence?.curatedMentions || [];
   const socialMentions = responsePayload?.sourceIntelligence?.socialMentions || [];
   const curatedIntelligenceAvailable =
@@ -713,7 +681,6 @@ function AssistantAnswer({
 
       <RelevantCuratedInsights insights={curatedInsights} />
 
-      <RecommendedActions actions={recommendedActions} />
     </div>
   );
 }
@@ -1814,7 +1781,7 @@ export default function WorkspaceShell() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    submitQuestion(question);
+    return submitQuestion(question);
   }
 
   function toggleLeftRail() {
@@ -1826,7 +1793,7 @@ export default function WorkspaceShell() {
       className="asksocial-v2 asksocial-shell min-h-screen bg-black text-white"
       data-rail-collapsed={leftRailCollapsed ? "true" : "false"}
     >
-      {workspaceSaveDialogOpen ? <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="save-current-session-title"><form onSubmit={saveCurrentSessionAsWorkspace} className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300/70">Workspace</p><h2 id="save-current-session-title" className="mt-2 text-xl font-semibold text-white">Save current session as workspace</h2><p className="mt-2 text-sm leading-6 text-white/45">Name this workspace to retain the active conversation and automatically save subsequent intelligence generated while it is selected.</p><label className="mt-5 block text-xs font-medium text-white/50">Workspace name<input autoFocus value={workspaceDraftName} onChange={(event) => { setWorkspaceDraftName(event.target.value); if (workspaceCreateError) setWorkspaceCreateError(""); }} placeholder="e.g., Botulinum toxin PV review" className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none focus:border-cyan-300/40" /></label>{workspaceCreateError ? <p role="alert" className="mt-3 text-xs text-amber-300">{workspaceCreateError}</p> : null}<div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setWorkspaceSaveDialogOpen(false)} disabled={workspaceCreateBusy} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">Cancel</button><button type="submit" disabled={workspaceCreateBusy || !workspaceDraftName.trim()} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{workspaceCreateBusy ? "Saving…" : "Save workspace"}</button></div></form></div> : null}
+      {workspaceSaveDialogOpen ? <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="save-current-session-title"><ActionForm onSubmit={saveCurrentSessionAsWorkspace} className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300/70">Workspace</p><h2 id="save-current-session-title" className="mt-2 text-xl font-semibold text-white">Save current session as workspace</h2><p className="mt-2 text-sm leading-6 text-white/45">Name this workspace to retain the active conversation and automatically save subsequent intelligence generated while it is selected.</p><label className="mt-5 block text-xs font-medium text-white/50">Workspace name<input autoFocus value={workspaceDraftName} onChange={(event) => { setWorkspaceDraftName(event.target.value); if (workspaceCreateError) setWorkspaceCreateError(""); }} placeholder="e.g., Botulinum toxin PV review" className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none focus:border-cyan-300/40" /></label>{workspaceCreateError ? <p role="alert" className="mt-3 text-xs text-amber-300">{workspaceCreateError}</p> : null}<div className="mt-6 flex justify-end gap-3"><ActionButton type="button" onClick={() => setWorkspaceSaveDialogOpen(false)} disabled={workspaceCreateBusy} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">Cancel</ActionButton><ActionButton type="submit" disabled={workspaceCreateBusy || !workspaceDraftName.trim()} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{workspaceCreateBusy ? "Saving…" : "Save workspace"}</ActionButton></div></ActionForm></div> : null}
       <div
         data-asksocial-layout
         className={
@@ -1841,7 +1808,7 @@ export default function WorkspaceShell() {
         >
           {leftRailCollapsed ? (
             <div className="flex min-h-full flex-col items-center gap-2 px-3 py-5">
-              <button
+              <ActionButton
                 type="button"
                 onClick={toggleLeftRail}
                 aria-label="Show left rail"
@@ -1851,7 +1818,7 @@ export default function WorkspaceShell() {
                 className="asksocial-rail-menu-button inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-200/15 bg-cyan-200/[0.07] text-cyan-100 transition hover:border-cyan-200/30 hover:bg-cyan-200/[0.11] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
               >
                 <RailIcon name="menu" className="h-5 w-5" />
-              </button>
+              </ActionButton>
               <AskSocialWordmark compact />
               <div className="my-2 h-px w-8 bg-white/8" />
               <RailDockButton label="New conversation" icon="new" onClick={startNewConversation} />
@@ -1877,7 +1844,7 @@ export default function WorkspaceShell() {
                 </div>
                 </div>
               </div>
-              <button
+              <ActionButton
                 type="button"
                 onClick={toggleLeftRail}
                 aria-label="Collapse left rail"
@@ -1887,18 +1854,18 @@ export default function WorkspaceShell() {
                 className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-white/10 text-white/45 transition hover:border-white/20 hover:bg-white/[0.04] hover:text-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
               >
                 <RailIcon name="close" className="h-4 w-4" />
-              </button>
+              </ActionButton>
             </div>
 
             <div className="mt-7">
-              <button
+              <ActionButton
                 type="button"
                 onClick={startNewConversation}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90"
               >
                 <RailIcon name="new" className="h-4 w-4" />
                 New conversation
-              </button>
+              </ActionButton>
             </div>
 
             <div className="mt-8 -translate-x-[10px]">
@@ -1938,7 +1905,7 @@ export default function WorkspaceShell() {
               </p>
               <div className="mt-3 space-y-2">
                 {QUICK_ACTIONS.map((item) => (
-                  <button
+                  <ActionButton
                     key={item}
                     type="button"
                     onClick={() => submitQuestion(item)}
@@ -1946,7 +1913,7 @@ export default function WorkspaceShell() {
                     className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/75 transition disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {item}
-                  </button>
+                  </ActionButton>
                 ))}
               </div>
             </div>
@@ -1963,7 +1930,7 @@ export default function WorkspaceShell() {
                   </div>
                 ) : (
                   recentQuestions.map((item, idx) => (
-                    <button
+                    <ActionButton
                       key={`${item}-${idx}`}
                       type="button"
                       onClick={() => submitQuestion(item)}
@@ -1971,7 +1938,7 @@ export default function WorkspaceShell() {
                       className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/70 transition disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {item}
-                    </button>
+                    </ActionButton>
                   ))
                 )}
               </div>
@@ -2026,25 +1993,25 @@ export default function WorkspaceShell() {
                             className="w-full rounded-xl border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none focus:border-white/30"
                           />
                           <div className="flex gap-2">
-                            <button
+                            <ActionButton
                               type="button"
                               onClick={() => saveRename(session.id)}
                               className="rounded-xl bg-white px-3 py-2 text-xs font-medium text-black"
                             >
                               Save
-                            </button>
-                            <button
+                            </ActionButton>
+                            <ActionButton
                               type="button"
                               onClick={cancelRename}
                               className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/70"
                             >
                               Cancel
-                            </button>
+                            </ActionButton>
                           </div>
                         </div>
                       ) : (
                         <>
-                          <button
+                          <ActionButton
                             type="button"
                             onClick={() => openSession(session.id)}
                             disabled={loading || openingSession}
@@ -2069,30 +2036,30 @@ export default function WorkspaceShell() {
                             <div className="mt-1 text-[11px] text-white/30">
                               Updated {formatDate(session.updated_at)}
                             </div>
-                          </button>
+                          </ActionButton>
 
                           <div className="mt-3 flex justify-end gap-3">
-                            <button
+                            <ActionButton
                               type="button"
                               onClick={() => togglePinned(session)}
                               className="text-xs text-white/45 transition hover:text-white/70"
                             >
                               {session.is_pinned ? "Unpin" : "Pin"}
-                            </button>
-                            <button
+                            </ActionButton>
+                            <ActionButton
                               type="button"
                               onClick={() => beginRename(session)}
                               className="text-xs text-white/45 transition hover:text-white/70"
                             >
                               Rename
-                            </button>
-                            <button
+                            </ActionButton>
+                            <ActionButton
                               type="button"
                               onClick={() => deleteSession(session.id)}
                               className="text-xs text-rose-400/80 transition hover:text-rose-300"
                             >
                               Delete
-                            </button>
+                            </ActionButton>
                           </div>
                         </>
                       )}
@@ -2189,7 +2156,7 @@ export default function WorkspaceShell() {
                   aria-label={activeWorkspace ? `Current workspace: ${activeWorkspace.name}` : "Save current session as workspace"}
                   className="text-right"
                 >
-                  {activeWorkspace ? <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">{availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}</select> : <button type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"><span>Save current session as workspace</span></button>}
+                  {activeWorkspace ? <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">{availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}</select> : <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"><span>Save current session as workspace</span></ActionButton>}
                   {activeWorkspace ? (
                     <p
                       aria-live="polite"
@@ -2233,12 +2200,6 @@ export default function WorkspaceShell() {
                 {messages.length === 0 || loading || openingSession ? (
                   <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
                     <div>
-                      {loading || openingSession ? (
-                        <div role="status" className="mb-5 flex justify-center text-cyan-200/80" data-testid="search-loading-indicator" data-inline-activity>
-                          <Spinner className="h-10 w-10" />
-                          <span className="sr-only">{openingSession ? "Loading saved intelligence…" : "Working on your question…"}</span>
-                        </div>
-                      ) : null}
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/60">
                         Intelligence workspace
                       </p>
@@ -2370,7 +2331,7 @@ export default function WorkspaceShell() {
             data-testid="primary-search-composer"
             className="order-2 px-6 pt-6"
           >
-            <form onSubmit={handleSubmit}>
+            <ActionForm onSubmit={handleSubmit}>
               <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
                 <div className="flex flex-col gap-3">
                   <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
@@ -2386,17 +2347,17 @@ export default function WorkspaceShell() {
                   />
 
                   <div className="flex justify-end">
-                    <button
+                    <ActionButton
                       type="submit"
                       disabled={!canSubmit}
                       className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loading ? "Synthesizing intelligence…" : "Explore intelligence →"}
-                    </button>
+                    </ActionButton>
                   </div>
                 </div>
               </div>
-            </form>
+            </ActionForm>
           </div>
           ) : null}
 
@@ -2406,8 +2367,7 @@ export default function WorkspaceShell() {
               className="order-4 border-t border-white/10 px-6 py-4"
             >
               <p className="text-xs text-white/40">
-                Report-backed insights + structured curated intelligence + social
-                narrative discovery
+                (c) 2026 Eavesdrop LLC. All Rights Reserved.
               </p>
             </footer>
           ) : null}

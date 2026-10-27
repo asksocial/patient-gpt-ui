@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton from "./ui/ActionButton";
+
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
@@ -32,9 +34,9 @@ export default function Glp1PvReference({ libraries, busy, onMutate, onConfigura
     </> : null}
     <Glp1HeldTriage busy={busy} onMutate={onMutate} />
     <div className="mt-4 flex flex-wrap items-center gap-3">
-      {!library ? <button disabled={Boolean(busy)} onClick={() => onMutate("/api/pv/corpora/glp-1", { payload: { action: "setup" } }, "glp1-setup", "GLP-1 library created in draft. Review its concepts and approve it in Configuration before screening.")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black disabled:opacity-40">Set up GLP-1 detection library</button> : null}
-      {library?.status === "active" ? <button disabled={Boolean(busy)} onClick={() => onMutate("/api/pv/corpora/glp-1", { payload: { action: "screen" } }, "glp1-screen", "GLP-1 social screening completed. Review the held-row counts and potential detections; existing case decisions were preserved.")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black disabled:opacity-40">{busy === "glp1-screen" ? "Screening…" : "Screen GLP-1 social corpus"}</button> : null}
-      {library && library.status !== "active" ? <><p className="text-xs text-amber-200">Library awaiting approval</p><button type="button" onClick={onConfiguration} className="cursor-pointer text-xs text-cyan-200 underline">Review library configuration</button></> : null}
+      {!library ? <ActionButton disabled={Boolean(busy)} onClick={() => onMutate("/api/pv/corpora/glp-1", { payload: { action: "setup" } }, "glp1-setup", "GLP-1 library created in draft. Review its concepts and approve it in Configuration before screening.")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black disabled:opacity-40">Set up GLP-1 detection library</ActionButton> : null}
+      {library?.status === "active" ? <ActionButton disabled={Boolean(busy)} onClick={() => onMutate("/api/pv/corpora/glp-1", { payload: { action: "screen" } }, "glp1-screen", "GLP-1 social screening completed. Review the held-row counts and potential detections; existing case decisions were preserved.")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black disabled:opacity-40">{busy === "glp1-screen" ? "Screening…" : "Screen GLP-1 social corpus"}</ActionButton> : null}
+      {library && library.status !== "active" ? <><p className="text-xs text-amber-200">Library awaiting approval</p><ActionButton type="button" onClick={onConfiguration} className="cursor-pointer text-xs text-cyan-200 underline">Review library configuration</ActionButton></> : null}
     </div>
   </section>;
 }
