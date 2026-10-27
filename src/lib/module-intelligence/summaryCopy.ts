@@ -1,6 +1,6 @@
-export function moduleExecutiveSummary(moduleId: string, therapeuticArea: string, summary: string): string {
-  if (moduleId === "medical_affairs" && /^glp[ _-]?1$/i.test(therapeuticArea)) {
-    return "Medical Affairs Intelligence evaluated eligible findings from corpus records for scientific perception, evidence gaps, medical questions, and safety-relevant discussion. Results are evidence-qualified and should be interpreted with the stated coverage limitations.";
-  }
-  return summary;
+export function moduleExecutiveSummary(summary: string): string {
+  return summary
+    .replace(/evaluated [\d,]+ eligible findings from [\d,]+ corpus records/, "evaluated eligible findings from corpus records")
+    .replace(/Patient Intelligence analyzed [\d,]+ /, "Patient Intelligence analyzed ")
+    .replace(/ from [\d,]+ corpus findings\./, " from corpus findings.");
 }

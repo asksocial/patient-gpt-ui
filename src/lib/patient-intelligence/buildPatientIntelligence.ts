@@ -509,7 +509,7 @@ export function buildPatientIntelligence(
     therapeuticArea,
     generatedAt,
     headline: topBarrier ? `${topBarrier} is the leading ${evidenceScope === "patient_related" ? "patient-related discussion" : "patient-experience"} signal in the available ${therapeuticArea} evidence.` : `No supported treatment-consideration priority was identified in the available ${therapeuticArea} patient evidence.`,
-    executiveSummary: `Patient Intelligence analyzed ${patientFindings.length} ${evidenceScope === "patient_related" ? "patient-related mentions, including community and third-party context," : "patient or caregiver voice records"} from ${findings.length} corpus findings. ${topNeed ? `The strongest supported information need is ${topNeed.toLowerCase()}.` : "No explicit unmet-information need was identified in the available source wording."} Findings should be interpreted with the stated coverage limitations.`,
+    executiveSummary: `Patient Intelligence analyzed ${evidenceScope === "patient_related" ? "patient-related mentions, including community and third-party context," : "patient or caregiver voice records"} from corpus findings. ${topNeed ? `The strongest supported information need is ${topNeed.toLowerCase()}.` : "No explicit unmet-information need was identified in the available source wording."} Findings should be interpreted with the stated coverage limitations.`,
     dataQuality: {
       contextRulesVersion: CONTEXT_RULES_VERSION,
       evidenceScope,

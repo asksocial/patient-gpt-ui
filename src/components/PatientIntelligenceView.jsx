@@ -1,5 +1,7 @@
 "use client";
 
+import { moduleExecutiveSummary } from "../lib/module-intelligence/summaryCopy";
+
 import ActionButton, { ActionForm } from "./ui/ActionButton";
 
 import { activityFetch as fetch } from "../lib/client/requestActivity";
@@ -270,7 +272,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
           <ActionButton type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_voice"} disabled={loading} onClick={() => runAnalysis("patient_voice")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">Patient/caregiver voice only</ActionButton>
         </div> : null}
         <h2 className={`${isGlp1 ? "mt-4 " : ""}text-xl font-semibold text-white`}>{result.headline}</h2>
-        <p className="mt-3 max-w-4xl text-sm leading-6 text-white/65">{result.executiveSummary}</p>
+        <p className="mt-3 max-w-4xl text-sm leading-6 text-white/65">{moduleExecutiveSummary(result.executiveSummary)}</p>
         <ActionButton type="button" onClick={() => openEvidenceBrowser("all", "All analyzed mentions")} className="mt-4 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-cyan-200">View all {result.dataQuality.analyzedFindingCount} analyzed mentions</ActionButton>
       </section>
       <div className="grid gap-4 xl:grid-cols-2">
