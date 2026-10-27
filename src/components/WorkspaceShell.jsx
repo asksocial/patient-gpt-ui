@@ -2090,7 +2090,7 @@ export default function WorkspaceShell() {
         </aside>
 
         <main data-asksocial-workarea className="flex min-h-screen min-w-0 flex-col">
-          <header className="asksocial-topbar order-1 sticky top-0 z-20 border-b border-white/10 bg-black/85 px-6 pt-5 pb-2.5 backdrop-blur-xl">
+          <header className="asksocial-topbar order-1 sticky top-0 z-20 border-b-0 border-white/10 bg-black/85 px-6 pt-5 pb-0 backdrop-blur-xl">
             <div className="mb-5 flex items-start gap-3 border-b border-white/10 pb-4">
               <div className="min-w-0 flex-1">
                 <EcosystemNavigation
