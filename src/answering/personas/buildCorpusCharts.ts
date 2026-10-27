@@ -9,7 +9,7 @@ export type CorpusChart = {
 export type CorpusCharts = { version: 1; burdens: CorpusChart; markets: CorpusChart };
 
 /** Each donut partitions posts exactly once, including multi-burden posts. */
-export function buildCorpusCharts(findings: Array<{ symptoms?: string[]; country?: string }>): CorpusCharts {
+export function buildCorpusCharts(findings: Array<{ symptoms?: string[]; country?: string }>, options: { showAllMarkets?: boolean } = {}): CorpusCharts {
   const denominator = findings.length;
   const symptoms = new Map<string, number>();
   const countries = new Map<string, number>();
@@ -32,7 +32,7 @@ export function buildCorpusCharts(findings: Array<{ symptoms?: string[]; country
   const burdenSegments = top.map((name, index) => ({ id: name, label: title(name) + (overlap ? " only" : ""), count: counts[index] }));
   if (overlap) burdenSegments.push({ id: "overlap", label: "Both leading burdens", count: overlap });
   burdenSegments.push({ id: "remainder", label: "All other findings", count: denominator - matched });
-  const marketSegments = ranked(countries).slice(0, 3).map(([label, count]) => ({ id: label, label, count }));
+  const marketSegments = ranked(countries).slice(0, options.showAllMarkets ? undefined : 3).map(([label, count]) => ({ id: label, label, count }));
   const leading = marketSegments[0];
   marketSegments.push({ id: "remainder", label: "Other markets / unspecified", count: denominator - marketSegments.reduce((sum, s) => sum + s.count, 0) });
   return {

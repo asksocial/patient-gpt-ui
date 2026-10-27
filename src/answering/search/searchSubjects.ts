@@ -8,8 +8,8 @@ const topic = (id: string, label: string, pattern: RegExp): SubjectTopic => ({ i
 export const SEARCH_SUBJECTS: SearchSubject[] = [
   { id: "access", label: "access and affordability", trigger: /\b(costs?|prices?|pricing|afford\w*|insurance|coverage|access|availability|shortages?|copay|out.of.pocket)\b/i,
     topics: [
-      topic("coverage", "insurance and coverage", /\b(insurance(?: companies)?.{0,80}(?:cover\w*|deni\w*|pay\w*|afford\w*|treatment|prescri\w*)|(?:health|drug|medical|treatment) insurance|insured|uninsured|coverage|copay\w*|prior authori\w*|reimbursement|medicare|medicaid)\b|保険|보험|seguro|cobertura/i),
-      topic("prices", "prices and affordability", /\b(costs?|prices?|pricing|afford\w*|expensive|out.of.pocket|cash.pay|savings? programs?)\b|価格|費用|高額|가격|비용|비싸|\bpre[çc]os?\b|\bcustos?\b|\bprecios?\b/i),
+      topic("coverage", "insurance and coverage", /\b(insurance(?: companies)?.{0,80}(?:cover\w*|deni\w*|pay\w*|afford\w*|treatment|prescri\w*)|(?:health|drug|medical|treatment) insurance|insured|uninsured|coverage|copay\w*|prior authori\w*|reimbursement|medicare|medicaid)\b|保険|医保|醫保|医疗保险|醫療保險|보험|비급여|급여 적용|급여 대상|ประกัน|bảo hiểm|asuransi|insurans|बीमा|seguro|cobertura/i),
+      topic("prices", "prices and affordability", /\b(costs?|prices?|pricing|afford\w*|expensive|out.of.pocket|cash.pay|savings? programs?)\b|価格|費用|高額|値段|自費|价格|價格|费用|費用|昂贵|昂貴|가격|비용|비싸|약값|ราคา|chi phí|giá thuốc|\b(?:harga|biaya|presyo)\b|कीमत|महंगा|\bpre[çc]os?\b|\bcustos?\b|\bprecios?\b/i),
       topic("availability", "availability and sourcing", /\b(shortages?|availability|supply|in stock|out of stock|access|sourcing|imports?)\b|品薄|品切れ|入手|공급|품절|직구|escassez|disponibilidad/i),
       topic("providers", "pharmacy and telehealth access", /\b(pharmacy|pharmacies|pharmacists?|telehealth|telemedicine|prescription denied)\b|薬局|処方|약국|처방|farm[aá]cia|farmacia/i),
     ], researchUse: "These discussions can inform research into affordability and access. They do not quantify household spending or establish reasons for treatment discontinuation." },

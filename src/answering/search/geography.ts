@@ -39,6 +39,9 @@ for (const a of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for (const b of "ABCDEFGHIJKLMNOPQ
   if (name && name !== code) countryNames.set(name.toLowerCase(), code);
 }
 const aliases: Record<string, string> = {
+  myanmar: "MM", burma: "MM", palestine: "PS", "state of palestine": "PS", "palestinian territories": "PS",
+  "brunei darussalam": "BN", "east timor": "TL", "lao people's democratic republic": "LA", "lao pdr": "LA",
+  "democratic people's republic of korea": "KP", "syrian arab republic": "SY", "iran, islamic republic of": "IR",
   "united states": "US", "united states of america": "US", usa: "US", "u.s.": "US", "u.s.a.": "US", american: "US",
   "united kingdom": "GB", uk: "GB", britain: "GB", british: "GB", "south korea": "KR", "republic of korea": "KR", "korea, republic of": "KR", korean: "KR",
   "north korea": "KP", vietnam: "VN", "viet nam": "VN", taiwan: "TW", "taiwan, province of china": "TW", "hong kong": "HK", "hong kong sar china": "HK", "macao": "MO", macau: "MO",
@@ -49,6 +52,10 @@ const escape = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export function sourceCountryCode(value: unknown): string | undefined {
   const name = String(value || "").trim().toLowerCase();
   return countryNames.get(name) || (/^[a-z]{2}$/.test(name) ? name.toUpperCase() : undefined);
+}
+export function sourceCountryLabel(value: unknown): string {
+  const code = sourceCountryCode(value);
+  return (code && names.of(code)) || String(value || "").trim() || "Unspecified market";
 }
 export function resolveQuestionGeography(question: string): { labels: string[]; remainder: string; matchesCountry: (value: unknown) => boolean } {
   let remainder = question;

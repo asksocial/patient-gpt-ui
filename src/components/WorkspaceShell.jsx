@@ -409,7 +409,7 @@ function ConversationThemeEvidence({ theme, examples }) {
   return <div className="mt-3 grid gap-3 lg:grid-cols-2">
     {matching.map(example => <article key={example.id} className="rounded-xl border border-white/10 p-4">
       <blockquote className="text-sm leading-6 text-white/80">{example.excerpt}</blockquote>
-      {example.sourceCategory || example.language ? <p className="mt-2 text-xs text-white/40">{[example.sourceCategory, example.language].filter(Boolean).join(" · ")}</p> : null}
+      {example.country || example.sourceCategory || example.language ? <p className="mt-2 text-xs text-white/40">{[example.country, example.sourceCategory, example.language].filter(Boolean).join(" · ")}</p> : null}
       {example.url ? <a href={example.url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs font-semibold text-cyan-200">Open original source ↗</a> : <p className="mt-3 text-xs text-white/50">Source URL was not supplied.</p>}
     </article>)}
   </div>;
