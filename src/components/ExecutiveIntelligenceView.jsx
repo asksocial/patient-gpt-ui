@@ -275,48 +275,24 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
         )}
       </Section>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <Section title="Recommended actions" subtitle="Actions inherited from supported strategic implications">
-          {actions.length ? (
-            <div className="space-y-3">
-              {actions.map((action, index) => (
-                <article key={action.actionId} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-black">{index + 1}</span>
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PRIORITY_STYLES[action.priority] || PRIORITY_STYLES.low}`}>
-                      {words(action.priority)} priority
-                    </span>
-                    <span className="text-xs text-white/35">{words(action.confidence)} confidence</span>
-                  </div>
-                  <p className="mt-3 text-sm font-medium leading-6 text-white">{action.action}</p>
-                  <p className="mt-2 text-xs leading-5 text-white/45">{action.rationale}</p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm leading-6 text-white/45">No action currently clears both the priority and evidence-confidence thresholds.</p>
-          )}
-        </Section>
-
-        <Section title="Executive watchlist" subtitle="Directional signals that require corroboration before escalation">
-          {watchlist.length ? (
-            <div className="space-y-3">
-              {watchlist.map((item) => (
-                <article key={item.themeId} className="rounded-2xl border border-amber-500/15 bg-amber-500/[0.06] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-white">{item.label}</h3>
-                    <span className="text-xs text-amber-300/80">{words(item.confidence)}</span>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-white/55">{item.reason}</p>
-                  <p className="mt-3 text-xs leading-5 text-white/35"><span className="font-semibold text-white/50">Escalation trigger:</span> {item.trigger}</p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-white/45">No directional themes require executive monitoring.</p>
-          )}
-        </Section>
-      </div>
+      <Section title="Executive watchlist" subtitle="Directional signals that require corroboration before escalation">
+        {watchlist.length ? (
+          <div className="space-y-3">
+            {watchlist.map((item) => (
+              <article key={item.themeId} className="rounded-2xl border border-amber-500/15 bg-amber-500/[0.06] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-white">{item.label}</h3>
+                  <span className="text-xs text-amber-300/80">{words(item.confidence)}</span>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-white/55">{item.reason}</p>
+                <p className="mt-3 text-xs leading-5 text-white/35"><span className="font-semibold text-white/50">Escalation trigger:</span> {item.trigger}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-white/45">No directional themes require executive monitoring.</p>
+        )}
+      </Section>
 
       <Section title="Evidence guardrails" subtitle="Coverage and limitations carried into the leadership interpretation">
         <div className="grid gap-4">
@@ -330,6 +306,28 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
             )}
           </div>
         </div>
+      </Section>
+
+      <Section title="Recommended actions" subtitle="Actions inherited from supported strategic implications">
+        {actions.length ? (
+          <div className="space-y-3">
+            {actions.map((action, index) => (
+              <article key={action.actionId} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-black">{index + 1}</span>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PRIORITY_STYLES[action.priority] || PRIORITY_STYLES.low}`}>
+                    {words(action.priority)} priority
+                  </span>
+                  <span className="text-xs text-white/35">{words(action.confidence)} confidence</span>
+                </div>
+                <p className="mt-3 text-sm font-medium leading-6 text-white">{action.action}</p>
+                <p className="mt-2 text-xs leading-5 text-white/45">{action.rationale}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm leading-6 text-white/45">No action currently clears both the priority and evidence-confidence thresholds.</p>
+        )}
       </Section>
     </div>
   );

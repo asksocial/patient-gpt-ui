@@ -300,7 +300,6 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
           <SignalList title="Treatment signals" signals={result.treatmentSignals} />
         </div>
       </div>
-      <RecommendedActions actions={result.recommendations} />
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Patient evidence</h3>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -328,6 +327,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">Data-quality limitations</h3>
         <ul className="mt-3 space-y-2 text-xs leading-5 text-white/45">{result.dataQuality.limitations.map((item) => <li key={item}>• {item}</li>)}</ul>
       </section>
+      <RecommendedActions actions={result.recommendations} />
     </div>
   );
 }

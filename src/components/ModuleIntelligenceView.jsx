@@ -369,7 +369,6 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
         <CountList title="Evidence classes" items={result.sourceSignals} onOpen={(item) => openEvidenceBrowser({ key: "evidenceClass", value: item.label, label: item.label.replaceAll("_", " ") })} />
       </div>
 
-      <RecommendedActions actions={result.recommendations} />
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -409,6 +408,7 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
           {result.dataQuality.limitations.map((item) => <li key={item}>• {item}</li>)}
         </ul>
       </section>
+      <RecommendedActions actions={result.recommendations} />
     </div>
   );
 }
