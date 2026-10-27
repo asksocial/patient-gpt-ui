@@ -152,13 +152,13 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
     <div className="space-y-5">
       <section className="overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-white/[0.03] to-violet-500/10 p-6 md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-4xl">
+          <div className="min-w-0 flex-1 [container-type:inline-size]">
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
               <span>Executive Intelligence</span>
               <span className="text-white/20">•</span>
               <span>{brief.therapeuticArea}</span>
             </div>
-            <h1 className="mt-4 text-2xl font-semibold leading-tight tracking-tight text-white md:text-4xl">
+            <h1 className="mt-4 text-2xl font-semibold leading-tight tracking-tight text-white md:text-[clamp(1.5rem,3cqi,2.25rem)] md:[text-wrap:balance]">
               {brief.headline}
             </h1>
             <div className="mt-5 space-y-2">
@@ -170,7 +170,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
             </div>
           </div>
 
-          <div className="min-w-56 rounded-2xl border border-white/10 bg-black/25 p-4 text-xs text-white/45">
+          <div className="min-w-56 shrink-0 rounded-2xl border border-white/10 bg-black/25 p-4 text-xs text-white/45">
             <p className="font-semibold uppercase tracking-[0.16em] text-white/65">
               Analysis window
             </p>
