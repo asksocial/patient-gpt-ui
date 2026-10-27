@@ -73,7 +73,7 @@ export default function ModuleShell({
 
   return (
     <div className="space-y-5">
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.025] p-1.5">
+      {module.id !== "medical_affairs" ? <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.025] p-1.5">
         <div className="flex min-w-max gap-1">
           {experience.tabs.map(
             (tab) => (
@@ -94,7 +94,7 @@ export default function ModuleShell({
             )
           )}
         </div>
-      </div>
+      </div> : null}
 
       {activeTab === "overview" ? (
         <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
