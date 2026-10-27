@@ -1,6 +1,7 @@
 "use client";
 
 import ActionButton, { ActionForm } from "./ui/ActionButton";
+import Spinner from "./ui/Spinner";
 
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
@@ -1905,7 +1906,7 @@ export default function WorkspaceShell() {
               </p>
               <div className="mt-3 space-y-2">
                 {QUICK_ACTIONS.map((item) => (
-                  <ActionButton
+                  <button
                     key={item}
                     type="button"
                     onClick={() => submitQuestion(item)}
@@ -1913,7 +1914,7 @@ export default function WorkspaceShell() {
                     className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/75 transition disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {item}
-                  </ActionButton>
+                  </button>
                 ))}
               </div>
             </div>
@@ -1930,7 +1931,7 @@ export default function WorkspaceShell() {
                   </div>
                 ) : (
                   recentQuestions.map((item, idx) => (
-                    <ActionButton
+                    <button
                       key={`${item}-${idx}`}
                       type="button"
                       onClick={() => submitQuestion(item)}
@@ -1938,7 +1939,7 @@ export default function WorkspaceShell() {
                       className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/70 transition disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {item}
-                    </ActionButton>
+                    </button>
                   ))
                 )}
               </div>
@@ -2011,7 +2012,7 @@ export default function WorkspaceShell() {
                         </div>
                       ) : (
                         <>
-                          <ActionButton
+                          <button
                             type="button"
                             onClick={() => openSession(session.id)}
                             disabled={loading || openingSession}
@@ -2036,7 +2037,7 @@ export default function WorkspaceShell() {
                             <div className="mt-1 text-[11px] text-white/30">
                               Updated {formatDate(session.updated_at)}
                             </div>
-                          </ActionButton>
+                          </button>
 
                           <div className="mt-3 flex justify-end gap-3">
                             <ActionButton
@@ -2200,6 +2201,14 @@ export default function WorkspaceShell() {
                 {messages.length === 0 || loading || openingSession ? (
                   <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
                     <div>
+                      {loading || openingSession ? (
+                        <div className="mb-5 flex justify-center" data-inline-activity data-testid="search-loading-indicator">
+                          <div role="status" aria-live="polite" className="inline-flex items-center gap-2 rounded-full border border-[#dce5e1] bg-white px-5 py-3 text-sm font-semibold text-[#087f72] shadow-sm">
+                            <Spinner className="h-5 w-5" />
+                            <span>Working…</span>
+                          </div>
+                        </div>
+                      ) : null}
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/60">
                         Intelligence workspace
                       </p>
@@ -2347,13 +2356,13 @@ export default function WorkspaceShell() {
                   />
 
                   <div className="flex justify-end">
-                    <ActionButton
+                    <button
                       type="submit"
                       disabled={!canSubmit}
                       className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {loading ? "Synthesizing intelligence…" : "Explore intelligence →"}
-                    </ActionButton>
+                      Explore intelligence →
+                    </button>
                   </div>
                 </div>
               </div>

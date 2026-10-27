@@ -145,7 +145,8 @@ async function run() {
     assert.match(buttonSource, /disabled=\{disabled \|\| busy\}/);
     assert.match(buttonSource, /<WorkingLabel/);
     const searchSource = readFileSync("src/components/WorkspaceShell.jsx", "utf8");
-    assert.doesNotMatch(searchSource, /RecommendedActions|search-loading-indicator/);
+    assert.doesNotMatch(searchSource, /RecommendedActions/);
+    assert.match(searchSource, /data-testid="search-loading-indicator"/);
     assert.match(searchSource, /return submitQuestion\(question\)/);
     assert.match(searchSource, /\(c\) 2026 Eavesdrop LLC. All Rights Reserved./);
     assert.doesNotMatch(readFileSync("src/components/ExecutiveIntelligenceView.jsx", "utf8"), />Directional themes</);

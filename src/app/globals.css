@@ -786,4 +786,5 @@ body {
   letter-spacing: normal;
   text-transform: none;
 }
-body:has([data-working-action]) .asksocial-activity-notice { display: none; }
+body:has([data-working-action]) .asksocial-activity-notice,
+body:has([data-inline-activity]) .asksocial-activity-notice { display: none; }
