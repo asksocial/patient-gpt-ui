@@ -79,7 +79,7 @@ export function acceptsTopicMatch(topicId: string, text: string, match: string, 
   if (topicId.endsWith(":availability") || topicId === "availability") {
     if (/\b(?:food|soybean|oil|energy|water|electricity|power|blood|money|protein|spike|oxygen)\s+(?:\w+\s+){0,2}supply\b/i.test(around)) return false;
     if (/^supply$/i.test(match) && !/\b(?:drug|medicines?|medications?|prescriptions?|pharmac\w*|doses?|injections?|treatment|months?|weeks?|days?)\b.{0,40}\bsupply\b|\bsupply\b.{0,40}\b(?:drug|medicines?|medications?|prescriptions?|pharmac\w*|doses?|injections?|treatment|shortage|chain)\b/i.test(around)) return false;
-    if (/^access$/i.test(match) && /\baccess\s+(?:to\s+)?(?:this|the|our|an?)?\s*(?:article|website|webpage|video|internet|data|report|account|portal)\b/i.test(around)) return false;
+    if (/^access$/i.test(match) && /\baccess\s+(?:to\s+)?(?:(?:this|the|our|an?|affordable|quality|online)\s+)*(?:article|website|webpage|video|internet|data|report|account|portal|housing|education|jobs?|employment|food|water|electricity)\b/i.test(around)) return false;
   }
   if (topicId.endsWith(":prices") || topicId === "prices") {
     if (/\b(?:maybe|perhaps|probably|i doubt|i assume)\b/i.test(around) && /\b(?:he|she|they|guy|someone)\b/i.test(around) && !/\b(?:my insurance|my prescription|i paid|i pay|i cannot afford|i can.t afford)\b/i.test(text)) return false;

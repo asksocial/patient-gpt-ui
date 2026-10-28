@@ -24,6 +24,7 @@ function finding(id: string, text: string, fields: Record<string, unknown> = {})
 }
 const question = "What are the main GLP-1 treatment experiences, access barriers, and safety concerns?";
 const negative = [
+  finding("housing-access", "The state of the world, forests burning and access to housing almost impossible, Ozempic and everything being about selling a product rather than connection."),
   finding("protein-supply", "Tirzepatide and T3 optimize your metabolism and mitochondria, but they aren't clearing an endless spike protein supply."),
   finding("investor-prices", "$LLY returns are down. $NVO Wegovy shares are up. @Investseekers, look at the stock prices."),
   finding("wellness", "Perfect for women over 40 starting a GLP-1 journey, managing side effects, and building a realistic wellness routine without the overwhelm."),
