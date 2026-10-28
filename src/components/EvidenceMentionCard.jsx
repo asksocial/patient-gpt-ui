@@ -38,6 +38,7 @@ export default function EvidenceMentionCard({
 
       {visibleTags.length ? (
         <div className="mt-4 flex flex-wrap gap-1.5">
+          <span className="self-center text-[10px] font-semibold text-white/50">Supports:</span>
           {visibleTags.map((tag) => <span key={tag} className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-2 py-1 text-[10px] text-cyan-200/65">{tag}</span>)}
           {remainingTagCount ? <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] text-white/40">+{remainingTagCount} more</span> : null}
         </div>

@@ -107,7 +107,7 @@ function createTestFinding(params: {
     relevanceScore: 0.85,
     evidenceStrength: 0.85,
 
-    evidence: [],
+    evidence: [{ sourceType: "live", sourceId: params.findingId, excerpt: params.summary, url: params.url }],
     normalizedLabels: [],
 
     semanticFingerprint:

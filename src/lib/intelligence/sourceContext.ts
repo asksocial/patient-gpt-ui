@@ -86,3 +86,8 @@ export function hasTrialContext(text: string): boolean {
 export function expressesInformationNeed(text: string): boolean {
   return /\?|\b(?:need|wish|help|how|where|why|unclear|unsure|looking for|want to know|lack|can't|cannot)\b/i.test(text) || native.questions.test(text) || /필요|부족|알고\s*싶|知りたい|教えて|需要|preciso|necesito/iu.test(text);
 }
+
+/** Same vocabulary for assigning a signal and locating its supporting source words. */
+export function signalSupportPattern(id: string, pattern: RegExp): RegExp {
+  return new RegExp([pattern.source, ...(map[id] || []).map(concept => native[concept].source)].join("|"), "iu");
+}

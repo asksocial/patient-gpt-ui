@@ -80,6 +80,12 @@ function FullMentionDialog({ evidence, moduleName, onClose }) {
           </div>
           <BackButton onClick={onClose} aria-label="Back to previous screen" />
         </div>
+        {evidence.supportingPassages?.length ? <div className="mt-5 space-y-3 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.05] p-4">
+          {evidence.supportingPassages.map(passage => <div key={passage.theme}>
+            <p className="text-xs font-semibold text-cyan-200">Supports: {passage.theme}</p>
+            <p className="mt-2 text-sm leading-6 text-white/75">{passage.quote}</p>
+          </div>)}
+        </div> : null}
         <blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">
           {evidence.fullMention || evidence.quote}
         </blockquote>
@@ -388,8 +394,8 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
               eyebrow={`${module.name} evidence`}
               badge={`${String(item.qualityBand || "unrated").replaceAll("_", " ")} quality`}
               title={evidenceDisplayTitle(item, module.name)}
-              preview={item.fullMention || item.quote}
-              tags={item.matchedSectionLabels || []}
+              preview={item.quote || item.fullMention}
+              tags={item.supportingPassages?.map(passage => passage.theme) || []}
               metrics={[
                 { label: "Source", value: item.sourceLabel },
                 { label: "Audience", value: String(item.voice || "Not available").replaceAll("_", " "), capitalize: true },

@@ -1,4 +1,5 @@
-import { sourceContext, matchesContextSignal, expressesInformationNeed, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
+import { sourcePassages, supportingPassage } from "../../answering/evidence/sourcePassages";
+import { sourceContext, matchesContextSignal, signalSupportPattern, expressesInformationNeed, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
 import { SEARCH_SUBJECTS } from "../../answering/search/searchSubjects";
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
 import {
@@ -40,6 +41,7 @@ export type PatientEvidenceItem = {
   id: string;
   findingId: string;
   quote: string;
+  supportingPassages?: Array<{ theme: string; quote: string; url?: string }>;
   fullMention: string;
   mentionTitle?: string;
   author?: string;
@@ -115,6 +117,7 @@ export type PatientIntelligenceResult = {
     id: string;
     findingId: string;
     quote: string;
+    supportingPassages?: Array<{ theme: string; quote: string; url?: string }>;
     fullMention: string;
     mentionTitle?: string;
     author?: string;
@@ -332,16 +335,25 @@ function buildPatientEvidenceItem(
   const intelligence = classification.intelligence;
   const source = bestEvidence(finding);
   const matchedSignals = matchedPatientSignals(finding, dimension);
+  const patterns = dimension === "all" ? Object.values(PATIENT_EVIDENCE_DIMENSIONS).flatMap(value => value.patterns) : PATIENT_EVIDENCE_DIMENSIONS[dimension].patterns;
+  const actualSignals = dimension === "all" ? allMatchedPatientSignals(finding) : matchedSignals;
+  const supports = patterns.flatMap(([id, label, pattern]) => {
+    if (!actualSignals.some(signal => signal.id === id)) return [];
+    const passage = supportingPassage(sourcePassages(finding), signalSupportPattern(id, pattern), { minimumLength: 1 });
+    return passage ? [{ theme: label, support: passage }] : [];
+  });
+  const support = supports[0]?.support;
   return {
     id: `patient:${findingId(finding)}`,
     findingId: findingId(finding),
-    quote: source?.excerpt || finding.summary || finding.canonicalClaim,
-    fullMention: fullMention(finding, source),
+    quote: support?.excerpt || source?.excerpt || finding.summary || finding.canonicalClaim,
+    supportingPassages: [...new Map(supports.filter(item => item.support.url === support?.url && item.support.text === support?.text).map(item => [item.theme, { theme: item.theme, quote: item.support.excerpt, url: item.support.url }])).values()],
+    fullMention: support?.text || fullMention(finding, source),
     mentionTitle: metadataString(finding, "headline", "title") || undefined,
     author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,
     publishedAt: metadataString(finding, "date", "published_at", "published_date", "alternate_date_format") || undefined,
     sourceLabel: source?.platform || intelligence.sourceType || intelligence.platform || "Source metadata unavailable",
-    url: originalSourceUrl(finding, source),
+    url: support ? support.url : originalSourceUrl(finding, source),
     platform: source?.platform,
     country: source?.country,
     voice: intelligence.voice,
@@ -477,17 +489,19 @@ export function buildPatientIntelligence(
     .slice(0, 20)
     .map(({ finding, intelligence, classification }) => {
     const source = bestEvidence(finding);
+    const supported = buildPatientEvidenceItem(finding, classification, "all");
     const matchedSignals = allMatchedPatientSignals(finding);
     return {
       id: `patient:${findingId(finding)}`,
       findingId: findingId(finding),
-      quote: source?.excerpt || finding.summary || finding.canonicalClaim,
-      fullMention: fullMention(finding, source),
+      quote: supported.quote,
+      supportingPassages: supported.supportingPassages,
+      fullMention: supported.fullMention,
       mentionTitle: metadataString(finding, "headline", "title") || undefined,
       author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,
       publishedAt: metadataString(finding, "date", "published_at", "published_date", "alternate_date_format") || undefined,
       sourceLabel: source?.platform || intelligence.sourceType || intelligence.platform || "Source metadata unavailable",
-      url: originalSourceUrl(finding, source),
+      url: supported.url,
       platform: source?.platform,
       country: source?.country,
       voice: intelligence.voice,

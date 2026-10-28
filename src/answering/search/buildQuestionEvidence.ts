@@ -1,12 +1,15 @@
+import { preserveRawMetadata } from "../../ingestion/metadata";
 import type { CanonicalFinding } from "../models/finding";
+import { analyzeEvidence } from "../evidence/analyzeEvidence";
+import { sourcePassages, supportingPassage, acceptsTopicMatch } from "../evidence/sourcePassages";
 import { searchRecordText, subjectsForQuestion, topicsForQuestion } from "./searchSubjects";
 import { resolveQuestionGeography, sourceCountryLabel } from "./geography";
 
 export type QuestionEvidence = {
-  version: 5;
+  version: 6;
   subjects: string[];
   topics: Array<{ id: string; label: string; count: number }>;
-  examples: Array<{ id: string; excerpt: string; url?: string; topic: string; country?: string; language?: string; sourceCategory?: string }>;
+  examples: Array<{ id: string; excerpt: string; url?: string; topic: string; topicId: string; matchedTerms: string[]; country?: string; language?: string; sourceCategory?: string }>;
   marketCoverage?: Array<{ country: string; count: number; topics: string[] }>;
   observations: string[];
   researchUses: string[];
@@ -20,14 +23,29 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
   const contextPattern = diseaseTerms.length ? new RegExp(diseaseTerms.map(escape).join("|"), "i") : undefined;
   if (!subjects.length) return undefined;
   const topics = subjects.flatMap(subject => topicsForQuestion(subject, question).map(t => ({ ...t, id: `${subject.id}:${t.id}` })));
-  const matches = topics.map(topic => ({ topic, records: findings.filter(record => topic.pattern.test(searchRecordText(record))) })).filter(item => item.records.length);
-  matches.sort((a, b) => Number(!a.topic.pattern.test(question)) - Number(!b.topic.pattern.test(question)) || Number(a.topic.id.endsWith(":general_safety")) - Number(b.topic.id.endsWith(":general_safety")) || b.records.length - a.records.length || a.topic.id.localeCompare(b.topic.id));
+  const quality = new Map<CanonicalFinding, ReturnType<typeof analyzeEvidence>>();
+  const supportFor = (record: CanonicalFinding, topic: typeof topics[number]) => {
+    if (!quality.has(record)) {
+      const rawMetadata = record.rawMetadata && !record.rawMetadata.normalizedFields
+        ? preserveRawMetadata(record.rawMetadata.fields, { adapter: record.rawMetadata.adapter || "source-evidence", sourceProvider: record.rawMetadata.sourceProvider || "retained-corpus" })
+        : record.rawMetadata;
+      quality.set(record, analyzeEvidence({ ...record, rawMetadata }));
+    }
+    const assessment = quality.get(record)!;
+    if (assessment.isPromotional || ["clinic_marketing", "corporate_pr", "sponsored_content", "retail_or_product"].includes(assessment.evidenceClass)) return undefined;
+    return supportingPassage(sourcePassages(record), topic.pattern, {
+      context: /^english$/i.test(String(record.rawMetadata?.fields?.Language || "")) || !record.rawMetadata?.fields?.Language && /^[\x00-\x7F]/.test(String(record.rawMetadata?.fields?.["Opening Text"] || record.evidence?.[0]?.excerpt || "")) ? contextPattern : undefined,
+      accept: (text, match, index) => acceptsTopicMatch(topic.id, text, match, index),
+    });
+  };
+  const matches = topics.map(topic => ({ topic, records: findings.filter(record => supportFor(record, topic)) })).filter(item => item.records.length);
+  matches.sort((a, b) => Number(a.topic.id.endsWith(":general_safety")) - Number(b.topic.id.endsWith(":general_safety")) || Number(!a.topic.pattern.test(question)) - Number(!b.topic.pattern.test(question)) || b.records.length - a.records.length || a.topic.id.localeCompare(b.topic.id));
   const examples: QuestionEvidence["examples"] = [];
   const geography = resolveQuestionGeography(question);
   const countryOf = (record: CanonicalFinding) => sourceCountryLabel(record.rawMetadata?.fields?.Country || record.countries?.[0] || (record as CanonicalFinding & { country?: string }).country);
   const marketCoverage = geography.labels.length ? [...new Set(findings.map(countryOf))].map(country => {
     const records = findings.filter(record => countryOf(record) === country);
-    return { country, count: records.length, topics: topics.filter(topic => records.some(record => topic.pattern.test(searchRecordText(record)))).map(topic => topic.label) };
+    return { country, count: records.length, topics: topics.filter(topic => records.some(record => supportFor(record, topic))).map(topic => topic.label) };
   }).sort((a, b) => b.count - a.count || a.country.localeCompare(b.country)) : undefined;
   const seen = new Set<string>();
   for (const { topic, records } of matches) {
@@ -37,39 +55,27 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
         const text = compact(fields["Opening Text"] || fields["Hit Sentence"] || r.summary);
         const source = String(fields["Source Type"] || "");
         const title = compact(fields.Title);
-        return (/^english$/i.test(String(fields.Language)) ? 2000 : 0) + (r.audienceClassification?.patientContent ? 1200 : /forum|social network|comments/i.test(source) ? 200 : 0) + (topic.pattern.test(title) ? 150 : 0) + Math.min(text.length, 400);
+        const directVoice = /\b(?:i(?:'m|'ve| am| have)?|my|we|our)\b.{0,80}\b(?:tak\w*|start\w*|prescription|insur\w*|afford\w*|paid|pay|nausea|side effects?|experienc\w*|dose|shortage)\b|맞았|맞고|복용|구토|내가|제가|服用|打った|私|吐き気|tomei|estou tomando/i.test(text);
+        return (directVoice ? 3000 : 0) + (/^english$/i.test(String(fields.Language)) ? 700 : 0) + (r.audienceClassification?.patientContent ? 1200 : /forum|social network|comments/i.test(source) ? 200 : 0) + (topic.pattern.test(title) ? 150 : 0) + Math.min(text.length, 400);
       };
       const represented = (r: CanonicalFinding) => examples.filter(example => example.country === countryOf(r)).length;
       return (geography.labels.length ? represented(a) - represented(b) : 0) || score(b) - score(a);
     });
     for (const record of ordered) {
       if (examples.filter(e => e.topic === topic.label).length >= 2 || examples.length >= 6) break;
+      const subject = topic.id.split(":")[0];
+      if (examples.filter(example => example.topicId.startsWith(`${subject}:`)).length >= Math.ceil(6 / subjects.length)) break;
       if (geography.labels.length && examples.some(example => example.topic === topic.label && example.country === countryOf(record))) continue;
       const fields = record.rawMetadata?.fields || {};
-      // Preserve original-language source wording, never generated canonical claims.
-      const original = [fields["Opening Text"], fields["Hit Sentence"], fields.Title].filter(Boolean);
-      const parts = (original.length ? original : [...(record.evidence || []).map(e => e.excerpt), record.summary]).filter(Boolean).map(compact);
-      const english = /^english$/i.test(String(fields.Language)) || (!fields.Language && /^[\x00-\x7F]/.test(parts.join(" ")));
-      const passage = parts.map(text => {
-        const hits = [...text.matchAll(new RegExp(topic.pattern.source, "gi"))];
-        const contexts = contextPattern && english ? [...text.matchAll(new RegExp(contextPattern.source, "gi"))] : [];
-        if (contextPattern && english && !contexts.length) return null;
-        for (const hit of hits) {
-          const context = contexts.length ? contexts.reduce((best, c) => Math.abs(c.index - hit.index) < Math.abs(best.index - hit.index) ? c : best) : hit;
-          if (Math.abs(context.index - hit.index) > 280) continue;
-          const start = Math.max(0, Math.min(hit.index, context.index) - 70);
-          const end = Math.min(text.length, Math.max(hit.index + hit[0].length, context.index + context[0].length) + 180);
-          return (start ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : "");
-        }
-        return null;
-      }).find(Boolean);
+      const support = supportFor(record, topic);
+      const passage = support?.excerpt;
       if (!passage) continue;
       const excerpt = passage;
       const id = record.findingId || (record as CanonicalFinding & { id?: string }).id || String(fields["Document ID"] || "");
-      const url = compact(fields.URL || record.evidence?.find(e => e.url)?.url);
+      const url = support?.url;
       if (!id || seen.has(id) || seen.has(excerpt)) continue;
       seen.add(id); seen.add(excerpt);
-      examples.push({ id, excerpt, url: /^https?:\/\//i.test(url) ? url : undefined, topic: topic.label, country: countryOf(record), language: compact(fields.Language) || undefined, sourceCategory: compact(fields["Source Type"]) || undefined });
+      examples.push({ id, excerpt, url, topic: topic.label, topicId: topic.id, matchedTerms: support!.matchedTerms, country: countryOf(record), language: compact(fields.Language) || undefined, sourceCategory: compact(fields["Source Type"]) || undefined });
     }
   }
   const observations: string[] = [];
@@ -84,7 +90,7 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
   if (findings.length > 0 && findings.length < 20) limitations.push("The matching evidence is limited. Treat these observations as illustrative examples rather than estimates of prevalence.");
   if (/\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(question)) limitations.push("Themes present in this corpus do not establish emergence or growth without a comparable time baseline.");
   if (/\b(why|reasons?|drivers?|caus\w*)\b/i.test(question)) limitations.push("Topic mentions alone do not establish motivations or causal relationships. Reasons require explicit supporting accounts.");
-  return { version: 5, subjects: subjects.map(s => s.label), topics: matches.map(({ topic, records }) => ({ id: topic.id, label: topic.label, count: records.length })), examples, marketCoverage, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
+  return { version: 6, subjects: subjects.map(s => s.label), topics: matches.map(({ topic, records }) => ({ id: topic.id, label: topic.label, count: records.length })), examples, marketCoverage, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
 }
 
 export function questionEvidenceAnswer(evidence: QuestionEvidence): string {

@@ -403,12 +403,23 @@ function RelevantCuratedInsights({ insights = [] }) {
 
 const evidenceTextKey = (value) => String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
 
+function ThemeSupportQuote({ text, terms = [] }) {
+  const escaped = terms.filter(Boolean).map(term => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (!escaped.length) return text;
+  const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+  return String(text).split(pattern).map((part, index) => terms.some(term => evidenceTextKey(term) === evidenceTextKey(part))
+    ? <mark key={index} className="rounded bg-[#deeee6] px-0.5 text-[#123b32]">{part}</mark>
+    : part);
+}
+
 function ConversationThemeEvidence({ theme, examples }) {
-  const matching = examples.filter(example => evidenceTextKey(example.topic) === evidenceTextKey(theme));
+  const matching = examples.filter(example => evidenceTextKey(example.topic) === evidenceTextKey(theme) && example.matchedTerms?.some(term => evidenceTextKey(example.excerpt).includes(evidenceTextKey(term))));
   if (!matching.length) return null;
   return <div className="mt-3 grid gap-3 lg:grid-cols-2">
     {matching.map(example => <article key={example.id} className="rounded-xl border border-white/10 p-4">
-      <blockquote className="text-sm leading-6 text-white/80">{example.excerpt}</blockquote>
+      <p className="mb-2 text-xs font-semibold text-cyan-200">Supports: {theme}</p>
+      <blockquote className="text-sm leading-6 text-white/80"><ThemeSupportQuote text={example.excerpt} terms={example.matchedTerms} /></blockquote>
+      <p className="mt-2 text-xs text-white/50">Relevant source wording: {example.matchedTerms.map(term => `“${term}”`).join(", ")}</p>
       {example.country || example.sourceCategory || example.language ? <p className="mt-2 text-xs text-white/40">{[example.country, example.sourceCategory, example.language].filter(Boolean).join(" · ")}</p> : null}
       {example.url ? <a href={example.url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs font-semibold text-cyan-200">Open original source ↗</a> : <p className="mt-3 text-xs text-white/50">Source URL was not supplied.</p>}
     </article>)}

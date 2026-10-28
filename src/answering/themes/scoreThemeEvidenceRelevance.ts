@@ -1,3 +1,4 @@
+import { sourcePassages } from "../evidence/sourcePassages";
 import { CanonicalFinding } from "../models/finding";
 import { ThemeDefinition } from "./themeModels";
 
@@ -22,44 +23,9 @@ function normalizeText(
     .trim();
 }
 
-function getTextFields(
-  finding: CanonicalFinding
-) {
-  const f = finding as any;
-
-  return {
-    claim: normalizeText(
-      f.canonicalClaim
-    ),
-    summary: normalizeText(
-      f.summary
-    ),
-    title: normalizeText(
-      f.title
-    ),
-    description: normalizeText(
-      f.description
-    ),
-    excerpt: normalizeText(
-      f.excerpt
-    ),
-    fullText: normalizeText(
-      [
-        f.canonicalClaim,
-        f.summary,
-        f.title,
-        f.description,
-        f.text,
-        f.excerpt,
-        ...(f.labels || []),
-        ...(f.normalizedLabels || []),
-        ...(f.symptoms || []),
-        ...(f.treatments || []),
-      ]
-        .filter(Boolean)
-        .join(" ")
-    ),
-  };
+function getTextFields(finding: CanonicalFinding) {
+  const text = normalizeText(sourcePassages(finding).map(passage => passage.text).join(" "));
+  return { claim: "", summary: text, title: "", description: "", excerpt: text, fullText: text };
 }
 
 function getMatchedKeywords(

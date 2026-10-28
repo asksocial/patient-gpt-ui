@@ -90,6 +90,9 @@ export type RepresentativeEvidence = {
 
   quote: string;
 
+  supportingTheme?: string;
+  matchedTerms?: string[];
+
   sourceCategory:
     EvidenceSourceCategory;
 

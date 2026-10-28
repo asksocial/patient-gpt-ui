@@ -21,9 +21,7 @@ import type {
   ThemeDefinition,
   ThemeQualityDiagnostics,
 } from "./themeModels";
-import {
-  extractRepresentativeQuote,
-} from "./extractRepresentativeQuote";
+import { sourcePassages, supportingPassage, acceptsTopicMatch } from "../evidence/sourcePassages";
 import {
   classifyEvidenceSource,
 } from "./classifyEvidenceSource";
@@ -95,18 +93,6 @@ function getClaim(
       value.description ||
       ""
   ).trim();
-}
-
-function getPrimaryEvidence(
-  finding: CanonicalFinding
-): any | null {
-  const evidence = Array.isArray(
-    (finding as any).evidence
-  )
-    ? (finding as any).evidence
-    : [];
-
-  return evidence[0] || null;
 }
 
 function getEvidenceIntelligence(
@@ -511,17 +497,16 @@ function buildCandidate(
     return null;
   }
 
-  const quote =
-    extractRepresentativeQuote(
-      finding
-    );
-
-  if (!quote) {
-    return null;
-  }
-
-  const primaryEvidence =
-    getPrimaryEvidence(finding);
+  const escapeKeyword = (keyword: string) => keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const terms = theme.keywords.filter(Boolean).map(keyword => /[a-z0-9]/i.test(keyword) ? `(?<![\\p{L}\\p{N}])${escapeKeyword(keyword)}(?![\\p{L}\\p{N}])` : escapeKeyword(keyword));
+  if (!terms.length) return null;
+  const support = supportingPassage(sourcePassages(finding), new RegExp(terms.join("|"), "iu"), {
+    maximumLength: THEME_QUALITY_CONFIG.maximumQuoteLength,
+    accept: (text, match, index) => acceptsTopicMatch(/availability|sourcing/i.test(theme.label) ? "availability" : /affordability|cost/i.test(theme.label) ? "prices" : /safety|tolerability|side.effects/i.test(theme.label) ? "general_safety" : theme.themeId, text, match, index),
+  });
+  if (!support) return null;
+  const quote = support.excerpt;
+  const primaryEvidence = support.evidence;
 
   const intelligence =
     getEvidenceIntelligence(
@@ -565,8 +550,7 @@ function buildCandidate(
     );
 
   const url = String(
-    primaryEvidence?.url ||
-      value.url ||
+    support.url ||
       ""
   ).trim();
 
@@ -603,6 +587,9 @@ function buildCandidate(
       claim: getClaim(finding),
 
       quote,
+
+      supportingTheme: theme.label,
+      matchedTerms: support.matchedTerms,
 
       sourceCategory,
 

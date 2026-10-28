@@ -1,5 +1,6 @@
+import { sourcePassages, supportingPassage } from "../../answering/evidence/sourcePassages";
 import { applyEvidenceClassQualityCap } from "../../answering/evidence/config/evidenceQualityConfig";
-import { sourceContext, matchesContextSignal, hasTrialContext, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
+import { sourceContext, matchesContextSignal, signalSupportPattern, hasTrialContext, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
 import { classifyGlp1Audience, GLP1_AUDIENCE_VERSION } from "../../ingestion/glp1Audience";
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
 import { analyzeEvidence } from "../../answering/evidence/analyzeEvidence";
@@ -20,6 +21,7 @@ export type ModuleEvidenceItem = {
   id: string;
   findingId: string;
   quote: string;
+  supportingPassages?: Array<{ theme: string; quote: string; url?: string }>;
   fullMention: string;
   mentionTitle?: string;
   author?: string;
@@ -538,17 +540,27 @@ function buildEvidenceItem(
   matchedSections: SectionDefinition[],
   contextualRelevanceScore: number
 ): ModuleEvidenceItem {
-  const source = bestEvidence(finding, matchedSections);
+  const passages = sourcePassages(finding);
+  const supports = matchedSections.flatMap(section => {
+    const support = supportingPassage(passages, signalSupportPattern(section.id, section.pattern), {
+      minimumLength: 1,
+      accept: text => matchesContextSignal(section.id, section.pattern, text),
+    });
+    return support ? [{ section, support }] : [];
+  });
+  const support = supports[0]?.support;
+  const source = support?.evidence || bestEvidence(finding, matchedSections);
   return {
     id: `${moduleId}:${findingId(finding)}`,
     findingId: findingId(finding),
-    quote: source?.excerpt || fallbackExcerpt(finding),
-    fullMention: fullMention(finding, source),
+    quote: support?.excerpt || source?.excerpt || fallbackExcerpt(finding),
+    supportingPassages: supports.filter(item => item.support.url === support?.url && item.support.text === support?.text).map(item => ({ theme: item.section.label, quote: item.support.excerpt, url: item.support.url })),
+    fullMention: support?.text || fullMention(finding, source),
     mentionTitle: metadataString(finding, "headline", "title") || undefined,
     author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,
     publishedAt: metadataString(finding, "date", "published_at", "published_date", "alternate_date_format") || undefined,
     sourceLabel: source?.platform || intelligence.domain || intelligence.platform || "Source metadata unavailable",
-    url: originalSourceUrl(finding, source),
+    url: support ? support.url : originalSourceUrl(finding, source),
     country: source?.country || metadataString(finding, "country") || undefined,
     platform: source?.platform || intelligence.platform,
     voice: resolvedAudienceLabel(intelligence),
@@ -556,8 +568,8 @@ function buildEvidenceItem(
     qualityScore: intelligence.qualityScore,
     qualityBand: intelligence.qualityBand,
     promotionalContext: intelligence.isPromotional || intelligence.evidenceClass === "corporate_pr",
-    matchedSectionIds: matchedSections.map((section) => section.id),
-    matchedSectionLabels: matchedSections.map((section) => section.label),
+    matchedSectionIds: matchedSections.map(section => section.id),
+    matchedSectionLabels: matchedSections.map(section => section.label),
     contextualRelevanceScore,
   };
 }
@@ -816,7 +828,7 @@ export function buildModuleEvidenceCatalog(
   const items = filtered
     .slice(offset, offset + pageSize)
     .map(({ finding, intelligence, matchedSections, contextualRelevanceScore }) =>
-      buildEvidenceItem(moduleId, finding, intelligence, matchedSections, contextualRelevanceScore)
+      buildEvidenceItem(moduleId, finding, intelligence, params.sectionId ? matchedSections.filter(section => section.id === params.sectionId) : matchedSections, contextualRelevanceScore)
     );
 
   return {

@@ -75,6 +75,12 @@ function PatientEvidenceDialog({ evidence, onClose }) {
           <div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{patientEvidenceTitle(evidence)}</h2></div>
           <BackButton onClick={onClose} aria-label="Back to previous screen" />
         </div>
+        {evidence.supportingPassages?.length ? <div className="mt-5 space-y-3 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.05] p-4">
+          {evidence.supportingPassages.map(passage => <div key={passage.theme}>
+            <p className="text-xs font-semibold text-cyan-200">Supports: {passage.theme}</p>
+            <p className="mt-2 text-sm leading-6 text-white/75">{passage.quote}</p>
+          </div>)}
+        </div> : null}
         <blockquote className="mt-5 whitespace-pre-wrap border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{evidence.fullMention || evidence.quote}</blockquote>
         <div className="mt-5 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-5">
           <div><p className="text-white/30">Source</p><p className="mt-1 text-white/65">{evidence.sourceLabel}</p></div>
@@ -309,8 +315,8 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
               eyebrow="Patient evidence"
               badge={item.patientContentLabel || item.evidenceTierLabel || "Direct patient evidence"}
               title={patientEvidenceTitle(item)}
-              preview={item.fullMention || item.quote}
-              tags={item.matchedSignalLabels || []}
+              preview={item.quote || item.fullMention}
+              tags={item.supportingPassages?.map(passage => passage.theme) || []}
               metrics={[
                 { label: "Source", value: item.sourceLabel },
                 { label: "Audience", value: readableLabel(item.audienceLabel || item.voice), capitalize: true },
