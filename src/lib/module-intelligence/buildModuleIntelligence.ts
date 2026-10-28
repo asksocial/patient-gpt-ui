@@ -554,7 +554,7 @@ function buildEvidenceItem(
     id: `${moduleId}:${findingId(finding)}`,
     findingId: findingId(finding),
     quote: support?.excerpt || source?.excerpt || fallbackExcerpt(finding),
-    supportingPassages: supports.filter(item => item.support.url === support?.url && item.support.text === support?.text).map(item => ({ theme: item.section.label, quote: item.support.excerpt, url: item.support.url })),
+    supportingPassages: supports.filter(item => support?.url ? item.support.url === support.url : item.support.text === support?.text).map(item => ({ theme: item.section.label, quote: item.support.excerpt, url: item.support.url })),
     fullMention: support?.text || fullMention(finding, source),
     mentionTitle: metadataString(finding, "headline", "title") || undefined,
     author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,

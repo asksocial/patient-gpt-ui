@@ -347,7 +347,7 @@ function buildPatientEvidenceItem(
     id: `patient:${findingId(finding)}`,
     findingId: findingId(finding),
     quote: support?.excerpt || source?.excerpt || finding.summary || finding.canonicalClaim,
-    supportingPassages: [...new Map(supports.filter(item => item.support.url === support?.url && item.support.text === support?.text).map(item => [item.theme, { theme: item.theme, quote: item.support.excerpt, url: item.support.url }])).values()],
+    supportingPassages: [...new Map(supports.filter(item => support?.url ? item.support.url === support.url : item.support.text === support?.text).map(item => [item.theme, { theme: item.theme, quote: item.support.excerpt, url: item.support.url }])).values()],
     fullMention: support?.text || fullMention(finding, source),
     mentionTitle: metadataString(finding, "headline", "title") || undefined,
     author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,

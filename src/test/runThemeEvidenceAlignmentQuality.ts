@@ -5,7 +5,7 @@ import { selectRepresentativeEvidence } from "../answering/themes/selectRepresen
 import { loadCanonicalFindingsForAsk } from "../lib/answers/loadCanonicalFindingsForAsk";
 import { selectSearchCorpusForQuestion } from "../lib/answers/loadSearchCorpusIntelligence";
 import { refreshSearchCorpusIntelligence } from "../lib/answers/refreshSearchCorpusIntelligence";
-import { buildModuleEvidenceCatalog } from "../lib/module-intelligence/buildModuleIntelligence";
+import { buildModuleIntelligence, buildModuleEvidenceCatalog } from "../lib/module-intelligence/buildModuleIntelligence";
 import { buildPatientEvidenceCatalog } from "../lib/patient-intelligence/buildPatientIntelligence";
 import { preserveRawMetadata } from "../ingestion/metadata";
 import type { CanonicalFinding } from "../answering/models/finding";
@@ -64,6 +64,10 @@ const native = finding("native", "마운자로 맞고 구토와 변비 부작용
 assert.ok(buildQuestionEvidence(question, [native], ["Mounjaro"])?.examples.some(item => /구토|변비|부작용/.test(item.excerpt)), "Original-language evidence remains eligible.");
 const mismatched = finding("substring", "I wore a costume while discussing my daily life and GLP-1 treatment.");
 assert.equal(selectRepresentativeEvidence([mismatched], { themeId: "cost", label: "Cost", description: "Treatment cost", keywords: ["cost"] }).evidence.length, 0, "Theme words must not match unrelated substrings.");
+const multiPassage = finding("same-source-passages", "Clinical research discusses the mechanism and efficacy of Mounjaro treatment.", { "Hit Sentence": "Should I ask my doctor about Mounjaro side effects? I am worried about constipation." });
+const overviewEvidence = buildModuleIntelligence("medical_affairs", "GLP-1", [multiPassage]).evidence[0];
+assert.ok(overviewEvidence.supportingPassages?.some(passage => passage.theme === "Scientific perception"));
+assert.ok(overviewEvidence.supportingPassages?.some(passage => passage.theme === "Medical questions"), "Different excerpts from the same linked source retain their separate theme support.");
 const longQuestion = finding("question", "I started Wegovy. " + "I am describing my everyday routines here. ".repeat(16) + "What are the side effects of Wegovy and should I ask my doctor about constipation?");
 const catalog = buildModuleEvidenceCatalog("medical_affairs", "GLP-1", [longQuestion], { analysisOnly: true, sectionId: "medical_questions" });
 assert.equal(catalog.total, 1);
