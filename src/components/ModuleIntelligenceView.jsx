@@ -9,6 +9,7 @@ import EvidenceMentionCard from "./EvidenceMentionCard";
 import BackButton from "./ui/BackButton";
 import useDrilldownNavigation from "../lib/client/useDrilldownNavigation";
 import RecommendedActions from "./RecommendedActions";
+import { CONFIDENCE_STYLES } from "./ui/intelligenceStyles";
 import { moduleExecutiveSummary } from "../lib/module-intelligence/summaryCopy";
 
 function SignalCard({ section, onOpen }) {
@@ -19,7 +20,7 @@ function SignalCard({ section, onOpen }) {
           <h3 className="text-sm font-semibold text-white/80">{section.label}</h3>
           <p className="mt-2 text-xs leading-5 text-white/40">{section.description}</p>
         </div>
-        <span className="shrink-0 rounded-full border border-white/10 px-2 py-1 text-[11px] text-white/45">
+        <span className={`shrink-0 rounded-full border border-white/10 px-2 py-1 text-[11px] ${CONFIDENCE_STYLES[section.confidence] || CONFIDENCE_STYLES.insufficient}`}>
           {section.confidence}
         </span>
       </div>
@@ -29,8 +30,8 @@ function SignalCard({ section, onOpen }) {
           {section.findingCount} findings ↗
         </ActionButton>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/5">
-        <div className="h-full rounded-full bg-cyan-300/70" style={{ width: `${Math.min(100, section.prevalencePercent)}%` }} />
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#e2e9e5]">
+        <div className="h-full rounded-full bg-[#11766b]" style={{ width: `${Math.min(100, section.prevalencePercent)}%` }} />
       </div>
     </section>
   );

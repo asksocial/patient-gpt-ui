@@ -3,6 +3,7 @@
 import ActionButton from "./ui/ActionButton";
 
 import Tooltip from "./ui/Tooltip";
+import { PRIORITY_STYLES } from "./ui/intelligenceStyles";
 
 const SIGNAL_STYLES = {
   momentum:
@@ -17,12 +18,7 @@ const SIGNAL_STYLES = {
     "border-blue-500/20 bg-blue-500/10 text-blue-300",
 };
 
-const PRIORITY_STYLES = {
-  high: "bg-rose-500/15 text-rose-300",
-  medium:
-    "bg-amber-500/15 text-amber-300",
-  low: "bg-white/10 text-white/55",
-};
+
 
 function words(value) {
   return String(value || "")
