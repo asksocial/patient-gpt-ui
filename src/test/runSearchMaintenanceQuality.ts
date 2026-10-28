@@ -35,7 +35,7 @@ for (const text of [
 assert.match(searchRecordText(record('💙 제목에 정체기 등 키워드를 넣어주세요! --- 마운자로 정체기 꿀팁 있나요?')), /정체기 꿀팁/);
 const evidence = buildQuestionEvidence(question, [record('I reached a weight plateau on Mounjaro.')]);
 assert.ok(evidence?.topics.some(t => t.id === 'maintenance:plateau'));
-assert.equal(evidence?.version, 6);
+assert.equal(evidence?.version, 7);
 
 const corpus = loadCanonicalFindingsForAsk('GLP-1');
 assert.equal(corpus.status, 'available');
@@ -62,6 +62,6 @@ const saved = { analyticalAnswer: { directAnswer: 'Old answer', sections: [{ key
 const refreshed = refreshSearchCorpusIntelligence(saved, 'GLP-1', question) as any;
 const summary = refreshed.analyticalAnswer.sections.find((s: any) => s.personaIntelligence)?.personaIntelligence;
 assert.equal(summary.analyticalCount, matched.findings.length);
-assert.equal(summary.questionEvidence.version, 6);
+assert.equal(summary.questionEvidence.version, 7);
 assert.equal(saved.analyticalAnswer.sections[0].personaIntelligence.denominator, 36);
 console.log(`PASS maintenance retrieval: ${matched.findings.length}/${all.findings.length} patient-related analytical mentions; native-language misses, false positives, posting templates, and saved Search refresh checked.`);

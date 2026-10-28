@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { paginateThemeMentions } from "../answering/search/themeMentionCatalog";
 import { buildQuestionEvidence } from "../answering/search/buildQuestionEvidence";
 import { sourcePassages, supportingPassage } from "../answering/evidence/sourcePassages";
 import { selectRepresentativeEvidence } from "../answering/themes/selectRepresentativeEvidence";
@@ -85,8 +86,40 @@ for (const example of evidence?.examples || []) {
   assert.ok(record && sourcePassages(record).some(passage => passage.url === example.url && passage.text.includes(example.excerpt.replace(/^…|…$/g, ""))), `${example.topic}: displayed passage and link belong to the original source.`);
   assert.ok(example.matchedTerms.every(term => example.excerpt.toLowerCase().includes(term.toLowerCase())));
 }
+// Every theme gets two samples when available; the catalog keeps all other matches.
+const many = Array.from({ length: 31 }, (_, index) => finding(`sample-${index}`, `I am taking Wegovy and have nausea and constipation after my dose. My insurance coverage was denied and my pharmacy has a medication shortage. Account ${index}.`));
+const samples = buildQuestionEvidence(question, many, ["Wegovy"])!;
+const complete = buildQuestionEvidence(question, many, ["Wegovy"], { allExamples: true })!;
+assert.ok(samples.examples.length > 6, "Samples are no longer constrained by a global six-mention cap.");
+for (const topic of samples.topics) {
+  const previews = samples.examples.filter(example => example.topicId === topic.id);
+  assert.equal(previews.length, 2, topic.label);
+  const catalog = paginateThemeMentions(complete, topic.id)!;
+  assert.equal(catalog.totalMatched, topic.count);
+  assert.equal(catalog.total, topic.count - 2);
+  assert.equal(catalog.items.length, 12);
+  assert.ok(catalog.items.every(item => !previews.some(sample => sample.id === item.id)));
+  const allPages = Array.from({ length: catalog.pages }, (_, index) => paginateThemeMentions(complete, topic.id, "", index + 1)!.items).flat();
+  assert.equal(new Set(allPages.map(item => item.id)).size, catalog.total, "Pagination exposes every remaining mention exactly once.");
+  assert.equal(paginateThemeMentions(complete, topic.id, "not-a-source-word")!.total, 0);
+  assert.equal(paginateThemeMentions(complete, topic.id, "", Infinity)!.page, 1);
+  const apiCollection = buildQuestionEvidence(question, many, ["Wegovy"], { allExamples: true, topicId: topic.id })!;
+  assert.deepEqual(apiCollection.examples.slice(0, 2), previews, "API and Search choose the same two samples.");
+}
+assert.equal(paginateThemeMentions(complete, "unknown"), undefined);
+const duplicate = structuredClone(many[0]); duplicate.findingId = "duplicate-source";
+const deduped = buildQuestionEvidence(question, [many[0], duplicate], ["Wegovy"], { allExamples: true })!;
+assert.ok(deduped.topics.every(topic => topic.count === 1));
+assert.ok(deduped.topics.every(topic => paginateThemeMentions(deduped, topic.id)!.total === 0));
+for (const topic of evidence?.topics || []) assert.equal(evidence!.examples.filter(example => example.topicId === topic.id).length, Math.min(2, topic.count), topic.label);
+const allReal = selectSearchCorpusForQuestion("GLP-1", corpus.findings, question, { allExamples: true }).summary.questionEvidence!;
+for (const topic of evidence?.topics || []) {
+  const page = paginateThemeMentions(allReal, topic.id)!;
+  assert.equal(page.totalMatched, topic.count, `${topic.label}: count matches the linked collection.`);
+  assert.deepEqual(allReal.examples.filter(example => example.topicId === topic.id).slice(0, 2), evidence!.examples.filter(example => example.topicId === topic.id));
+}
 const saved = { answer: { directAnswer: "Old answer", liveData: { themes: [] } }, analyticalAnswer: { directAnswer: "Old answer", sections: [{ key: "persona_intelligence", personaIntelligence: { questionEvidence: { version: 5 }, queryContext: { question } } }] } };
 const refreshed = refreshSearchCorpusIntelligence(saved, "GLP-1", question);
 const refreshedSummary = refreshed.analyticalAnswer.sections.find(section => section.key === "persona_intelligence")?.personaIntelligence;
-assert.equal(refreshedSummary?.questionEvidence?.version, 6, "Existing saved conversations refresh their evidence association.");
+assert.equal(refreshedSummary?.questionEvidence?.version, 7, "Existing saved conversations refresh their evidence association.");
 console.log(JSON.stringify({ checked: "Source-aligned theme evidence, screenshot negatives, provenance, long excerpts, multilingual support, modules, Patient, and saved Search", realExamples: evidence?.examples.map(item => ({ topic: item.topic, excerpt: item.excerpt, url: item.url })) }, null, 2));

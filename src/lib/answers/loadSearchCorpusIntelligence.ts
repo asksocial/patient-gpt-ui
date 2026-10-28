@@ -66,7 +66,7 @@ function loadCorpusBundle(therapeuticArea: string, findings: CanonicalFinding[])
 }
 
 
-export function selectSearchCorpusForQuestion(therapeuticArea: string, findings: CanonicalFinding[], question = ""): { summary: PersonaIntelligenceSummary; findings: CanonicalFinding[] } {
+export function selectSearchCorpusForQuestion(therapeuticArea: string, findings: CanonicalFinding[], question = "", evidenceOptions: { allExamples?: boolean; topicId?: string } = {}): { summary: PersonaIntelligenceSummary; findings: CanonicalFinding[] } {
   const bundle = loadCorpusBundle(therapeuticArea, findings);
   if (!question.trim()) return { summary: structuredClone(bundle.summary), findings };
   const profile = getDiseaseProfile(normalizeTherapeuticAreaId(therapeuticArea), therapeuticArea);
@@ -78,7 +78,7 @@ export function selectSearchCorpusForQuestion(therapeuticArea: string, findings:
   summary.recordUnit = bundle.summary.recordUnit;
   summary.additionalExclusionLabel = bundle.summary.additionalExclusionLabel;
   const matchedRecords = bundle.findingRecords.filter(focus.matches);
-  summary.questionEvidence = buildQuestionEvidence(question, matchingFindings.map((finding, index) => ({ ...finding, audienceClassification: matchedRecords[index]?.audienceClassification })), profile.diseaseNames);
+  summary.questionEvidence = buildQuestionEvidence(question, matchingFindings.map((finding, index) => ({ ...finding, audienceClassification: matchedRecords[index]?.audienceClassification })), profile.diseaseNames, evidenceOptions);
   const subjects = subjectsForQuestion(question);
   summary.corpusCharts = buildCorpusCharts(matchingFindings.map(finding => ({ symptoms: subjects.length ? subjects.flatMap(subject => topicsForQuestion(subject, question).filter(topic => topic.pattern.test(searchRecordText(finding))).map(topic => topic.label)) : finding.symptoms, country: sourceCountryLabel(finding.rawMetadata?.fields?.Country || finding.countries?.[0] || (finding as CanonicalFinding & { country?: string }).country) })), { showAllMarkets: resolveQuestionGeography(question).labels.length > 0 });
   if (subjects.length) {

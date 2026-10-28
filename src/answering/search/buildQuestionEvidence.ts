@@ -6,7 +6,7 @@ import { searchRecordText, subjectsForQuestion, topicsForQuestion } from "./sear
 import { resolveQuestionGeography, sourceCountryLabel } from "./geography";
 
 export type QuestionEvidence = {
-  version: 6;
+  version: 7;
   subjects: string[];
   topics: Array<{ id: string; label: string; count: number }>;
   examples: Array<{ id: string; excerpt: string; url?: string; topic: string; topicId: string; matchedTerms: string[]; country?: string; language?: string; sourceCategory?: string }>;
@@ -17,7 +17,7 @@ export type QuestionEvidence = {
 };
 const compact = (value: unknown) => String(value || "").replace(/\s+/g, " ").trim();
 
-export function buildQuestionEvidence(question: string, findings: CanonicalFinding[], diseaseTerms: string[] = []): QuestionEvidence | undefined {
+export function buildQuestionEvidence(question: string, findings: CanonicalFinding[], diseaseTerms: string[] = [], options: { allExamples?: boolean; topicId?: string } = {}): QuestionEvidence | undefined {
   const subjects = subjectsForQuestion(question);
   const escape = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const contextPattern = diseaseTerms.length ? new RegExp(diseaseTerms.map(escape).join("|"), "i") : undefined;
@@ -47,8 +47,9 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
     const records = findings.filter(record => countryOf(record) === country);
     return { country, count: records.length, topics: topics.filter(topic => records.some(record => supportFor(record, topic))).map(topic => topic.label) };
   }).sort((a, b) => b.count - a.count || a.country.localeCompare(b.country)) : undefined;
-  const seen = new Set<string>();
+  const counts = new Map<string, number>();
   for (const { topic, records } of matches) {
+    const seen = new Set<string>();
     const ordered = [...records].sort((a, b) => {
       const score = (r: CanonicalFinding) => {
         const fields = r.rawMetadata?.fields || {};
@@ -58,14 +59,13 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
         const directVoice = /\b(?:i(?:'m|'ve| am| have)?|my|we|our)\b.{0,80}\b(?:tak\w*|start\w*|prescription|insur\w*|afford\w*|paid|pay|nausea|side effects?|experienc\w*|dose|shortage)\b|맞았|맞고|복용|구토|내가|제가|服用|打った|私|吐き気|tomei|estou tomando/i.test(text);
         return (directVoice ? 3000 : 0) + (/^english$/i.test(String(fields.Language)) ? 700 : 0) + (r.audienceClassification?.patientContent ? 1200 : /forum|social network|comments/i.test(source) ? 200 : 0) + (topic.pattern.test(title) ? 150 : 0) + Math.min(text.length, 400);
       };
-      const represented = (r: CanonicalFinding) => examples.filter(example => example.country === countryOf(r)).length;
-      return (geography.labels.length ? represented(a) - represented(b) : 0) || score(b) - score(a);
+      return score(b) - score(a);
     });
+    if (geography.labels.length && ordered.length > 1) {
+      const otherCountry = ordered.findIndex(record => countryOf(record) !== countryOf(ordered[0]));
+      if (otherCountry > 1) ordered.splice(1, 0, ...ordered.splice(otherCountry, 1));
+    }
     for (const record of ordered) {
-      if (examples.filter(e => e.topic === topic.label).length >= 2 || examples.length >= 6) break;
-      const subject = topic.id.split(":")[0];
-      if (examples.filter(example => example.topicId.startsWith(`${subject}:`)).length >= Math.ceil(6 / subjects.length)) break;
-      if (geography.labels.length && examples.some(example => example.topic === topic.label && example.country === countryOf(record))) continue;
       const fields = record.rawMetadata?.fields || {};
       const support = supportFor(record, topic);
       const passage = support?.excerpt;
@@ -73,8 +73,10 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
       const excerpt = passage;
       const id = record.findingId || (record as CanonicalFinding & { id?: string }).id || String(fields["Document ID"] || "");
       const url = support?.url;
-      if (!id || seen.has(id) || seen.has(excerpt)) continue;
-      seen.add(id); seen.add(excerpt);
+      if (!id || seen.has(id) || seen.has(excerpt) || (url && seen.has(url))) continue;
+      seen.add(id); seen.add(excerpt); if (url) seen.add(url);
+      counts.set(topic.id, (counts.get(topic.id) || 0) + 1);
+      if (options.topicId && topic.id !== options.topicId || !options.allExamples && examples.filter(e => e.topicId === topic.id).length >= 2) continue;
       examples.push({ id, excerpt, url, topic: topic.label, topicId: topic.id, matchedTerms: support!.matchedTerms, country: countryOf(record), language: compact(fields.Language) || undefined, sourceCategory: compact(fields["Source Type"]) || undefined });
     }
   }
@@ -90,7 +92,7 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
   if (findings.length > 0 && findings.length < 20) limitations.push("The matching evidence is limited. Treat these observations as illustrative examples rather than estimates of prevalence.");
   if (/\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(question)) limitations.push("Themes present in this corpus do not establish emergence or growth without a comparable time baseline.");
   if (/\b(why|reasons?|drivers?|caus\w*)\b/i.test(question)) limitations.push("Topic mentions alone do not establish motivations or causal relationships. Reasons require explicit supporting accounts.");
-  return { version: 6, subjects: subjects.map(s => s.label), topics: matches.map(({ topic, records }) => ({ id: topic.id, label: topic.label, count: records.length })), examples, marketCoverage, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
+  return { version: 7, subjects: subjects.map(s => s.label), topics: matches.map(({ topic }) => ({ id: topic.id, label: topic.label, count: counts.get(topic.id) || 0 })), examples, marketCoverage, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
 }
 
 export function questionEvidenceAnswer(evidence: QuestionEvidence): string {
