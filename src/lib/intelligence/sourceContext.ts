@@ -89,5 +89,5 @@ export function expressesInformationNeed(text: string): boolean {
 
 /** Same vocabulary for assigning a signal and locating its supporting source words. */
 export function signalSupportPattern(id: string, pattern: RegExp): RegExp {
-  return new RegExp([pattern.source, ...(map[id] || []).map(concept => native[concept].source)].join("|"), "iu");
+  return new RegExp([englishPattern(pattern).source, ...(map[id] || []).map(concept => native[concept].source)].join("|"), "iu");
 }

@@ -1,7 +1,7 @@
 import { selectThemeEvidence } from "../intelligence/selectThemeEvidence";
 import { sourcePassages, supportingPassage } from "../../answering/evidence/sourcePassages";
 import { applyEvidenceClassQualityCap } from "../../answering/evidence/config/evidenceQualityConfig";
-import { sourceContext, matchesContextSignal, signalSupportPattern, hasTrialContext, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
+import { sourceContext, matchesContextSignal, signalSupportPattern, hasTrialContext, expressesInformationNeed, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
 import { classifyGlp1Audience, GLP1_AUDIENCE_VERSION } from "../../ingestion/glp1Audience";
 import type { CanonicalFinding, EvidenceRef } from "../../answering/models/finding";
 import { analyzeEvidence } from "../../answering/evidence/analyzeEvidence";
@@ -540,13 +540,24 @@ function buildEvidenceItem(
   finding: CanonicalFinding,
   intelligence: EvidenceIntelligence,
   matchedSections: SectionDefinition[],
-  contextualRelevanceScore: number
+  contextualRelevanceScore: number,
+  directOnly = false
 ): ModuleEvidenceItem {
   const passages = sourcePassages(finding);
   const supports = matchedSections.flatMap(section => {
     const support = supportingPassage(passages, signalSupportPattern(section.id, section.pattern), {
       minimumLength: 1,
-      accept: text => matchesContextSignal(section.id, section.pattern, text),
+      accept: (text, match, index) => {
+        if (!matchesContextSignal(section.id, section.pattern, text)) return false;
+        if (!directOnly) return true;
+        const around = text.slice(Math.max(0, index - 120), index + match.length + 180);
+        if (section.id === "medical_questions" && !expressesInformationNeed(around)) return false;
+        if (["medical_questions", "evidence_gaps"].includes(section.id) && !/[?¿]/.test(around) &&
+          /ante cualquier duda|consult[aáe].{0,20}m[eé]dic|ask (?:a|your) doctor|consult (?:a|your) (?:doctor|physician)/i.test(around)) return false;
+        if (["safety_discussion", "safety_tolerability"].includes(section.id) && /^reactions?$/i.test(match) &&
+          !/adverse|allergic|drug reaction|skin reaction|injection.{0,25}reaction|reaction.{0,25}(?:medication|drug|injection|symptom)/i.test(around)) return false;
+        return true;
+      },
     });
     return support ? [{ section, support }] : [];
   });
@@ -657,7 +668,7 @@ export function buildModuleIntelligence(
     const candidates = contextualEvidence.filter(item => item.matchedSections.some(matched => matched.id === section.id))
       .sort((a, b) => rank(b) - rank(a) || b.contextualRelevanceScore - a.contextualRelevanceScore || findingId(a.finding).localeCompare(findingId(b.finding)));
     const items = selectThemeEvidence(candidates, ({ finding, intelligence, contextualRelevanceScore }) => {
-      const item = buildEvidenceItem(moduleId, finding, intelligence, [definition], contextualRelevanceScore);
+      const item = buildEvidenceItem(moduleId, finding, intelligence, [definition], contextualRelevanceScore, true);
       return item.supportingPassages?.some(passage => passage.theme === section.label && passage.quote === item.quote) ? item : undefined;
     });
     return { id: section.id, label: section.label, items };

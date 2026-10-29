@@ -42,6 +42,12 @@ for (const group of patient.evidenceGroups) for (const item of group.items) {
   const record = patientSources.find(finding => finding.findingId === item.findingId)!;
   assert.ok(record && sourcePassages(record).some(passage => passage.url === item.url && passage.text.includes(strip(item.quote))));
 }
+const misleading = buildModuleIntelligence("medical_affairs", "GLP-1", [
+  finding("emotional-reaction", "Weight-loss drugs for children? When I first saw the research, my reaction as a parent was probably surprise."),
+  finding("generic-advice", "Semaglutide. Ante cualquier duda, consultá a un médico."),
+], undefined, { relevancePolicy: "prequalified" });
+assert.equal(misleading.evidenceGroups.find(group => group.id === "safety_discussion")!.items.length, 0, "A parent's emotional reaction is not a safety reaction.");
+assert.ok(!misleading.evidenceGroups.find(group => group.id === "medical_questions")!.items.some(item => item.findingId === "generic-advice"), "Generic doctor advice is not a medical question.");
 const coverage = [];
 for (const moduleId of ids) {
   const corpus = loadCanonicalFindingsForModule("GLP-1", moduleId);
