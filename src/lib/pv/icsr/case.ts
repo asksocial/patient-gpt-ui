@@ -1,3 +1,4 @@
+import { findEvidence, literalEvidencePattern } from "../evidenceContext";
 import { buildPvE2bAlignedCase } from "../e2b/case";
 import { assessIcsrIdentifiability } from "../identifiability";
 import { ASSESSMENT_FIELDS, CONCOMITANT_FIELDS, EVENT_FIELDS, HISTORY_FIELDS, PATIENT_FIELDS, PRODUCT_FIELDS, REPORTER_FIELDS, SERIOUSNESS_FIELDS } from "./types";
@@ -75,26 +76,25 @@ export function buildR3AlignedCase(record: Record<string, any>): R3AlignedCase {
     // Do not distribute case-level outcome/onset/seriousness over multiple events.
     if (aligned.reactions.length === 1) {
       result.onset = field(ontology.timeToOnset?.value, ontology.timeToOnset?.evidence);
-      const outcome = ontology.outcomes?.find((item: any) => item.category !== "hospitalization" && item.category !== "unknown");
+      const outcome = ontology.outcomes?.find((item: any) => item.category !== "hospitalization" && item.category !== "unknown" && item.evidence && findEvidence(source, literalEvidencePattern(item.evidence)));
       result.outcome = field(outcome?.value, outcome?.evidence);
       const seriousnessPatterns: Partial<Record<typeof SERIOUSNESS_FIELDS[number], RegExp>> = {
-        hospitalization: /\b(?:ended up in (?:the )?hospital|was hospitali[sz]ed|admitted to (?:the )?hospital)\b/i,
-        death: /\b(?:died|passed away)\b/i,
-        lifeThreatening: /\b(?:life[- ]threatening)\b/i,
-        disability: /\b(?:permanent disability|disabled|incapacitated)\b/i,
-        congenitalAnomaly: /\b(?:birth defect|congenital anomaly)\b/i,
+        hospitalization: /\b(?:ended up in (?:the )?hospital|hospitali[sz](?:ed|ation)|admitted to (?:the )?hospital)\b/i,
+        death: /\b(?:died|death|fatal|passed away)\b/i,
+        lifeThreatening: /\b(?:life[- ]threatening|nearly died|almost died)\b/i,
+        disability: /\b(?:permanent disability|permanent injury|permanent damage|disability|disabled|incapacitated)\b/i,
+        congenitalAnomaly: /\b(?:birth defect|congenital anomal(?:y|ies))\b/i,
+        otherMedicallyImportant: /\b(?:medically important|required urgent intervention|emergency surgery)\b/i,
       };
       for (const key of SERIOUSNESS_FIELDS) {
-        const match = seriousnessPatterns[key] ? source.match(seriousnessPatterns[key]!) : null;
+        const match = seriousnessPatterns[key] ? findEvidence(source, seriousnessPatterns[key]!, true) : undefined;
         if (match) {
-          const sentence = source.slice(Math.max(0, (match.index || 0) - 80), (match.index || 0) + match[0].length);
-          const uncertain = /\b(?:not|never|if|would|could|might|heard|read)\b/i.test(sentence);
-          const state = uncertain ? "requires_pv_review" : "evidence_present";
-          result.seriousness[key] = { ...field(state, match[0]), value: state };
+          const state = match.assertion === "uncertain" ? "requires_pv_review" : "evidence_present";
+          result.seriousness[key] = { ...field(state, match.evidence), value: state };
         }
       }
       if (ontology.seriousness?.evidence?.length && !Object.values(result.seriousness).some(item => item.value === "evidence_present")) {
-        const quote = ontology.seriousness.evidence.find((item: string) => source.includes(item));
+        const quote = ontology.seriousness.evidence.find((item: string) => source.includes(item) && findEvidence(source, literalEvidencePattern(item), true));
         if (quote) result.seriousness.otherMedicallyImportant = { ...field("requires_pv_review", quote), value: "requires_pv_review" };
       }
     } else {

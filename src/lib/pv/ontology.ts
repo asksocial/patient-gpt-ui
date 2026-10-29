@@ -1,3 +1,4 @@
+import { findEvidence, literalEvidencePattern } from "./evidenceContext";
 import type {
   PvAdverseEventOntology,
   PvConceptMatch,
@@ -5,13 +6,13 @@ import type {
   PvOntologyEvidence,
 } from "./types";
 
-export const PV_AE_ONTOLOGY_VERSION = "pv-ae-ontology-1.0.0";
+export const PV_AE_ONTOLOGY_VERSION = "pv-ae-ontology-1.1.0";
 
 function normalizedText(input: PvContentInput) {
   return [input.verbatim, input.parentContext || "", ...(input.threadContext || [])]
-    .join(" ")
+    .join("\n")
     .replace(/[\u2018\u2019]/g, "'")
-    .replace(/\s+/g, " ")
+    .replace(/[^\S\n]+/g, " ")
     .trim();
 }
 
@@ -26,24 +27,17 @@ function matchEvidence(text: string, pattern: RegExp) {
   return match?.[0]?.trim();
 }
 
-function isNegated(text: string, evidence: string) {
-  const index = text.toLowerCase().indexOf(evidence.toLowerCase());
-  if (index < 0) return false;
-  const prefix = text.slice(Math.max(0, index - 28), index).toLowerCase();
-  return /\b(?:no|not|never|without|wasn't|was not|didn't|did not|haven't|have not)\b[^.!?]{0,24}$/.test(prefix);
-}
-
 function extractOutcome(text: string): PvAdverseEventOntology["outcomes"] {
   const rules: Array<[PvAdverseEventOntology["outcomes"][number]["category"], RegExp, number]> = [
     ["fatal", /\b(?:died|death|fatal|passed away)\b/i, 0.98],
-    ["permanent_injury", /\b(?:permanent(?:ly)?|permanent injury|permanent damage|disabled|disability)\b/i, 0.92],
+    ["permanent_injury", /\b(?:permanent injury|permanent damage|disabled|disability)\b/i, 0.92],
     ["hospitalization", /\b(?:hospitali[sz](?:ed|ation)|admitted to (?:the )?hospital|emergency room|\bER\b)\b/i, 0.96],
     ["recovered", /\b(?:recovered|resolved|went away|back to normal|fine now|fully healed)\b/i, 0.9],
     ["ongoing", /\b(?:ongoing|still (?:have|having|experiencing|hurts|sick)|hasn't gone away|have not recovered|not resolved)\b/i, 0.88],
   ];
   return rules.flatMap(([category, pattern, confidence]) => {
-    const evidence = matchEvidence(text, pattern);
-    return evidence && !isNegated(text, evidence) ? [{ category, value: category, evidence, confidence }] : [];
+    const evidence = findEvidence(text, pattern)?.evidence;
+    return evidence ? [{ category, value: category, evidence, confidence }] : [];
   });
 }
 
@@ -69,10 +63,10 @@ function extractSeverity(text: string, matches: PvConceptMatch[]): PvAdverseEven
     ["mild", /\b(?:mild|slight|minor)\b/i, 0.94],
   ];
   for (const [value, pattern, confidence] of explicit) {
-    const evidence = matchEvidence(text, pattern);
-    if (evidence && !isNegated(text, evidence)) return { value, evidence, confidence };
+    const evidence = findEvidence(text, pattern)?.evidence;
+    if (evidence) return { value, evidence, confidence };
   }
-  const severityConcept = matches.find((match) => match.category === "severity");
+  const severityConcept = matches.find((match) => match.category === "severity" && findEvidence(text, literalEvidencePattern(match.matchedTerm)));
   if (severityConcept) {
     const value = /mild|minor|slight/i.test(severityConcept.canonicalTerm) ? "mild"
       : /moderate/i.test(severityConcept.canonicalTerm) ? "moderate"
@@ -93,8 +87,8 @@ function extractSeriousness(text: string): PvAdverseEventOntology["seriousness"]
     ["medically_important", /\b(?:medically important|required urgent intervention|emergency surgery)\b/i],
   ];
   const supported = criteriaRules.flatMap(([criterion, pattern]) => {
-    const evidence = matchEvidence(text, pattern);
-    return evidence && !isNegated(text, evidence) ? [{ criterion, evidence }] : [];
+    const evidence = findEvidence(text, pattern)?.evidence;
+    return evidence ? [{ criterion, evidence }] : [];
   });
   if (supported.length) {
     return { value: "serious", criteria: supported.map((item) => item.criterion), evidence: supported.map((item) => item.evidence), confidence: 0.96 };

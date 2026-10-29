@@ -1,3 +1,4 @@
+import { findEvidence, literalEvidencePattern } from "../evidenceContext";
 import { classifyPvContent } from "../detection";
 import { samePvLanguage } from "../language";
 import type { PvContentInput, PvDetectionConcept } from "../types";
@@ -45,32 +46,30 @@ export const GLP1_PV_CONCEPTS: PvDetectionConcept[] = [
   concept("treatment-change", "treatment_change", "Treatment change", ["stopped taking", "discontinued", "reduced my dose", "dose reduced"]),
 ];
 
-function escaped(term: string) { return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-
-// Retain a term if any occurrence is asserted. A negated earlier occurrence must
-// not erase a later report of the same event. Boundaries avoid e.g. "dizzying".
-function asserted(text: string, term: string) {
-  const pattern = new RegExp(`(?<![\\p{L}\\p{N}])${escaped(term)}(?![\\p{L}\\p{N}])`, "giu");
-  for (const match of text.matchAll(pattern)) {
-    const prefix = text.slice(Math.max(0, match.index! - 85), match.index).split(/\b(?:but|however|yet)\b/i).pop()!.replace(/\bnot (?:only|to mention)\b/gi, "");
-    if (!/\b(?:no|not|never|without|denies|denied|won't|will not|wouldn't|would not|don't have|do not have|didn't have|did not have|worried about|risk of|can cause|may cause|could cause)\b[^.!?;]{0,55}$/i.test(prefix)) return true;
-  }
-  return false;
+// Class descriptors are not an additional drug when a named exposure is present.
+// Retain an explicitly separate or different-patient unspecified exposure.
+function productTerms(text: string, concepts: PvDetectionConcept[]) {
+  const source = text.replace(/\b(?:QA[-_])?GLP[- ]?1[-_]\d[\w-]*/gi, " ");
+  const named = concepts.some(item => item.category === "product" && !/GLP[- ]?1.*unspecified/i.test(item.canonicalTerm) && item.terms.some(term => literalEvidencePattern(term).test(source)));
+  const separate = /\b(?:another|different|other|unknown|unspecified)\s+(?:\w+\s+){0,2}GLP[- ]?1\b|\b(?:sister|brother|mother|father|friend|another patient)\b[^.!?\n]*\bGLP[- ]?1\b/i.test(source);
+  return concepts.map(item => ({ ...item, terms: item.terms.filter(term => item.category === "product"
+    ? literalEvidencePattern(term).test(source) && (!/GLP[- ]?1.*unspecified/i.test(item.canonicalTerm) || !named || separate)
+    : !!findEvidence(text, literalEvidencePattern(term))) }));
 }
 
 export function classifyGlp1PvContent(input: PvContentInput, concepts = GLP1_PV_CONCEPTS, options: { threshold?: number; libraryVersion?: number; expectedEvents?: string[] } = {}) {
   if (!input.language || !samePvLanguage(input.language, "en")) throw new Error("GLP-1 screening requires explicit English source metadata; other or unknown languages require a qualified language workflow.");
-  const text = [input.verbatim, input.parentContext || "", ...(input.threadContext || [])].join(" ").replace(/[\u2018\u2019]/g, "'");
+  const text = [input.verbatim, input.parentContext || "", ...(input.threadContext || [])].join("\n").replace(/[\u2018\u2019]/g, "'");
   const exposure = /\b(?:i|i've|i have|i'm|i am|my|our|patient|she|he|they)\b[^.!?]{0,140}\b(?:took|taking|take|started|starting|used|using|injected|received|on|prescribed|after)\b|\b(?:after|since|following)\s+(?:my\s+|i\s+)?(?:first\s+|starting\s+|taking\s+|using\s+|injecting\s+)?(?:dose|shot|injection|ozempic|wegovy|mounjaro|zepbound|semaglutide|tirzepatide)\b|\b(?:ozempic|wegovy|mounjaro|zepbound|semaglutide|tirzepatide)\s+(?:made|makes|gave|gives)\s+me\b/i.test(text);
   const promotional = /\b(?:buy now|promo code|discount code|dm to order|shop now)\b/i.test(text);
-  const filtered = concepts.map((item) => ({ ...item, terms: item.terms.filter((term) => item.category === "product" || asserted(text, term)) }));
+  const filtered = productTerms(text, concepts);
   const result = classifyPvContent(input, filtered, options);
   // No final reportability or expectedness is inferred from FAERS frequency.
   if (!exposure || promotional) {
     result.shouldCreateRecord = false;
     result.rationale.push(promotional ? "Promotional content is retained as screening evidence without creating a case." : "Product/event co-occurrence without treatment-exposure context does not create a social safety case.");
   }
-  result.classifierVersion = GLP1_PV_VERSION;
+  result.classifierVersion = `${GLP1_PV_VERSION}-context.1`;
   if (/\b(?:switch|switched|switching|went back)\b/i.test(text)) result.rationale.push("Multiple-treatment or switching context: verify which exposure, if any, is associated with each reported event. Product selection is provisional.");
   result.rationale.push("GLP-1 rules propose human review only. FAERS co-reports do not establish drug-event causality or label expectedness.");
   return result;
