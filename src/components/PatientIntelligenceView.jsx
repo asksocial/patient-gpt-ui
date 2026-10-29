@@ -9,6 +9,7 @@ import { activityFetch as fetch } from "../lib/client/requestActivity";
 import { useEffect, useState } from "react";
 import EvidenceMentionCard from "./EvidenceMentionCard";
 import RecommendedActions from "./RecommendedActions";
+import { formatConfidenceLabel } from "./ui/intelligenceStyles";
 import BackButton from "./ui/BackButton";
 import useDrilldownNavigation from "../lib/client/useDrilldownNavigation";
 
@@ -21,7 +22,7 @@ function SignalList({ title, signals = [], evidenceCount, onOpenEvidence }) {
           <span key={signal.id} className="block">
             <span className="flex items-center justify-between gap-3 text-sm">
               <span className="text-white/70">{signal.label}</span>
-              <span className="text-white/40">{signal.prevalencePercent}% · {signal.confidence}</span>
+              <span className="text-white/40">{signal.prevalencePercent}% · {formatConfidenceLabel(signal.confidence)}</span>
             </span>
             <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-[#e2e9e5]">
               <span className="block h-full rounded-full bg-[#11766b]" style={{ width: `${Math.min(100, signal.prevalencePercent)}%` }} />

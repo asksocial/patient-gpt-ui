@@ -9,7 +9,7 @@ import EvidenceMentionCard from "./EvidenceMentionCard";
 import BackButton from "./ui/BackButton";
 import useDrilldownNavigation from "../lib/client/useDrilldownNavigation";
 import RecommendedActions from "./RecommendedActions";
-import { CONFIDENCE_STYLES } from "./ui/intelligenceStyles";
+import { CONFIDENCE_STYLES, formatConfidenceLabel } from "./ui/intelligenceStyles";
 import { moduleExecutiveSummary } from "../lib/module-intelligence/summaryCopy";
 
 function SignalCard({ section, onOpen }) {
@@ -21,7 +21,7 @@ function SignalCard({ section, onOpen }) {
           <p className="mt-2 text-xs leading-5 text-white/40">{section.description}</p>
         </div>
         <span className={`shrink-0 rounded-full border border-white/10 px-2 py-1 text-[11px] ${CONFIDENCE_STYLES[section.confidence] || CONFIDENCE_STYLES.insufficient}`}>
-          {section.confidence}
+          {formatConfidenceLabel(section.confidence)}
         </span>
       </div>
       <div className="mt-4 flex items-end justify-between gap-3">

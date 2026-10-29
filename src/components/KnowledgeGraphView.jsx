@@ -276,7 +276,7 @@ export default function KnowledgeGraphView({
                   strokeLinecap="round"
                   strokeDasharray={relationship.relationshipType === "contrasts_with" ? "7 6" : undefined}
                 >
-                  <title>{`${source.label} → ${target.label} · ${words(relationship.relationshipType)} · ${Math.round(strength * 100)}% strength · ${relationship.confidence} confidence`}</title>
+                  <title>{`${source.label} → ${target.label} · ${words(relationship.relationshipType)} · ${Math.round(strength * 100)}% strength · ${words(relationship.confidence)} confidence`}</title>
                 </path>
               );
             })}
@@ -284,7 +284,7 @@ export default function KnowledgeGraphView({
               const position = positions.get(node.themeId);
               return (
                 <g key={node.themeId} transform={`translate(${position.x} ${baseline})`}>
-                  <title>{`${node.label} · ${node.eligiblePercent}% eligible prevalence · ${node.confidence} confidence · ${words(node.triangulation)} corroboration`}</title>
+                  <title>{`${node.label} · ${node.eligiblePercent}% eligible prevalence · ${words(node.confidence)} confidence · ${words(node.triangulation)} corroboration`}</title>
                   <circle r={position.radius} fill={index === 0 ? "#0e7467" : "#209585"} stroke="#f6f8f7" strokeWidth="3" />
                   <text textAnchor="middle" fill="#2e403a" fontSize="18" fontWeight="600">
                     {position.lines.map((line, lineIndex) => (

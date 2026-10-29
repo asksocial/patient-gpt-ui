@@ -12,3 +12,7 @@ export const CONFIDENCE_STYLES = {
   directional: PRIORITY_STYLES.low,
   insufficient: PRIORITY_STYLES.low,
 };
+
+export function formatConfidenceLabel(value) {
+  return String(value || "").replaceAll("_", " ").replace(/\b[a-z]/g, letter => letter.toUpperCase());
+}
