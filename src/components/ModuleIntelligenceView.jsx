@@ -371,12 +371,6 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
         {result.sections.map((section) => <SignalCard key={section.id} section={section} onOpen={() => openEvidenceBrowser({ key: "sectionId", value: section.id, label: section.label })} />)}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <CountList title="Audience coverage" items={result.audienceSignals} onOpen={(item) => openEvidenceBrowser({ key: "audience", value: item.label, label: item.label.replaceAll("_", " ") })} />
-        <CountList title="Evidence classes" items={result.sourceSignals} onOpen={(item) => openEvidenceBrowser({ key: "evidenceClass", value: item.label, label: item.label.replaceAll("_", " ") })} />
-      </div>
-
-
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -417,6 +411,11 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
           </div>)}
         </div>
       </section>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CountList title="Audience coverage" items={result.audienceSignals} onOpen={(item) => openEvidenceBrowser({ key: "audience", value: item.label, label: item.label.replaceAll("_", " ") })} />
+        <CountList title="Evidence classes" items={result.sourceSignals} onOpen={(item) => openEvidenceBrowser({ key: "evidenceClass", value: item.label, label: item.label.replaceAll("_", " ") })} />
+      </div>
 
       <RecommendedActions actions={result.recommendations} />
 
