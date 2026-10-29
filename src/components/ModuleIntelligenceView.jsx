@@ -381,31 +381,40 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">Representative module evidence</h3>
-            <p className="mt-2 text-xs text-white/35">Ranked examples across the module taxonomy. Evidence quality is labeled and used for ordering.</p>
+            <p className="mt-2 text-xs text-white/35">Two distinct mentions for each primary theme, selected from directly supporting source wording. Evidence quality is labeled.</p>
           </div>
           <ActionButton type="button" onClick={() => openEvidenceBrowser()} className="rounded-xl border border-cyan-300/30 bg-cyan-300/[0.08] px-4 py-2.5 text-xs font-semibold text-cyan-200 transition hover:border-cyan-200/55 hover:bg-cyan-300/[0.14]">
             View all evidence
           </ActionButton>
         </div>
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {result.evidence.map((item) => (
-            <EvidenceMentionCard
-              key={item.id}
-              eyebrow={`${module.name} evidence`}
-              badge={`${String(item.qualityBand || "unrated").replaceAll("_", " ")} quality`}
-              title={evidenceDisplayTitle(item, module.name)}
-              preview={item.quote || item.fullMention}
-              tags={item.supportingPassages?.map(passage => passage.theme) || []}
-              metrics={[
-                { label: "Source", value: item.sourceLabel },
-                { label: "Audience", value: String(item.voice || "Not available").replaceAll("_", " "), capitalize: true },
-                { label: "Evidence class", value: String(item.evidenceClass || "Not available").replaceAll("_", " "), capitalize: true },
-                { label: "Evidence quality", value: `${Math.round(Number(item.qualityScore) || 0)} / 100` },
-              ]}
-              url={item.url}
-              onOpen={() => openMention(item)}
-            />
-          ))}
+        <div className="mt-5 space-y-6">
+          {(result.evidenceGroups || []).map(group => <div key={group.id}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h4 className="text-sm font-semibold text-white/85">{group.label}</h4>
+              <span className="text-xs text-white/50">{group.items.length} supporting {group.items.length === 1 ? "mention" : "mentions"}</span>
+            </div>
+            {group.items.length < 2 ? <p className="mt-2 text-xs text-white/50">{group.items.length ? "Only one distinct mention directly supports this theme in the available corpus." : "No retained mention directly supports this theme in the available corpus."}</p> : null}
+            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              {group.items.map(item => (
+                <EvidenceMentionCard
+                  key={item.id}
+                  eyebrow={group.label}
+                  badge={`${String(item.qualityBand || "unrated").replaceAll("_", " ")} quality`}
+                  title={evidenceDisplayTitle(item, module.name)}
+                  preview={item.quote || item.fullMention}
+                  tags={item.supportingPassages?.map(passage => passage.theme) || []}
+                  metrics={[
+                    { label: "Source", value: item.sourceLabel },
+                    { label: "Audience", value: String(item.voice || "Not available").replaceAll("_", " "), capitalize: true },
+                    { label: "Evidence class", value: String(item.evidenceClass || "Not available").replaceAll("_", " "), capitalize: true },
+                    { label: "Evidence quality", value: `${Math.round(Number(item.qualityScore) || 0)} / 100` },
+                  ]}
+                  url={item.url}
+                  onOpen={() => openMention(item)}
+                />
+              ))}
+            </div>
+          </div>)}
         </div>
       </section>
 

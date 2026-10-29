@@ -1,3 +1,4 @@
+import { selectThemeEvidence } from "../intelligence/selectThemeEvidence";
 import { sourcePassages, supportingPassage } from "../../answering/evidence/sourcePassages";
 import { applyEvidenceClassQualityCap } from "../../answering/evidence/config/evidenceQualityConfig";
 import { sourceContext, matchesContextSignal, signalSupportPattern, hasTrialContext, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
@@ -96,6 +97,7 @@ export type ModuleIntelligenceResult = {
   sourceSignals: Array<{ label: string; count: number }>;
   recommendations: string[];
   evidence: ModuleEvidenceItem[];
+  evidenceGroups: Array<{ id: string; label: string; items: ModuleEvidenceItem[] }>;
 };
 
 export type ModuleEvidenceCatalogResult = {
@@ -574,25 +576,6 @@ function buildEvidenceItem(
   };
 }
 
-function normalizeMention(value: string) {
-  return value
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/https?:\/\/\S+/g, " ")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim()
-    .replace(/\s+/g, " ");
-}
-
-function mentionKey(
-  finding: CanonicalFinding,
-  matchedSections: SectionDefinition[]
-) {
-  const source = bestEvidence(finding, matchedSections);
-  const normalized = normalizeMention(source?.excerpt || fallbackExcerpt(finding));
-  return normalized || `finding:${findingId(finding)}`;
-}
-
 function countLabels(values: string[]) {
   const counts = new Map<string, number>();
   for (const value of values.filter(Boolean)) counts.set(value, (counts.get(value) || 0) + 1);
@@ -666,41 +649,24 @@ export function buildModuleIntelligence(
     };
   }).sort((left, right) => right.findingCount - left.findingCount);
 
-  const evidenceItems: (typeof contextualEvidence)[number][] = [];
-  const usedFindingIds = new Set<string>();
-  const usedMentionKeys = new Set<string>();
-  function appendEvidenceCandidate(item: (typeof contextualEvidence)[number]) {
-    const id = findingId(item.finding);
-    const normalizedMention = mentionKey(item.finding, item.matchedSections);
-    if (usedFindingIds.has(id) || usedMentionKeys.has(normalizedMention)) return false;
-    usedFindingIds.add(id);
-    usedMentionKeys.add(normalizedMention);
-    evidenceItems.push(item);
-    return true;
-  }
-  for (const section of profile.sections) {
-    if (evidenceItems.some(item => item.matchedSections.some(matched => matched.id === section.id))) continue;
-    const sectionCandidates = contextualEvidence
-      .filter((item) => item.matchedSections.some((matched) => matched.id === section.id))
-      .sort((left, right) =>
-        right.contextualRelevanceScore - left.contextualRelevanceScore ||
-        right.intelligence.qualityScore - left.intelligence.qualityScore
-      );
-    for (const item of sectionCandidates) if (appendEvidenceCandidate(item)) break;
-  }
-  for (const item of [...contextualEvidence].sort((left, right) =>
-    right.contextualRelevanceScore - left.contextualRelevanceScore ||
-    right.intelligence.qualityScore - left.intelligence.qualityScore
-  )) {
-    if (evidenceItems.length >= 16) break;
-    appendEvidenceCandidate(item);
-  }
-
-  const evidence = evidenceItems
-    .slice(0, 16)
-    .map(({ finding, intelligence, matchedSections, contextualRelevanceScore }) =>
-      buildEvidenceItem(moduleId, finding, intelligence, matchedSections, contextualRelevanceScore)
-    );
+  // Select independently for each visible primary theme, focusing both the
+  // excerpt and its source URL on that theme rather than a different match.
+  const evidenceGroups = sections.map(section => {
+    const definition = profile.sections.find(item => item.id === section.id)!;
+    const rank = (item: typeof contextualEvidence[number]) => item.intelligence.qualityScore + (profile.preferredClasses.includes(item.intelligence.evidenceClass) ? 100 : 0) + (profile.preferredVoices.includes(resolvedAudienceLabel(item.intelligence) as EvidenceVoice) ? 30 : 0);
+    const candidates = contextualEvidence.filter(item => item.matchedSections.some(matched => matched.id === section.id))
+      .sort((a, b) => rank(b) - rank(a) || b.contextualRelevanceScore - a.contextualRelevanceScore || findingId(a.finding).localeCompare(findingId(b.finding)));
+    const items = selectThemeEvidence(candidates, ({ finding, intelligence, contextualRelevanceScore }) => {
+      const item = buildEvidenceItem(moduleId, finding, intelligence, [definition], contextualRelevanceScore);
+      return item.supportingPassages?.some(passage => passage.theme === section.label && passage.quote === item.quote) ? item : undefined;
+    });
+    return { id: section.id, label: section.label, items };
+  });
+  // Keep the existing flat contract unique for exports and downstream consumers.
+  const chosenIds = new Set(evidenceGroups.flatMap(group => group.items.map(item => item.findingId)));
+  const evidence = contextualEvidence.filter(item => chosenIds.has(findingId(item.finding)))
+    .filter((item, index, all) => all.findIndex(other => findingId(other.finding) === findingId(item.finding)) === index)
+    .map(({ finding, intelligence, matchedSections, contextualRelevanceScore }) => buildEvidenceItem(moduleId, finding, intelligence, matchedSections, contextualRelevanceScore));
 
   const assessment = selected.length >= 30 ? "adequate" : selected.length >= 8 ? "limited" : "insufficient";
   const leading = sections[0];
@@ -749,6 +715,7 @@ export function buildModuleIntelligence(
     sourceSignals: countLabels(selected.map(({ intelligence }) => intelligence.evidenceClass)),
     recommendations: contextualEvidence.length ? profile.recommendations : [],
     evidence,
+    evidenceGroups,
   };
 }
 

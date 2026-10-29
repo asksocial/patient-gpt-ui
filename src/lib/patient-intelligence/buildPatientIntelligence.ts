@@ -1,3 +1,4 @@
+import { selectThemeEvidence } from "../intelligence/selectThemeEvidence";
 import { sourcePassages, supportingPassage } from "../../answering/evidence/sourcePassages";
 import { sourceContext, matchesContextSignal, signalSupportPattern, expressesInformationNeed, CONTEXT_RULES_VERSION } from "../intelligence/sourceContext";
 import { SEARCH_SUBJECTS } from "../../answering/search/searchSubjects";
@@ -113,6 +114,7 @@ export type PatientIntelligenceResult = {
     findingCount: number;
   }>;
   recommendations: string[];
+  evidenceGroups: Array<{ id: string; label: string; items: PatientEvidenceItem[] }>;
   evidence: Array<{
     id: string;
     findingId: string;
@@ -339,7 +341,7 @@ function buildPatientEvidenceItem(
   const actualSignals = dimension === "all" ? allMatchedPatientSignals(finding) : matchedSignals;
   const supports = patterns.flatMap(([id, label, pattern]) => {
     if (!actualSignals.some(signal => signal.id === id)) return [];
-    const passage = supportingPassage(sourcePassages(finding), signalSupportPattern(id, pattern), { minimumLength: 1 });
+    const passage = supportingPassage(sourcePassages(finding), signalSupportPattern(id, pattern), { minimumLength: 1, accept: text => matchesPatientSignal(id, pattern, text) && (dimension !== "unmet_needs" || expressesInformationNeed(text)) });
     return passage ? [{ theme: label, support: passage }] : [];
   });
   const support = supports[0]?.support;
@@ -480,41 +482,30 @@ export function buildPatientIntelligence(
     .sort((left, right) => right.count - left.count)
     .slice(0, 8);
 
-  const evidence = patient
-    .sort((left, right) =>
-      Number(right.classification.tier.startsWith("confirmed_")) - Number(left.classification.tier.startsWith("confirmed_")) ||
-      right.classification.confidence - left.classification.confidence ||
-      right.intelligence.qualityScore - left.intelligence.qualityScore
-    )
-    .slice(0, 20)
-    .map(({ finding, intelligence, classification }) => {
-    const source = bestEvidence(finding);
-    const supported = buildPatientEvidenceItem(finding, classification, "all");
-    const matchedSignals = allMatchedPatientSignals(finding);
-    return {
-      id: `patient:${findingId(finding)}`,
-      findingId: findingId(finding),
-      quote: supported.quote,
-      supportingPassages: supported.supportingPassages,
-      fullMention: supported.fullMention,
-      mentionTitle: metadataString(finding, "headline", "title") || undefined,
-      author: metadataString(finding, "influencer", "author", "author_name", "username") || undefined,
-      publishedAt: metadataString(finding, "date", "published_at", "published_date", "alternate_date_format") || undefined,
-      sourceLabel: source?.platform || intelligence.sourceType || intelligence.platform || "Source metadata unavailable",
-      url: supported.url,
-      platform: source?.platform,
-      country: source?.country,
-      voice: intelligence.voice,
-      audienceLabel: classification.resolvedAudience,
-      patientContentLabel: classification.patientContentType ? patientContentTypeLabel(classification.patientContentType) : undefined,
-      evidenceTier: classification.tier,
-      evidenceTierLabel: patientEvidenceTierLabel(classification.tier),
-      classificationConfidence: classification.confidence,
-      classificationRationale: classification.rationale,
-      qualityScore: intelligence.qualityScore,
-      matchedSignalLabels: matchedSignals.map((signal) => signal.label),
-    };
-  });
+  const rankedPatient = [...patient].sort((a, b) =>
+    Number(b.classification.tier.startsWith("confirmed_")) - Number(a.classification.tier.startsWith("confirmed_")) ||
+    b.classification.confidence - a.classification.confidence || b.intelligence.qualityScore - a.intelligence.qualityScore || findingId(a.finding).localeCompare(findingId(b.finding)));
+  const evidenceGroups: PatientIntelligenceResult["evidenceGroups"] = evidenceDimensions.filter(dimension => dimension.id !== "all").map(dimension => ({
+    id: dimension.id, label: dimension.label,
+    items: selectThemeEvidence(rankedPatient, ({ finding, classification }) => {
+      if (!matchedPatientSignals(finding, dimension.id).length) return undefined;
+      const item = buildPatientEvidenceItem(finding, classification, dimension.id);
+      return item.supportingPassages?.length ? item : undefined;
+    }),
+  }));
+  if (treatmentSignals.length) {
+    const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(treatmentSignals.map(signal => escape(signal.label)).join("|"), "i");
+    evidenceGroups.push({ id: "treatment_signals", label: "Treatment signals", items: selectThemeEvidence(rankedPatient, ({ finding, classification }) => {
+      const support = supportingPassage(sourcePassages(finding), pattern);
+      if (!support) return undefined;
+      const item = buildPatientEvidenceItem(finding, classification, "all");
+      return { ...item, quote: support.excerpt, fullMention: support.text, url: support.url, supportingPassages: [{ theme: "Treatment signals", quote: support.excerpt, url: support.url }] };
+    }) });
+  }
+  const chosenIds = new Set(evidenceGroups.flatMap(group => group.items.map(item => item.findingId)));
+  const evidence = rankedPatient.filter(item => chosenIds.has(findingId(item.finding)))
+    .map(({ finding, classification }) => buildPatientEvidenceItem(finding, classification, "all"));
 
   const topBarrier = treatmentBarriers[0]?.label;
   const topNeed = unmetNeeds[0]?.label;
@@ -564,5 +555,6 @@ export function buildPatientIntelligence(
       "Validate the highest-priority signals with human-reviewed patient/HCP labels before external activation.",
     ] : [],
     evidence,
+    evidenceGroups,
   };
 }

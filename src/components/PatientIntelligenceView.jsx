@@ -307,26 +307,35 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
         </div>
       </div>
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Patient evidence</h3>
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {result.evidence.slice(0, 12).map((item) => (
-            <EvidenceMentionCard
-              key={item.id}
-              eyebrow="Patient evidence"
-              badge={item.patientContentLabel || item.evidenceTierLabel || "Direct patient evidence"}
-              title={patientEvidenceTitle(item)}
-              preview={item.quote || item.fullMention}
-              tags={item.supportingPassages?.map(passage => passage.theme) || []}
-              metrics={[
-                { label: "Source", value: item.sourceLabel },
-                { label: "Audience", value: readableLabel(item.audienceLabel || item.voice), capitalize: true },
-                { label: "Classification", value: `${Math.round((item.classificationConfidence || 0) * 100)}% confidence` },
-                { label: "Evidence quality", value: Math.round(item.qualityScore) },
-              ]}
-              url={item.url}
-              onOpen={() => openMention(item)}
-            />
-          ))}
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Representative patient evidence</h3>
+        <div className="mt-5 space-y-6">
+          {(result.evidenceGroups || []).map(group => <div key={group.id}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h4 className="text-sm font-semibold text-white/85">{group.label}</h4>
+              <span className="text-xs text-white/50">{group.items.length} supporting {group.items.length === 1 ? "mention" : "mentions"}</span>
+            </div>
+            {group.items.length < 2 ? <p className="mt-2 text-xs text-white/50">{group.items.length ? "Only one distinct mention directly supports this theme in the available corpus." : "No retained mention directly supports this theme in the available corpus."}</p> : null}
+            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              {group.items.map(item => (
+                <EvidenceMentionCard
+                  key={item.id}
+                  eyebrow={group.label}
+                  badge={item.patientContentLabel || item.evidenceTierLabel || "Direct patient evidence"}
+                  title={patientEvidenceTitle(item)}
+                  preview={item.quote || item.fullMention}
+                  tags={item.supportingPassages?.map(passage => passage.theme) || []}
+                  metrics={[
+                    { label: "Source", value: item.sourceLabel },
+                    { label: "Audience", value: readableLabel(item.audienceLabel || item.voice), capitalize: true },
+                    { label: "Classification", value: `${Math.round((item.classificationConfidence || 0) * 100)}% confidence` },
+                    { label: "Evidence quality", value: Math.round(item.qualityScore) },
+                  ]}
+                  url={item.url}
+                  onOpen={() => openMention(item)}
+                />
+              ))}
+            </div>
+          </div>)}
         </div>
       </section>
       <RecommendedActions actions={result.recommendations} />

@@ -82,15 +82,14 @@ const evidenceSignatures = new Set(
 if (evidenceSignatures.size !== expectedModules.length) {
   throw new Error("Each module must return a context-specific evidence set.");
 }
-for (let leftIndex = 0; leftIndex < results.length; leftIndex += 1) {
-  for (let rightIndex = leftIndex + 1; rightIndex < results.length; rightIndex += 1) {
-    const left = new Set(results[leftIndex].evidence.map((item) => item.findingId));
-    const overlap = results[rightIndex].evidence.filter((item) => left.has(item.findingId)).length;
-    const smallerSetSize = Math.min(results[leftIndex].evidence.length, results[rightIndex].evidence.length);
-    if (overlap / smallerSetSize >= 0.75) {
-      throw new Error(
-        `${results[leftIndex].moduleId} and ${results[rightIndex].moduleId} evidence sets are insufficiently differentiated.`
-      );
+// A source may directly support different module themes. Validate the focused
+// passage for each theme instead of requiring an arbitrary cross-module ID split.
+for (const result of results) {
+  if (result.evidenceGroups.map(group => group.id).join("|") !== result.sections.map(section => section.id).join("|")) throw new Error("Evidence groups must follow primary theme cards.");
+  for (const group of result.evidenceGroups) {
+    if (group.items.length > 2 || new Set(group.items.map(item => item.findingId)).size !== group.items.length) throw new Error("Theme samples must be a distinct pair.");
+    for (const item of group.items) {
+      if (item.matchedSectionIds.join("|") !== group.id || !item.supportingPassages?.some(passage => passage.theme === group.label && passage.quote === item.quote)) throw new Error(`${result.moduleId}: representative quote must directly support ${group.label}.`);
     }
   }
 }
