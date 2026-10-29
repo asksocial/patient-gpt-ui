@@ -1,4 +1,5 @@
 "use client";
+import { seriousnessReviewOptions } from "../lib/pv/seriousnessReview";
 
 import ActionButton, { ActionForm } from "./ui/ActionButton";
 
@@ -841,7 +842,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       ...proposedOntology,
       productProcedures: ontologyReview.productProcedure.split("\n").map(v=>v.trim()).filter(Boolean).map(value=>({value,evidence:proposedOntology.productProcedures?.find(p=>p.value===value)?.evidence || "Reviewer confirmed",confidence:1})),
       adverseEvents: ontologyReview.adverseEvent.split("\n").map(v=>v.trim()).filter(Boolean).map(value=>({value,evidence:proposedOntology.adverseEvents?.find(e=>e.value===value)?.evidence || "Reviewer confirmed",confidence:1})),
-      seriousness: { ...(proposedOntology.seriousness || {}), value: ontologyReview.seriousness, confidence: ontologyReview.seriousness === "unclear" ? 0 : 1 },
+      seriousness: { ...(proposedOntology.seriousness || {}), value: ontologyReview.seriousness, criteria: e2dReview.seriousnessCriteria, confidence: ontologyReview.seriousness === "unclear" ? 0 : 1 },
       outcomes: ontologyReview.outcome === "unknown" ? [] : [{ category: ontologyReview.outcome, value: ontologyReview.outcome, evidence: proposedOntology.outcomes?.[0]?.evidence || "Reviewer confirmed", confidence: 1 }],
       timeToOnset: { category: ontologyReview.timeToOnset, value: ontologyReview.timeToOnsetDetail || undefined, evidence: proposedOntology.timeToOnset?.evidence, confidence: ontologyReview.timeToOnset === "unknown" ? 0 : 1 },
       severity: { ...(proposedOntology.severity || {}), value: ontologyReview.severity, confidence: ontologyReview.severity === "unclear" ? 0 : 1 },
@@ -1074,7 +1075,7 @@ function PvOntologyReview({ value, onChange }) {
 }
 
 function E2dCaseAssessment({ value, onChange, patientCriterion, reporterCriterion, patientEvidenceConfirmed, onPatientEvidenceConfirmed }) {
-  const seriousnessCriteria = ["death", "life_threatening", "hospitalization", "disability_or_incapacity", "congenital_anomaly_or_birth_defect", "important_medical_event"];
+  const seriousnessCriteria = seriousnessReviewOptions(value.seriousnessCriteria);
   function field(key) { return { value: value[key], onChange: (event) => onChange((current) => ({ ...current, [key]: event.target.value })) }; }
   function toggleCriterion(criterion) {
     onChange((current) => ({

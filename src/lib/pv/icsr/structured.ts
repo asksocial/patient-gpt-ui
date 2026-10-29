@@ -45,12 +45,13 @@ export function structuredIcsr(record: Record<string, any>, ontology: any, repor
   c.pvAssessment.seriousness = human(ontology.seriousness?.value);
   c.pvAssessment.expectedness = human(ontology.unexpectedness?.value);
   c.pvAssessment.causality = human((ontology.causality || []).map((v: any) => `Reporter wording: ${v.phrase}; reviewer classification: ${v.value}`).join("; "));
-  c.narrative = human(a.clinicalNarrative?.clinicalCourse || (c.narrative.origin==="human_added"?c.narrative.value:generateCaseNarrative(c)), "Narrative explicitly reviewed during Structured Review completion");
   const allowed=/^(patient\.(age|ageGroup|sex|weight|medicalHistory|pregnancyStatus)|reporter\.(qualification|country)|identification\.country|suspectProducts\.\d+\.(genericName|activeIngredient|indication|dose|frequency|route|therapyStartDate|therapyEndDate|batchLot)|events\.\d+\.(onset|end|outcome|medicalIntervention|meddraTerm|meddraVersion|seriousness\.(death|lifeThreatening|hospitalization|disability|congenitalAnomaly|otherMedicallyImportant))|concomitantProducts\.\d+\.[^.]+|medicalHistory\.[^.]+|pvAssessment\.meddraCoding)$/;
   if(Object.keys(reviewedFields).some(path=>!allowed.test(path)))throw new Error("Use the canonical Structured Review controls for product, event and minimum criteria.");
   if(c.events.length>50||c.suspectProducts.length>50)throw new Error("Maximum 50 products/events per case.");
   for(const path of Object.keys(reviewedFields)){if(path.startsWith("concomitantProducts.")){const index=Number(path.split(".")[1]);if(index>=50)throw new Error("Maximum 50 concomitant products.");while(c.concomitantProducts.length<=index)c.concomitantProducts.push(blankConcomitant());}}
   c=applyCaseReview(c,{fields:Object.fromEntries(Object.entries(reviewedFields).map(([path,field])=>[path,{...field,confirmed:true}]))});
+  // Build from the final reviewed facts; optional corrections must not leave a stale narrative.
+  c.narrative = human(a.clinicalNarrative?.clinicalCourse || generateCaseNarrative(c), "Narrative explicitly reviewed during Structured Review completion");
   c.approval = null;
   // Completion attests to the exact rendered preview, including explicit missing fields.
   for (const [, field] of caseFields(c)) field.confirmed = true;
