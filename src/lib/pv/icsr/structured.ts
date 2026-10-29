@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { buildR3AlignedCase, blankProduct, blankEvent, caseFields, emptyField, blankConcomitant, generateCaseNarrative } from "./case";
-import { approveIcsr, applyCaseReview } from "./review";
-import { generateIcsrEmail, ICSR_ASSESSMENT } from "./email";
+import { approveIcsr, applyCaseReview, validateEmail } from "./review";
+import { generateIcsrEmail } from "./email";
 import type { CaseField, IcsrSnapshot } from "./types";
 
 /** Canonical Structured Review supplies human interpretations; source extraction is never overwritten. */
@@ -67,9 +67,8 @@ export function externalStructuredText(snapshot: IcsrSnapshot, ontology?: any, c
   return generateIcsrEmail(snapshot.caseData).body + "\n\n" + outwardStructuredAssessment(ontology,classifications);
 }
 export function validatedQueueEmail(input: any) {
-  if (!input || typeof input.subject !== "string" || typeof input.body !== "string" || typeof input.recipients !== "string") throw new Error("Complete the email preview.");
-  if (!input.body.includes(ICSR_ASSESSMENT)) throw new Error("Retain the AskSocial assessment disclaimer.");
-  return input;
+  // The approved case PDF carries the assessment; the cover can use the client's exact wording.
+  return validateEmail(input);
 }
 
 /** Approved structured interpretations are explicitly labelled; internal notes never enter the document. */

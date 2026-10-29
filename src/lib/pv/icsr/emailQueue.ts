@@ -1,7 +1,8 @@
 import { getSupabaseServerClient } from "../../supabase/server";
 import type { PlatformPrincipal } from "../../intelligence-platform/persistence";
 import { validateEmail } from "./review";
-import { ICSR_ASSESSMENT, generateIcsrEmail } from "./email";
+import { generateIcsrEmail } from "./email";
+import { ICSR_CASE_EMAIL_BODY } from "./coverEmail";
 import { createIcsrCasePdf, combineIcsrCasePdfs } from "./casePdf";
 
 export function selectedCaseIds(value: unknown): string[] {
@@ -51,8 +52,8 @@ export async function prepareQueueEmail(principal: PlatformPrincipal, input: any
  const report=await combineIcsrCasePdfs(cases);
  const attachment={fileName:report.fileName,content:Buffer.from(report.bytes).toString("base64"),hash:report.hash,ranges:report.ranges};
  const caseManifest=cases.map(({content:_content,...item})=>({...item,reportHash:report.hash,...report.ranges.find(r=>r.recordId===item.recordId)}));
- const email=validateEmail(input.email || {subject:ids.length===1?generateIcsrEmail(heads.find(h=>h.record_id===ids[0]).snapshot.caseData).subject:`Potential ICSRs - ${ids.length} reviewed AskSocial cases`,recipients:"",body:`Please review the attached R3-aligned case summaries. Each selected case starts on its own page in the attached PDF. Long cases retain clearly labeled continuation pages.\n\nCase IDs:\n${ids.join("\n")}\n\n${ICSR_ASSESSMENT}`});
- if(!email.body.includes(ICSR_ASSESSMENT))throw new Error("Retain the AskSocial assessment disclaimer.");
+ const email=validateEmail(input.email || {subject:ids.length===1?generateIcsrEmail(heads.find(h=>h.record_id===ids[0]).snapshot.caseData).subject:`Potential ICSRs - ${ids.length} reviewed AskSocial cases`,recipients:"",body:ICSR_CASE_EMAIL_BODY});
+ // The required assessment is retained in every approved PDF, not appended to the cover.
  const {data:id,error}=await db.rpc("prepare_pv_icsr_email",{p_principal:principal.principalId,p_actor:principal.actorId,p_payload:{caseIds:ids,email,cases:caseManifest,attachment}});
  if(error)throw new Error(error.message);
  return {id,email,attachment:{fileName:attachment.fileName,hash:attachment.hash,ranges:attachment.ranges},deliveryConfigured:Boolean(process.env.RESEND_API_KEY&&process.env.PV_SPONSOR_FROM_EMAIL)};

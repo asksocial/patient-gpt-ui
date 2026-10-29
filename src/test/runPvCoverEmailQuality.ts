@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {ICSR_CASE_EMAIL_BODY} from '../lib/pv/icsr/coverEmail';
+import {validatedQueueEmail} from '../lib/pv/icsr/structured';
+const expected='Hello,\n\nAttached is a pharmacovigilance case summary documenting a potential adverse event identified through social media monitoring.\n\nThe report includes the available patient and reporter information, suspected product, reported adverse event, supporting source evidence, and relevant case details.\n\nPlease review the attached report to assess case validity, determine whether additional information or follow-up is required, and evaluate any applicable reporting obligations.\n\nShould you require additional information or clarification, please let us know.\n\nBest regards,\nAskSocial Pharmacovigilance Team';
+assert.equal(ICSR_CASE_EMAIL_BODY,expected);
+assert.equal(validatedQueueEmail({subject:'QA TEST',recipients:'hpaige@eavesdropinc.com',body:ICSR_CASE_EMAIL_BODY}).body,expected);
+assert.throws(()=>validatedQueueEmail({subject:'bad\nheader',recipients:'hpaige@eavesdropinc.com',body:expected}),/header/);
+assert(fs.readFileSync('src/lib/pv/icsr/emailQueue.ts','utf8').includes('body:ICSR_CASE_EMAIL_BODY'));
+assert(fs.readFileSync('src/lib/pv/icsr/casePdf.ts','utf8').includes('row("AskSocial Assessment",ICSR_ASSESSMENT)'));
+console.log('PASS exact client cover wording, header safety, shared queue default and retained PDF assessment.');
