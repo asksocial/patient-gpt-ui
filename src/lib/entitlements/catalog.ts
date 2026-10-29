@@ -91,9 +91,9 @@ export const ENTITLEMENT_CATALOG: EntitlementDefinition[] = [
   },
   {
     key: "module_medical_affairs",
-    label: "Medical Affairs Module",
+    label: "Medical Affairs/HEOR Module",
     description:
-      "Medical Affairs domain intelligence, workflows, and authorized agents.",
+      "Medical Affairs/HEOR domain intelligence, workflows, and authorized agents.",
     defaultGranted: false,
   },
   {

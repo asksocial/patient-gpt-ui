@@ -186,7 +186,7 @@ export const MODE_ANALYSIS_PROFILES: ModeAnalysisProfile[] = [
         section("scientific_perception", "Scientific perception", "How scientific claims are being interpreted."),
         section("evidence_quality", "Evidence quality", "Strength, independence, and limitations of support."),
         section("evidence_gaps", "Evidence gaps and questions", "Unsupported or unresolved scientific questions."),
-        section("medical_implications", "Medical implications", "Evidence-bounded implications for Medical Affairs."),
+        section("medical_implications", "Medical implications", "Evidence-bounded implications for Medical Affairs/HEOR."),
       ],
       requiredFields: ["summary", "evidenceFindingIds", "limitations"],
     },

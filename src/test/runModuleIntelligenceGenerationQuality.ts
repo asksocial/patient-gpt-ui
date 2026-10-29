@@ -98,7 +98,7 @@ const medical = results.find((result) => result.moduleId === "medical_affairs");
 const commercial = results.find((result) => result.moduleId === "commercial");
 if (!medical || !commercial) throw new Error("Medical and Commercial module outputs are required.");
 if (medical.dataQuality.promotionalContextCount !== 0) {
-  throw new Error("Medical Affairs must exclude promotional evidence from its selected subset.");
+  throw new Error("Medical Affairs/HEOR must exclude promotional evidence from its selected subset.");
 }
 if (!commercial.dataQuality.limitations.some((item) => item.includes("labeled context"))) {
   throw new Error("Commercial Intelligence must disclose promotional context handling.");

@@ -58,7 +58,7 @@ of records containing a particular signal.
 | Module | Input findings | Previous matched context | Audited matched context |
 | --- | ---: | ---: | ---: |
 | Patient | 4737 | 634 in patient scope | 634 in patient scope |
-| Medical Affairs | 4737 | 23 | 1120 |
+| Medical Affairs/HEOR | 4737 | 23 | 1120 |
 | Clinical Trials | 4737 | 43 | 1673 |
 | Corporate Affairs | 4737 | 480 | 1209 |
 | Commercial | 4737 | 2119 | 2001 |

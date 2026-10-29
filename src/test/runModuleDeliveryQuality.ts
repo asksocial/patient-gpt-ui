@@ -36,7 +36,7 @@ if (
   ])
 ) {
   throw new Error(
-    "Phase 1 must contain Medical Affairs, Clinical Trials, and Patient in the prescribed order."
+    "Phase 1 must contain Medical Affairs/HEOR, Clinical Trials, and Patient in the prescribed order."
   );
 }
 

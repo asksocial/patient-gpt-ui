@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 }
 
 const MODULE_INTELLIGENCE_LABELS = {
-  medical_affairs: "Medical Affairs",
+  medical_affairs: "Medical Affairs/HEOR",
   clinical_trials: "Clinical Trials",
   corporate_affairs: "Corporate Affairs",
   commercial: "Commercial",

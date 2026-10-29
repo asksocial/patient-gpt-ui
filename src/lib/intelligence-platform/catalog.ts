@@ -53,7 +53,7 @@ export const INTELLIGENCE_MODULE_CATALOG:
   IntelligenceModuleDefinition[] = [
   {
     id: "medical_affairs",
-    name: "Medical Affairs",
+    name: "Medical Affairs/HEOR",
     description:
       "Scientific, congress, medical-information, and safety intelligence.",
     capabilities: [

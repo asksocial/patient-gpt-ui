@@ -128,7 +128,7 @@ const PROMOTIONAL_CLASSES = new Set<EvidenceClass>([
 export const MODULE_INTELLIGENCE_PROFILES: Record<GeneratableModuleId, ModuleIntelligenceProfile> = {
   medical_affairs: {
     moduleId: "medical_affairs",
-    label: "Medical Affairs",
+    label: "Medical Affairs/HEOR",
     purpose: "scientific perception, evidence gaps, medical questions, and safety-relevant discussion",
     minimumQualityScore: 45,
     preferredVoices: ["provider", "researcher", "patient", "caregiver"],

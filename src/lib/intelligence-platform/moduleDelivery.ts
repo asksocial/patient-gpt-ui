@@ -100,7 +100,7 @@ export const MODULE_IMPLEMENTATION_PLANS:
         "medical_affairs",
       phase: 1,
       primaryUsers: [
-        "medical affairs",
+        "Medical Affairs/HEOR",
         "medical information",
         "pharmacovigilance",
       ],

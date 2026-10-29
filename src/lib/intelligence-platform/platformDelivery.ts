@@ -33,7 +33,7 @@ export const PLATFORM_DELIVERY_SEQUENCE =
       id:
         "medical_affairs_module",
       name:
-        "Migrate Medical Affairs into the module model",
+        "Migrate Medical Affairs/HEOR into the module model",
     },
     {
       id:

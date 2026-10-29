@@ -64,7 +64,7 @@ if (
   !labels.includes("Patient") ||
   labels.includes("My Modes") ||
   labels.includes("Mode Library") ||
-  labels.includes("Medical Affairs") ||
+  labels.includes("Medical Affairs/HEOR") ||
   labels.includes(
     "Referral Navigator"
   ) ||

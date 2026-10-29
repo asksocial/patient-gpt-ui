@@ -333,7 +333,7 @@ coverage and the source-attribution policy are documented in
 
 ## Module corpus consistency (October 27, 2026)
 
-All six specialist modules (Medical Affairs, Clinical Trials, Corporate Affairs,
+All six specialist modules (Medical Affairs/HEOR, Clinical Trials, Corporate Affairs,
 Commercial, Competitive, and Advocacy) and Patient Intelligence read the current
 GLP-1 canonical corpus: 5,000 original source rows and 4,737 retained analytical
 findings. Each module applies its existing evidence-selection rules to that shared
