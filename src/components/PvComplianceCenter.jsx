@@ -1048,7 +1048,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
     <Card title="Screening assessment draft" subtitle="Retain unfinished work without confirming reportability. Missing criteria may remain unclear.">
       {draftNotice ? <p role="status" className="mb-3 text-sm text-cyan-100">{draftNotice}</p> : null}
       {draftError ? <p role="alert" className="mb-3 text-sm text-amber-200">{draftError}</p> : null}
-      {screeningDraftFingerprint(screeningFields()) !== savedScreeningJson ? <p className="mb-3 text-xs text-amber-100">Current screening fields have not been saved as a draft.</p> : null}
+      {["new", "in_review"].includes(record.status) && screeningDraftFingerprint(screeningFields()) !== savedScreeningJson ? <p className="mb-3 text-xs text-amber-100">Current screening fields have not been saved as a draft.</p> : null}
       <ActionButton type="button" disabled={draftSaving || !!busy || !["new", "in_review"].includes(record.status)} onClick={saveScreeningDraft} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{draftSaving ? "Saving draft…" : "Save incomplete assessment"}</ActionButton>
     </Card>
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]">
@@ -1219,7 +1219,7 @@ function ReviewerWorkflowGuide() {
 function StructuredReview({ selected, busy, onMutate, onRefreshRecord, onReturnToQueue }) {
   if (!selected) return <Card title="Structured Review" subtitle="Open a mention from the Review Queue to begin a governed reportability decision."><Empty>No PV mention is currently open for structured review.</Empty></Card>;
   return <section id="pv-structured-review" className="space-y-5 scroll-mt-6">
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-4"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">Structured Review</p><p className="mt-1 text-sm text-white/45">Determine reportability first, then complete the safety ontology and ICH case assessment only when appropriate.</p></div><ActionButton type="button" onClick={onReturnToQueue} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60">Return to Review Queue</ActionButton></div>
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-4"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">Structured Review</p><p className="mt-1 text-sm text-white/45">Assess available evidence, retain incomplete work for follow-up, and complete an ICSR review only when the source supports it.</p></div><ActionButton type="button" onClick={onReturnToQueue} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60">Return to Review Queue</ActionButton></div>
     <ReviewerWorkflowGuide />
     <RecordWorkbench key={selected.record.id} detail={selected} busy={busy} onMutate={onMutate} onRefresh={() => onRefreshRecord(selected.record.id)} />
   </section>;
