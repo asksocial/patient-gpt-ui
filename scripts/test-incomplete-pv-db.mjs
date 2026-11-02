@@ -4,7 +4,7 @@ import {PGlite} from '@electric-sql/pglite';
 const db=new PGlite();
 try {
 await db.exec('create role anon;create role authenticated;create role service_role bypassrls;');
-const files=['202608060001_create_pv_compliance_services.sql','202608080002_expand_pv_adverse_event_ontology.sql','202608100001_create_pv_csv_imports.sql','202608110002_scope_pv_corpora.sql','202608230001_start_day_zero_at_reportability_review.sql','202608230002_add_pv_review_start.sql','202609110001_add_pv_health_experience_reclassification.sql','202609150001_add_versioned_e2b_alignment.sql','202610010001_create_pv_icsr_email_reviews.sql','202610170001_odcs_service_controls.sql','202610190001_pv_reportability_identification.sql','202610200002_structured_review_email_queue.sql','202611020001_incomplete_pv_screening.sql'];
+const files=['202608060001_create_pv_compliance_services.sql','202608080002_expand_pv_adverse_event_ontology.sql','202608100001_create_pv_csv_imports.sql','202608110002_scope_pv_corpora.sql','202608230001_start_day_zero_at_reportability_review.sql','202608230002_add_pv_review_start.sql','202609110001_add_pv_health_experience_reclassification.sql','202609150001_add_versioned_e2b_alignment.sql','202610010001_create_pv_icsr_email_reviews.sql','202610170001_odcs_service_controls.sql','202610190001_pv_reportability_identification.sql','202610200002_structured_review_email_queue.sql','202611020001_incomplete_pv_screening.sql','202611020002_pv_review_audit_revision.sql'];
 for(const file of files)await db.exec((await readFile('supabase/migrations/'+file,'utf8')).replace('create extension if not exists pgcrypto;',''));
 const id='a23d8974-4fa5-4115-891b-f26abf054eae',tenant='qa-only',actor='qa-reviewer',at='2026-11-02T10:00:00Z';
 await db.query("insert into pv_records(id,principal_id,external_id,source_type,source_url,original_verbatim,evidence_hash,posted_at,ingested_at,identified_at,detection_score,product_confidence,health_experience_confidence,context_confidence,classifier_version,library_version,updated_at,status) values($1,$2,'QA-ONLY','Synthetic','https://example.invalid','SYNTHETIC ONLY','qa',$3,$3,$3,0,0,0,0,'qa',1,$3,'in_review')",[id,tenant,at]);
@@ -30,6 +30,12 @@ assert.equal(saved.record.reportability_identified_at,null);assert.equal(saved.r
 const head=(await db.query('select snapshot from pv_icsr_cases where record_id=$1',[id])).rows[0].snapshot;assert.equal(head.caseData.approval,null);assert.equal(head.email,null);
 await assert.rejects(db.query(draft,[id,tenant,actor,2,{...head,revision:3},[],at]),/conflict/);
 await assert.rejects(db.query('select prepare_pv_icsr_email($1,$2,$3)',[tenant,actor,{caseIds:[id],cases:[{recordId:id,revision:2}]}]),/review changed/);
+// An ordinary non-case has no ICSR snapshot; audit must not invent revision 1.
+const second='b23d8974-4fa5-4115-891b-f26abf054eae';
+await db.query("insert into pv_records select (jsonb_populate_record(null::pv_records,to_jsonb(r)||jsonb_build_object('id',$1::text,'external_id','QA-SECOND','status','in_review','updated_at',$2::text))).* from pv_records r where id=$3",[second,at,id]);
+await db.query(complete,[second,tenant,actor,at,{...review,decision:'close_not_relevant'},{status:'not_relevant',updated_at:'2026-11-02T10:02:00Z',reviewer_detection_segment:'health_experience',reviewer_health_experience_tags:['medication_error'],segment_reclassified_at:at,segment_reclassified_by:actor},0,null]);
+const event=(await db.query("select metadata from pv_audit_events where resource_id=$1 and action='structured_review.close_not_relevant'",[second])).rows[0].metadata;
+assert.equal(event.icsrRevision,null);assert.equal(event.reviewerDetectionSegment,'health_experience');
 await db.exec('set role authenticated');
 await assert.rejects(db.query(draft,[id,tenant,actor,2,{...head,revision:3},[],at]),/permission denied/);
 console.log('PASS: real PostgreSQL draft/revision/audit atomicity, rollback, tenant and stale-edit guards, incomplete disposition and follow-up retention, no approval/email/Day Zero, complete-email rejection, direct-user RPC denial.');
