@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {explorationSummary,explorationEvidence,explorationFindingId} from '../lib/intelligence/exploration';
+import {loadCanonicalFindingsForAsk} from '../lib/answers/loadCanonicalFindingsForAsk';
+const summary=explorationSummary('GLP-1');
+assert.equal(summary.scope.sourceRecordCount,5000);assert.equal(summary.scope.analyzedFindingCount,4737);assert.equal(summary.scope.excludedRecordCount,263);
+assert.equal(summary.scope.themeDenominators.length,summary.knowledgeSnapshot.themeRecords.length);
+const corpus=loadCanonicalFindingsForAsk('GLP-1');
+const ids=new Set(corpus.findings.map(f=>explorationFindingId(f)));
+const counts=[];
+for(const t of summary.scope.themeDenominators){
+ const evidence=explorationEvidence('GLP-1',t.themeId,'',1,summary.scope.snapshotKey);
+ assert.equal(evidence.total,t.count);assert.equal(evidence.populationCount,t.count);
+ const record=summary.knowledgeSnapshot.themeRecords.find(n=>n.themeId===t.themeId)!;
+ assert.equal(new Set(record.findingIds).size,t.count);
+ assert(Math.abs(t.percent!-Math.round(t.count/t.denominator!*1000)/10)<0.11);
+ assert(evidence.items.every(item=>ids.has(item.findingId)&&record.findingIds.includes(item.findingId)&&item.text.length>0));
+ counts.push({themeId:t.themeId,count:t.count,denominator:t.denominator,percent:t.percent});
+}
+const page1=explorationEvidence('GLP-1',''),page2=explorationEvidence('GLP-1','','',2);
+assert.equal(page1.total,4737);assert.equal(page1.items.length,20);assert(!page1.items.some(a=>page2.items.some(b=>a.findingId===b.findingId)));
+assert.equal(explorationEvidence('GLP-1','','QA_NO_MATCH_778899').total,0);
+assert.throws(()=>explorationEvidence('GLP-1','invented'),/not found/);
+assert.throws(()=>explorationEvidence('GLP-1','','',1,'stale'),/changed/);
+assert.throws(()=>explorationSummary('Hepatitis B'),/pilot only/);
+const route=fs.readFileSync('src/app/api/intelligence/exploration/route.ts','utf8');
+for(const guard of ['getCurrentEntitlements','knowledge_intelligence','executive_intelligence','hasTherapeuticAreaAccess','capabilities.exports','status:409','private, no-store'])assert(route.includes(guard));
+const exportValue=JSON.parse(JSON.stringify({scope:summary.scope,brief:summary.executiveIntelligence,snapshot:summary.knowledgeSnapshot}));
+assert.equal(exportValue.scope.snapshotKey,exportValue.snapshot.snapshotKey);
+assert.equal(exportValue.brief.dataQuality.datasetFindingCount,4737);
+fs.mkdirSync('artifacts/qa/glp1-remaining-priorities',{recursive:true});fs.writeFileSync('artifacts/qa/glp1-remaining-priorities/analytical-populations.json',JSON.stringify({status:'Pass',scope:summary.scope,counts,pagination:{total:page1.total,pages:page1.pages},guardCoverage:'Pure population, stale-snapshot, unknown-theme and no-match tests; route guards inspected here. Live unauthenticated denial is checked separately.'},null,2));
+console.log('PASS current-corpus scope, all theme count/denominator/source-ID reconciliation, source pagination, no-match, stale/foreign topic rejection, export alignment and protected route guard wiring.');

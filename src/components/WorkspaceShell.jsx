@@ -23,6 +23,7 @@ import CorpusDonutCards from "./CorpusDonutCards";
 import ModuleIntelligenceView from "./ModuleIntelligenceView";
 import MonitoringCenter from "./MonitoringCenter";
 import PvComplianceCenter from "./PvComplianceCenter";
+import Glp1ExplorationView from "./Glp1ExplorationView";
 import KnowledgeGraphView from "./KnowledgeGraphView";
 import WorkspaceManager from "./WorkspaceManager";
 import {
@@ -2309,7 +2310,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
             ) : null}
             {activeDestination ===
             "intelligence_reports" ? (
-              <ExecutiveIntelligenceView
+              /^glp[ _-]?1$/i.test(therapeuticArea) ? <Glp1ExplorationView key="glp1-executive" kind="executive" /> : <ExecutiveIntelligenceView
                 brief={latestExecutiveIntelligence}
                 unavailableReason={
                   !canUseExecutiveIntelligence
@@ -2393,7 +2394,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
               <GovernanceCenter />
             ) : activeDestination ===
               "intelligence_graph" ? (
-              <KnowledgeGraphView
+              /^glp[ _-]?1$/i.test(therapeuticArea) ? <Glp1ExplorationView key="glp1-graph" kind="graph" /> : <KnowledgeGraphView
                 dataTherapeuticArea={latestKnowledgeGraph?.therapeuticArea}
                 snapshot={latestKnowledgeGraph?.snapshot}
                 themes={latestKnowledgeGraph?.themes}

@@ -1,3 +1,4 @@
+import { GLP1_MODULE_RELEVANCE_VERSION, requiresGlp1SectionReview, matchesGlp1ModuleSection, isExplicitPromotion } from "../intelligence/glp1ModuleRelevance";
 import { selectThemeEvidence } from "../intelligence/selectThemeEvidence";
 import { sourcePassages, supportingPassage } from "../../answering/evidence/sourcePassages";
 import { applyEvidenceClassQualityCap } from "../../answering/evidence/config/evidenceQualityConfig";
@@ -484,9 +485,10 @@ function applyModuleEvidenceClassification(
         journalist: "consumer_news", corporate: "corporate_pr", clinic: "clinic_marketing",
         advocacy: "advocacy_organization", community: "community_conversation", influencer: "influencer_content",
       };
-      const commercialRole = ["corporate", "clinic", "influencer"].includes(voice);
+      const explicitPromotion = isExplicitPromotion(sourceContext(finding));
+      const commercialRole = ["corporate", "clinic", "influencer"].includes(voice) || explicitPromotion;
       const evidenceClass = commercialRole || conversationClasses.has(intelligence.evidenceClass)
-        ? roleClasses[voice] || intelligence.evidenceClass : intelligence.evidenceClass;
+        ? explicitPromotion ? "sponsored_content" : roleClasses[voice] || intelligence.evidenceClass : intelligence.evidenceClass;
       const qualityScore = commercialRole ? applyEvidenceClassQualityCap(evidenceClass, intelligence.qualityScore) : intelligence.qualityScore;
       const qualityBand: EvidenceIntelligence["qualityBand"] = qualityScore >= 90 ? "very_high" : qualityScore >= 75 ? "high" : qualityScore >= 55 ? "moderate" : qualityScore >= 35 ? "low" : "very_low";
       intelligence = {
@@ -517,7 +519,7 @@ function contextualizeFinding(
   const text = findingText(item.finding);
   const trialSpecific = new Set(["awareness_trust", "recruitment", "eligibility", "retention", "site_experience"]);
   const matchedSections = profile.sections.filter((section) =>
-    (!trialSpecific.has(section.id) || item.intelligence.evidenceClass === "clinical_study" || item.intelligence.evidenceClass === "research_journal" || hasTrialContext(text)) && matchesContextSignal(section.id, section.pattern, text)
+    (!trialSpecific.has(section.id) || item.intelligence.evidenceClass === "clinical_study" || item.intelligence.evidenceClass === "research_journal" || hasTrialContext(text)) && (requiresGlp1SectionReview(item.finding.therapeuticArea, profile.moduleId) ? matchesGlp1ModuleSection(section.id, text) : matchesContextSignal(section.id, section.pattern, text))
   );
   const sectionPriorityScore = matchedSections.reduce((total, section) => {
     const index = profile.sections.findIndex((candidate) => candidate.id === section.id);
@@ -548,7 +550,7 @@ function buildEvidenceItem(
     const support = supportingPassage(passages, signalSupportPattern(section.id, section.pattern), {
       minimumLength: 1,
       accept: (text, match, index) => {
-        if (!matchesContextSignal(section.id, section.pattern, text)) return false;
+        if (requiresGlp1SectionReview(finding.therapeuticArea, moduleId) ? !matchesGlp1ModuleSection(section.id, text) : !matchesContextSignal(section.id, section.pattern, text)) return false;
         if (!directOnly) return true;
         const around = text.slice(Math.max(0, index - 120), index + match.length + 180);
         if (section.id === "medical_questions" && !expressesInformationNeed(around)) return false;
@@ -616,6 +618,16 @@ export function isGeneratableModuleId(value: unknown): value is GeneratableModul
   return typeof value === "string" && value !== "patient" && value in MODULE_INTELLIGENCE_PROFILES;
 }
 
+/** The same source population used by module report metrics, for scoped Q&A. */
+export function selectModuleAnalysisFindings(moduleId: GeneratableModuleId, findings: CanonicalFinding[], options: ModuleIntelligenceBuildOptions = {}) {
+  if (options.relevancePolicy === "prequalified" && !findings.some(finding => requiresGlp1SectionReview(finding.therapeuticArea, moduleId))) return findings;
+  const profile = MODULE_INTELLIGENCE_PROFILES[moduleId];
+  return findings.filter(finding => {
+    const intelligence = applyModuleEvidenceClassification(moduleId, finding, analyzeEvidence(finding));
+    return Boolean(sourceContext(finding)) && (profile.allowPromotionalContext || !intelligence.isPromotional && !PROMOTIONAL_CLASSES.has(intelligence.evidenceClass) && intelligence.evidenceClass !== "corporate_pr") && contextualizeFinding(profile, { finding, intelligence }).matchedSections.length > 0;
+  });
+}
+
 export function buildModuleIntelligence(
   moduleId: GeneratableModuleId,
   therapeuticArea: string,
@@ -624,7 +636,7 @@ export function buildModuleIntelligence(
   options: ModuleIntelligenceBuildOptions = {}
 ): ModuleIntelligenceResult {
   const profile = MODULE_INTELLIGENCE_PROFILES[moduleId];
-  const relevancePolicy = options.relevancePolicy || "standard";
+  const relevancePolicy = requiresGlp1SectionReview(therapeuticArea, moduleId) ? "standard" : options.relevancePolicy || "standard";
   const relevancePrequalified = relevancePolicy === "prequalified";
   const analyzed = findings.map((finding) => ({
     finding,
@@ -653,7 +665,7 @@ export function buildModuleIntelligence(
       description: section.description,
       findingCount: matching.length,
       prevalencePercent: selected.length ? Math.round((matching.length / selected.length) * 1000) / 10 : 0,
-      confidence: matching.length && !matching.some(item => item.intelligence.qualityScore >= profile.minimumQualityScore)
+      confidence: requiresGlp1SectionReview(therapeuticArea, moduleId) ? matching.length ? "directional" as const : "insufficient" as const : matching.length && !matching.some(item => item.intelligence.qualityScore >= profile.minimumQualityScore)
         ? "directional" as const
         : confidence(matching.filter(item => item.intelligence.qualityScore >= profile.minimumQualityScore).length, selected.length),
       evidenceIds: matching.slice(0, 8).map(({ finding }) => findingId(finding)),
@@ -683,6 +695,8 @@ export function buildModuleIntelligence(
   const leading = sections[0];
   const limitations = [
     "Audience and evidence classifications are machine-derived and should be human-reviewed for consequential use.",
+    ...(requiresGlp1SectionReview(therapeuticArea, moduleId) ? ["Section counts require a treatment reference and a specific section signal in the same passage or a directly linked sentence. Hashtags alone are insufficient. Conservative rules can miss relevant sources; all retained records remain available for source review."] : []),
+    "Automated source scores support ordering; they do not establish topical relevance, factual accuracy, independent corroboration or reviewed evidence quality.",
     "Module topics match original source wording; quality and source preferences rank rather than truncate contextually relevant evidence. Lower-quality records remain explicitly labeled.",
     ...(moduleId === "clinical_trials" ? ["General treatment, safety and outcome discussions can inform trial-design questions but do not establish actual trial participation. Recruitment, eligibility, retention and site signals require explicit research context."] : []),
     `This analysis reflects the available ${therapeuticArea} corpus and is not a statistically representative market sample.`,
@@ -707,7 +721,7 @@ export function buildModuleIntelligence(
       : `The available ${therapeuticArea} evidence does not yet support a clear ${profile.label} priority signal.`,
     executiveSummary: `${profile.label} Intelligence evaluated eligible findings from corpus records for ${profile.purpose}. Results are evidence-qualified and should be interpreted with the stated coverage limitations.`,
     dataQuality: {
-      contextRulesVersion: CONTEXT_RULES_VERSION,
+      contextRulesVersion: requiresGlp1SectionReview(therapeuticArea, moduleId) ? `${CONTEXT_RULES_VERSION}/${GLP1_MODULE_RELEVANCE_VERSION}` : CONTEXT_RULES_VERSION,
       corpusFindingCount: findings.length,
       ...(/^glp[ _-]?1$/i.test(therapeuticArea) ? { patientRelatedFindingCount: findings.filter(finding => finding.audienceClassification?.patientContent).length, audienceClassificationVersion: GLP1_AUDIENCE_VERSION } : {}),
       eligibleFindingCount: eligible.length,
@@ -748,7 +762,7 @@ export function buildModuleEvidenceCatalog(
   options: ModuleIntelligenceBuildOptions = {}
 ): ModuleEvidenceCatalogResult {
   const profile = MODULE_INTELLIGENCE_PROFILES[moduleId];
-  const relevancePolicy = options.relevancePolicy || "standard";
+  const relevancePolicy = requiresGlp1SectionReview(therapeuticArea, moduleId) ? "standard" : options.relevancePolicy || "standard";
   const query = String(params.query || "").trim();
   const normalizedQuery = query.toLowerCase();
   const qualityBand = String(params.qualityBand || "").trim();

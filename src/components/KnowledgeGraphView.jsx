@@ -206,6 +206,7 @@ export default function KnowledgeGraphView({
   longitudinalTracking,
   therapeuticArea,
   dataTherapeuticArea,
+  onOpenTheme = undefined,
 }) {
   if (!graphMatchesTopic(therapeuticArea, dataTherapeuticArea, snapshot?.therapeuticArea, brief?.therapeuticArea)) {
     return <EmptyState therapeuticArea={therapeuticArea} />;
@@ -331,7 +332,7 @@ export default function KnowledgeGraphView({
                 <span aria-hidden="true" className="text-sm font-medium tabular-nums text-[#8a9993]">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <h3 className="min-w-0 text-lg font-bold leading-snug text-[#12352e] sm:text-xl">{node.label}</h3>
+                <h3 className="min-w-0 text-lg font-bold leading-snug text-[#12352e] sm:text-xl">{onOpenTheme ? <button type="button" onClick={()=>onOpenTheme(node.themeId)} className="text-left underline underline-offset-4">{node.label}</button> : node.label}</h3>
                 <p className="whitespace-nowrap text-3xl font-bold leading-none tracking-tight tabular-nums text-[#12352e] sm:text-4xl">
                   {percent}<span className="ml-0.5 text-lg font-semibold text-[#65746e]">%</span>
                 </p>

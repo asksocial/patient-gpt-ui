@@ -134,7 +134,7 @@ function EmptyState({ reason }) {
   );
 }
 
-export default function ExecutiveIntelligenceView({ brief, unavailableReason }) {
+export default function ExecutiveIntelligenceView({ brief, unavailableReason, onOpenTheme = undefined }) {
   if (!brief) return <EmptyState reason={unavailableReason} />;
 
   const quality = brief.dataQuality || {};
@@ -224,7 +224,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason }) 
               <tbody>
                 {themes.map((theme) => (
                   <tr key={theme.themeId} className="border-b border-white/[0.06] text-white/70 last:border-0">
-                    <td className="py-4 pr-5 font-medium text-white">{theme.label}</td>
+                    <td className="py-4 pr-5 font-medium text-white">{onOpenTheme?<ActionButton type="button" onClick={()=>onOpenTheme(theme.themeId)} className="text-left underline underline-offset-4">{theme.label}</ActionButton>:theme.label}</td>
                     <td className="py-4 pr-5">{theme.eligiblePercent}%</td>
                     <td className="py-4 pr-5">{words(theme.trajectory)}</td>
                     <td className={`py-4 pr-5 ${Number(theme.percentagePointChange) > 0 ? "text-emerald-300" : Number(theme.percentagePointChange) < 0 ? "text-rose-300" : ""}`}>
