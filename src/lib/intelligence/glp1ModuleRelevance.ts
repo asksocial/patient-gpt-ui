@@ -1,6 +1,6 @@
 /** Conservative pilot rules: topic membership and a high source score do not
  * establish that a passage supports a Corporate Affairs or Advocacy section. */
-export const GLP1_MODULE_RELEVANCE_VERSION = "glp1-module-relevance-2026-10-29.1";
+export const GLP1_MODULE_RELEVANCE_VERSION = "glp1-module-relevance-2026-11-02.2";
 
 export function requiresGlp1SectionReview(area: string, moduleId: string) {
   return /^glp[ _-]?1$/i.test(area) && ["corporate_affairs", "advocacy"].includes(moduleId);
@@ -31,7 +31,10 @@ export function matchesGlp1ModuleSection(sectionId: string, text: string): boole
     .replace(/-\s*마운자로 마이너 갤러리/gu, " ")
     .replace(/\b(?:body|self)[ -]criticism\b|\blabel trust\b|\bprice competition\b/giu, " ")
     .replace(/\bglp[ -]?1[ -]friendly\b/giu, " ");
-  const passages = cleaned.split(/[.!?。！？;\n]+/u).map(value => value.trim()).filter(Boolean);
+  // Explicit medication analogies do not establish that the policy or
+  // criticism concerns treatment. Preserve any separate direct references.
+  const directText = cleaned.replace(new RegExp(`\\b(?:like|likened to)\\s+(?:taking|using|being on)\\s+(?:(?:a|an|the|daily|weekly)\\s+)*(?:${topic.source})`, "giu"), " ");
+  const passages = directText.split(/[.!?。！？;\n]+/u).map(value => value.trim()).filter(Boolean);
   return passages.some((passage, index) => {
     if (topic.test(passage)) {
       // Bound the matching passage so distant keywords cannot establish a link.

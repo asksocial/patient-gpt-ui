@@ -7,6 +7,8 @@ import { buildModuleIntelligence, buildModuleEvidenceCatalog, selectModuleAnalys
 import { sourceContext } from "../lib/intelligence/sourceContext";
 
 const negativeCases = [
+  ["policy_awareness", "QT @JasonBedrick: Gutting the @usedgov without legislation is like taking a daily GLP-1 pill without working out. It’s great as long as you ..."],
+  ["reputation", "The controversy over the election is like using Ozempic."],
   ["policy_awareness", "Vou trazer tirzepatide escondida da policia federal."],
   ["policy_awareness", "My doctor got me approved for Zepbound."],
   ["community_priorities", "Our pharmacy is augmenting the patient experience for patients taking GLP-1 drugs."],
@@ -24,6 +26,7 @@ const negativeCases = [
   ["reputation", "I take Mounjaro. NHK television fees prompted criticism."],
 ] as const;
 const positiveCases = [
+  ["policy_awareness", "The new FDA policy regulates GLP-1 prescribing. Some call it like taking a daily GLP-1 pill."],
   ["reputation", "Patients distrust the company marketing Ozempic."],
   ["narratives", "The debate over stigma associated with Ozempic continues."],
   ["advocacy", "A patient advocacy group discussed GLP-1 access."],
