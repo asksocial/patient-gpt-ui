@@ -5,6 +5,7 @@ import ActionButton, { ActionForm } from "./ui/ActionButton";
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
+import useRetainedAnalysis from "../lib/client/useRetainedAnalysis";
 import EvidenceMentionCard from "./EvidenceMentionCard";
 import BackButton from "./ui/BackButton";
 import useDrilldownNavigation from "../lib/client/useDrilldownNavigation";
@@ -106,8 +107,8 @@ function FullMentionDialog({ evidence, moduleName, onClose }) {
   );
 }
 
-export default function ModuleIntelligenceView({ module, therapeuticArea, workspaceId }) {
-  const [result, setResult] = useState(null);
+export default function ModuleIntelligenceView({ module, therapeuticArea, workspaceId, persistenceScope = "" }) {
+  const [result, setResult, retentionWarning] = useRetainedAnalysis(persistenceScope, module.id, therapeuticArea, workspaceId);
   const [selectedEvidence, setSelectedEvidence] = useState(null);
   const [evidenceBrowserOpen, setEvidenceBrowserOpen] = useState(false);
   const [evidenceCatalog, setEvidenceCatalog] = useState(null);
@@ -133,7 +134,6 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
 
 
   useEffect(() => {
-    setResult(null);
     setSelectedEvidence(null);
     setEvidenceBrowserOpen(false);
     setEvidenceCatalog(null);
@@ -354,6 +354,7 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
 
   return (
     <div className="space-y-5">
+      {retentionWarning ? <p role="status" className="rounded-xl border border-amber-300/30 p-3 text-sm">{retentionWarning}</p> : null}
       <FullMentionDialog
         evidence={selectedEvidence}
         moduleName={module.name}

@@ -7,6 +7,7 @@ import ActionButton, { ActionForm } from "./ui/ActionButton";
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import { useEffect, useState } from "react";
+import useRetainedAnalysis from "../lib/client/useRetainedAnalysis";
 import EvidenceMentionCard from "./EvidenceMentionCard";
 import RecommendedActions from "./RecommendedActions";
 import { formatConfidenceLabel } from "./ui/intelligenceStyles";
@@ -98,10 +99,10 @@ function PatientEvidenceDialog({ evidence, onClose }) {
   );
 }
 
-export default function PatientIntelligenceView({ therapeuticArea, workspaceId }) {
+export default function PatientIntelligenceView({ therapeuticArea, workspaceId, persistenceScope = "" }) {
   const isGlp1 = /^glp[ _-]?1$/i.test(therapeuticArea || "");
   const [evidenceScope, setEvidenceScope] = useState(isGlp1 ? "patient_related" : "patient_voice");
-  const [result, setResult] = useState(null);
+  const [result, setResult, retentionWarning] = useRetainedAnalysis(persistenceScope, "patient", therapeuticArea, workspaceId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [evidenceDimension, setEvidenceDimension] = useState(null);
@@ -126,7 +127,6 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
 
   useEffect(() => {
     setEvidenceScope(isGlp1 ? "patient_related" : "patient_voice");
-    setResult(null);
     setEvidenceDimension(null);
     setEvidenceCatalog(null);
     setEvidenceQuery("");
@@ -142,6 +142,10 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   });
+
+  useEffect(() => {
+    if (result?.dataQuality?.evidenceScope) setEvidenceScope(result.dataQuality.evidenceScope);
+  }, [result]);
 
   async function runAnalysis(requestedScope = evidenceScope) {
     setEvidenceScope(requestedScope);
@@ -288,6 +292,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId }
 
   return (
     <div className="space-y-4">
+      {retentionWarning ? <p role="status" className="rounded-xl border border-amber-300/30 p-3 text-sm">{retentionWarning}</p> : null}
       <PatientEvidenceDialog evidence={selectedEvidence} onClose={closeMention} />
       <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         {isGlp1 ? <div className="flex flex-wrap gap-2" aria-label="Patient evidence scope">

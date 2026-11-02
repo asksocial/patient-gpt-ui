@@ -6,10 +6,10 @@ import ConversationThemeEvidence from "./ConversationThemeEvidence";
 
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useActivity } from "./AppActivityIndicator";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
 import Tooltip from "./ui/Tooltip";
 import Badge from "./ui/Badge";
 import { graphMatchesTopic } from "../answering/knowledge/graphPresentation";
@@ -30,6 +30,8 @@ import {
 } from "../lib/intelligence-platform/navigation";
 import { getCurrentSearchResult } from "../lib/answers/currentSearchResult";
 import { sortTherapeuticAreas } from "../lib/therapeuticAreas";
+
+import { readWorkspaceContext, retainWorkspaceContext, restoreWorkspaceContext, readRetainedAnalyses, retainAnalysis } from "../lib/client/workspaceRetention";
 
 const QUICK_ACTIONS = [
   "What are patients saying about cost and insurance?",
@@ -872,7 +874,18 @@ function DestinationPlaceholder({
 }
 
 export default function WorkspaceShell() {
+  const { userId, orgId, isLoaded } = useAuth();
+  if (!isLoaded || !userId) return <p role="status" className="p-8">Loading your workspace…</p>;
+  const scope = `${orgId || userId}:${userId}`;
+  return <AuthenticatedWorkspaceShell key={scope} persistenceScope={scope} />;
+}
+
+function AuthenticatedWorkspaceShell({ persistenceScope }) {
   const router = useRouter();
+  const [restoredScope, setRestoredScope] = useState("");
+  const [workspacesLoaded, setWorkspacesLoaded] = useState(false);
+  const [activeSavedProductId, setActiveSavedProductId] = useState("");
+  const createdWorkspace = useRef(null);
   const [navigating, startNavigation] = useTransition();
   const [therapeuticAreas, setTherapeuticAreas] = useState([]);
   const [analyticalCoverage, setAnalyticalCoverage] = useState([]);
@@ -1084,15 +1097,17 @@ export default function WorkspaceShell() {
     try {
       const response = await fetch("/api/workspaces", { cache: "no-store" });
       const data = await response.json();
-      if (!response.ok || !data.ok) return null;
+      if (!response.ok || !data.ok) { setWorkspacesLoaded(true); return null; }
       const nextWorkspaces = data.workspaces || [];
       setWorkspaces(nextWorkspaces);
       setActiveWorkspaceId((current) => {
         if (nextWorkspaces.some((workspace) => workspace.id === current)) return current;
         return "";
       });
+      setWorkspacesLoaded(true);
       return nextWorkspaces;
     } catch (workspaceError) {
+      setWorkspacesLoaded(true);
       console.error("Failed to load persistent workspaces", workspaceError);
       return null;
     }
@@ -1111,6 +1126,7 @@ export default function WorkspaceShell() {
       try {
         const response = await fetch("/api/entitlements/me");
         const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Unable to load workspace access.");
         if (response.ok && data.ok) {
           setEntitlements(data.entitlements);
           const nextAccess =
@@ -1139,6 +1155,7 @@ export default function WorkspaceShell() {
           );
         }
       } catch (loadError) {
+        setError(loadError.message || "Unable to load workspace access.");
         console.error("Failed to load entitlements", loadError);
       }
     }
@@ -1168,9 +1185,60 @@ export default function WorkspaceShell() {
     loadSessions();
   }, []);
 
+  const restorationReady = Boolean(persistenceScope && !loadingAreas && !loadingSessions && entitlements && workspacesLoaded);
+  const restoreInputs = useRef(null);
+  restoreInputs.current = { therapeuticAreas, intelligenceAccess, workspaces, sessions, entitlements };
+  useEffect(() => {
+    if (!restorationReady) return;
+    let cancelled = false;
+    setMessages([]);
+    setActiveSessionId(null);
+    setActiveSavedProductId("");
+    setActiveWorkspaceId("");
+    const input = restoreInputs.current;
+    const restored = restoreWorkspaceContext(readWorkspaceContext(persistenceScope), input.therapeuticAreas,
+      input.intelligenceAccess.modules.map(item => item.id), input.workspaces.filter(item => !item.archivedAt).map(item => item.id),
+      input.sessions.map(item => item.id), Object.keys(DESTINATION_COPY).filter(id => id !== "administration" && (!id.startsWith("pv_") || input.entitlements.capabilities?.pv_compliance?.granted)));
+    async function restore() {
+      try {
+        if (restored) {
+          setTherapeuticArea(restored.therapeuticArea);
+          setActiveWorkspaceId(restored.workspaceId);
+          setActiveModuleId(restored.moduleId);
+          setQuestion(restored.question || "");
+          if (restored.savedProductId && restored.workspaceId) {
+            const response = await fetch(`/api/work-products?workspaceId=${encodeURIComponent(restored.workspaceId)}&productId=${encodeURIComponent(restored.savedProductId)}`, { cache: "no-store" });
+            const data = await response.json();
+            if (cancelled) return;
+            if (!response.ok || !data.ok) throw new Error(data.error || "Unable to restore saved work.");
+            const product = data.products.find(item => item.id === restored.savedProductId);
+            if (!product) throw new Error("The saved item could not be restored. Reopen it from Workspaces.");
+            await openSavedWork(product, { preferRetained: true });
+          } else if (restored.sessionId) {
+            await openSession(restored.sessionId, { cancelled: () => cancelled });
+          }
+          if (!cancelled) { setActiveModuleId(restored.moduleId); setQuestion(restored.question || ""); setActiveDestination(restored.destination); }
+        }
+      } catch (restoreError) {
+        if (!cancelled) setError(restoreError.message || "Unable to restore your session. Reopen it from Recent intelligence or Workspaces.");
+      } finally { if (!cancelled) setRestoredScope(persistenceScope); }
+    }
+    void restore();
+    return () => { cancelled = true; };
+    // Initialization is keyed to the authenticated identity and completion of access loading.
+    // Resource lists are read once from restoreInputs to avoid restarting restore during refreshes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persistenceScope, restorationReady]);
+
+  useEffect(() => {
+    if (!persistenceScope || restoredScope !== persistenceScope) return;
+    retainWorkspaceContext(persistenceScope, { therapeuticArea, moduleId: activeModuleId, destination: activeDestination,
+      workspaceId: activeWorkspaceId, sessionId: activeSessionId, savedProductId: activeSavedProductId, question });
+  }, [persistenceScope, restoredScope, therapeuticArea, activeModuleId, activeDestination, activeWorkspaceId, activeSessionId, activeSavedProductId, question]);
+
   const canSubmit = useMemo(() => {
-    return !!question.trim() && !!therapeuticArea && !loading && !openingSession;
-  }, [question, therapeuticArea, loading, openingSession]);
+    return !!question.trim() && !!therapeuticArea && !loading && !openingSession && restoredScope === persistenceScope;
+  }, [question, therapeuticArea, loading, openingSession, restoredScope, persistenceScope]);
 
   function pushRecentQuestion(q) {
     setRecentQuestions((prev) => {
@@ -1206,6 +1274,7 @@ export default function WorkspaceShell() {
         return false;
       }
     }
+    setActiveSavedProductId("");
     setActiveWorkspaceId(nextWorkspaceId);
     setWorkspaceSaveStatus("saved");
     return true;
@@ -1217,6 +1286,7 @@ export default function WorkspaceShell() {
       : therapeuticArea
         ? `${therapeuticArea} workspace`
         : "My AskSocial workspace";
+    createdWorkspace.current = null;
     setWorkspaceDraftName(suggestedName);
     setWorkspaceCreateError("");
     setWorkspaceSaveDialogOpen(true);
@@ -1229,16 +1299,33 @@ export default function WorkspaceShell() {
     setWorkspaceCreateBusy(true);
     setWorkspaceCreateError("");
     try {
-      const response = await fetch("/api/workspaces", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, therapeuticArea }),
+      let workspace = createdWorkspace.current;
+      if (!workspace) {
+        const response = await fetch("/api/workspaces", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, therapeuticArea }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok || !data.workspace) throw new Error(data.error || "Unable to create workspace.");
+        workspace = data.workspace;
+        createdWorkspace.current = workspace;
+        addWorkspace(workspace);
+      }
+      const analyses = readRetainedAnalyses(persistenceScope).filter(item => item.therapeuticArea === therapeuticArea && item.workspaceId === activeWorkspaceId);
+      const payload = { type: "workspace_session", version: 1, therapeuticArea, moduleId: activeModuleId,
+        destination: activeDestination, sessionId: activeSessionId, question, messages, analyses };
+      const saved = await fetch("/api/work-products", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId: workspace.id, kind: "snapshot", title: `${workspace.name} · saved session`, therapeuticArea,
+          moduleId: activeModuleId || undefined, payload, provenance: { generatedAt: new Date().toISOString(), sessionId: activeSessionId } }),
       });
-      const data = await response.json();
-      if (!response.ok || !data.ok || !data.workspace) throw new Error(data.error || "Unable to create workspace.");
-      addWorkspace(data.workspace);
-      const selected = await selectWorkspace(data.workspace.id);
-      if (!selected) throw new Error("The workspace was created, but the current session could not be attached. Reload and select it from Workspaces.");
+      const savedData = await saved.json();
+      if (!saved.ok || !savedData.ok) throw new Error(savedData.error || "Workspace created, but current work could not be saved. Retry to save into the same workspace.");
+      // Transfer the existing view without generating another analysis.
+      for (const item of analyses) retainAnalysis(persistenceScope, { ...item, workspaceId: workspace.id });
+      const selected = await selectWorkspace(workspace.id);
+      if (!selected) throw new Error("Your work was saved, but the conversation could not be attached. Reopen it from Workspaces.");
+      setActiveSavedProductId(savedData.product.id);
+      setWorkspaceSaveStatus("saved");
       setWorkspaceSaveDialogOpen(false);
       setWorkspaceDraftName("");
     } catch (workspaceError) {
@@ -1246,6 +1333,37 @@ export default function WorkspaceShell() {
     } finally {
       setWorkspaceCreateBusy(false);
     }
+  }
+
+  async function openSavedWork(product, options = {}) {
+    const payload = product.payload || {};
+    const area = product.therapeutic_area || payload.therapeuticArea;
+    if (!therapeuticAreas.includes(area)) { setError("The saved topic is not available to this account."); return; }
+    const snapshot = payload.type === "workspace_session";
+    const moduleId = snapshot ? payload.moduleId : product.module_id;
+    if (moduleId && !intelligenceAccess.modules.some(item => item.id === moduleId)) { setError("Access to the saved module is required to reopen this work."); return; }
+    const workspaceId = product.workspace_id;
+    if (!workspaces.some(item => item.id === workspaceId && !item.archivedAt)) { setError("The saved workspace is not available."); return; }
+    const analyses = snapshot ? payload.analyses || [] : moduleId && product.kind !== "answer"
+      ? [{ moduleId, therapeuticArea: area, workspaceId, result: payload }] : [];
+    for (const item of analyses) {
+      if (options.preferRetained && readRetainedAnalyses(persistenceScope).some(current => current.moduleId === item.moduleId && current.therapeuticArea === area && current.workspaceId === workspaceId)) continue;
+      if (item.therapeuticArea === area && intelligenceAccess.modules.some(module => module.id === item.moduleId))
+        retainAnalysis(persistenceScope, { ...item, workspaceId });
+    }
+    setTherapeuticArea(area);
+    setActiveWorkspaceId(workspaceId);
+    setActiveModuleId(moduleId || "");
+    setActiveSavedProductId(product.id);
+    setActiveSessionId(snapshot && sessions.some(item => item.id === payload.sessionId) ? payload.sessionId : null);
+    setMessages(snapshot ? payload.messages || [] : product.kind === "answer" ? [
+      { role: "user", text: product.provenance?.question || product.title }, { role: "assistant", responsePayload: payload },
+    ] : []);
+    setQuestion(snapshot ? payload.question || "" : product.provenance?.question || "");
+    const destination = snapshot ? payload.destination : product.kind === "answer" ? "ask" : moduleId ? `module_${moduleId}` : "ask";
+    setActiveDestination(destination?.startsWith("module_") && intelligenceAccess.modules.some(item => destination === `module_${item.id}`)
+      ? destination : Object.hasOwn(DESTINATION_COPY, destination) && destination !== "administration" ? destination : "ask");
+    setError("");
   }
 
   function addWorkspace(workspace) {
@@ -1328,10 +1446,11 @@ export default function WorkspaceShell() {
     }
   }
 
-  async function openSession(sessionId) {
+  async function openSession(sessionId, options = {}) {
     if (loading || openingSession) return;
     const selectedSession = sessions.find((session) => session.id === sessionId);
     const selectedQuestion = selectedSession?.title || "";
+    setActiveSavedProductId("");
     setActiveSessionId(sessionId);
     setMessages([]);
     setQuestion(selectedQuestion);
@@ -1347,6 +1466,8 @@ export default function WorkspaceShell() {
         throw new Error(data.error || "Failed to open session");
       }
 
+      if (options.cancelled?.()) return;
+      setActiveWorkspaceId(workspaces.some(item => item.id === data.session.workspace_id && !item.archivedAt) ? data.session.workspace_id : "");
       setActiveSessionId(sessionId);
       setEditingSessionId(null);
       setEditingTitle("");
@@ -1408,6 +1529,7 @@ export default function WorkspaceShell() {
   }
 
   function startNewConversation() {
+    setActiveSavedProductId("");
     setActiveSessionId(null);
     setMessages([]);
     setQuestion("");
@@ -1422,6 +1544,7 @@ export default function WorkspaceShell() {
 
     if (nextTherapeuticArea === therapeuticArea) return;
 
+    setActiveSavedProductId("");
     setTherapeuticArea(nextTherapeuticArea);
     setActiveSessionId(null);
     setMessages([]);
@@ -1591,6 +1714,7 @@ export default function WorkspaceShell() {
 
     setError("");
     setLoading(true);
+    setActiveSavedProductId("");
     pushRecentQuestion(trimmed);
 
     const userMessage = {
@@ -1777,6 +1901,11 @@ export default function WorkspaceShell() {
   function toggleLeftRail() {
     setLeftRailCollapsed((current) => !current);
   }
+
+  if (restoredScope !== persistenceScope) return <div className="p-8" role="status">
+    <p>{error || "Restoring your workspace…"}</p>
+    {error ? <ActionButton type="button" onClick={() => window.location.reload()} className="mt-4 rounded-xl border px-4 py-2">Retry loading workspace</ActionButton> : null}
+  </div>;
 
   return (
     <div
@@ -2248,10 +2377,11 @@ export default function WorkspaceShell() {
               ) &&
               activeModule ? (
               activeDestination === "module_patient" ? (
-                <PatientIntelligenceView therapeuticArea={therapeuticArea} workspaceId={activeWorkspaceId} />
+                <PatientIntelligenceView therapeuticArea={therapeuticArea} workspaceId={activeWorkspaceId} persistenceScope={persistenceScope} />
               ) : (
                 <ModuleIntelligenceView
                   module={activeModule}
+                  persistenceScope={persistenceScope}
                   agents={intelligenceAccess.agents}
                   workflows={intelligenceAccess.workflows}
                   therapeuticArea={therapeuticArea}
@@ -2278,6 +2408,7 @@ export default function WorkspaceShell() {
                 workspaces={workspaces}
                 activeWorkspaceId={activeWorkspaceId}
                 therapeuticAreas={therapeuticAreas}
+                onOpenSavedWork={openSavedWork}
                 onSelectWorkspace={selectWorkspace}
                 onWorkspaceCreated={addWorkspace}
                 onWorkspaceUpdated={updateWorkspaceInList}

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const kind = request.nextUrl.searchParams.get("kind") || undefined;
     const products = await listIntelligenceWorkProducts(
       platformPrincipalFromEntitlements(entitlements),
-      { workspaceId, kind: kind as any }
+      { workspaceId, kind: kind as any, productId: request.nextUrl.searchParams.get("productId") || undefined }
     );
     return NextResponse.json({ ok: true, products });
   } catch (error: any) {

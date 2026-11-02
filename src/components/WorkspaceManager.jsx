@@ -111,7 +111,7 @@ function PvReviewListDetail({ product, candidateUsers, members, onClose }) {
   );
 }
 
-function ProductDetail({ product, onClose }) {
+function ProductDetail({ product, onClose, onReopen }) {
   if (!product) return null;
   const payload = product.payload || {};
   const summary = payload.directAnswer || payload.summary || payload.analyticalAnswer?.directAnswer || payload.answer?.directAnswer;
@@ -125,6 +125,7 @@ function ProductDetail({ product, onClose }) {
         </div>
         <ActionButton type="button" onClick={onClose} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</ActionButton>
       </div>
+      {onReopen ? <ActionButton type="button" onClick={() => onReopen(product)} className="mt-4 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black">Reopen saved work</ActionButton> : null}
       {summary ? <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-white/70">{typeof summary === "string" ? summary : JSON.stringify(summary, null, 2)}</p> : null}
       <details className="mt-5 rounded-xl border border-white/10 bg-black/30 p-4">
         <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.14em] text-white/45">Complete saved payload</summary>
@@ -139,6 +140,7 @@ export default function WorkspaceManager({
   activeWorkspaceId,
   therapeuticAreas,
   onSelectWorkspace,
+  onOpenSavedWork,
   onWorkspaceCreated,
   onWorkspaceUpdated,
   onWorkspaceDeleted,
@@ -161,7 +163,8 @@ export default function WorkspaceManager({
     () => validWorkspaces.filter((workspace) => showArchived || !workspace.archivedAt),
     [showArchived, validWorkspaces]
   );
-  const selected = validWorkspaces.find((workspace) => workspace.id === selectedId) || null;
+  const selected = validWorkspaces.find((workspace) => workspace.id === selectedId)
+    || validWorkspaces.find((workspace) => workspace.id === activeWorkspaceId) || validWorkspaces[0] || null;
   const selectedWorkspaceId = selected?.id || "";
   const [draft, setDraft] = useState({
     name: initialWorkspace?.name || "",
@@ -170,8 +173,20 @@ export default function WorkspaceManager({
     moduleIds: initialWorkspace?.moduleIds || [],
   });
 
+  // Adjust selection once when asynchronous workspace loading supplies an accessible item.
+  if (selected && selected.id !== selectedId) {
+    setSelectedId(selected.id);
+    setDraft({ name: selected.name || "", description: selected.description || "", therapeuticArea: selected.therapeuticArea || "", moduleIds: selected.moduleIds || [] });
+    setSelectedProduct(null);
+    setProducts([]);
+    setMembers([]);
+    setLoading(true);
+  }
+
   function chooseWorkspace(workspace) {
     setLoading(true);
+    setProducts([]);
+    setMembers([]);
     setSelectedId(workspace.id);
     setDraft({
       name: workspace.name || "",
@@ -184,17 +199,21 @@ export default function WorkspaceManager({
 
   useEffect(() => {
     if (!selectedWorkspaceId) return;
+    let cancelled = false;
     Promise.all([
       fetch(`/api/work-products?workspaceId=${encodeURIComponent(selectedWorkspaceId)}`, { cache: "no-store" }).then((response) => response.json()),
       fetch(`/api/workspaces/members?workspaceId=${encodeURIComponent(selectedWorkspaceId)}`, { cache: "no-store" }).then((response) => response.json()),
     ]).then(([productData, memberData]) => {
+      if (cancelled) return;
       if (productData.ok) setProducts(productData.products || []);
       else setMessage(productData.error || "Unable to load workspace content.");
       if (memberData.ok) setMembers(memberData.members || []);
       else setMessage((current) => current || memberData.error || "Unable to load workspace members.");
     }).catch(() => {
+      if (cancelled) return;
       setMessage("Unable to load workspace content. Reload to try again.");
-    }).finally(() => setLoading(false));
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [selectedWorkspaceId]);
 
   useEffect(() => {
@@ -352,7 +371,7 @@ export default function WorkspaceManager({
               {selectedProduct ? (
                 selectedProduct.payload?.type === "pv_review_list"
                   ? <PvReviewListDetail key={selectedProduct.id} product={selectedProduct} candidateUsers={candidateUsers} members={members} onClose={() => setSelectedProduct(null)} />
-                  : <ProductDetail product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+                  : <ProductDetail product={selectedProduct} onReopen={onOpenSavedWork} onClose={() => setSelectedProduct(null)} />
               ) : null}
 
               <Panel>
