@@ -356,8 +356,8 @@ assert(reviewQueueSource.includes('aria-sort={sort.key === head.key') && reviewQ
 assert(!reviewQueueSource.includes("formatDate(record.algorithm_timestamp)"), "The queue must omit the redundant Algorithm timestamp column when it cannot be distinguished from collection.");
 assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('sourceType.endsWith("_csv")'), "CSV-origin PV queue records must be labeled Social.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
-assert(workbench.includes('title="Initial reportability decision"') && workbench.includes("Mark as Reportable") && workbench.includes('review("close_not_relevant", false)'), "The structured-review workflow must require an explicit reportability decision before revealing the detailed assessment.");
-assert(workbench.includes('markedReportable && !["transferred"') && workbench.includes("setMarkedReportable(true)"), "Ontology and ICH case fields must remain hidden until the reviewer marks the mention reportable.");
+assert(workbench.includes("Save incomplete assessment") && workbench.includes('review("close_not_relevant", false)'), "Reviewers must be able to retain incomplete evidence before disposition.");
+assert(!workbench.includes("setMarkedReportable") && workbench.includes("Forward observation for sponsor assessment"), "Assessment and incomplete observation review must be available without asserting reportability.");
 assert(resolvePvReviewCompletionNavigation("close_not_relevant")?.destination === "pv_overview", "Close as Not Reportable must resolve to the canonical Compliance Overview destination.");
 assert(resolvePvReviewCompletionNavigation("reclassify_health_experience")?.destination === "pv_overview", "Health Experience reclassification must return to Compliance Overview so the affected lifecycle count is visible.");
 assert(resolvePvReviewCompletionNavigation("escalate")?.destination === "pv_handoff", "Completed Structured Reviews must enter the discretionary email queue without sending.");

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePvPrincipal, pvErrorResponse } from "../../../../../lib/pv/auth";
 import { getPvRecord, reopenPvRecordReview, reviewPvRecord, startPvRecordReview, transferPvRecord } from "../../../../../lib/pv/service";
 
+import { prepareObservationPackage } from "../../../../../lib/pv/observation";
+
 export const dynamic = "force-dynamic";
 const headers={"Cache-Control":"private, no-store"};
 export async function GET(_request: NextRequest, context: { params: Promise<{ recordId: string }> }) {
@@ -19,6 +21,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ r
     if (body?.action === "reopen_review") {
       return NextResponse.json({ ok: true, ...(await reopenPvRecordReview(principal, recordId)) });
     }
+    if (body?.action === "prepare_observation") return NextResponse.json({ ok: true, transfer: await prepareObservationPackage(principal, recordId, String(body.destination || "")) }, { headers });
     if (body?.action === "transfer") {
       return NextResponse.json({ ok: true, transfer: await transferPvRecord(principal, recordId, { destination: String(body.destination || ""), transferMethod: body.transferMethod || "manual_export" }) });
     }
@@ -27,6 +30,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ r
         productMention: body.productMention, healthExperience: body.healthExperience,
         classifications: Array.isArray(body.classifications) ? body.classifications : [], rationale: String(body.rationale || ""),
         action: body.decision, ontologyReview: body.ontologyReview, initialFollowUp: body.initialFollowUp,
+        followUpOwner: body.followUpOwner, followUpDueAt: body.followUpDueAt,
         reviewedFields: body.reviewedFields, expectedUpdatedAt: body.expectedUpdatedAt, completionAttested: body.completionAttested, previewHash: body.previewHash,
       }, body.action === "review_preview")) },{headers});
     }

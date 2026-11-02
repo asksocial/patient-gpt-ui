@@ -53,6 +53,7 @@ export type R3AlignedCase = {
 export type IcsrEmail = { subject: string; recipients: string; body: string };
 export type IcsrSnapshot = {
   revision: number;
+  screeningDraft?: import("./screeningDraft").PvScreeningDraft;
   originalExtraction: R3AlignedCase;
   caseData: R3AlignedCase;
   email: IcsrEmail | null;

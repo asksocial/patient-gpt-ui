@@ -1,3 +1,4 @@
+import { retainedReviewSegmentation, validateObservationForward } from "./screeningWorkflow";
 import { structuredIcsr, structuredPreviewHash, externalStructuredText } from "./icsr/structured";
 import { changedPaths } from "./icsr/review";
 import type { IcsrSnapshot } from "./icsr/types";
@@ -1095,6 +1096,8 @@ export async function reopenPvRecordReview(principal: PlatformPrincipal, recordI
 
 export async function reviewPvRecord(principal: PlatformPrincipal, recordId: string, decision: PvReviewDecision, previewOnly = false) {
   assertPrincipal(principal);
+  if (!["escalate", "forward_observation", "close_not_relevant", "reclassify_health_experience"].includes(decision.action)) throw new Error("Unsupported review decision.");
+  if (decision.action === "forward_observation") validateObservationForward(decision);
   if (!decision.rationale.trim()) throw new Error("Reviewer rationale is required.");
   const healthExperienceClassifications = decision.classifications.filter((classification) => classification !== "adverse_event");
   if (decision.action === "reclassify_health_experience" && (
@@ -1145,7 +1148,7 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     .eq("id", recordId).eq("principal_id", principal.principalId).maybeSingle();
   if (recordLookupError) throw new Error(`Failed to load PV record for review: ${recordLookupError.message}`);
   if (!record) throw new Error("PV record not found.");
-  if (["transferred", "acknowledged", "reconciled"].includes(record.status)) throw new Error("Sponsor-ready or transferred PV records cannot be reclassified without a governed correction workflow.");
+  if (["ready_for_transfer", "transferred", "acknowledged", "reconciled"].includes(record.status)) throw new Error("Sponsor-ready or transferred PV records cannot be reclassified without a governed correction workflow.");
   const reviewedAt = new Date().toISOString();
   const regulatoryVersions = pvE2bVersionSnapshot();
   const reviewPayload = {
@@ -1159,7 +1162,7 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     ontologyReviewed: Boolean(decision.ontologyReview),
     dayZeroStarted: decision.action === "escalate" && !record.reportability_identified_at,
   };
-  const nextStatus = decision.action === "escalate"
+  const nextStatus = ["escalate", "forward_observation"].includes(decision.action)
     ? "ready_for_transfer"
     : decision.action === "reclassify_health_experience" ? "health_experience" : "not_relevant";
   const recordUpdates: Record<string, unknown> = { status: nextStatus, assigned_reviewer_id: principal.actorId, updated_at: reviewedAt };
@@ -1170,6 +1173,10 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     recordUpdates.day_zero_basis = "reportability_identified_at";
     recordUpdates.day_zero_reason = "Day Zero began when the qualified reviewer confirmed the minimum ICSR criteria and escalated the AE/ADR for sponsor handoff.";
   }
+  if (decision.action === "forward_observation") {
+    recordUpdates.follow_up_owner = decision.followUpOwner!.trim();
+    recordUpdates.follow_up_due_at = decision.followUpDueAt;
+  }
   const supportsReviewerSegmentation = Object.prototype.hasOwnProperty.call(record, "reviewer_detection_segment");
   if (decision.action === "reclassify_health_experience") {
     recordUpdates.reviewer_detection_segment = "health_experience";
@@ -1177,10 +1184,7 @@ export async function reviewPvRecord(principal: PlatformPrincipal, recordId: str
     recordUpdates.segment_reclassified_at = reviewedAt;
     recordUpdates.segment_reclassified_by = principal.actorId;
   } else if (supportsReviewerSegmentation) {
-    recordUpdates.reviewer_detection_segment = null;
-    recordUpdates.reviewer_health_experience_tags = null;
-    recordUpdates.segment_reclassified_at = null;
-    recordUpdates.segment_reclassified_by = null;
+    Object.assign(recordUpdates, retainedReviewSegmentation(record));
   }
   if (!decision.expectedUpdatedAt || decision.expectedUpdatedAt !== record.updated_at) throw Object.assign(new Error("Another reviewer changed this record. Reload Structured Review."), { status: 409 });
   const { data: head, error: headError } = await supabase.from("pv_icsr_cases").select("snapshot").eq("record_id", recordId).eq("principal_id", principal.principalId).maybeSingle();

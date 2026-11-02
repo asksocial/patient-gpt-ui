@@ -219,10 +219,12 @@ export type PvReviewDecision = {
   healthExperience: "yes" | "no" | "unclear";
   classifications: PvClassification[];
   rationale: string;
-  action: "escalate" | "close_not_relevant" | "reclassify_health_experience";
+  action: "escalate" | "forward_observation" | "close_not_relevant" | "reclassify_health_experience";
   ontologyReview?: PvAdverseEventOntology;
   reviewedFields?: Record<string, any>;
   initialFollowUp?: "Initial" | "Follow-up";
+  followUpOwner?: string;
+  followUpDueAt?: string;
   expectedUpdatedAt?: string;
   completionAttested?: boolean;
   previewHash?: string;

@@ -1,11 +1,15 @@
 import { generateIcsrEmail, ICSR_ASSESSMENT } from "./email";
 import { applyCaseReview, approveIcsr, validateEmail, validateIcsrReview } from "./review";
+import { retainScreeningDraft } from "./screeningDraft";
 import type { IcsrSnapshot } from "./types";
 
 /** Pure, testable workflow; all persistence and authenticated identity stay in the service. */
 export function transitionIcsrSnapshot(previous: IcsrSnapshot, input: any, actor: string, timestamp: string): IcsrSnapshot {
   const next: IcsrSnapshot = structuredClone(previous);
   switch (input.action) {
+    case "save_screening":
+      next.screeningDraft = retainScreeningDraft(input.screening, actor, timestamp);
+      break;
     case "save_review":
       next.caseData = applyCaseReview(next.caseData, input.review || {});
       next.email = null;

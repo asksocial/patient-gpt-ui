@@ -11,6 +11,8 @@ import { activityFetch as fetch } from "../lib/client/requestActivity";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
 import { resolvePvReviewCompletionNavigation } from "../lib/pv/reviewNavigation";
+import { screeningDraftFingerprint } from "../lib/pv/icsr/screeningDraft";
+import { validateObservationForward } from "../lib/pv/screeningWorkflow";
 import Tooltip from "./ui/Tooltip";
 import PvStructuredCaseHistory from "./PvStructuredCaseHistory";
 import PvStructuredClinicalFields from "./PvStructuredClinicalFields";
@@ -408,7 +410,7 @@ export default function PvComplianceCenter({ initialTab = "overview", initialMes
       {tab === "overview" ? <Overview metrics={metricData} statusCounts={overview?.statusCounts || {}} onSelectLifecycle={openLifecycle} onNavigate={navigateTab} /> : null}
       {tab === "lifecycle" ? <LifecycleRecords status={lifecycleStatus} expectedCount={overview?.statusCounts?.[lifecycleStatus] || 0} therapeuticArea={therapeuticArea} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onUpdateReview={updateStructuredReview} onBack={() => setTab("overview")} /> : null}
       {tab === "queue" ? <ReviewQueue therapeuticArea={therapeuticArea} workspaceId={workspaceId} workspaces={workspaces} onRefreshWorkspaces={onRefreshWorkspaces} records={records} reviewLists={reviewLists} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onMutate={mutate} /> : null}
-      {tab === "health" ? <HealthExperienceDetection records={records} selected={selectedRecord} busy={busy} onOpen={openRecord} onUpdateReview={updateStructuredReview} /> : null}
+      {tab === "health" ? <HealthExperienceDetection records={records} selected={selectedRecord} busy={busy} onOpen={openRecord} onContinueReview={continueStructuredReview} onUpdateReview={updateStructuredReview} /> : null}
       {tab === "review" ? <StructuredReview selected={selectedRecord} busy={busy} onMutate={mutate} onRefreshRecord={openRecord} onReturnToQueue={() => navigateTab("queue")} /> : null}
       {tab === "handoff" ? <SponsorHandoff therapeuticArea={therapeuticArea} sponsorCases={sponsorCases} qaNotRelevantCases={qaNotRelevantCases} emailDeliveryConfigured={sponsorEmailDeliveryConfigured} busy={busy} onMutate={mutate} onOpenRecord={async (recordId) => { await openRecord(recordId); setTab("review"); }} /> : null}
       {tab === "transfers" ? <Transfers transfers={transfers} busy={busy} onMutate={mutate} /> : null}
@@ -515,7 +517,7 @@ function LifecycleRecords({ status, expectedCount, therapeuticArea, selected, bu
   </div>;
 }
 
-function HealthExperienceDetection({ records, selected, busy, onOpen, onUpdateReview }) {
+function HealthExperienceDetection({ records, selected, busy, onOpen, onContinueReview, onUpdateReview }) {
   const pageSize = 20;
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
@@ -545,7 +547,7 @@ function HealthExperienceDetection({ records, selected, busy, onOpen, onUpdateRe
   }
 
   return <div className="space-y-5">
-    {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} onUpdateReview={onUpdateReview} /> : null}
+    {previewOpen ? <PvMentionDialog selected={selected} busy={busy} onClose={() => setPreviewOpen(false)} onContinueReview={onContinueReview} onUpdateReview={onUpdateReview} /> : null}
     <Card title="Health Experience Detection" subtitle="Broader product-linked medical experiences and special situations are retained here separately from potential AE/ADR records in the Review Queue.">
       <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/[0.05] p-4 text-xs leading-5 text-cyan-100/65">
         This segment includes medication errors, overdose, misuse or abuse, pregnancy exposure, lack of efficacy, product-quality complaints, and other safety-significant observations. Slang, misspellings, and variable patient language are normalized through the configured detection concepts. These records are safety signals for surveillance—not confirmed adverse reactions.
@@ -753,19 +755,24 @@ function ReviewQueue({ therapeuticArea, workspaceId, workspaces, onRefreshWorksp
 
 function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
   const { record, clock, reviews, transfers, audit } = detail;
-  const retainedOntology = reviews.find((review) => review.decision === "escalate")?.validated_ae_ontology;
-  const [markedReportable, setMarkedReportable] = useState(["ready_for_transfer", "transferred", "acknowledged", "reconciled"].includes(record.status));
+  const retainedOntology = reviews[0]?.validated_ae_ontology;
+
   const [reclassifyingHealth, setReclassifyingHealth] = useState(false);
   const [productMention, setProductMention] = useState("unclear");
   const [healthExperience, setHealthExperience] = useState("unclear");
   const [selectedClasses, setSelectedClasses] = useState(record.proposed_classifications || []);
   const [rationale, setRationale] = useState("");
+  const [followUpOwner, setFollowUpOwner] = useState(record.follow_up_owner || "");
+  const [followUpDueAt, setFollowUpDueAt] = useState("");
+  const identificationTime = "";
   const [reviewError, setReviewError] = useState("");
   const [reviewedFields,setReviewedFields]=useState(reviews[0]?.validated_ae_ontology?.reviewedCaseFields||{});
   const [initialFollowUp,setInitialFollowUp]=useState("Initial");
   const [casePreview,setCasePreview]=useState(null);
   const [completionAttested,setCompletionAttested]=useState(false);
   const [patientEvidenceConfirmed, setPatientEvidenceConfirmed] = useState(retainedOntology?.icsrAssessment?.patientAssessment?.reviewerConfirmed === true);
+  const [observationDestination, setObservationDestination] = useState("");
+  const [observationPackage, setObservationPackage] = useState(null);
   const [historyView, setHistoryView] = useState("history");
   const proposedOntology = retainedOntology && Object.keys(retainedOntology).length ? retainedOntology : record.ae_ontology || {};
   const retainedIcsr = proposedOntology.icsrAssessment || {};
@@ -837,6 +844,57 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
     identifierBasis: e2dReview.reporterIdentifierBasis,
     verificationEvidence: e2dReview.reporterVerificationEvidence,
   });
+  const [draftRevision, setDraftRevision] = useState(null);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftError, setDraftError] = useState("");
+  const [draftNotice, setDraftNotice] = useState("");
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftAttempt, setDraftAttempt] = useState(0);
+  const [savedScreeningJson, setSavedScreeningJson] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDraft() {
+      setDraftReady(false); setDraftError("");
+      try {
+        const response = await fetch(`/api/pv/records/${record.id}/icsr`, { cache: "no-store" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) throw new Error(payload.error || "Unable to load the saved screening assessment.");
+        if (cancelled) return;
+        setDraftRevision(payload.snapshot.revision);
+        const draft = payload.snapshot.screeningDraft;
+        if (draft && draft.recordUpdatedAt === record.updated_at) {
+          setProductMention(draft.productMention); setHealthExperience(draft.healthExperience);
+          setSelectedClasses(draft.selectedClasses); setRationale(draft.rationale);
+          setFollowUpOwner(draft.followUpOwner); setFollowUpDueAt(draft.followUpDueAt);
+ setPatientEvidenceConfirmed(draft.patientEvidenceConfirmed);
+          setReviewedFields(draft.reviewedFields || {}); setInitialFollowUp(draft.initialFollowUp || "Initial");
+          setOntologyReview(draft.ontologyReview); setE2dReview(draft.e2dReview);
+          const { savedBy: _actor, savedAt: _time, ...fields } = draft;
+          setSavedScreeningJson(screeningDraftFingerprint(fields));
+          setDraftNotice(`Saved screening draft restored · ${formatDate(draft.savedAt)}. No disposition or reportability confirmation was made by saving it.`);
+        } else if (draft) setDraftNotice("An earlier screening draft is retained in revision history. It predates the current record disposition and was not reapplied.");
+        setDraftReady(true);
+      } catch (failure) { if (!cancelled) setDraftError(failure.message); }
+    }
+    loadDraft();
+    return () => { cancelled = true; };
+    // Drafts preceding a disposition change are retained but never reapplied.
+  }, [record.id, record.updated_at, draftAttempt]);
+  function screeningFields() {
+    return { recordUpdatedAt: record.updated_at, productMention, healthExperience, selectedClasses, rationale, followUpOwner, followUpDueAt, identificationTime, patientEvidenceConfirmed, ontologyReview, e2dReview, reviewedFields, initialFollowUp };
+  }
+  async function saveScreeningDraft() {
+    setDraftSaving(true); setDraftError(""); setDraftNotice("");
+    try {
+      const screening = screeningFields();
+      const response = await fetch(`/api/pv/records/${record.id}/icsr`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save_screening", revision: draftRevision, screening }) });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error(payload.error || "The screening draft could not be saved.");
+      setDraftRevision(payload.snapshot.revision); setSavedScreeningJson(screeningDraftFingerprint(screening));
+      setDraftNotice(`Screening draft saved · ${formatDate(payload.snapshot.screeningDraft.savedAt)}. Record disposition and existing clocks are unchanged. Nothing was sent.`);
+      if (payload.auditWarning) setDraftError(payload.auditWarning);
+    } catch (failure) { setDraftError(failure.message); } finally { setDraftSaving(false); }
+  }
   function validatedOntology() {
     return {
       ...proposedOntology,
@@ -899,7 +957,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
     };
   }
   function toggleClassification(value) { setCasePreview(null);setCompletionAttested(false);setSelectedClasses((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]); }
-  async function review(decision, includeStructuredAssessment = markedReportable, finalize = false) {
+  async function review(decision, includeStructuredAssessment = true, finalize = false) {
     if (!rationale.trim()) {
       setReviewError("Enter a reviewer rationale before saving this PV decision.");
       return;
@@ -966,22 +1024,33 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
         return;
       }
     }
+    if (decision === "forward_observation") {
+      try { validateObservationForward({ productMention, healthExperience, classifications: selectedClasses, followUpOwner, followUpDueAt }); }
+      catch (error) { setReviewError(error.message); return; }
+    }
     setReviewError("");
     const reclassifying = decision === "reclassify_health_experience";
     const classifications = reclassifying
       ? selectedClasses.filter((classification) => classification !== "adverse_event")
       : includeStructuredAssessment ? selectedClasses : [];
-    const payload={ action:decision === "escalate"&&!finalize?"review_preview":"review",productMention:reclassifying?"yes":productMention,healthExperience:reclassifying?"yes":healthExperience,classifications,rationale,decision,ontologyReview:includeStructuredAssessment&&!reclassifying?validatedOntology():undefined,initialFollowUp,reviewedFields,expectedUpdatedAt:record.updated_at };
+    const payload={ action:decision === "escalate"&&!finalize?"review_preview":"review",productMention:reclassifying?"yes":productMention,healthExperience:reclassifying?"yes":healthExperience,classifications,rationale,decision,ontologyReview:includeStructuredAssessment&&!reclassifying?validatedOntology():undefined,initialFollowUp,reviewedFields,followUpOwner,followUpDueAt:followUpDueAt?new Date(followUpDueAt).toISOString():undefined,expectedUpdatedAt:record.updated_at };
     if(decision === "escalate"&&!finalize){
       const preview=await onMutate(`/api/pv/records/${record.id}`,{method:"PATCH",payload},"review:preview","Case summary prepared for Structured Review.",{refresh:false,onError: setReviewError});
       if(preview){setCasePreview(preview);setCompletionAttested(false);}return;
     }
     if(decision==="escalate"&&(!casePreview||!completionAttested)){setReviewError("Review the current case summary and attest completion.");return;}
     const completionNavigation=resolvePvReviewCompletionNavigation(decision);
-    const data=await onMutate(`/api/pv/records/${record.id}`,{method:"PATCH",payload:{...payload,completionAttested,previewHash:casePreview?.previewHash}},`review:${decision}`,decision==="escalate"?"Structured Review completed. Case added to the reviewed-case email queue; nothing was sent.":reclassifying?"Record reclassified as Health Experience.":"Record retained and closed as not reportable.",{ refresh: !completionNavigation, completionNavigation, onError: setReviewError });
+    const data=await onMutate(`/api/pv/records/${record.id}`,{method:"PATCH",payload:{...payload,completionAttested,previewHash:casePreview?.previewHash}},`review:${decision}`,decision==="forward_observation"?"Incomplete observation retained for sponsor assessment. No complete ICSR approval or email was created.":decision==="escalate"?"Structured Review completed. Case added to the reviewed-case email queue; nothing was sent.":reclassifying?"Record reclassified as Health Experience.":"Record retained and closed as not reportable.",{ refresh: !completionNavigation, completionNavigation, onError: setReviewError });
     if (data && !completionNavigation) onRefresh();
   }
+  if (!draftReady) return <Card title="Screening assessment"><p role="status">{draftError || "Loading saved assessment…"}</p>{draftError ? <ActionButton type="button" onClick={() => setDraftAttempt(value => value + 1)}>Retry loading assessment</ActionButton> : null}</Card>;
   return <div className="space-y-5">
+    <Card title="Screening assessment draft" subtitle="Retain unfinished work without confirming reportability. Missing criteria may remain unclear.">
+      {draftNotice ? <p role="status" className="mb-3 text-sm text-cyan-100">{draftNotice}</p> : null}
+      {draftError ? <p role="alert" className="mb-3 text-sm text-amber-200">{draftError}</p> : null}
+      {screeningDraftFingerprint(screeningFields()) !== savedScreeningJson ? <p className="mb-3 text-xs text-amber-100">Current screening fields have not been saved as a draft.</p> : null}
+      <ActionButton type="button" disabled={draftSaving || !!busy || !["new", "in_review"].includes(record.status)} onClick={saveScreeningDraft} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-40">{draftSaving ? "Saving draft…" : "Save incomplete assessment"}</ActionButton>
+    </Card>
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(220px,260px)]">
       <Card title={`PV Record ${record.id.slice(0, 8)}`} subtitle="Original evidence is immutable. Translations, review decisions, and workflow events are stored separately.">
         <div className="space-y-4"><div className="rounded-xl border border-white/10 bg-black/40 p-4"><div className="flex flex-wrap items-center gap-2"><ToneBadge>{sourceLabel(record)}</ToneBadge><ToneBadge>{record.original_language}</ToneBadge><ToneBadge tone={record.priority === "critical" ? "breached" : record.priority === "high" ? "approaching" : "neutral"}>{record.priority} priority</ToneBadge></div><blockquote className="mt-4 border-l-2 border-cyan-300/40 pl-4 text-sm leading-7 text-white/75">{record.original_verbatim}</blockquote><div className="mt-4 grid gap-3 text-xs sm:grid-cols-2"><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Original post date</p><p className="mt-1 text-white/65">{formatDate(record.posted_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.posted_at_source_column ? `CSV date column: ${record.posted_at_source_column}${record.posted_at_raw_value ? ` · Raw: ${record.posted_at_raw_value}` : ""}` : "Captured from the source record"}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Content availability</p><p className="mt-1 text-white/65">{formatDate(record.identified_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.import_batch_id ? "Server time when the CSV became available to this AskSocial tenant" : "Timestamp when AskSocial made the content available for review"}</p></div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Structured review started</p><p className="mt-1 text-cyan-100/75">{formatDate(record.review_started_at)}</p><p className="mt-1 text-[10px] text-white/25">{record.review_started_at ? `Started by ${record.review_started_by || record.assigned_reviewer_id || "authorized reviewer"}` : "Populates when Continue to structured review is selected."}</p></div><div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-white/25">Ingested</p><p className="mt-1 text-white/65">{formatDate(record.ingested_at)}</p>{record.import_batch_id ? <p className="mt-1 text-[10px] text-white/25">Batch {record.import_batch_id.slice(0, 8)} · CSV row {record.source_row_number}</p> : null}</div><div className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.04] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Reportability review / Day Zero</p><p className="mt-1 text-cyan-100/75">{record.reportability_identified_at ? formatDate(record.reportability_identified_at) : "Not started"}</p><p className="mt-1 text-[10px] leading-4 text-white/25">{record.day_zero_reason || "Starts only when a qualified reviewer confirms all four minimum ICSR criteria."}</p></div></div>{String(record.source_url || "").startsWith("http") ? <a href={record.source_url} target="_blank" rel="noreferrer" className="inline-block cursor-pointer rounded-lg border border-cyan-300/20 px-3 py-2 text-xs font-semibold text-cyan-300">Open original source ↗</a> : null}<p className="mt-3 break-all text-[10px] text-white/20">Evidence hash {record.evidence_hash}</p></div>
@@ -991,8 +1060,8 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       </Card>
       <Card title="Compliance clock" subtitle={`Clock stage: ${label(clock.stage)}`}><div className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex flex-col items-start gap-2"><ToneBadge tone={clock.state}>{label(clock.state)}</ToneBadge><span className="text-[11px] leading-4 text-white/35">{clock.state === "not_started" ? "Awaiting reportability determination" : `${clock.percentConsumed}% consumed`}</span></div><div className="mt-3 rounded-lg border border-cyan-400/15 bg-cyan-400/[0.05] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Governing clock</p><p className="mt-1 text-xs font-medium text-cyan-100/75">{clock.governingClock === "reportability_identified_at" ? "Qualified reportability review" : clock.governingClock === "identified_at" ? "Reviewer identification" : label(clock.governingClock)}</p><p className="mt-1 text-[11px] text-white/35">Day zero: {formatDate(clock.governingTimestamp)}</p></div>{clock.state === "not_started" ? <p className="mt-3 text-xs leading-5 text-white/45">Confirm all four minimum ICSR criteria and escalate the record to start Day Zero.</p> : <><p className="mt-4 text-2xl font-semibold text-white">{Math.floor(clock.elapsedMinutes / 60)}h {clock.elapsedMinutes % 60}m</p><p className="mt-1 text-[11px] text-white/35">Elapsed in current stage</p><div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full ${clock.state === "breached" ? "bg-rose-400" : clock.state === "approaching" ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${Math.min(100, clock.percentConsumed)}%` }} /></div><dl className="mt-4 space-y-2 text-[11px]"><div className="flex justify-between gap-2"><dt className="text-white/35">Started</dt><dd className="text-right text-white/65">{formatDate(clock.startedAt)}</dd></div><div className="flex justify-between gap-2"><dt className="text-white/35">Due</dt><dd className="text-right text-white/65">{formatDate(clock.dueAt)}</dd></div><div className="flex justify-between gap-2"><dt className="text-white/35">Remaining</dt><dd className="text-right text-white/65">{clock.remainingMinutes ?? 0} min</dd></div></dl></>}</div></Card>
     </div>
-    {!markedReportable && !["not_relevant", "health_experience", "transferred", "acknowledged", "reconciled"].includes(record.status) ? (
-      <Card title="Initial reportability decision" subtitle="Determine whether the mention contains a potentially reportable AE/ADR before opening the complete ontology and ICH case assessment.">
+    {["new", "in_review"].includes(record.status) ? (
+      <Card title="Screening disposition" subtitle="Determine whether the mention contains a potentially reportable AE/ADR before opening the complete ontology and ICH case assessment.">
         {reclassifyingHealth ? <div className="space-y-4">
           <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/[0.05] p-4"><p className="text-sm font-medium text-cyan-100/80">Reclassify as Health Experience</p><p className="mt-1 text-xs leading-5 text-white/45">Use this outcome when the mention is product-linked and safety-significant but does not contain an AE/ADR signal. The original automated detection and prior review remain preserved in History &amp; Audit.</p></div>
           <div><p className="text-xs font-medium text-white/55"><FieldLabel labelText="Health Experience classification" /></p><div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{HEALTH_EXPERIENCE_CLASSIFICATIONS.map((classification) => <label key={classification} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/55"><input type="checkbox" checked={selectedClasses.includes(classification)} onChange={() => toggleClassification(classification)} />{label(classification)}</label>)}</div></div>
@@ -1000,13 +1069,13 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
           <div className="flex flex-wrap gap-2"><ActionButton type="button" disabled={busy.startsWith("review:")} onClick={() => review("reclassify_health_experience", false)} className="cursor-pointer rounded-xl bg-cyan-200 px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:reclassify_health_experience" ? "Saving…" : "Save Health Experience reclassification"}</ActionButton><ActionButton type="button" onClick={() => { setReclassifyingHealth(false); setReviewError(""); }} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60">Cancel</ActionButton></div>
         </div> : <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
           <label className="text-xs font-medium text-white/55"><FieldLabel labelText="Reviewer rationale" /><textarea value={rationale} onChange={(event) => { setRationale(event.target.value);setCasePreview(null);setCompletionAttested(false); if (reviewError) setReviewError(""); }} rows={3} placeholder="Required when closing or reclassifying the mention." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" /></label>
-          <div className="flex flex-wrap gap-2"><ActionButton type="button" onClick={() => { setMarkedReportable(true); setReviewError(""); }} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black">Mark as Reportable</ActionButton><ActionButton type="button" onClick={() => { setSelectedClasses((current) => current.filter((classification) => classification !== "adverse_event")); setReclassifyingHealth(true); setReviewError(""); }} className="cursor-pointer rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-medium text-cyan-200">Reclassify as Health Experience</ActionButton><ActionButton type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant", false)} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Reportable"}</ActionButton></div>
+          <div className="flex flex-wrap gap-2"><ActionButton type="button" onClick={() => { setSelectedClasses((current) => current.filter((classification) => classification !== "adverse_event")); setReclassifyingHealth(true); setReviewError(""); }} className="cursor-pointer rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-medium text-cyan-200">Reclassify as Health Experience</ActionButton><ActionButton type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant", false)} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Reportable"}</ActionButton></div>
         </div>}
         {reviewError ? <p role="alert" className="mt-3 text-xs text-amber-300">{reviewError}</p> : null}
       </Card>
     ) : null}
-    {markedReportable && !["transferred", "acknowledged", "reconciled"].includes(record.status) ? (
-      <Card title="Structured human review" subtitle="Complete the four minimum ICSR criteria first. AskSocial starts Day Zero only when a qualified reviewer confirms and escalates a complete case.">
+    {["new", "in_review"].includes(record.status) ? (
+      <Card title="Structured human review" subtitle="Assess available evidence and save unfinished work. Complete ICSR approval still requires all four minimum criteria.">
         <MinimumCriteriaSummary product={productMention} event={healthExperience} patient={patientCriterion} reporter={reporterCriterion} />
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <DecisionSelect labelText="Does the content mention or reasonably imply a sponsor product?" value={productMention} onChange={value=>{setProductMention(value);setCasePreview(null);setCompletionAttested(false);}} />
@@ -1016,7 +1085,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
         <label className="mt-5 block text-sm text-white/65">Initial / Follow-up<select aria-label="Initial or Follow-up" value={initialFollowUp} onChange={e=>{setInitialFollowUp(e.target.value);setCasePreview(null);setCompletionAttested(false);}} className="ml-3 rounded-lg border border-white/20 bg-black p-2"><option>Initial</option><option>Follow-up</option></select></label>
         <p className="mt-2 text-xs text-white/40">Enter separate products and events on separate lines. Report origin (spontaneous/solicited) is separate from Initial/Follow-up.</p>
         <div className="mt-5"><PvOntologyReview value={ontologyReview} onChange={value=>{setOntologyReview(value);setCasePreview(null);setCompletionAttested(false);}} /></div>
-        <PvStructuredClinicalFields initialReviewedFields={reviews[0]?.validated_ae_ontology?.reviewedCaseFields||{}} recordId={record.id} onChange={(path,field)=>{setReviewedFields(current=>({...current,[path]:field}));setCasePreview(null);setCompletionAttested(false);}}/>
+        <PvStructuredClinicalFields initialReviewedFields={reviewedFields} recordId={record.id} onChange={(path,field)=>{setReviewedFields(current=>({...current,[path]:field}));setCasePreview(null);setCompletionAttested(false);}}/>
         <div className="mt-5 grid gap-5 xl:grid-cols-2">
           <div>
             <p className="text-xs font-medium text-white/55"><FieldLabel labelText="Classification" /></p>
@@ -1027,7 +1096,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
             <textarea value={rationale} onChange={(event) => { setRationale(event.target.value);setCasePreview(null);setCompletionAttested(false); if (reviewError) setReviewError(""); }} rows={6} placeholder="Document the source evidence and reasoning supporting the final decision." className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none" />
             {reviewError ? <p role="alert" className="mt-2 text-xs text-amber-300">{reviewError}</p> : <p className="mt-2 text-[11px] text-white/30">A rationale and at least one classification are required for escalation.</p>}
             <div className="mt-3 flex flex-wrap gap-2">
-              <ActionButton type="button" disabled={busy.startsWith("review:")} onClick={() => review("escalate")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:escalate" ? "Saving…" : "Review case summary"}</ActionButton>
+              <div className="w-full rounded-xl border border-cyan-300/20 p-3"><p className="text-xs text-white/60">Incomplete observations and special situations can be forwarded for sponsor assessment without asserting complete ICSR criteria. Existing clock policies remain unchanged. Nothing is sent by this action.</p><label className="mt-2 block text-xs text-white/60">Follow-up owner<input value={followUpOwner} onChange={(e) => setFollowUpOwner(e.target.value)} className="mt-1 block rounded-lg bg-black/40 p-2 text-white" /></label><label className="mt-2 block text-xs text-white/60">Follow-up due date<input type="datetime-local" value={followUpDueAt} onChange={(e) => setFollowUpDueAt(e.target.value)} className="mt-1 block rounded-lg bg-black/40 p-2 text-white" /></label><ActionButton type="button" disabled={busy.startsWith("review:") || !followUpOwner.trim() || !followUpDueAt} onClick={() => review("forward_observation", true)} className="mt-3 rounded-lg border border-cyan-300/30 px-3 py-2 text-sm text-cyan-200 disabled:opacity-40">Forward observation for sponsor assessment</ActionButton></div><ActionButton type="button" disabled={busy.startsWith("review:")} onClick={() => review("escalate")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:escalate" ? "Saving…" : "Review case summary"}</ActionButton>
               <ActionButton type="button" disabled={busy.startsWith("review:")} onClick={() => review("close_not_relevant")} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">{busy === "review:close_not_relevant" ? "Saving…" : "Close as Not Reportable"}</ActionButton>
             </div>
           </div>
@@ -1036,8 +1105,9 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
     ) : null}
 
     {casePreview ? <section aria-label="Structured Review completion" className="rounded-xl border border-cyan-300/30 p-5"><h3 className="font-semibold text-white">Complete Structured Review</h3><p className="mt-2 text-sm text-white/55">Inspect the complete case summary, source evidence and missing information. Make corrections in Structured Review above, then prepare a fresh summary. Completion enables email composition; it does not send.</p><label className="mt-3 block text-sm text-white/70">Case summary<textarea readOnly rows={20} className="mt-2 w-full rounded-xl border border-white/20 bg-black/40 p-3 text-sm text-white" value={casePreview.text}/></label><label className="mt-3 flex items-start gap-2 text-sm text-white/70"><input type="checkbox" checked={completionAttested} onChange={e=>setCompletionAttested(e.target.checked)}/>I reviewed all case details, source evidence, the narrative and explicit missing information, and approve this case for the R3 email queue.</label><ActionButton type="button" disabled={!completionAttested||busy.startsWith("review:")} onClick={()=>review("escalate",true,true)} className="mt-4 rounded-xl bg-cyan-100 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-40">Complete Structured Review & add to email queue</ActionButton>{reviewError?<p role="alert" className="mt-2 text-amber-200">{reviewError}</p>:null}</section>:null}
-    {record.status === "ready_for_transfer" ? <Card title="Review completed" subtitle="Compose and send notifications from Reviewed Cases & Email. Review completion does not send an email." /> : null}
-    <PvStructuredCaseHistory recordId={record.id}/>
+    {record.status === "ready_for_transfer" ? <Card title="Review completed" subtitle={reviews[0]?.decision === "forward_observation" ? "Incomplete observation retained for sponsor assessment. It is excluded from complete ICSR email approval; no notification was sent." : "Compose and send notifications from Reviewed Cases & Email. Review completion does not send an email."} /> : null}
+    {record.status === "ready_for_transfer" && reviews[0]?.decision === "forward_observation" ? <Card title="Incomplete observation handoff" subtitle="Prepare a controlled manual package for assessment. This does not send an email or record sponsor receipt."><p className="text-sm text-white/65">Follow-up owner: {record.follow_up_owner} · Due: {formatDate(record.follow_up_due_at)}</p><label className="mt-3 block text-xs text-white/60">Assessment destination reference<input value={observationDestination} onChange={e=>setObservationDestination(e.target.value)} className="mt-1 block rounded-lg bg-black/40 p-2 text-white" /></label><ActionButton type="button" disabled={!!busy || !observationDestination.trim()} onClick={async()=>{const result=await onMutate(`/api/pv/records/${record.id}`,{method:"PATCH",payload:{action:"prepare_observation",destination:observationDestination}},"observation:package","Manual observation package prepared. Nothing was sent.",{refresh:false});if(result)setObservationPackage(result.transfer);}} className="mt-3 rounded-lg bg-white px-3 py-2 text-sm text-black disabled:opacity-40">Prepare observation package</ActionButton>{observationPackage ? <div className="mt-3"><p role="status" className="text-sm text-cyan-100">Queued manual package · {observationPackage.id} · No dispatch or sponsor receipt recorded.</p><DownloadLink href={`/api/pv/transfers/${observationPackage.id}/export`} download className="mt-2 inline-block text-sm text-cyan-200">Download incomplete observation package</DownloadLink></div> : null}</Card> : null}
+    <PvStructuredCaseHistory key={`${record.id}:${draftRevision}`} recordId={record.id}/>
     <details className="group rounded-2xl border border-white/10 bg-white/[0.02]">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-medium text-white/70 marker:hidden">
         <span><span className="block">History &amp; Audit</span><span className="mt-1 block text-xs font-normal text-white/30">The complete review, transfer, and provenance ledger for this record.</span></span>
@@ -1138,12 +1208,12 @@ function E2dTextArea({ labelText, value, onChange, placeholder, className = "", 
 function ReviewerWorkflowGuide() {
   const steps = [
     ["Inspect", "Read the full mention, provenance, timestamps, and original source."],
-    ["Reportability", "Choose Mark as Reportable for a potential AE/ADR, Reclassify as Health Experience for a non-AE safety observation, or close the mention as not reportable."],
+    ["Reportability", "Assess available evidence for a potential AE/ADR, Reclassify as Health Experience for a non-AE safety observation, or close the mention as not reportable."],
     ["Minimum criteria", "Confirm product and event. For the patient, enter one specific patient, select at least one controlled ICH characteristic, document supporting evidence, and attest that you verified it."],
     ["Safety review", "Confirm reporter identifiability, sponsor-ready adverse-event facts, classification, seriousness, duplicate status, and any targeted follow-up."],
     ["Decision", "Enter the rationale, then escalate only when all four criteria are Yes; that governed confirmation starts Day Zero."],
   ];
-  return <Card title="Reviewer workflow" subtitle="Follow these steps in order; required fields remain hidden until the mention is marked reportable."><ol className="grid gap-3 lg:grid-cols-5">{steps.map(([title, detail], index) => <li key={title} className="rounded-xl border border-white/10 bg-black/30 p-3"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-200/55">Step {index + 1}</p><p className="mt-1 text-xs font-medium text-white/70">{title}</p><p className="mt-2 text-[11px] leading-5 text-white/35">{detail}</p></li>)}</ol></Card>;
+  return <Card title="Reviewer workflow" subtitle="Follow these steps in order; open the assessment without first declaring reportability. Save unfinished work for follow-up."><ol className="grid gap-3 lg:grid-cols-5">{steps.map(([title, detail], index) => <li key={title} className="rounded-xl border border-white/10 bg-black/30 p-3"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-200/55">Step {index + 1}</p><p className="mt-1 text-xs font-medium text-white/70">{title}</p><p className="mt-2 text-[11px] leading-5 text-white/35">{detail}</p></li>)}</ol></Card>;
 }
 
 function StructuredReview({ selected, busy, onMutate, onRefreshRecord, onReturnToQueue }) {
