@@ -564,11 +564,6 @@ body {
   opacity: 1;
 }
 
-[data-testid="active-module-indicator"] {
-  border-color: var(--as-sage-line) !important;
-  background: var(--as-sage-paper) !important;
-  color: var(--as-sage-active) !important;
-}
 
 [data-testid="active-workspace-indicator"] > button,
 [data-testid="active-workspace-indicator"] .asksocial-workspace-select {

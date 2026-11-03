@@ -2262,16 +2262,6 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
 
               <div className="flex shrink-0 flex-wrap items-start justify-end gap-2 self-end xl:ml-auto xl:self-start">
                 <div
-                  data-testid="active-module-indicator"
-                  aria-label={`Current module: ${activeModule?.name || "None"}`}
-                  className="inline-flex min-h-9 items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300"
-                >
-                  {activeModule ? (
-                    <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
-                  ) : null}
-                  <span>Module: {activeModule?.name || "None"}</span>
-                </div>
-                <div
                   data-testid="active-workspace-indicator"
                   aria-label={activeWorkspace ? `Current workspace: ${activeWorkspace.name}` : "Save current session as workspace"}
                   className="text-right"
@@ -2285,12 +2275,12 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                     </div>
                   ) : <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"><span>Save current session as workspace</span></ActionButton>}
                   {activeWorkspace ? (
-                    <p
-                      aria-live="polite"
-                      className={`mt-1 text-[9px] font-medium uppercase tracking-[0.14em] ${workspaceSaveStatus === "error" ? "text-rose-300/80" : "text-cyan-200/45"}`}
-                    >
-                      {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
-                    </p>
+                    <>
+                      <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.14em] text-cyan-200/45">Active Workspace</p>
+                      <span aria-live="polite" className="sr-only">
+                        {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
+                      </span>
+                    </>
                   ) : null}
                 </div>
               </div>
