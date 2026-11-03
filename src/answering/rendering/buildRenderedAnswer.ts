@@ -1,3 +1,4 @@
+import { topicNarrative } from "../narrative/clientNarrative";
 import { buildCorpusBurdenAnswer, buildFocusedSearchAnswer } from "../personas/buildCorpusCharts";
 import {
   CanonicalFinding,
@@ -343,49 +344,11 @@ function countPersonas(
 function buildThemeDirectAnswer(
   themes: ThemeMatch[]
 ): string {
-  const topThemes =
-    themes.slice(0, 3);
-
-  if (
-    topThemes.length === 0
-  ) {
-    return "The available findings do not yet contain enough high-quality aggregated evidence to identify a reliable dominant pattern.";
-  }
-
-  const themeNames =
-    topThemes.map(
-      (theme) =>
-        theme.label.toLowerCase()
-    );
-
-  const totalPercent =
-    topThemes.reduce(
-      (sum, theme) =>
-        sum +
-        (
-          theme.prevalence
-            ?.eligiblePercent ??
-          theme.percent
-        ),
-      0
-    );
-
-  if (
-    topThemes.length === 1
-  ) {
-    return `${sentenceCase(
-      topThemes[0].label
-    )} is the strongest recurring theme, appearing in ${formatThemePercent(
-      topThemes[0]
-    )} of qualifying discussion with ${topThemes[0].confidenceLabel} confidence.`;
-  }
-
-  return `Conversation is primarily shaped by ${joinList(
-    themeNames
-  )}. Together, these overlapping themes appear across approximately ${Math.min(
-    totalPercent,
-    100
-  )}% of qualifying discussion, with the strongest evidence concentrated around ${topThemes[0].label.toLowerCase()}.`;
+  return topicNarrative({
+    themes: themes.slice(0, 3).map(theme => theme.label),
+    significance: "These themes offer insight into the questions receiving attention and can help focus further qualitative research.",
+    limitation: "The findings describe the available discussion rather than the wider population; further review is needed to understand how these themes relate to individual experiences and decisions.",
+  });
 }
 
 function buildThemeSection(
@@ -809,27 +772,14 @@ function buildFindingDirectAnswer(
   findings: CanonicalFinding[],
   _lowSample: boolean
 ): string {
-  const symptomCounts =
-    sortDescending(
-      countSymptoms(findings)
-    );
-
-  if (
-    symptomCounts.length === 0
-  ) {
-    return "The current dataset does not contain enough symptom-specific signal to identify meaningful day-to-day burdens.";
-  }
-
-  const top =
-    symptomCounts[0];
-
-  const second =
-    symptomCounts[1];
-
-  if (second) {
-    return `${titleCase(top[0])} and ${titleCase(second[0]).toLowerCase()} are the most visible burden themes in the available corpus.`;
-  }
-  return `${titleCase(top[0])} is the most visible burden theme in the available corpus.`;
+  const themes = sortDescending(countSymptoms(findings)).slice(0, 2).map(([label]) => titleCase(label));
+  return topicNarrative({
+    themes,
+    significance: "These accounts offer a starting point for understanding the day-to-day experiences described and the questions that may benefit from further exploration.",
+    limitation: _lowSample
+      ? "The available sample is small, so these examples should guide further enquiry rather than conclusions about how common the experiences are."
+      : "Further research is needed to establish how widely these experiences are shared and how they affect treatment decisions or continuity of care.",
+  });
 }
 
 function buildTopBurdensSection(

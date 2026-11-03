@@ -13,8 +13,8 @@ import type { CanonicalFinding } from "../answering/models/finding";
 
 const corpus = loadCanonicalFindingsForAsk("GLP-1").findings;
 const prompts: Array<[string, RegExp]> = [
-  ["What are the cost and insurance concerns?", /insurance and coverage/],
-  ["What are patients saying about cost and insurance?", /prices and affordability/],
+  ["What are the cost and insurance concerns?", /insurance (?:and )?coverage/],
+  ["What are patients saying about cost and insurance?", /(?:prices|medication costs) and affordability/],
   ["What are the safety and side effect concerns?", /digestive symptoms/],
   ["What are patients saying about side effects?", /side.effect|digestive/],
   ["What are people saying about appetite and eating?", /appetite|eating/],
@@ -23,7 +23,7 @@ const prompts: Array<[string, RegExp]> = [
   ["What are patients saying about weight regain?", /weight regain/],
   ["What are patients saying about PCOS?", /PCOS/],
   ["What are people saying about microdosing?", /microdosing/],
-  ["What are the cost concerns in Asian markets?", /prices and affordability/],
+  ["What are the cost concerns in Asian markets?", /(?:prices|medication costs) and affordability/],
 ];
 const results: unknown[] = [];
 for (const [question, expected] of prompts) {
@@ -34,7 +34,7 @@ for (const [question, expected] of prompts) {
   assert.ok(evidence?.examples.length > 0, `${question}: source excerpts must accompany the summary`);
   const answer = askSocial(question, corpus).answer;
   assert.match(answer.directAnswer, expected, question);
-  assert.ok(!/\d|%/.test(answer.directAnswer), "Analytical narrative stays qualitative");
+  assert.ok(!/\d+(?:\.\d+)?\s*(?:%|percent\b|posts\b|patients\b)/i.test(answer.directAnswer), "Analytical narrative stays qualitative");
   assert.ok(!/most frequently identified burden themes/.test(answer.directAnswer), "Focused answers cannot default to symptom synthesis");
   assert.ok(!/personal treatment experience and shared/.test(answer.directAnswer), "Audience role is not a topical answer");
   assert.equal(summary.corpusCharts!.burdens.denominator, selection.findings.length);
@@ -74,23 +74,23 @@ const rate = selectSearchCorpusForQuestion("GLP-1", corpus, "What percentage of 
 assert.ok(rate.findings.length > 0);
 assert.match(buildFocusedSearchAnswer(rate.summary), /do not supply a representative patient denominator/);
 const household = selectSearchCorpusForQuestion("GLP-1", corpus, "What are the household productivity costs?");
-assert.match(buildFocusedSearchAnswer(household.summary), /structured resource.use|No retained/);
+assert.match(buildFocusedSearchAnswer(household.summary), /structured resource.use|do not yet provide evidence/);
 const empty = selectSearchCorpusForQuestion("GLP-1", corpus, "What are cost concerns about xylophonebarnacle?");
 assert.equal(empty.findings.length, 0);
-assert.match(buildFocusedSearchAnswer(empty.summary), /No retained/);
+assert.match(buildFocusedSearchAnswer(empty.summary), /do not yet provide evidence/);
 assert.equal(empty.summary.questionEvidence!.examples.length, 0);
 const emerging = selectSearchCorpusForQuestion("GLP-1", corpus, "What safety themes are emerging in Asian markets?");
 assert.match(buildFocusedSearchAnswer(emerging.summary), /comparable time baseline/);
 const hypothetical = [
-  { id: "new-cost", findingId: "new-cost", therapeuticArea: "New Demo Topic", summary: "My insurance denied coverage and I cannot afford the treatment price.", country: "Canada", sourceType: "live", persona: "patient", symptoms: ["fatigue"] },
+  { id: "new-cost", findingId: "new-cost", therapeuticArea: "New Demo Topic", summary: "My insurance denied coverage and I cannot afford the treatment price.", rawMetadata: { fields: { Title: "New Demo Topic treatment", "Opening Text": "My insurance denied coverage for New Demo Topic treatment and I cannot afford the treatment price.", URL: "https://example.test/new-cost", Language: "English", "Source Type": "forum" } }, country: "Canada", sourceType: "live", persona: "patient", symptoms: ["fatigue"] },
   { id: "new-other", findingId: "new-other", therapeuticArea: "New Demo Topic", summary: "My fatigue improved with treatment.", country: "Canada", sourceType: "live", persona: "patient", symptoms: ["fatigue"] },
 ] as unknown as CanonicalFinding[];
 const custom = selectSearchCorpusForQuestion("New Demo Topic", hypothetical, "What are the cost and insurance concerns?");
 assert.equal(custom.findings.length, 1);
-assert.match(buildFocusedSearchAnswer(custom.summary), /insurance and coverage/);
+assert.match(buildFocusedSearchAnswer(custom.summary), /insurance (?:and )?coverage/);
 assert.ok(searchRecordText(custom.findings[0]).includes("insurance"));
 const shell = fs.readFileSync("src/components/WorkspaceShell.jsx", "utf8");
-assert.ok(shell.includes('<ConversationThemeEvidence theme={theme.name} examples={questionExamples} />'));
+assert.ok(shell.includes('<ConversationThemeEvidence theme={theme.name} examples={questionExamples}'));
 assert.ok(shell.includes('focusedSummary ? "Supporting Conversation Evidence"'));
 assert.ok(fs.readFileSync("src/components/CorpusDonutCards.jsx", "utf8").includes('"Topics in This Question"'));
 console.log(JSON.stringify({passed: true, demoPrompts: results, guards: ["qualitative question-specific summaries", "source-exact evidence", "matching topic charts", "saved answer upgrade", "thin cohorts", "unsupported rates", "unmatched concepts", "temporal limits", "future corpora"]}, null, 2));

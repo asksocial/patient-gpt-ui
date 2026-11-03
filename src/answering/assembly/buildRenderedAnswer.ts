@@ -1,3 +1,4 @@
+import { topicNarrative } from "../narrative/clientNarrative";
 import { CanonicalFinding } from "../models/finding";
 import { PlannedSections } from "./sectionPlanner";
 import { AnswerTemplateRule } from "../templates/templateRegistry";
@@ -83,43 +84,15 @@ function buildDirectAnswer(
   template: AnswerTemplateRule
 ): string {
   const themes = aggregateSymptomThemes(sections.topBurdens || []);
-
-  if (themes.length === 0) {
-    return "Symptom burden is driven by quality-of-life disruption and uncertainty.";
-  }
-
-  const core = themes.slice(0, 2);
-  const secondary = themes.slice(2, 4);
-
-  let s1 = "";
-  let s2 = "";
-  let s3 = "";
-  let s4 = "";
-
-  if (template.intent === "symptom_qol_burden") {
-    if (core.length > 0) {
-      const coreLabels = core.map((t) => t.label);
-      const topPercent = core[0]?.percentage || 0;
-
-      s1 = `${coreLabels.join(" and ")} dominate patient discussion as the most immediate burdens, appearing in about ${topPercent}% of high-signal findings`;
-    }
-
-    if (secondary.length > 0) {
-      const secondaryLabels = secondary.map((t) => t.label);
-      s2 = `${secondaryLabels.join(" and ")} add secondary burden signals across the remaining discussion`;
-    }
-
-    const market = buildMarketIntelligence(sections, template);
-    if (market.length > 0) s3 = market[0];
-
-    const persona = buildPersonaIntelligence(sections, template);
-    if (persona.length > 0) s4 = persona[0];
-  }
-
-  return [s1, s2, s3, s4]
-    .filter(Boolean)
-    .map((s) => sentenceCase(stripTrailingPeriod(s)) + ".")
-    .join(" ");
+  return topicNarrative({
+    themes: themes.slice(0, 3).map(theme => theme.label),
+    observations: [
+      ...buildMarketIntelligence(sections, template).slice(0, 1),
+      ...buildPersonaIntelligence(sections, template).slice(0, 1),
+    ].map(text => stripTrailingPeriod(text) + "."),
+    significance: "These discussions can help frame further research into treatment experiences and the information or support people may need.",
+    limitation: "The findings reflect the available sources; further research is needed to establish how common these experiences are and how they relate to individual outcomes.",
+  });
 }
 
 function buildMarketIntelligence(

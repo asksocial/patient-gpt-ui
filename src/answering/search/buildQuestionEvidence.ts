@@ -1,3 +1,4 @@
+import { CLIENT_NARRATIVE_VERSION, clientNarrative, joinNarrativeList } from "../narrative/clientNarrative";
 import { preserveRawMetadata } from "../../ingestion/metadata";
 import type { CanonicalFinding } from "../models/finding";
 import { analyzeEvidence } from "../evidence/analyzeEvidence";
@@ -7,7 +8,7 @@ import { resolveQuestionGeography, sourceCountryLabel } from "./geography";
 
 export type QuestionEvidence = {
   version: 7;
-  narrativeVersion?: 1;
+  narrativeVersion?: number;
   treatmentLabel?: string;
   subjects: string[];
   topics: Array<{ id: string; label: string; count: number }>;
@@ -94,18 +95,18 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
   if (findings.length > 0 && findings.length < 20) limitations.push("The matching evidence is limited. Treat these observations as illustrative examples rather than estimates of prevalence.");
   if (/\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(question)) limitations.push("Themes present in this corpus do not establish emergence or growth without a comparable time baseline.");
   if (/\b(why|reasons?|drivers?|caus\w*)\b/i.test(question)) limitations.push("Topic mentions alone do not establish motivations or causal relationships. Reasons require explicit supporting accounts.");
-  return { version: 7, narrativeVersion: 1, treatmentLabel: diseaseTerms.some(term => /glp[ -]?1/i.test(term)) ? "GLP-1 treatments" : "treatment", subjects: subjects.map(s => s.label), topics: matches.map(({ topic }) => ({ id: topic.id, label: topic.label, count: counts.get(topic.id) || 0 })), examples, marketCoverage, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
+  return { version: 7, narrativeVersion: CLIENT_NARRATIVE_VERSION, treatmentLabel: diseaseTerms.some(term => /glp[ -]?1/i.test(term)) ? "GLP-1 treatments" : "treatment", subjects: subjects.map(s => s.label), topics: matches.map(({ topic }) => ({ id: topic.id, label: topic.label, count: counts.get(topic.id) || 0 })), examples, marketCoverage, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
 }
 
 export function questionEvidenceAnswer(evidence: QuestionEvidence): string {
-  const join = (items: string[]) => items.length > 2 ? `${items.slice(0, -1).join(", ")}, and ${items.at(-1)}` : items.join(" and ");
+  const join = joinNarrativeList;
   const labels: Record<string, string> = {
     "insurance and coverage": "insurance coverage",
     "prices and affordability": "medication costs and affordability",
     "pharmacy and telehealth access": "access through pharmacies and telehealth services",
   };
   const topics = evidence.topics.filter(topic => topic.count > 0).slice(0, 4).map(topic => labels[topic.label] || topic.label);
-  if (!topics.length) return "No interpretable evidence supports the requested subject in the retained corpus.";
+  if (!topics.length) return "The available sources do not yet provide enough evidence to answer this question. Additional relevant material and source review would help clarify the discussion before conclusions are drawn.";
   const countries = evidence.marketCoverage?.filter(market => market.topics.length && !/^(?:unknown|unspecified market)$/i.test(market.country)).map(market => market.country) || [];
   const origin = countries.length ? `Conversations originating in ${join(countries)}` : "The available conversations";
   const accessOnly = evidence.subjects.length === 1 && evidence.subjects[0] === "access and affordability";
@@ -116,5 +117,5 @@ export function questionEvidenceAnswer(evidence: QuestionEvidence): string {
   const limitations = evidence.limitations.map(text => text.startsWith("Markets reflect source-country metadata")
     ? "Source locations indicate where conversations originate; individual posts may discuss other countries, and gaps in coverage do not rule out concerns elsewhere."
     : text);
-  return [introduction, ...evidence.observations, implications, ...limitations].filter(Boolean).join(" ");
+  return clientNarrative({ opening: introduction, observations: evidence.observations, significance: implications, limitation: limitations.join(" ") });
 }

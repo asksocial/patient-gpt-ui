@@ -1,3 +1,4 @@
+import { moduleNarrative } from "../../answering/narrative/intelligenceNarratives";
 import { GLP1_MODULE_RELEVANCE_VERSION, requiresGlp1SectionReview, matchesGlp1ModuleSection, isExplicitPromotion } from "../intelligence/glp1ModuleRelevance";
 import { selectThemeEvidence } from "../intelligence/selectThemeEvidence";
 import { sourcePassages, supportingPassage } from "../../answering/evidence/sourcePassages";
@@ -719,7 +720,7 @@ export function buildModuleIntelligence(
     headline: leading?.findingCount
       ? `${leading.label} is the most prevalent ${profile.label} signal in the available ${therapeuticArea} evidence.`
       : `The available ${therapeuticArea} evidence does not yet support a clear ${profile.label} priority signal.`,
-    executiveSummary: `${profile.label} Intelligence evaluated eligible findings from corpus records for ${profile.purpose}. Results are evidence-qualified and should be interpreted with the stated coverage limitations.`,
+    executiveSummary: moduleNarrative({ moduleId, therapeuticArea, sections }),
     dataQuality: {
       contextRulesVersion: requiresGlp1SectionReview(therapeuticArea, moduleId) ? `${CONTEXT_RULES_VERSION}/${GLP1_MODULE_RELEVANCE_VERSION}` : CONTEXT_RULES_VERSION,
       corpusFindingCount: findings.length,

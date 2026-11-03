@@ -32,7 +32,7 @@ const refreshed = refreshSearchCorpusIntelligence(saved, "GLP-1", question);
 assert.equal(refreshed.analyticalAnswer.directAnswer, answer);
 assert.equal(refreshed.answer.directAnswer, answer);
 assert.equal(saved.analyticalAnswer.directAnswer, "Old mechanical answer");
-assert.equal(questionEvidenceAnswer({ ...evidence, topics: [] }), "No interpretable evidence supports the requested subject in the retained corpus.");
+assert.match(questionEvidenceAnswer({ ...evidence, topics: [] }), /do not yet provide enough evidence to answer this question/);
 const narrow = questionEvidenceAnswer({ ...evidence, topics: evidence.topics.filter(topic => topic.id === "access:coverage") });
 assert.doesNotMatch(narrow, /Discussions touch on[^.]*pharmac|Discussions touch on[^.]*medication costs/);
 console.log(answer);

@@ -1,5 +1,7 @@
 "use client";
 
+import { CLIENT_NARRATIVE_VERSION } from "../answering/narrative/clientNarrative";
+import { executiveNarrative } from "../answering/narrative/intelligenceNarratives";
 import ActionButton from "./ui/ActionButton";
 
 import Tooltip from "./ui/Tooltip";
@@ -158,7 +160,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
               {brief.headline}
             </h1>
             <div className="mt-5 space-y-2">
-              {(brief.executiveSummary || []).map((item, index) => (
+              {(brief.narrativeStyleVersion === CLIENT_NARRATIVE_VERSION ? brief.executiveSummary || [] : [executiveNarrative(brief, (brief.executiveSummary || []).slice(1))]).map((item, index) => (
                 <p key={`${item}-${index}`} className="text-sm leading-6 text-white/65">
                   {item}
                 </p>

@@ -1,3 +1,5 @@
+import { CLIENT_NARRATIVE_VERSION } from "../narrative/clientNarrative";
+import { executiveNarrative } from "../narrative/intelligenceNarratives";
 import type {
   ThemeKnowledgeComparison,
   ThemeKnowledgeRecord,
@@ -375,13 +377,13 @@ export function buildExecutiveIntelligenceBrief(
       top?.themeId
   ) {
     summary.push(
-      `${accelerating.label} is the clearest acceleration signal, changing ${signed(
+      `${accelerating.label} has received a growing share of discussion, changing ${signed(
         accelerating.percentagePointChange
       )} percentage points in the recent comparison window.`
     );
   } else if (accelerating) {
     summary.push(
-      `The leading theme is also accelerating, increasing ${signed(
+      `Discussion of this leading theme has also grown, increasing ${signed(
         accelerating.percentagePointChange
       )} percentage points in the recent comparison window.`
     );
@@ -389,7 +391,7 @@ export function buildExecutiveIntelligenceBrief(
 
   if (declining) {
     summary.push(
-      `${declining.label} is declining despite ${declining.persistencePercent}% period persistence and should be monitored as a changing decision signal.`
+      `${declining.label} has received a smaller share of discussion over the comparison period. Further review would help clarify the context behind this change.`
     );
   }
 
@@ -429,8 +431,9 @@ export function buildExecutiveIntelligenceBrief(
       snapshot.analysisEnd,
     headline:
       buildHeadline(records),
+    narrativeStyleVersion: CLIENT_NARRATIVE_VERSION,
     executiveSummary:
-      summary.slice(0, 3),
+      [executiveNarrative({ therapeuticArea: snapshot.therapeuticArea, topThemes: [...records].sort((a, b) => b.eligiblePercent - a.eligiblePercent), dataQuality: { temporalCoveragePercent: snapshot.temporalCoveragePercent } }, summary.slice(1, 3))],
     topThemes: records
       .slice()
       .sort(

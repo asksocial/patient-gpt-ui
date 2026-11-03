@@ -114,6 +114,8 @@ export type ExecutiveIntelligenceBrief = {
 
   executiveSummary: string[];
 
+  narrativeStyleVersion?: number;
+
   topThemes:
     ExecutiveThemeSummary[];
 

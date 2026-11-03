@@ -1,3 +1,4 @@
+import { topicNarrative } from "../narrative/clientNarrative";
 import { questionEvidenceAnswer } from "../search/buildQuestionEvidence";
 export type CorpusChart = {
   denominator: number;
@@ -45,15 +46,18 @@ export function buildCorpusCharts(findings: Array<{ symptoms?: string[]; country
 /** Qualitative synthesis of the corpus themes; numeric shares stay in charts. */
 export function buildCorpusBurdenAnswer(chart: CorpusChart): string {
   const leading = chart.segments.filter(segment => !["remainder", "overlap"].includes(segment.id) && segment.count > 0).map(segment => segment.label.replace(/ only$/, ""));
-  if (!leading.length) return "The corpus does not contain enough burden-specific signal to identify leading themes.";
-  const themes = leading.map((label, index) => index ? label.charAt(0).toLowerCase() + label.slice(1) : label).join(" and ");
   const overlap = chart.segments.some(segment => segment.id === "overlap" && segment.count > 0);
-  return `${themes} ${leading.length > 1 ? "are the most frequently identified burden themes" : "is the most frequently identified burden theme"} in the corpus.${overlap ? " Some posts discuss these themes together." : ""}`;
+  return topicNarrative({
+    themes: leading,
+    observations: overlap ? ["Some posts discuss these experiences together, offering context for how concerns may overlap."] : [],
+    significance: "These accounts can help focus further research into the day-to-day experiences described in the discussion.",
+    limitation: "The findings reflect the available conversations; further research is needed to establish how common these experiences are and how they affect individual treatment decisions.",
+  });
 }
 
 
 export function buildFocusedSearchAnswer(summary: import("./buildPersonaIntelligence").PersonaIntelligenceSummary): string {
-  if (!summary.analyticalCount) return "No retained analytical evidence matches the interpreted question scope in this corpus. Rephrase or broaden the question if this scope differs from what you intended.";
+  if (!summary.analyticalCount) return "The available sources do not yet provide evidence that answers this question within the selected scope. Reviewing additional relevant sources or broadening the question may help; this gap does not mean the concerns are absent.";
   if (summary.questionEvidence) return questionEvidenceAnswer(summary.questionEvidence);
   const focus = summary.queryContext?.filters.join("; ");
   const temporalNote = /\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(summary.queryContext?.question || "") ? " These are themes present in the available corpus; a time comparison is needed to establish which are newly emerging or changing." : "";
@@ -65,5 +69,10 @@ export function buildFocusedSearchAnswer(summary: import("./buildPersonaIntellig
   const conversations = new Map<string, number>();
   for (const group of summary.clientGroups) for (const subtype of group.subtypes) for (const item of subtype.conversations) conversations.set(item.label, (conversations.get(item.label) || 0) + item.count);
   const leading = [...conversations].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([label]) => label.toLowerCase());
-  return `The matching conversations${focus ? ` about ${focus}` : ""} focus on ${leading.join(" and ") || "the requested topic"}.${temporalNote}`;
+  return topicNarrative({
+    themes: leading,
+    context: focus ? `within the selected scope (${focus})` : undefined,
+    significance: "These discussions offer a starting point for exploring the questions and experiences raised by the available sources.",
+    limitation: "Further qualitative review is needed before drawing conclusions about how widely these views are shared." + temporalNote,
+  });
 }

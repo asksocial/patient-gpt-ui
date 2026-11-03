@@ -1,3 +1,4 @@
+import { CLIENT_NARRATIVE_VERSION } from "../../answering/narrative/clientNarrative";
 import { loadCurrentGlp1ExecutiveIntelligence } from "./loadCurrentGlp1ExecutiveIntelligence";
 import { buildSourceIntelligence } from "./buildSourceIntelligence";
 import { buildSourceGroundedSearchAnswer, type HybridAnswer } from "./composeHybridAnswer";
@@ -21,7 +22,8 @@ export function refreshSearchCorpusIntelligence<T extends { analyticalAnswer?: {
   const saved = content as T & { answer?: HybridAnswer; relevantCuratedInsights?: any[]; curatedIntelligenceAvailable?: boolean };
   const insights = summary.queryContext ? filterSearchInsightsForQuestion(therapeuticArea, corpus.findings, scopedQuestion, saved.relevantCuratedInsights || []) : saved.relevantCuratedInsights || [];
   const focusChanged = summary.queryContext && (previousSummary?.questionEvidence?.version !== summary.questionEvidence?.version || previousSummary?.questionEvidence?.narrativeVersion !== summary.questionEvidence?.narrativeVersion || JSON.stringify(previousSummary?.queryContext?.filters) !== JSON.stringify(summary.queryContext.filters) || previousSummary?.denominator !== summary.denominator || previousSummary?.analyticalCount !== summary.analyticalCount);
-  const refreshedHybrid = focusChanged && saved.answer ? buildSourceGroundedSearchAnswer({ questionEvidence: summary.questionEvidence, question: scopedQuestion, therapeuticArea, curatedThemes: sourceIntelligence.curatedThemes, liveThemes: sourceIntelligence.socialThemes, matches: [], curatedInsights: insights }) : saved.answer;
+  const narrativeChanged = saved.answer && saved.answer.narrativeStyleVersion !== CLIENT_NARRATIVE_VERSION;
+  const refreshedHybrid = (focusChanged || narrativeChanged) && saved.answer ? buildSourceGroundedSearchAnswer({ questionEvidence: summary.questionEvidence, question: scopedQuestion, therapeuticArea, curatedThemes: sourceIntelligence.curatedThemes, liveThemes: sourceIntelligence.socialThemes, matches: [], curatedInsights: insights }) : saved.answer;
   const persona = buildPersonaSection([], summary);
   const hasBurdens = answer.sections.some(section => section.key === "top_burdens");
   const directAnswer = summary.queryContext ? buildFocusedSearchAnswer(summary) : hasBurdens && summary.corpusCharts ? buildCorpusBurdenAnswer(summary.corpusCharts.burdens) : answer.directAnswer;

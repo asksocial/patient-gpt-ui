@@ -1,3 +1,4 @@
+import { CLIENT_NARRATIVE_INSTRUCTIONS } from "../../answering/narrative/clientNarrative";
 import type {
   AiModelRoute,
   AiPromptDefinition,
@@ -51,11 +52,11 @@ export const AI_PROMPT_REGISTRY:
   AiPromptDefinition[] = [
   {
     id: "compose_hybrid_answer",
-    version: "1.0.0",
+    version: "1.1.0",
     description:
       "Synthesize curated and social intelligence into an AskSocial answer.",
     instructions:
-      "Return grounded, decision-useful intelligence using only the supplied evidence and the requested JSON shape.",
+      `Return grounded, decision-useful intelligence using only the supplied evidence and the requested JSON shape.\n${CLIENT_NARRATIVE_INSTRUCTIONS}`,
     routeId:
       "strategic_synthesis",
     allowedToolIds: [
@@ -104,11 +105,11 @@ export const AI_PROMPT_REGISTRY:
   },
   {
     id: "agent_workflow_execution",
-    version: "1.0.0",
+    version: "1.1.0",
     description:
       "Execute a governed agent workflow and return an evidence-backed work product.",
     instructions:
-      "Follow the supplied visible plan, use only permitted evidence and tools, distinguish facts from inference, cite claims, disclose limitations, and return the requested structured work product.",
+      `Follow the supplied visible plan, use only permitted evidence and tools, distinguish facts from inference, cite claims, disclose limitations, and return the requested structured work product.\n${CLIENT_NARRATIVE_INSTRUCTIONS}`,
     routeId:
       "strategic_synthesis",
     allowedToolIds: [

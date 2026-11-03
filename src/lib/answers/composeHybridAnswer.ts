@@ -1,3 +1,4 @@
+import { CLIENT_NARRATIVE_INSTRUCTIONS, CLIENT_NARRATIVE_VERSION, topicNarrative, joinNarrativeList } from "../../answering/narrative/clientNarrative";
 import { questionEvidenceAnswer, type QuestionEvidence } from "../../answering/search/buildQuestionEvidence";
 import {
   aiGateway,
@@ -71,6 +72,7 @@ export type ComposeHybridAnswerInput = {
 };
 
 export type HybridAnswer = {
+  narrativeStyleVersion?: number;
   directAnswer: string;
   curatedIntelligence: {
     themes: Array<{
@@ -350,6 +352,7 @@ function deriveRecommendedActions({
 
 function buildFallbackAnswer({
   question,
+  therapeuticArea,
   curatedThemes,
   liveThemes,
   curatedInsights = [],
@@ -369,24 +372,18 @@ function buildFallbackAnswer({
       .filter((value): value is string => Boolean(value))
   );
 
-  const directAnswer = topCuratedInsights.length
-    ? `For ${question}, curated intelligence shows meaningful differences across ${countries.join(", ") || "the available markets"}. The most relevant signals include ${topCuratedInsights
-        .slice(0, 3)
-        .map((insight) => compactText(insight.title))
-        .join("; ")}.`
-    : `For ${question}, the baseline curated intelligence points to ${
-        topCuratedThemes.length
-          ? topCuratedThemes.map((theme) => theme.name).join(", ")
-          : "no major baseline themes were available"
-      }. Social intelligence adds or reinforces ${
-        topLiveThemes.length
-          ? topLiveThemes.map((theme) => theme.name).join(", ")
-          : "no strong social themes were available"
-      }.`;
+  const directAnswer = topicNarrative({
+    sourceDescription: topLiveThemes.length ? "The available conversations" : "The available source material",
+    themes: topCuratedInsights.length
+      ? topCuratedInsights.slice(0, 3).map(insight => compactText(insight.title))
+      : uniq([...topCuratedThemes, ...topLiveThemes].map(theme => theme.name)).slice(0, 3),
+    context: `about ${therapeuticArea}`,
+    observations: countries.length ? [`The source material includes perspectives from ${joinNarrativeList(countries)}.`] : [],
+    significance: "These themes offer a starting point for exploring the questions and considerations raised in the available material.",
+    limitation: "Further source review and qualitative research are needed to understand how these discussions relate to individual decisions or wider patterns.",
+  });
 
-  const whatThisMeans = topCuratedInsights.length
-    ? "This suggests strategy should be tailored to the country-, persona-, and platform-specific signals present in the curated intelligence, rather than relying on generic category messaging alone."
-    : "This suggests the most useful strategy is to anchor on the baseline report themes while using social intelligence to identify where new narratives are emerging, intensifying, or changing in tone.";
+  const whatThisMeans = "The discussions can help focus follow-up research and communication around the themes raised. Their relevance to particular groups or markets should be checked against the original sources before drawing broader conclusions.";
 
   const recommendedActions = deriveRecommendedActions({
     question,
@@ -396,6 +393,7 @@ function buildFallbackAnswer({
   });
 
   return {
+    narrativeStyleVersion: CLIENT_NARRATIVE_VERSION,
     directAnswer,
     curatedIntelligence: {
       themes: topCuratedThemes.map((theme) => ({
@@ -421,8 +419,9 @@ function buildNoEvidenceAnswer(
   therapeuticArea: string
 ): HybridAnswer {
   return {
+    narrativeStyleVersion: CLIENT_NARRATIVE_VERSION,
     directAnswer:
-      `AskSocial does not currently have curated or social intelligence loaded for ${therapeuticArea}, so it cannot provide a source-grounded answer yet.`,
+      `AskSocial does not currently have curated or social intelligence loaded for ${therapeuticArea}, so it cannot provide a source-grounded answer yet. Additional relevant sources would help clarify the questions and experiences being discussed.`,
     curatedIntelligence: {
       themes: [],
     },
@@ -494,6 +493,7 @@ function normalizeAnswerShape(
   ).slice(0, 4);
 
   return {
+    narrativeStyleVersion: CLIENT_NARRATIVE_VERSION,
     directAnswer:
       compactText(value?.directAnswer) || fallbackAnswer.directAnswer,
     curatedIntelligence: {
@@ -643,9 +643,7 @@ Return JSON with this exact shape:
 }
 
 Rules:
-- directAnswer should sound like AskSocial: strategic, synthesized, decision-useful.
-- Write directAnswer as connected, client-friendly narrative prose: explain what conversations discuss, why it matters to the question, and what further research is needed. Avoid mechanical topic inventories and phrases such as "The matching material" or "Matching source markets".
-- Describe countries from source metadata as conversation origins. Do not infer patient residence, local coverage rules, prevalence, or treatment decisions from topic mentions. Weave material evidence limits into the narrative without overstating findings.
+${CLIENT_NARRATIVE_INSTRUCTIONS}
 - If curatedInsights are provided, you MUST use them to construct the answer.
 - Do NOT say that data is unavailable if curatedInsights exist.
 - curatedInsights should be treated as primary evidence when curatedThemes are empty.
@@ -719,6 +717,7 @@ Rules:
 export function buildSourceGroundedSearchAnswer(input: ComposeHybridAnswerInput): HybridAnswer {
   if (input.questionEvidence?.topics.length) {
     return {
+      narrativeStyleVersion: CLIENT_NARRATIVE_VERSION,
       directAnswer: questionEvidenceAnswer(input.questionEvidence),
       curatedIntelligence: { themes: input.curatedThemes },
       liveData: { themes: input.liveThemes, emergingNarratives: [] },
@@ -731,7 +730,8 @@ export function buildSourceGroundedSearchAnswer(input: ComposeHybridAnswerInput)
   }
   if (input.curatedThemes.length || input.liveThemes.length || input.curatedInsights?.length) return buildFallbackAnswer(input);
   return {
-    directAnswer: "No corpus evidence matches this question.",
+    narrativeStyleVersion: CLIENT_NARRATIVE_VERSION,
+    directAnswer: "No corpus evidence matches this question. Additional relevant sources or a broader scope would help clarify the discussion before conclusions are drawn.",
     curatedIntelligence: { themes: [] }, liveData: { themes: [], emergingNarratives: [] },
     whatThisMeans: "The requested focus has no matching evidence in the available corpus.",
     recommendedActions: ["Try a broader question or a different focus within the corpus."],
