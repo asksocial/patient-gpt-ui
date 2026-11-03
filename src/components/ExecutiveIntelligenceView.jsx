@@ -271,7 +271,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
         )}
       </Section>
 
-      <Section title="Executive watchlist" subtitle="Directional signals that require corroboration before escalation">
+      {watchlist.length ? <Section title="Executive watchlist" subtitle="Directional signals that require corroboration before escalation">
         {watchlist.length ? (
           <div className="space-y-3">
             {watchlist.map((item) => (
@@ -288,7 +288,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
         ) : (
           <p className="text-sm text-white/45">No directional themes require executive monitoring.</p>
         )}
-      </Section>
+      </Section> : null}
 
       <Section title="Recommended actions" subtitle="Actions inherited from supported strategic implications">
         {actions.length ? (
