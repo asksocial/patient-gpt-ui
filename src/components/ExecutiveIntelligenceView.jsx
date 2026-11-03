@@ -134,7 +134,7 @@ function EmptyState({ reason }) {
   );
 }
 
-export default function ExecutiveIntelligenceView({ brief, unavailableReason, onOpenTheme = undefined }) {
+export default function ExecutiveIntelligenceView({ brief, unavailableReason, onOpenTheme = undefined, children = undefined }) {
   if (!brief) return <EmptyState reason={unavailableReason} />;
 
   const quality = brief.dataQuality || {};
@@ -311,6 +311,8 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
           <p className="text-sm leading-6 text-white/45">No action currently clears both the priority and evidence-confidence thresholds.</p>
         )}
       </Section>
+
+      {children}
 
       <Section title="Evidence guardrails" subtitle="Coverage and limitations carried into the leadership interpretation">
         <div className="grid gap-4">
