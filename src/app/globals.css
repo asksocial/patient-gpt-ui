@@ -571,7 +571,7 @@ body {
 }
 
 [data-testid="active-workspace-indicator"] > button,
-[data-testid="active-workspace-indicator"] > select {
+[data-testid="active-workspace-indicator"] .asksocial-workspace-select {
   border-color: transparent !important;
   background: var(--as-sage-active) !important;
   color: #ffffff !important;

@@ -7,6 +7,8 @@ import { resolveQuestionGeography, sourceCountryLabel } from "./geography";
 
 export type QuestionEvidence = {
   version: 7;
+  narrativeVersion?: 1;
+  treatmentLabel?: string;
   subjects: string[];
   topics: Array<{ id: string; label: string; count: number }>;
   examples: Array<{ id: string; excerpt: string; url?: string; topic: string; topicId: string; matchedTerms: string[]; country?: string; language?: string; sourceCategory?: string }>;
@@ -92,12 +94,27 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
   if (findings.length > 0 && findings.length < 20) limitations.push("The matching evidence is limited. Treat these observations as illustrative examples rather than estimates of prevalence.");
   if (/\b(emerging|emerge|growing|changing|changed|trends?)\b/i.test(question)) limitations.push("Themes present in this corpus do not establish emergence or growth without a comparable time baseline.");
   if (/\b(why|reasons?|drivers?|caus\w*)\b/i.test(question)) limitations.push("Topic mentions alone do not establish motivations or causal relationships. Reasons require explicit supporting accounts.");
-  return { version: 7, subjects: subjects.map(s => s.label), topics: matches.map(({ topic }) => ({ id: topic.id, label: topic.label, count: counts.get(topic.id) || 0 })), examples, marketCoverage, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
+  return { version: 7, narrativeVersion: 1, treatmentLabel: diseaseTerms.some(term => /glp[ -]?1/i.test(term)) ? "GLP-1 treatments" : "treatment", subjects: subjects.map(s => s.label), topics: matches.map(({ topic }) => ({ id: topic.id, label: topic.label, count: counts.get(topic.id) || 0 })), examples, marketCoverage, observations, researchUses: [...new Set(subjects.map(s => s.researchUse))], limitations };
 }
 
 export function questionEvidenceAnswer(evidence: QuestionEvidence): string {
-  const topics = evidence.topics.slice(0, 4).map(t => t.label);
-  const list = topics.length > 1 ? `${topics.slice(0, -1).join(", ")} and ${topics.at(-1)}` : topics[0];
-  const markets = evidence.marketCoverage?.length ? `Matching source markets include ${evidence.marketCoverage.map(market => `${market.country} (${market.topics.join("; ")})`).join(", ")}.` : "";
-  return [list ? `The matching material on ${evidence.subjects.join(" and ")} discusses ${list}.` : "No interpretable evidence supports the requested subject in the retained corpus.", markets, ...evidence.observations, ...evidence.limitations, ...evidence.researchUses].filter(Boolean).join(" ");
+  const join = (items: string[]) => items.length > 2 ? `${items.slice(0, -1).join(", ")}, and ${items.at(-1)}` : items.join(" and ");
+  const labels: Record<string, string> = {
+    "insurance and coverage": "insurance coverage",
+    "prices and affordability": "medication costs and affordability",
+    "pharmacy and telehealth access": "access through pharmacies and telehealth services",
+  };
+  const topics = evidence.topics.filter(topic => topic.count > 0).slice(0, 4).map(topic => labels[topic.label] || topic.label);
+  if (!topics.length) return "No interpretable evidence supports the requested subject in the retained corpus.";
+  const countries = evidence.marketCoverage?.filter(market => market.topics.length && !/^(?:unknown|unspecified market)$/i.test(market.country)).map(market => market.country) || [];
+  const origin = countries.length ? `Conversations originating in ${join(countries)}` : "The available conversations";
+  const accessOnly = evidence.subjects.length === 1 && evidence.subjects[0] === "access and affordability";
+  const introduction = `${origin} offer insight into questions surrounding ${accessOnly ? `the affordability and accessibility of ${evidence.treatmentLabel || "treatment"}` : join(evidence.subjects)}. Discussions touch on ${join(topics)}.`;
+  const implications = accessOnly
+    ? "These conversations can help identify potential barriers to access. Further research is needed to understand the extent to which costs and coverage limitations affect treatment decisions, affordability, or continuity of care."
+    : evidence.researchUses.join(" ");
+  const limitations = evidence.limitations.map(text => text.startsWith("Markets reflect source-country metadata")
+    ? "Source locations indicate where conversations originate; individual posts may discuss other countries, and gaps in coverage do not rule out concerns elsewhere."
+    : text);
+  return [introduction, ...evidence.observations, implications, ...limitations].filter(Boolean).join(" ");
 }

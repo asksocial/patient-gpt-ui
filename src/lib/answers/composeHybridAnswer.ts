@@ -644,6 +644,8 @@ Return JSON with this exact shape:
 
 Rules:
 - directAnswer should sound like AskSocial: strategic, synthesized, decision-useful.
+- Write directAnswer as connected, client-friendly narrative prose: explain what conversations discuss, why it matters to the question, and what further research is needed. Avoid mechanical topic inventories and phrases such as "The matching material" or "Matching source markets".
+- Describe countries from source metadata as conversation origins. Do not infer patient residence, local coverage rules, prevalence, or treatment decisions from topic mentions. Weave material evidence limits into the narrative without overstating findings.
 - If curatedInsights are provided, you MUST use them to construct the answer.
 - Do NOT say that data is unavailable if curatedInsights exist.
 - curatedInsights should be treated as primary evidence when curatedThemes are empty.

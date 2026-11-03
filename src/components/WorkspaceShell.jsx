@@ -2276,7 +2276,14 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                   aria-label={activeWorkspace ? `Current workspace: ${activeWorkspace.name}` : "Save current session as workspace"}
                   className="text-right"
                 >
-                  {activeWorkspace ? <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">{availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}</select> : <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"><span>Save current session as workspace</span></ActionButton>}
+                  {activeWorkspace ? (
+                    <div className="relative">
+                      <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="asksocial-workspace-select cursor-pointer appearance-none rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] pl-4 pr-12 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">
+                        {availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}
+                      </select>
+                      <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="pointer-events-none absolute right-[18px] top-1/2 h-4 w-4 -translate-y-1/2 text-white"><path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </div>
+                  ) : <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"><span>Save current session as workspace</span></ActionButton>}
                   {activeWorkspace ? (
                     <p
                       aria-live="polite"
