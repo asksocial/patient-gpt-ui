@@ -626,7 +626,7 @@ body {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-asksocial-workarea-content]:not([data-search-page="true"]) section:not(.pv-compliance-hero):not(.pv-review-path-card):hover,
+  [data-asksocial-workarea-content]:not([data-search-page="true"]) section:not(.pv-compliance-hero):hover,
   [data-asksocial-workarea-content]:not([data-search-page="true"]) article:hover {
     border-color: rgba(12, 122, 105, 0.14) !important;
     box-shadow: 0 2px 4px rgba(12, 41, 35, 0.04), 0 18px 42px rgba(12, 41, 35, 0.075) !important;
@@ -640,21 +640,12 @@ body {
     transform: translateY(-2px);
   }
 
-  .pv-review-path-button:not(:disabled):hover {
-    transform: translateY(-2px);
-  }
 }
 
 .pv-review-path-button[aria-pressed="true"],
 .pv-review-path-button:focus-visible {
   outline: 2px solid var(--as-sage-active);
   outline-offset: 3px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pv-review-path-button:not(:disabled):hover {
-    transform: none;
-  }
 }
 
 [data-asksocial-workarea-content] section:not(.pv-compliance-hero),
