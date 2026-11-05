@@ -20,10 +20,13 @@ export default function Glp1PvReference({ libraries, busy, onMutate, onConfigura
   }, []);
   const reference = data?.reference;
   return <section aria-label="GLP-1 FAERS reference and screening" className="rounded-2xl border border-cyan-300/15 bg-white/[0.025] p-5">
-    <div className="flex flex-wrap items-start justify-between gap-4">
+    <details className="group/glp1-reference">
+    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300">
       <h3 className="text-base font-semibold text-white">GLP-1 FAERS reference & screening</h3>
-      <span className="rounded-lg border border-amber-300/20 px-3 py-1.5 text-xs text-amber-200">{reference ? reference.status === "complete" ? "Reference retrieval complete" : "Partial reference snapshot" : "Loading reference…"}</span>
-    </div>
+      <span aria-hidden="true" className="text-white/60 transition-transform group-open/glp1-reference:rotate-180">⌄</span>
+    </summary>
+    <div className="mt-4">
+    <span className="inline-block rounded-lg border border-amber-300/20 px-3 py-1.5 text-xs text-amber-200">{reference ? reference.status === "complete" ? "Reference retrieval complete" : "Partial reference snapshot" : "Loading reference…"}</span>
     <p className="mt-2 overflow-x-auto whitespace-nowrap text-xs leading-5 text-white/50">FDA reports inform the reference vocabulary. Social detections enter the existing human review, case assessment, sponsor handoff, and reconciliation workflow.</p>
     {error ? <p role="alert" className="mt-3 text-sm text-rose-200">{error}</p> : null}
     {reference ? <>
@@ -38,5 +41,7 @@ export default function Glp1PvReference({ libraries, busy, onMutate, onConfigura
       {library?.status === "active" ? <ActionButton disabled={Boolean(busy)} onClick={() => onMutate("/api/pv/corpora/glp-1", { payload: { action: "screen" } }, "glp1-screen", "GLP-1 social screening completed. Review the held-row counts and potential detections; existing case decisions were preserved.")} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black disabled:opacity-40">{busy === "glp1-screen" ? "Screening…" : "Screen GLP-1 social corpus"}</ActionButton> : null}
       {library && library.status !== "active" ? <><p className="text-xs text-amber-200">Library awaiting approval</p><ActionButton type="button" onClick={onConfiguration} className="cursor-pointer text-xs text-cyan-200 underline">Review library configuration</ActionButton></> : null}
     </div>
+    </div>
+    </details>
   </section>;
 }
