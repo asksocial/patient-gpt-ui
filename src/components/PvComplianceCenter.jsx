@@ -338,7 +338,7 @@ export default function PvComplianceCenter({ initialTab = "overview", initialMes
   async function continueStructuredReview() {
     const recordId = selectedRecord?.record?.id;
     if (!recordId) return;
-    const started = await mutate(`/api/pv/records/${recordId}`, { method: "PATCH", payload: { action: "start_review" } }, `review-start:${recordId}`, "Structured review started. The review timestamp has been retained; Day Zero remains separate until reportability is confirmed.");
+    const started = await mutate(`/api/pv/records/${recordId}`, { method: "PATCH", payload: { action: "start_review" } }, `review-start:${recordId}`, "");
     if (!started) return;
     await openRecord(recordId);
     setTab("review");
