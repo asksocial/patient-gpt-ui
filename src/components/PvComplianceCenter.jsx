@@ -179,9 +179,9 @@ function FieldLabel({ labelText, tooltip }) {
   return <span className="inline-flex items-center gap-1.5">{labelText}{content ? <Tooltip content={content} delay={200} side="bottom" align="start"><ActionButton type="button" aria-label={`About ${labelText}: ${content}`} className="inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full border border-white/20 text-[10px] text-white/50 transition-colors hover:text-white focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60">?</ActionButton></Tooltip> : null}</span>;
 }
 
-function Card({ title, subtitle, children, actions }) {
+function Card({ title, subtitle, children, actions, className = "" }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+    <section className={`rounded-2xl border border-white/10 bg-white/[0.03] p-5 ${className}`}>
       <div className="flex items-start justify-between gap-4">
         <div><h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-white">{title}</h2>{subtitle ? <p className="mt-1 text-sm leading-6 text-white/40">{subtitle}</p> : null}</div>
         {actions}
@@ -1069,13 +1069,16 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
       </Card>
       <Card title="Compliance clock" subtitle={`Clock stage: ${label(clock.stage)}`}><div className="rounded-xl border border-white/10 bg-black/30 p-4"><div className="flex flex-col items-start gap-2"><ToneBadge tone={clock.state}>{label(clock.state)}</ToneBadge><span className="text-[11px] leading-4 text-white/35">{clock.state === "not_started" ? "Awaiting reportability determination" : `${clock.percentConsumed}% consumed`}</span></div><div className="mt-3 rounded-lg border border-cyan-400/15 bg-cyan-400/[0.05] p-3"><p className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/45">Governing clock</p><p className="mt-1 text-xs font-medium text-cyan-100/75">{clock.governingClock === "reportability_identified_at" ? "Qualified reportability review" : clock.governingClock === "identified_at" ? "Reviewer identification" : label(clock.governingClock)}</p><p className="mt-1 text-[11px] text-white/35">Day zero: {formatDate(clock.governingTimestamp)}</p></div>{clock.state === "not_started" ? <p className="mt-3 text-xs leading-5 text-white/45">Confirm all four minimum ICSR criteria and escalate the record to start Day Zero.</p> : <><p className="mt-4 text-2xl font-semibold text-white">{Math.floor(clock.elapsedMinutes / 60)}h {clock.elapsedMinutes % 60}m</p><p className="mt-1 text-[11px] text-white/35">Elapsed in current stage</p><div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10"><div className={`h-full ${clock.state === "breached" ? "bg-rose-400" : clock.state === "approaching" ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${Math.min(100, clock.percentConsumed)}%` }} /></div><dl className="mt-4 space-y-2 text-[11px]"><div className="flex justify-between gap-2"><dt className="text-white/35">Started</dt><dd className="text-right text-white/65">{formatDate(clock.startedAt)}</dd></div><div className="flex justify-between gap-2"><dt className="text-white/35">Due</dt><dd className="text-right text-white/65">{formatDate(clock.dueAt)}</dd></div><div className="flex justify-between gap-2"><dt className="text-white/35">Remaining</dt><dd className="text-right text-white/65">{clock.remainingMinutes ?? 0} min</dd></div></dl></>}</div></Card>
     </div>
-    {canReview ? <Card title="Choose the next step" subtitle="After reviewing the mention, select a path. Selecting a path does not record a decision or start Day Zero.">
+    {canReview ? <Card className="pv-review-path-card" title="Choose the next step" subtitle="After reviewing the mention, select a path. Selecting a path does not record a decision or start Day Zero.">
       <div role="group" aria-label="Mention review path" className="grid gap-3 lg:grid-cols-3">
         {[
           ["health", "Reclassify as Health Experience", "A product-linked safety observation or special situation without an AE/ADR signal."],
           ["close", "Close as Not Reportable", "The source supports closing this mention as a non-case. Retain your rationale."],
           ["structured", "Process with Structured Human Review", "Assess a potential safety case, verify minimum criteria and review the clinical details."],
-        ].map(([path, title, description]) => <ActionButton key={path} type="button" aria-pressed={reviewPath === path} aria-controls="pv-review-path-content" disabled={!!busy || draftSaving} onClick={() => chooseReviewPath(path)} className={`rounded-xl border p-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 ${reviewPath === path ? "border-cyan-300/50 bg-cyan-300/10" : "border-white/15 bg-black/20"}`}><span className="block text-sm font-semibold text-white/80">{title}</span><span className="mt-2 block text-xs leading-5 text-white/45">{description}</span></ActionButton>)}
+        ].map(([path, title, description]) => <div key={path} className="rounded-xl border border-white/15 bg-black/20 p-4">
+          <ActionButton type="button" aria-pressed={reviewPath === path} aria-controls="pv-review-path-content" aria-describedby={`pv-review-path-${path}-description`} disabled={!!busy || draftSaving} onClick={() => chooseReviewPath(path)} className="pv-review-path-button rounded-xl bg-white px-4 py-2.5 text-left text-sm font-medium text-black disabled:opacity-40">{title}</ActionButton>
+          <p id={`pv-review-path-${path}-description`} className="mt-3 text-xs leading-5 text-white/45">{description}</p>
+        </div>)}
       </div>
     </Card> : null}
     <div id="pv-review-path-content" className="space-y-5">
