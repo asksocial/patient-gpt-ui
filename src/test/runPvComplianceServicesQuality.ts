@@ -279,7 +279,7 @@ assert(lifecycleSource.includes("status, page: String(page), pageSize: String(pa
 for (const phrase of ["Product / procedure", "Adverse event", "Seriousness", "Outcome", "Time to onset", "Severity", "Unexpectedness", "Causality language", "Adverse-event assessment"]) {
   assert(workbench.includes(phrase), `PV workbench is missing ontology UX: ${phrase}`);
 }
-for (const phrase of ["Reviewer workflow", "one specific patient", "ICH qualifying patient characteristic (select at least one)", "Patient supporting evidence (required)", "Reviewer patient-evidence confirmation"]) {
+for (const phrase of ["PvReviewHowTo", "one specific patient", "ICH qualifying patient characteristic (select at least one)", "Patient supporting evidence (required)", "Reviewer patient-evidence confirmation"]) {
   assert(workbench.includes(phrase), `Structured review is missing the reviewer guide or required patient-identifiability gate: ${phrase}`);
 }
 for (const option of ["non_serious", "permanent_injury", "immediate", "moderate", "expected_label_event", "possibly due to", "think it was from"]) {
@@ -356,7 +356,7 @@ assert(reviewQueueSource.includes('aria-sort={sort.key === head.key') && reviewQ
 assert(!reviewQueueSource.includes("formatDate(record.algorithm_timestamp)"), "The queue must omit the redundant Algorithm timestamp column when it cannot be distinguished from collection.");
 assert(reviewQueueSource.includes("sourceLabel(record)") && workbench.includes('sourceType.endsWith("_csv")'), "CSV-origin PV queue records must be labeled Social.");
 assert(workbench.includes("Enter a reviewer rationale before saving this PV decision."), "Enabled PV decisions must explain the rationale requirement inline when submitted empty.");
-assert(workbench.includes("Save incomplete assessment") && workbench.includes('review("close_not_relevant", false)'), "Reviewers must be able to retain incomplete evidence before disposition.");
+assert(workbench.includes("Save incomplete assessment") && workbench.includes('reviewPath === "health" ? "reclassify_health_experience" : "close_not_relevant", false'), "Reviewers must be able to retain incomplete evidence, and non-case dispositions must omit complete ICSR approval.");
 assert(!workbench.includes("setMarkedReportable") && workbench.includes("Forward observation for sponsor assessment"), "Assessment and incomplete observation review must be available without asserting reportability.");
 assert(resolvePvReviewCompletionNavigation("close_not_relevant")?.destination === "pv_overview", "Close as Not Reportable must resolve to the canonical Compliance Overview destination.");
 assert(resolvePvReviewCompletionNavigation("reclassify_health_experience")?.destination === "pv_overview", "Health Experience reclassification must return to Compliance Overview so the affected lifecycle count is visible.");
