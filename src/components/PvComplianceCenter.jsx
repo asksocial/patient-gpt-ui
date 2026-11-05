@@ -1075,7 +1075,7 @@ function RecordWorkbench({ detail, busy, onMutate, onRefresh }) {
           ["health", "Reclassify as Health Experience", "A product-linked safety observation or special situation without an AE/ADR signal."],
           ["close", "Close as Not Reportable", "The source supports closing this mention as a non-case. Retain your rationale."],
           ["structured", "Process with Structured Human Review", "Assess a potential safety case, verify minimum criteria and review the clinical details."],
-        ].map(([path, title, description]) => <div key={path} className="rounded-xl border border-white/15 bg-black/20 p-4">
+        ].map(([path, title, description]) => <div key={path} className="pv-review-path-option rounded-xl border border-white/15 bg-black/20 p-4">
           <ActionButton type="button" aria-pressed={reviewPath === path} aria-controls="pv-review-path-content" aria-describedby={`pv-review-path-${path}-description`} disabled={!!busy || draftSaving} onClick={() => chooseReviewPath(path)} className="pv-review-path-button rounded-xl bg-white px-4 py-2.5 text-left text-sm font-medium text-black disabled:opacity-40">{title}</ActionButton>
           <p id={`pv-review-path-${path}-description`} className="mt-3 text-xs leading-5 text-white/45">{description}</p>
         </div>)}

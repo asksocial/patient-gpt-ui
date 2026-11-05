@@ -626,8 +626,9 @@ body {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-asksocial-workarea-content]:not([data-search-page="true"]) section:not(.pv-compliance-hero):hover,
-  [data-asksocial-workarea-content]:not([data-search-page="true"]) article:hover {
+  [data-asksocial-workarea-content]:not([data-search-page="true"]) section:not(.pv-compliance-hero):not(.pv-review-path-card):hover,
+  [data-asksocial-workarea-content]:not([data-search-page="true"]) article:hover,
+  .pv-review-path-option:hover {
     border-color: rgba(12, 122, 105, 0.14) !important;
     box-shadow: 0 2px 4px rgba(12, 41, 35, 0.04), 0 18px 42px rgba(12, 41, 35, 0.075) !important;
     transform: translateY(-2px);
@@ -650,8 +651,15 @@ body {
 
 [data-asksocial-workarea-content] section:not(.pv-compliance-hero),
 [data-asksocial-workarea-content] article,
-.pv-lifecycle-card {
+.pv-lifecycle-card,
+.pv-review-path-option {
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-review-path-option:hover {
+    transform: none;
+  }
 }
 
 .pv-metric-category {
