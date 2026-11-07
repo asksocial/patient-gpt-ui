@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AskSocial PV Academy</title>
+<meta name="description" content="AskSocial PV Academy: screener training for recognizing and transferring potential medicine safety information in digital mentions.">
+<link rel="icon" type="image/png" href="assets/asksocial-logo.png">
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script src="assets/dc-runtime.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="assets/styles.css">
+<style>:root{--color-bg:#FFFFFF;--color-surface:#F1F5F4;--color-text:#0B2822;--color-accent:#006E5F;--color-accent-2:#3ABBA6;--color-accent-100:#E3F4F0;--color-accent-600:#005A4D;--color-accent-700:#005A4D;--color-accent-800:#00463C;--color-divider:color-mix(in srgb,#0B2822 28%,transparent);--color-neutral-100:#F6F8F8;--color-neutral-200:#E8EEEC;--color-neutral-300:#D3DBD8;--color-neutral-700:#56635E;--color-danger:#B3261E;--color-danger-100:#FCEDEC;--color-danger-800:#7A1712;--font-heading:"Helvetica Neue",Helvetica,Arial,sans-serif;--font-heading-weight:700;--font-body:"Helvetica Neue",Helvetica,Arial,sans-serif}body{margin:0;background:var(--color-bg)}a{color:var(--color-accent-700)}a:hover{color:var(--color-accent)}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:var(--font-body);color:var(--color-text);background:var(--color-bg)">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 32px;border-bottom:2px solid var(--color-text)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="assets/asksocial-logo.png" alt="AskSocial" style="height:34px;width:auto;display:block">
+      <div style="display:flex;flex-direction:column;border-left:1px solid var(--color-divider);padding-left:14px">
+        <span style="font-weight:700;font-size:17px;letter-spacing:-0.01em">PV Academy</span>
+        <span style="font-size:12px;color:var(--color-neutral-700)">Screener pathway · Curriculum v1.0 · Proposed program for internal PV approval</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;min-width:260px">
+      <span style="font-size:12px;font-weight:600;white-space:nowrap">{{ progressLabel }}</span>
+      <div style="flex:1;height:8px;background:var(--color-neutral-300);min-width:100px"><div style="height:8px;background:var(--color-accent-2);width:{{ progressPct }}"></div></div>
+    </div>
+  </div>
+  <sc-if value="{{ isTop }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-wrap:wrap;border-bottom:2px solid var(--color-divider);padding:0 32px">
+      <sc-for list="{{ sections }}" as="s" hint-placeholder-count="5">
+        <button onClick="{{ s.onClick }}" style="display:flex;gap:10px;align-items:baseline;border:0;border-bottom:4px solid {{ s.rule }};margin-bottom:-2px;padding:14px 18px 12px 0;margin-right:22px;cursor:pointer;font-family:var(--font-body);font-size:14px;font-weight:600;background:transparent;color:var(--color-text)">
+          <span style="font-size:11px;font-weight:800;color:var(--color-accent-700)">{{ s.num }}</span><span>{{ s.label }}</span><span style="font-size:11px;color:var(--color-neutral-700)">{{ s.badge }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+  <div style="display:flex;flex-wrap:wrap;flex:1;align-items:stretch">
+    <sc-if value="{{ isSide }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1 1 200px;max-width:250px;border-right:2px solid var(--color-divider);display:flex;flex-direction:column">
+        <sc-for list="{{ sections }}" as="s" hint-placeholder-count="5">
+          <button onClick="{{ s.onClick }}" style="display:flex;gap:12px;align-items:baseline;text-align:left;width:100%;border:0;border-bottom:1px solid var(--color-divider);padding:14px 20px;cursor:pointer;font-family:var(--font-body);font-size:14px;font-weight:600;background:{{ s.bg }};color:{{ s.color }}">
+            <span style="font-size:11px;font-weight:800;min-width:18px">{{ s.num }}</span><span style="flex:1">{{ s.label }}</span><span style="font-size:11px">{{ s.badge }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <div style="flex:999 1 520px;min-width:0;padding:36px 40px 72px;max-width:1120px">
+
+      <sc-if value="{{ v.map }}" hint-placeholder-val="{{ true }}">
+        <h6 style="color:var(--color-accent-700);margin:0 0 8px">01 — Program map</h6>
+        <h1 style="font-size:46px;max-width:18ch;margin:0 0 18px">Recognize, document, transfer.</h1>
+        <p style="font-size:17px;max-width:66ch;text-wrap:pretty">AskSocial PV Academy will prepare staff to recognize potential medicine safety information in digital mentions, document what the source actually says, and transfer it to the client through an agreed safety process.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));border-top:2px solid var(--color-text);margin:28px 0 10px">
+          <div style="padding:16px 20px 16px 0;border-right:2px solid var(--color-divider)"><div style="font-size:44px;font-weight:800;line-height:1">36 h</div><div style="font-size:13px;margin-top:6px">Instruction and practical workshops</div></div>
+          <div style="padding:16px 20px;border-right:2px solid var(--color-divider)"><div style="font-size:44px;font-weight:800;line-height:1">8 h</div><div style="font-size:13px;margin-top:6px">Reading and independent practice</div></div>
+          <div style="padding:16px 20px;border-right:2px solid var(--color-divider)"><div style="font-size:44px;font-weight:800;line-height:1">4 h</div><div style="font-size:13px;margin-top:6px">Assessment</div></div>
+          <div style="padding:16px 20px"><div style="font-size:44px;font-weight:800;line-height:1;color:var(--color-accent)">12+ h</div><div style="font-size:13px;margin-top:6px">Supervised screening</div></div>
+        </div>
+        <p style="font-size:13px;color:var(--color-neutral-700);max-width:68ch;margin:0">Completion requires demonstrated competence; elapsed time alone does not qualify a reviewer.</p>
+
+        <h3 style="margin:40px 0 6px">Six week delivery plan</h3>
+        <p style="font-size:14px;color:var(--color-neutral-700);margin:0 0 14px">Select a week.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:2px;background:var(--color-bg)">
+          <sc-for list="{{ weeks }}" as="w" hint-placeholder-count="6">
+            <button onClick="{{ w.onClick }}" style="text-align:left;border:0;cursor:pointer;padding:14px;font-family:var(--font-body);min-height:104px;display:flex;flex-direction:column;justify-content:space-between;gap:6px;background:{{ w.bg }};color:{{ w.color }}">
+              <span style="font-size:12px;font-weight:600">Week {{ w.w }}</span>
+              <span style="font-size:17px;font-weight:800;line-height:1.15;overflow-wrap:break-word;hyphens:auto">{{ w.title }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="padding:20px 0 24px;border-bottom:2px solid var(--color-divider)">
+          <p style="font-weight:800;margin:0 0 6px">{{ week.hrs }}</p>
+          <p style="max-width:66ch;margin:0 0 14px">{{ week.text }}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <sc-for list="{{ week.mods }}" as="m" hint-placeholder-count="3">
+              <button class="btn btn-secondary" onClick="{{ m.onClick }}" style="justify-content:flex-start">{{ m.label }} →</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <h3 style="margin:40px 0 14px">What you should be able to do</h3>
+        <div style="display:flex;flex-direction:column;border-top:2px solid var(--color-text)">
+          <sc-for list="{{ outcomes }}" as="o" hint-placeholder-count="5">
+            <div style="display:flex;gap:20px;padding:13px 0;border-bottom:1px solid var(--color-divider)"><span style="font-weight:800;color:var(--color-accent)">{{ o.n }}</span><span style="max-width:72ch">{{ o.t }}</span></div>
+          </sc-for>
+        </div>
+
+        <h3 style="margin:40px 0 14px">Where your authority stops</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
+          <div style="background:var(--color-bg);padding:18px"><span class="tag tag-accent">You do</span><p style="font-size:14px;margin:12px 0 0">Screening and transfer, within your client-specific authorization.</p></div>
+          <div style="background:var(--color-bg);padding:18px"><span class="tag tag-neutral">Separate training</span><p style="font-size:14px;margin:12px 0 0">Medical causality assessment, final MedDRA coding and authority submission.</p></div>
+          <div style="background:var(--color-bg);padding:18px"><span class="tag tag-neutral">Client decides</span><p style="font-size:14px;margin:12px 0 0">Regulatory reporting, unless a written agreement explicitly delegates it.</p></div>
+        </div>
+        <p style="font-size:14px;max-width:72ch;margin:18px 0 0;text-wrap:pretty">Staff must not discard a concern merely because causality is uncertain, an event is already labeled, or all case details are unavailable.</p>
+        <div style="display:flex;gap:12px;margin-top:32px;flex-wrap:wrap">
+          <button class="btn btn-primary" onClick="{{ goMod1 }}" style="min-width:200px;justify-content:flex-start">Start Module 1 →</button>
+          <button class="btn btn-secondary" onClick="{{ goCases }}" style="min-width:200px;justify-content:flex-start">Practice cases →</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ v.modules }}" hint-placeholder-val="{{ false }}">
+        <h6 style="color:var(--color-accent-700);margin:0 0 8px">02 — Modules</h6>
+        <h2 style="margin:0 0 8px">Twelve core modules</h2>
+        <p style="color:var(--color-neutral-700);margin:0 0 24px">Open a module for its objective, exercise and evidence. Mark it complete once your evidence is signed off.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
+          <sc-for list="{{ modules }}" as="m" hint-placeholder-count="12">
+            <button onClick="{{ m.onClick }}" style="text-align:left;border:0;cursor:pointer;padding:18px;background:{{ m.bg }};font-family:var(--font-body);color:var(--color-text);display:flex;flex-direction:column;gap:8px;min-height:150px" style-hover="background:var(--color-neutral-200)">
+              <div style="display:flex;justify-content:space-between;align-items:center;width:100%"><span style="font-size:28px;font-weight:800;color:var(--color-accent)">{{ m.nn }}</span><span style="font-size:11px;font-weight:800;color:var(--color-accent-700)">{{ m.doneLabel }}</span></div>
+              <span style="font-size:16px;font-weight:800;line-height:1.2">{{ m.t }}</span>
+              <span style="font-size:12px;color:var(--color-neutral-700);margin-top:auto">Week {{ m.week }} · {{ m.hrs }} taught hours</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ v.module }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+          <button class="btn btn-ghost" onClick="{{ closeMod }}">← All modules</button>
+          <div style="display:flex;gap:8px"><button class="btn btn-secondary" onClick="{{ prevMod }}">← Previous</button><button class="btn btn-secondary" onClick="{{ nextMod }}">Next →</button></div>
+        </div>
+        <div style="display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;border-bottom:2px solid var(--color-text);padding-bottom:20px">
+          <div style="font-size:96px;font-weight:800;line-height:0.8;color:var(--color-accent)">{{ mod.nn }}</div>
+          <div style="flex:1;min-width:240px">
+            <h2 style="margin:0 0 8px">{{ mod.t }}</h2>
+            <span style="font-size:13px;font-weight:600">{{ mod.meta }}</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));border-bottom:2px solid var(--color-divider)">
+          <div style="padding:20px 20px 20px 0;border-right:2px solid var(--color-divider)"><h6 style="color:var(--color-accent-700)">Objective</h6><p style="font-size:14px;text-wrap:pretty;margin:0">{{ mod.obj }}</p></div>
+          <div style="padding:20px;border-right:2px solid var(--color-divider)"><h6 style="color:var(--color-accent-700)">Exercise</h6><p style="font-size:14px;text-wrap:pretty;margin:0">{{ mod.ex }}</p></div>
+          <div style="padding:20px 0 20px 20px"><h6 style="color:var(--color-accent-700)">Evidence</h6><p style="font-size:14px;text-wrap:pretty;margin:0">{{ mod.ev }}</p></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;align-items:center">
+          <button class="{{ mod.btnClass }}" onClick="{{ toggleDone }}" style="min-width:240px;justify-content:flex-start">{{ mod.btnLabel }}</button>
+          <sc-if value="{{ mod.hasLink }}" hint-placeholder-val="{{ false }}"><button class="btn btn-ghost" onClick="{{ mod.linkClick }}">{{ mod.linkLabel }} →</button></sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ v.cases }}" hint-placeholder-val="{{ false }}">
+        <h6 style="color:var(--color-accent-700);margin:0 0 8px">03 — Practice cases</h6>
+        <h2 style="margin:0 0 8px">Classify the mention</h2>
+        <p style="color:var(--color-neutral-700);margin:0 0 24px;max-width:76ch;font-size:14px">All examples are invented. Drug A is a placeholder. These are teaching dispositions for client escalation, not definitive regulatory reporting decisions.</p>
+        <div style="display:flex;flex-wrap:wrap;border-top:2px solid var(--color-text)">
+          <div style="flex:1 1 190px;max-width:240px;border-right:2px solid var(--color-divider)">
+            <sc-for list="{{ caseList }}" as="c" hint-placeholder-count="8">
+              <button onClick="{{ c.onClick }}" style="display:flex;flex-direction:column;gap:2px;text-align:left;width:100%;border:0;border-bottom:1px solid var(--color-divider);padding:10px 14px;cursor:pointer;font-family:var(--font-body);background:{{ c.bg }};color:{{ c.color }}">
+                <span style="font-size:11px;font-weight:600">Case {{ c.n }} · {{ c.status }}</span>
+                <span style="font-size:14px;font-weight:800">{{ c.t }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="flex:999 1 380px;min-width:0;padding:24px 0 24px 28px">
+            <span style="font-size:12px;font-weight:600">Case {{ cs.n }} — {{ cs.t }}</span>
+            <div style="margin:12px 0 28px;font-size:26px;font-weight:800;line-height:1.25;letter-spacing:-0.01em;max-width:30ch;border-left:6px solid var(--color-accent);padding-left:20px">{{ cs.q }}</div>
+            <h6 style="margin:0 0 10px">1 · Disposition</h6>
+            <div style="display:flex;flex-direction:column;gap:6px;max-width:560px">
+              <sc-for list="{{ dispOpts }}" as="d" hint-placeholder-count="4">
+                <button onClick="{{ d.onClick }}" style="text-align:left;cursor:pointer;padding:10px 14px;font-family:var(--font-body);font-size:14px;font-weight:600;border:2px solid {{ d.border }};background:{{ d.bg }};color:{{ d.color }}">{{ d.label }}</button>
+              </sc-for>
+            </div>
+            <h6 style="margin:20px 0 10px">2 · Urgent escalation route?</h6>
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ urgOpts }}" as="u" hint-placeholder-count="2">
+                <button onClick="{{ u.onClick }}" style="cursor:pointer;padding:8px 18px;font-family:var(--font-body);font-size:14px;font-weight:600;min-width:90px;text-align:left;border:2px solid {{ u.border }};background:{{ u.bg }};color:{{ u.color }}">{{ u.label }}</button>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap">
+              <button class="btn btn-primary" onClick="{{ checkCase }}" disabled="{{ cannotCheck }}" style="min-width:180px;justify-content:flex-start">Check against key</button>
+              <button class="btn btn-secondary" onClick="{{ nextCase }}">Next case →</button>
+            </div>
+            <sc-if value="{{ cs.showKey }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:24px;border-top:2px solid var(--color-text)">
+                <div style="padding:10px 14px;font-weight:800;background:{{ cs.verdictBg }};color:{{ cs.verdictColor }}">{{ cs.verdict }}</div>
+                <div style="padding:16px 14px;background:var(--color-surface)">
+                  <h6 style="color:var(--color-accent-700)">Facilitator key — expected action</h6>
+                  <p style="margin:0 0 10px;font-size:15px;text-wrap:pretty;max-width:70ch">{{ cs.key }}</p>
+                  <p style="margin:0;font-size:13px;color:var(--color-neutral-700)">Accepted: {{ cs.accepted }}</p>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ v.clock }}" hint-placeholder-val="{{ false }}">
+        <h6 style="color:var(--color-accent-700);margin:0 0 8px">04 — Clock exercise · Module 8</h6>
+        <h2 style="margin:0 0 8px">Where does day zero start?</h2>
+        <p style="color:var(--color-neutral-700);margin:0 0 24px;max-width:74ch;font-size:14px">An identical post can require a different clock analysis depending on source context. Record posting, collection, awareness, review, send and receipt separately. Timestamps below are fictional and in one time zone.</p>
+        <div style="border:2px solid var(--color-divider);padding:16px 20px;margin-bottom:24px;max-width:640px">
+          <span style="font-size:12px;font-weight:600">The post</span>
+          <div style="font-size:20px;font-weight:800;margin-top:6px">“My mother was admitted to hospital after she took Drug A and could not breathe.”</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:28px">
+          <sc-for list="{{ clockQs }}" as="q" hint-placeholder-count="2">
+            <div style="border-top:2px solid var(--color-text);padding-top:14px">
+              <h6 style="margin:0 0 4px;color:var(--color-accent-700)">Scenario {{ q.letter }}</h6>
+              <p style="font-weight:800;font-size:17px;margin:0 0 14px;max-width:66ch">{{ q.prompt }}</p>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:2px;background:var(--color-bg)">
+                <sc-for list="{{ q.events }}" as="e" hint-placeholder-count="6">
+                  <button onClick="{{ e.onClick }}" style="text-align:left;cursor:pointer;padding:12px;font-family:var(--font-body);display:flex;flex-direction:column;gap:4px;min-height:92px;border:2px solid {{ e.border }};background:{{ e.bg }};color:{{ e.color }}">
+                    <span style="font-size:18px;font-weight:800">{{ e.t }}</span>
+                    <span style="font-size:13px;font-weight:600;line-height:1.3">{{ e.label }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ q.answered }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:10px;padding:12px 14px;background:var(--color-surface);font-size:14px;max-width:76ch"><strong style="color:{{ q.resColor }}">{{ q.res }}</strong> {{ q.fb }}</div>
+              </sc-if>
+            </div>
+          </sc-for>
+          <div style="border-top:2px solid var(--color-text);padding-top:14px">
+            <h6 style="margin:0 0 4px;color:var(--color-accent-700)">Scenario C</h6>
+            <p style="font-weight:800;font-size:17px;margin:0 0 14px;max-width:66ch">In scenario B, QA amends the packet and completes review at Mon 11:30. Does day zero move to 11:30?</p>
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ qaOpts }}" as="u" hint-placeholder-count="2">
+                <button onClick="{{ u.onClick }}" style="cursor:pointer;padding:8px 18px;font-family:var(--font-body);font-size:14px;font-weight:600;min-width:90px;text-align:left;border:2px solid {{ u.border }};background:{{ u.bg }};color:{{ u.color }}">{{ u.label }}</button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ qa.answered }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:10px;padding:12px 14px;background:var(--color-surface);font-size:14px;max-width:76ch"><strong style="color:{{ qa.resColor }}">{{ qa.res }}</strong> QA review must not reset an earlier applicable clock. Record the actual timestamps; do not overwrite them to make a transfer appear timely.</div>
+            </sc-if>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:28px"><button class="btn btn-secondary" onClick="{{ resetClock }}">Reset exercise</button></div>
+      </sc-if>
+
+      <sc-if value="{{ v.quiz }}" hint-placeholder-val="{{ false }}">
+        <h6 style="color:var(--color-accent-700);margin:0 0 8px">05 — Knowledge check</h6>
+        <h2 style="margin:0 0 8px">Practice questions</h2>
+        <p style="color:var(--color-neutral-700);margin:0 0 24px;max-width:74ch;font-size:14px">The formal knowledge assessment is 40 questions in one hour and requires at least 90 percent correct. This practice set uses the same threshold.</p>
+        <sc-if value="{{ quizActive }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:4px;margin-bottom:20px">
+            <sc-for list="{{ quizDots }}" as="d" hint-placeholder-count="8">
+              <div style="flex:1;height:6px;background:{{ d.bg }}"></div>
+            </sc-for>
+          </div>
+          <span style="font-size:12px;font-weight:600">Question {{ qz.n }} of {{ qz.total }} · {{ qz.domain }}</span>
+          <p style="font-size:22px;font-weight:800;line-height:1.3;margin:8px 0 20px;max-width:40ch">{{ qz.q }}</p>
+          <div style="display:flex;flex-direction:column;gap:6px;max-width:640px">
+            <sc-for list="{{ qz.opts }}" as="o" hint-placeholder-count="3">
+              <button onClick="{{ o.onClick }}" style="text-align:left;cursor:pointer;padding:12px 14px;font-family:var(--font-body);font-size:15px;font-weight:600;border:2px solid {{ o.border }};background:{{ o.bg }};color:{{ o.color }}">{{ o.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ qz.answered }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:16px;padding:14px;background:var(--color-surface);font-size:14px;max-width:640px"><strong style="color:{{ qz.resColor }}">{{ qz.res }}</strong> {{ qz.why }}</div>
+            <button class="btn btn-primary" onClick="{{ nextQ }}" style="min-width:180px;justify-content:flex-start;margin-top:16px">{{ qz.nextLabel }} →</button>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ quizDone }}" hint-placeholder-val="{{ false }}">
+          <div style="border-top:2px solid var(--color-text);padding-top:20px">
+            <div style="font-size:96px;font-weight:800;line-height:0.9;color:{{ score.color }}">{{ score.pct }}</div>
+            <p style="font-size:18px;font-weight:800;margin:12px 0 6px">{{ score.line }}</p>
+            <p style="max-width:66ch;font-size:14px">{{ score.note }}</p>
+            <button class="btn btn-secondary" onClick="{{ resetQuiz }}" style="margin-top:8px">Retake</button>
+          </div>
+        </sc-if>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;layout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Sidebar&quot;,&quot;Top tabs&quot;],&quot;default&quot;:&quot;Sidebar&quot;,&quot;tsType&quot;:&quot;'Sidebar'|'Top tabs'&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;facilitatorMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+const LS = 'pvAcademy.v1';
+const MODS = [
+ ['PV foundations and AskSocial responsibilities',2,1,'Book Chapter 1 | Official readings [2,4]','Explain the path from an online mention to client safety review, using plain language. Teach adverse event, adverse drug reaction, individual case safety report or ICSR, marketing authorisation holder or MAH, and the roles of screening, QA and client PV.','Trace one fictional mention through receipt, screening, escalation, acknowledgement and reconciliation. Ask learners to identify who owns each action and what happens outside working hours.','A completed responsibility map and a short explanation of why a suspected event does not require proof before internal routing.'],
+ ['Medicine and patient language',3,1,'Book Chapters 12, 13 and 22','Identify what the author experienced without diagnosing. Teach brand and generic names, indication versus event, timing, concomitant products, dechallenge and rechallenge as observations, negation, uncertainty and common patient expressions.','Annotate 20 fictional mentions containing slang, typographical errors, sarcasm, quoted text and symptoms present before treatment. Include “not sure it is related” and “my heart is racing” examples.','The learner marks the exact product and event words, identifies the subject, separates reported facts from interpretation and explains unresolved ambiguity. “Racing heart” must not silently become a confirmed cardiac diagnosis.','cases'],
+ ['Digital sources and program context',4,1,'Book Chapters 1 and 24 | Official readings [2,3]','Apply the approved activity brief to a mention. Compare company channels, external platforms, planned listening, incidental discoveries, market research and patient support activities. Teach source classification as a program decision approved by PV.','Compare the same text appearing on a client-owned page, in a planned external listening dataset and in an incidental discovery. Use the appropriate client procedure for each context.','A completed activity worksheet with source category, dataset boundary, escalation route and the procedure version used. A classification disagreement goes to PV; the learner does not resolve it by assuming all channels follow one rule.','clock'],
+ ['Case elements and incomplete information',4,2,'Book Chapters 12 and 24 | Official readings [2,4]','Locate a patient, reporter, suspect or interacting medicine, and event or relevant observation. Teach identifiability using the approved regional and client criteria; a full legal name is not the universal test. Distinguish missing from unavailable information.','Compare first-person reports, caregivers, vague group claims and anonymous profiles. Complete an evidence worksheet for each element and record what is missing. Include a near-miss scenario to teach that relevant observations can have regional exceptions to the usual patient requirement [2].','15 completed worksheets with an explicit disposition. An incomplete safety concern enters the agreed potential-case route; the absence of four elements does not automatically justify rejection.'],
+ ['Seriousness and urgent escalation',3,2,'Book Chapter 13 | Official reading [5]','Recognize possible death, life-threatening events, admission or prolonged hospitalization, significant disability, congenital anomaly and other medically important events. Explain that intensity and regulatory seriousness are different concepts.','Sort scenarios involving a painful headache, hospital admission, an emergency visit without admission, breathing difficulty and an unspecified “bad reaction.” An emergency visit alone does not automatically establish hospitalization; other seriousness criteria still need consideration [5].','A triage decision with the exact supporting words and uncertainty recorded. Potential urgency is escalated under the client’s procedure without waiting for a confirmed diagnosis or complete case.','cases'],
+ ['Special situations and product complaints',3,2,'Book Chapters 18–20 and 23 where applicable | Official readings [2,4,6]','Recognize pregnancy or breastfeeding exposure, pediatric concerns, overdose, misuse, abuse, medication errors, occupational exposure, lack of effect, off-label use and product quality concerns. Teach each through the client’s handling matrix, including situations without an adverse outcome.','Classify 20 examples by safety route, quality route, both or another agreed route. Include a damaged injector with an injury and pregnancy exposure without reported harm.','An annotated routing matrix. Staff must avoid both declaring every special situation a reportable ADR and treating every no-harm mention as irrelevant.','cases'],
+ ['Evidence capture and client notifications',4,3,'Book Chapters 22 and 24 | Official reading [4]','Create a traceable transfer record. Practice source text, relevant thread context, source links and IDs, timestamp handling, product/event extraction, uncertainty, approved translation and factual narrative writing.','Produce five notification packets from fictional threads, including an edited post, a deleted-source simulation and a non-English mention. Compare the original and translated meaning. Apply the client’s privacy and retention rules.','Packets that preserve what the source said and clearly distinguish unknown information. Learners must not infer age, country, diagnosis or causality from a profile, image or demographic stereotype. Use approved storage and transfer systems.'],
+ ['Clocks and reliable transfer',3,3,'Book Chapters 1 and 24 | Official readings [2,4]','Calculate the contractual transfer deadline from the correct trigger and prove receipt. Teach source-sensitive day-zero rules, calendar versus business time, time zones, follow-up clocks, holidays, backup contacts and failed-delivery escalation.','Run Friday-evening, daylight-saving, delayed-discovery and system-outage scenarios using client-approved time rules. Record posting, collection, awareness, review, send and receipt separately.','A timestamped handoff log with the rule used. QA review must not reset an earlier applicable clock. Teach the agreed vendor deadline rather than presenting a regulator’s submission window as permission for AskSocial to wait.','clock'],
+ ['Duplicates and reviewer calibration',3,3,'Book Chapters 11 and 24 | Official reading [4]','Distinguish a repeated post, a possible same-patient case and new follow-up information. Practice documenting disagreement and obtaining adjudication.','Review reposts, screenshots of another author’s story, changed symptoms and similar accounts on different platforms. Keep source references and explain each proposed link. Two reviewers independently assess the same 20 mentions before discussion.','A disagreement log and corrected rationale. Possible duplicates remain visible for client review under the agreement; a screener must not silently delete a safety concern because it resembles another case.'],
+ ['Client and product qualification',3,4,'Book Chapter 13 plus relevant population chapters','Apply a controlled product and client rulebook. Teach product names and aliases, active ingredients, indications, relevant warnings, common confusions, territorial scope, special-situation handling, transfer fields and escalation contacts.','Screen 20 client-specific fictional or properly de-identified examples, including ambiguous brand attribution and a competitor mention. Use current client-approved labeling and approved terminology resources.','The learner locates the correct rule and explains how it changes the action. Qualification is specific to the assigned client, product, language and procedure version. A new account requires a documented training delta and sign-off.'],
+ ['AI assistance and screening limitations',2,4,'Book Chapter 24','Use approved assistance while verifying the source and keeping human accountability. Teach that a model score is a workflow aid and does not establish medical causality or determine regulatory reportability.','Challenge suggestions containing a missed negation, invented symptom, incorrect product, unsupported patient identity, omitted pregnancy exposure and overconfident duplicate match. Inspect an example that the model marked negative but a reviewer must escalate.','Corrected records with source-backed explanations. Route disagreements to the designated reviewer and log the tool version. Use approved environments for safety information. Model updates that materially affect screening trigger impact review and focused retraining.'],
+ ['End to end rehearsal and audit explanation',2,4,'Book Chapters 1 and 24','Complete the entire workflow and explain its evidence to a client reviewer. Include the boundaries of the staff member’s authorization.','Process a mixed queue, handle an urgent interruption, transfer a case, confirm acknowledgement and reconcile the queue. Then explain one escalation and one non-escalation using the source and the applicable rule.','A complete mock shift record showing that every assigned mention has a disposition, every transfer has an accountable recipient and unresolved items have an owner.','quiz']
+];
+const WEEKS = [
+ ['Foundations','9 taught hours + 2 independent hours','Establish terminology, source context and evidence extraction.',[0,1,2]],
+ ['Identification','10 taught hours + 1 independent hour','Practice identification, urgent routing and special situations.',[3,4,5]],
+ ['Transfer','10 taught hours + 1 independent hour','Build transfer records, apply clocks and calibrate decisions.',[6,7,8]],
+ ['Rehearsal','7 taught hours + 4 independent hours','Complete product training, technology exercises and rehearsal.',[9,10,11]],
+ ['Assessment','4-hour assessment + 6 supervised hours','Remediate any failed domain before independent work.',[]],
+ ['Authorization','6+ supervised hours + authorization review','Extend supervision if the case mix or performance is insufficient.',[]]
+];
+const DISP = ['Potential case for client PV assessment','Incomplete safety concern','Special situation or quality concern','No qualifying safety information identified'];
+const CASES = [
+ ['Uncertain connection','“Not sure it is related, but I have had blurry vision since starting Drug A.”',[0,1],false,'Flag a potential safety concern. Mark product, visual symptom, first-person experience and temporal wording. Assess available reporter and patient information under the approved rules. Do not reject because the author expresses uncertainty.'],
+ ['Question without an experience','“Can Drug A cause nausea? Thinking about starting it.”',[3],false,'No actual exposure or experienced event is stated. Document a hypothetical question and route a medical-information enquiry if that is in scope. Read relevant context before closing.'],
+ ['Potentially serious caregiver report','“My mother was admitted to hospital after she took Drug A and could not breathe.”',[0],true,'Urgent safety escalation. Record the mother as patient and the author as reporter, preserve breathing difficulty and reported admission, and leave causality and medical conclusions for PV assessment.'],
+ ['Pregnancy without reported harm','“I just found out I am pregnant and have been taking Drug A.”',[2],false,'Apply the pregnancy-exposure route. Do not invent an adverse outcome. Use authorized follow-up and the client’s matrix for the information required.'],
+ ['Quality problem with harm','“The Drug A injector broke and cut my hand.”',[2],false,'Consider both safety and quality routes. Preserve device/product details and the injury. Check whether a separate combination-product procedure applies.'],
+ ['Quoted experience','“Reposting @example: ‘Drug A gave me a rash.’”',[1],false,'Preserve attribution and examine accessible source context within the agreed scope. Do not assume the reposter is the patient or treat a repost alone as a proven duplicate. Flag unresolved safety information for adjudication.'],
+ ['Lack of effect','“My seizures are back even though I am taking Drug A exactly as prescribed.”',[0,2],true,'Escalate the reported seizures and lack-of-effect concern; obtain urgent PV assessment under the client’s procedure. Do not reduce this to a routine product-sentiment complaint.'],
+ ['Negation and indication','“Drug A is for my migraines. I have not had nausea or any other side effects.”',[3],false,'Do not extract negated nausea as an AE or automatically classify the indication as an event. Record the rationale; inspect context for any other safety information.']
+];
+const EVENTS = [['Fri 19:40','Posted on platform'],['Sat 06:15','Collected into dataset'],['Mon 09:05','Reviewer identifies safety information'],['Mon 11:30','QA review completed'],['Mon 13:10','Packet sent to client'],['Mon 13:22','Client acknowledges receipt']];
+const CLOCK = [
+ ['A','The post appears on a client-owned page under MAH responsibility, with sufficient information at posting. Which timestamp is day zero?',0,'In E2D(R1), a platform under MAH responsibility can trigger day zero when sufficient information is posted. The weekend does not pause the clock.'],
+ ['B','The same text is found in a planned external listening dataset (ODCS). Which timestamp is day zero?',2,'External ODCS review has a different identification-based rule. Collection is not a universal start date; apply the approved activity rule.']
+];
+const QUIZ = [
+ ['Terminology','A post says “not sure it is related” but describes a new symptom after starting the product. What decides whether you flag it?',['Whether the author is confident about causality','Whether there is a product exposure and a possible unwanted medical occurrence','Whether the event is already on the label'],1,'Do not use a lack of causal certainty as the rejection rule, and do not discard a concern because the event is already labeled.'],
+ ['Seriousness','A mention describes an emergency visit without admission. What follows?',['It counts as hospitalization','It is non-serious by definition','It does not automatically establish hospitalization; consider other seriousness criteria'],2,'An emergency visit alone does not automatically establish hospitalization; other seriousness criteria still need consideration.'],
+ ['Roles','Who makes regulatory reporting decisions?',['The screener who identified the mention','The client, unless a written agreement explicitly delegates them','AskSocial QA'],1,'The client retains regulatory reporting decisions unless a written agreement explicitly delegates them.'],
+ ['Source context','Is every social-media report automatically a spontaneous report?',['Yes','No — the PV lead classifies each activity; planned listening can be an ODCS','Only on client-owned pages'],1,'EMA’s implementation strategy includes planned social listening among examples of an ODCS. The PV lead must classify each activity before training staff on it.'],
+ ['Clocks','QA completes review two hours after you identified a case. Does the clock restart at QA completion?',['Yes, QA completion is day zero','No, QA review must not reset an earlier applicable clock','Only outside business hours'],1,'Substituting collection or QA completion as a universal start date is incorrect.'],
+ ['AI assistance','The model scores a mention negative, but the text describes a symptom after taking the product. What do you do?',['Close it; the score is the decision','Verify against the source and escalate; the score is a workflow aid','Wait for the model to be retrained'],1,'A model score is a workflow aid and does not establish medical causality or determine regulatory reportability. Route disagreements to the designated reviewer.'],
+ ['Duplicates','A new post looks like a case already transferred. What do you do?',['Delete it as a duplicate','Keep it visible, link the possible duplicate and explain the proposed link','Merge the text into the earlier case silently'],1,'Possible duplicates remain visible for client review under the agreement; a screener must not silently delete a safety concern.'],
+ ['Privacy','The author’s profile photo suggests an older adult. Should you record an age?',['Yes, estimate it','No — do not infer age, country, diagnosis or causality from a profile or image','Only if it helps the narrative'],1,'Packets must preserve what the source said and clearly distinguish unknown information.']
+];
+class Component extends DCLogic {
+  state = (() => { const d = { view:'map', mod:null, week:0, done:{}, ci:0, cases:{}, clock:{}, qa:null, qi:0, qans:{}, qdone:false };
+    try { return { ...d, ...JSON.parse(localStorage.getItem(LS) || '{}') }; } catch(e) { return d; } })();
+  set(p) { this.setState(p, () => { try { const { view, mod, week, done, ci, cases, clock, qa, qi, qans, qdone } = this.state; localStorage.setItem(LS, JSON.stringify({ view, mod, week, done, ci, cases, clock, qa, qi, qans, qdone })); } catch(e) {} }); }
+  pick(sel, ok, show) {
+    if (show && ok) return { border:'var(--color-text)', bg:'var(--color-text)', color:'var(--color-bg)' };
+    if (show && sel && !ok) return { border:'var(--color-danger)', bg:'var(--color-danger-100)', color:'var(--color-danger-800)' };
+    if (sel) return { border:'var(--color-text)', bg:'var(--color-text)', color:'var(--color-bg)' };
+    return { border:'var(--color-divider)', bg:'transparent', color:'var(--color-text)' };
+  }
+  renderVals() {
+    const s = this.state, fac = this.props.facilitatorMode ?? false, layout = this.props.layout ?? 'Sidebar';
+    const go = (view, extra) => () => this.set({ view, mod:null, ...extra });
+    const openMod = i => () => this.set({ view:'modules', mod:i });
+    const doneN = Object.values(s.done).filter(Boolean).length;
+    const caseOk = i => { const r = s.cases[i]; return r && r.checked && CASES[i][2].includes(r.d) && r.u === CASES[i][3]; };
+    const casesOkN = CASES.filter((_, i) => caseOk(i)).length;
+    const clockN = CLOCK.filter((c, i) => s.clock[i] === c[2]).length + (s.qa === false ? 1 : 0);
+    const qCorrect = QUIZ.filter((q, i) => s.qans[i] === q[3]).length;
+    const total = 12 + 8 + 3 + 1, got = doneN + casesOkN + clockN + (s.qdone && qCorrect / QUIZ.length >= 0.9 ? 1 : 0);
+    const sec = [['map','01','Program map',''],['modules','02','Modules',doneN+'/12'],['cases','03','Practice cases',casesOkN+'/8'],['clock','04','Clock exercise',clockN+'/3'],['quiz','05','Knowledge check',s.qdone ? Math.round(qCorrect/QUIZ.length*100)+'%' : '']];
+    const sections = sec.map(([id,num,label,badge]) => { const on = s.view === id; return { num, label, badge, onClick: go(id), bg: on ? 'var(--color-text)' : 'transparent', color: on ? 'var(--color-bg)' : 'var(--color-text)', rule: on ? 'var(--color-accent)' : 'transparent' }; });
+    const wk = WEEKS[s.week];
+    const m = s.mod != null ? MODS[s.mod] : null;
+    const linkMap = { cases:'Go to practice cases', clock:'Go to the clock exercise', quiz:'Go to the knowledge check' };
+    const cur = s.cases[s.ci] || {}, cc = CASES[s.ci], showKey = fac || cur.checked;
+    const curOk = CASES[s.ci][2].includes(cur.d) && cur.u === cc[3];
+    const qq = QUIZ[Math.min(s.qi, QUIZ.length-1)], qa = s.qans[s.qi];
+    const pct = Math.round(qCorrect / QUIZ.length * 100), pass = pct >= 90;
+    return {
+      isSide: layout === 'Sidebar', isTop: layout !== 'Sidebar',
+      progressLabel: got + ' of ' + total + ' milestones', progressPct: Math.round(got/total*100) + '%',
+      sections,
+      v: { map: s.view==='map', modules: s.view==='modules' && s.mod==null, module: s.view==='modules' && s.mod!=null, cases: s.view==='cases', clock: s.view==='clock', quiz: s.view==='quiz' },
+      goMod1: openMod(0), goCases: go('cases'),
+      weeks: WEEKS.map((w,i) => ({ w:i+1, title:w[0], onClick:() => this.set({ week:i }), bg: i===s.week ? 'var(--color-accent)' : (i<4 ? 'var(--color-surface)' : 'var(--color-neutral-300)'), color: i===s.week ? 'var(--color-bg)' : 'var(--color-text)' })),
+      week: { hrs: 'Week ' + (s.week+1) + ' · ' + wk[1], text: wk[2], mods: wk[3].length ? wk[3].map(i => ({ label:'Module '+(i+1)+' · '+MODS[i][0], onClick: openMod(i) })) : [{ label: s.week===4 ? 'Practice with the knowledge check' : 'Review the practice cases', onClick: go(s.week===4 ? 'quiz' : 'cases') }] },
+      outcomes: ['Recognize potential adverse events and suspected adverse drug reactions in everyday language, including uncertain, indirect and misspelled descriptions.','Distinguish a potential safety concern, an incomplete case, a possible individual case safety report and a separate quality complaint.','Extract source evidence, flag potential seriousness, preserve timestamps and deliver an accurate client notification within the applicable agreement.','Explain a screening decision, identify uncertainty and seek timely PV adjudication.','Apply the approved client and product rules and work within their authorized role.'].map((t,i) => ({ n:'0'+(i+1), t })),
+      modules: MODS.map((x,i) => ({ nn: String(i+1).padStart(2,'0'), t:x[0], hrs:x[1], week:x[2], doneLabel: s.done[i] ? 'COMPLETE' : '', bg: s.done[i] ? 'var(--color-surface)' : 'var(--color-bg)', onClick: openMod(i) })),
+      mod: m ? { nn:String(s.mod+1).padStart(2,'0'), t:m[0], meta: m[1]+' taught hours · Week '+m[2]+' · '+m[3], obj:m[4], ex:m[5], ev:m[6], btnClass: s.done[s.mod] ? 'btn btn-secondary' : 'btn btn-primary', btnLabel: s.done[s.mod] ? 'Completed — mark incomplete' : 'Mark evidence signed off', hasLink: !!m[7], linkLabel: linkMap[m[7]] || '', linkClick: go(m[7]) } : {},
+      toggleDone: () => this.set({ done: { ...s.done, [s.mod]: !s.done[s.mod] } }),
+      closeMod: () => this.set({ mod:null }),
+      prevMod: () => this.set({ mod: (s.mod + 11) % 12 }), nextMod: () => this.set({ mod: (s.mod + 1) % 12 }),
+      caseList: CASES.map((c,i) => { const on = i===s.ci, r = s.cases[i]; return { n:i+1, t:c[0], status: !r || !r.checked ? 'Open' : (caseOk(i) ? 'Matched key' : 'Review'), onClick:() => this.set({ ci:i }), bg: on ? 'var(--color-text)' : 'transparent', color: on ? 'var(--color-bg)' : 'var(--color-text)' }; }),
+      cs: { n:s.ci+1, t:cc[0], q:cc[1], key:cc[4], showKey, accepted: cc[2].map(i => DISP[i]).join(' or ') + ' · Urgent: ' + (cc[3] ? 'Yes' : 'No'),
+        verdict: !cur.checked ? 'Facilitator view' : (curOk ? 'Matches the facilitator key' : 'Differs from the facilitator key — compare your reasoning'),
+        verdictBg: !cur.checked ? 'var(--color-accent)' : (curOk ? 'var(--color-text)' : 'var(--color-danger)'), verdictColor: 'var(--color-bg)' },
+      dispOpts: DISP.map((label,i) => ({ label, onClick:() => this.set({ cases:{ ...s.cases, [s.ci]:{ ...cur, d:i, checked:false } } }), ...this.pick(cur.d===i, cc[2].includes(i), showKey) })),
+      urgOpts: [['Yes',true],['No',false]].map(([label,val]) => ({ label, onClick:() => this.set({ cases:{ ...s.cases, [s.ci]:{ ...cur, u:val, checked:false } } }), ...this.pick(cur.u===val, cc[3]===val, showKey) })),
+      cannotCheck: cur.d == null || cur.u == null,
+      checkCase: () => this.set({ cases:{ ...s.cases, [s.ci]:{ ...cur, checked:true } } }),
+      nextCase: () => this.set({ ci:(s.ci+1) % CASES.length }),
+      clockQs: CLOCK.map((c,qi) => { const a = s.clock[qi], ans = a != null; return { letter:c[0], prompt:c[1], answered: ans, res: a===c[2] ? 'Correct.' : 'Not this one.', resColor: a===c[2] ? 'var(--color-text)' : 'var(--color-danger)', fb: c[3],
+        events: EVENTS.map((e,i) => ({ t:e[0], label:e[1], onClick:() => this.set({ clock:{ ...s.clock, [qi]:i } }), ...this.pick(a===i, c[2]===i, ans) })) }; }),
+      qaOpts: [['Yes',true],['No',false]].map(([label,val]) => ({ label, onClick:() => this.set({ qa:val }), ...this.pick(s.qa===val, val===false, s.qa!=null) })),
+      qa: { answered: s.qa != null, res: s.qa===false ? 'Correct.' : 'No.', resColor: s.qa===false ? 'var(--color-text)' : 'var(--color-danger)' },
+      resetClock: () => this.set({ clock:{}, qa:null }),
+      quizActive: !s.qdone, quizDone: s.qdone,
+      quizDots: QUIZ.map((q,i) => ({ bg: s.qans[i]==null ? (i===s.qi ? 'var(--color-text)' : 'var(--color-neutral-300)') : (s.qans[i]===q[3] ? 'var(--color-text)' : 'var(--color-danger)') })),
+      qz: { n:s.qi+1, total:QUIZ.length, domain:qq[0], q:qq[1], answered: qa!=null, res: qa===qq[3] ? 'Correct.' : 'Incorrect.', resColor: qa===qq[3] ? 'var(--color-text)' : 'var(--color-danger)', why: qq[4], nextLabel: s.qi === QUIZ.length-1 ? 'See score' : 'Next question',
+        opts: qq[2].map((label,i) => ({ label, onClick:() => { if (qa==null) this.set({ qans:{ ...s.qans, [s.qi]:i } }); }, ...this.pick(qa===i, qq[3]===i, qa!=null || fac) })) },
+      nextQ: () => s.qi === QUIZ.length-1 ? this.set({ qdone:true }) : this.set({ qi:s.qi+1 }),
+      score: { pct: pct+'%', color: pass ? 'var(--color-text)' : 'var(--color-danger)', line: qCorrect+' of '+QUIZ.length+' correct · '+(pass ? 'Meets the 90 percent threshold' : 'Below the 90 percent threshold'), note: pass ? 'The formal assessment adds a three-hour blinded screening of 120 unseen mentions and at least 12 supervised hours before authorization.' : 'Identify the domains you missed, revisit the matching modules, and retake. Formal retests use a different assessment form.' },
+      resetQuiz: () => this.set({ qi:0, qans:{}, qdone:false })
+    };
+  }
+}
+</script>
+</body>
+</html>

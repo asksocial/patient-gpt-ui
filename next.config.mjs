@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
+  async redirects() {
+    return [
+      {
+        source: "/academy",
+        destination: "/academy/index.html",
+        permanent: false,
+      },
+    ];
+  },
   outputFileTracingIncludes: {
     "/api/executive/brief": ["./data/glp-1.csv"],
     "/api/chat/session": ["./data/*.csv"],
