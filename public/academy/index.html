@@ -8,10 +8,11 @@
 <link rel="icon" type="image/png" href="assets/asksocial-logo.png">
 <script src="vendor/react.production.min.js"></script>
 <script src="vendor/react-dom.production.min.js"></script>
+<script src="assurance-data.js"></script>
 <script src="assets/dc-runtime.js"></script>
 </head>
 <body>
-<div style="padding:12px 24px;background:#e3f4f0;color:#0b2822;font-family:Arial,sans-serif;font-size:14px;line-height:1.5"><a href="assurance.html" style="color:#005a4d;font-weight:700">Operating Model and Sponsor Assurance — modules 13–19 →</a><span style="display:block">All completion flags are browser-local practice. Named qualification and supervisor authorization are maintained separately.</span></div>
+<div style="padding:10px 24px;background:#e3f4f0;color:#0b2822;font-family:Arial,sans-serif;font-size:13px;line-height:1.5">All completion flags are browser-local practice. Named qualification and supervisor authorization are maintained separately.</div>
 <x-dc>
 <helmet>
 <link rel="stylesheet" href="assets/styles.css">
@@ -23,7 +24,7 @@
       <img src="assets/asksocial-logo.png" alt="AskSocial" style="height:34px;width:auto;display:block">
       <div style="display:flex;flex-direction:column;border-left:1px solid var(--color-divider);padding-left:14px">
         <span style="font-weight:700;font-size:17px;letter-spacing:-0.01em">PV Academy</span>
-        <span style="font-size:12px;color:var(--color-neutral-700)">Screener pathway · Curriculum v1.0 · Proposed program for internal PV approval</span>
+        <span style="font-size:12px;color:var(--color-neutral-700)">Screener pathway · Curriculum v1.1 · Proposed program for internal PV approval</span>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:14px;min-width:260px">
@@ -57,17 +58,17 @@
         <h1 style="font-size:46px;max-width:18ch;margin:0 0 18px">Recognize, document, transfer.</h1>
         <p style="font-size:17px;max-width:66ch;text-wrap:pretty">AskSocial PV Academy will prepare staff to recognize potential medicine safety information in digital mentions, document what the source actually says, and transfer it to the client through an agreed safety process.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));border-top:2px solid var(--color-text);margin:28px 0 10px">
-          <div style="padding:16px 20px 16px 0;border-right:2px solid var(--color-divider)"><div style="font-size:44px;font-weight:800;line-height:1">36 h</div><div style="font-size:13px;margin-top:6px">Instruction and practical workshops</div></div>
+          <div style="padding:16px 20px 16px 0;border-right:2px solid var(--color-divider)"><div style="font-size:44px;font-weight:800;line-height:1">50 h</div><div style="font-size:13px;margin-top:6px">Instruction and practical workshops</div></div>
           <div style="padding:16px 20px;border-right:2px solid var(--color-divider)"><div style="font-size:44px;font-weight:800;line-height:1">8 h</div><div style="font-size:13px;margin-top:6px">Reading and independent practice</div></div>
           <div style="padding:16px 20px;border-right:2px solid var(--color-divider)"><div style="font-size:44px;font-weight:800;line-height:1">4 h</div><div style="font-size:13px;margin-top:6px">Assessment</div></div>
           <div style="padding:16px 20px"><div style="font-size:44px;font-weight:800;line-height:1;color:var(--color-accent)">12+ h</div><div style="font-size:13px;margin-top:6px">Supervised screening</div></div>
         </div>
-        <p style="font-size:13px;color:var(--color-neutral-700);max-width:68ch;margin:0">Completion requires demonstrated competence; elapsed time alone does not qualify a reviewer.</p>
+        <p style="font-size:13px;color:var(--color-neutral-700);max-width:68ch;margin:0">74 hours minimum across the combined pathway. Completion requires demonstrated competence; elapsed time alone does not qualify a reviewer.</p>
 
-        <h3 style="margin:40px 0 6px">Six week delivery plan</h3>
-        <p style="font-size:14px;color:var(--color-neutral-700);margin:0 0 14px">Select a week.</p>
+        <h3 style="margin:40px 0 6px">Eight week delivery plan</h3>
+        <p style="font-size:14px;color:var(--color-neutral-700);margin:0 0 14px">Follow modules 1–12 for screening foundations, then 13–19 for the operating model and sponsor assurance. Select a week.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:2px;background:var(--color-bg)">
-          <sc-for list="{{ weeks }}" as="w" hint-placeholder-count="6">
+          <sc-for list="{{ weeks }}" as="w" hint-placeholder-count="8">
             <button onClick="{{ w.onClick }}" style="text-align:left;border:0;cursor:pointer;padding:14px;font-family:var(--font-body);min-height:104px;display:flex;flex-direction:column;justify-content:space-between;gap:6px;background:{{ w.bg }};color:{{ w.color }}">
               <span style="font-size:12px;font-weight:600">Week {{ w.w }}</span>
               <span style="font-size:17px;font-weight:800;line-height:1.15;overflow-wrap:break-word;hyphens:auto">{{ w.title }}</span>
@@ -84,6 +85,7 @@
           </div>
         </div>
 
+        <h3 style="margin:32px 0 8px">39 practice milestones</h3><p style="font-size:14px;max-width:76ch">19 lesson review flags + 8 mention cases + 7 operating scenarios + 3 clock checks + 2 knowledge checkpoints. Knowledge checkpoints cover 8 core and 14 assurance questions, each requiring at least 90% for its practice milestone. Assessor acceptance and qualification remain separate.</p>
         <h3 style="margin:40px 0 14px">What you should be able to do</h3>
         <div style="display:flex;flex-direction:column;border-top:2px solid var(--color-text)">
           <sc-for list="{{ outcomes }}" as="o" hint-placeholder-count="5">
@@ -99,17 +101,17 @@
         </div>
         <p style="font-size:14px;max-width:72ch;margin:18px 0 0;text-wrap:pretty">Staff must not discard a concern merely because causality is uncertain, an event is already labeled, or all case details are unavailable.</p>
         <div style="display:flex;gap:12px;margin-top:32px;flex-wrap:wrap">
-          <button class="btn btn-primary" onClick="{{ goMod1 }}" style="min-width:200px;justify-content:flex-start">Start Module 1 →</button>
+          <button class="btn btn-primary" onClick="{{ goMod1 }}" style="min-width:200px;justify-content:flex-start">{{ continueLabel }}</button>
           <button class="btn btn-secondary" onClick="{{ goCases }}" style="min-width:200px;justify-content:flex-start">Practice cases →</button>
         </div>
       </sc-if>
 
       <sc-if value="{{ v.modules }}" hint-placeholder-val="{{ false }}">
         <h6 style="color:var(--color-accent-700);margin:0 0 8px">02 — Modules</h6>
-        <h2 style="margin:0 0 8px">Twelve core modules</h2>
+        <h2 style="margin:0 0 8px">Nineteen sequential modules</h2>
         <p style="color:var(--color-neutral-700);margin:0 0 24px">Open a module for its objective, exercise and evidence. Use the practice flag to track your review; assessor acceptance and authorization are recorded separately.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
-          <sc-for list="{{ modules }}" as="m" hint-placeholder-count="12">
+          <sc-for list="{{ modules }}" as="m" hint-placeholder-count="19">
             <button onClick="{{ m.onClick }}" style="text-align:left;border:0;cursor:pointer;padding:18px;background:{{ m.bg }};font-family:var(--font-body);color:var(--color-text);display:flex;flex-direction:column;gap:8px;min-height:150px" style-hover="background:var(--color-neutral-200)">
               <div style="display:flex;justify-content:space-between;align-items:center;width:100%"><span style="font-size:28px;font-weight:800;color:var(--color-accent)">{{ m.nn }}</span><span style="font-size:11px;font-weight:800;color:var(--color-accent-700)">{{ m.doneLabel }}</span></div>
               <span style="font-size:16px;font-weight:800;line-height:1.2">{{ m.t }}</span>
@@ -122,7 +124,7 @@
       <sc-if value="{{ v.module }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:24px">
           <button class="btn btn-ghost" onClick="{{ closeMod }}">← All modules</button>
-          <div style="display:flex;gap:8px"><button class="btn btn-secondary" onClick="{{ prevMod }}">← Previous</button><button class="btn btn-secondary" onClick="{{ nextMod }}">Next →</button></div>
+          <div style="display:flex;gap:8px"><button class="btn btn-secondary" onClick="{{ prevMod }}" disabled="{{ mod.isFirst }}">← Previous</button><button class="btn btn-secondary" onClick="{{ nextMod }}">{{ mod.nextLabel }}</button></div>
         </div>
         <div style="display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;border-bottom:2px solid var(--color-text);padding-bottom:20px">
           <div style="font-size:96px;font-weight:800;line-height:0.8;color:var(--color-accent)">{{ mod.nn }}</div>
@@ -136,15 +138,34 @@
           <div style="padding:20px;border-right:2px solid var(--color-divider)"><h6 style="color:var(--color-accent-700)">Exercise</h6><p style="font-size:14px;text-wrap:pretty;margin:0">{{ mod.ex }}</p></div>
           <div style="padding:20px 0 20px 20px"><h6 style="color:var(--color-accent-700)">Evidence</h6><p style="font-size:14px;text-wrap:pretty;margin:0">{{ mod.ev }}</p></div>
         </div>
+        <sc-if value="{{ mod.isOps }}" hint-placeholder-val="{{ false }}">
+          <h3 style="margin:28px 0 12px">Lesson content</h3>
+          <sc-for list="{{ opsTeaching }}" as="p" hint-placeholder-count="3"><p style="font-size:15px;max-width:78ch;line-height:1.6">{{ p.text }}</p></sc-for>
+          <h3 style="margin:28px 0 10px">Operating scenario</h3>
+          <p style="font-weight:700;max-width:76ch">{{ ops.scenario }}</p>
+          <div style="display:flex;flex-direction:column;gap:8px;max-width:760px">
+            <sc-for list="{{ opsOptions }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.onClick }}" style="text-align:left;cursor:pointer;padding:12px 14px;font-family:var(--font-body);font-size:15px;border:2px solid {{ o.border }};background:{{ o.bg }};color:{{ o.color }}">{{ o.label }}</button></sc-for>
+          </div>
+          <button class="btn btn-primary" onClick="{{ checkOps }}" disabled="{{ ops.cannotCheck }}" style="margin-top:16px">Check scenario reasoning</button>
+          <sc-if value="{{ ops.checked }}" hint-placeholder-val="{{ false }}"><p role="status" style="padding:14px;background:var(--color-surface);max-width:78ch"><strong>{{ ops.verdict }}</strong> {{ ops.feedback }}</p></sc-if>
+          <h3 style="margin:28px 0 10px">Assessed worksheet</h3>
+          <ol><sc-for list="{{ opsWorksheet }}" as="w" hint-placeholder-count="3"><li style="margin:8px 0;max-width:76ch">{{ w.text }}</li></sc-for></ol>
+          <p style="font-size:14px;max-width:78ch"><strong>Critical error:</strong> {{ ops.critical }}</p>
+          <p style="font-size:14px;max-width:78ch">Complete the worksheet in the approved training repository with a qualified assessor. Retain actual outputs, versions, observed actions, comments and remediation. A matched practice answer does not constitute worksheet acceptance or authorization. Do not enter personnel details, real safety information or credentials here.</p>
+        </sc-if>
         <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;align-items:center">
           <button class="{{ mod.btnClass }}" onClick="{{ toggleDone }}" style="min-width:240px;justify-content:flex-start">{{ mod.btnLabel }}</button>
           <sc-if value="{{ mod.hasLink }}" hint-placeholder-val="{{ false }}"><button class="btn btn-ghost" onClick="{{ mod.linkClick }}">{{ mod.linkLabel }} →</button></sc-if>
+          <button class="btn btn-secondary" onClick="{{ nextMod }}">{{ mod.continueLabel }}</button>
         </div>
       </sc-if>
 
       <sc-if value="{{ v.cases }}" hint-placeholder-val="{{ false }}">
         <h6 style="color:var(--color-accent-700);margin:0 0 8px">03 — Practice cases</h6>
-        <h2 style="margin:0 0 8px">Classify the mention</h2>
+        <h2 style="margin:0 0 8px">Eight mention cases and seven operating scenarios</h2>
+        <p style="font-size:14px;margin:12px 0">The operating scenarios are embedded in modules 13–19. Open a module to read the lesson, complete its scenario and prepare its assessed worksheet.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px"><sc-for list="{{ opsScenarioLinks }}" as="o" hint-placeholder-count="7"><button class="btn btn-secondary" onClick="{{ o.onClick }}">{{ o.label }}</button></sc-for></div>
+        <h3>Classify the mention</h3>
         <p style="color:var(--color-neutral-700);margin:0 0 24px;max-width:76ch;font-size:14px">All examples are invented. Drug A is a placeholder. These are teaching dispositions for client escalation, not definitive regulatory reporting decisions.</p>
         <div style="display:flex;flex-wrap:wrap;border-top:2px solid var(--color-text)">
           <div style="flex:1 1 190px;max-width:240px;border-right:2px solid var(--color-divider)">
@@ -202,7 +223,7 @@
               <h6 style="margin:0 0 4px;color:var(--color-accent-700)">Scenario {{ q.letter }}</h6>
               <p style="font-weight:800;font-size:17px;margin:0 0 14px;max-width:66ch">{{ q.prompt }}</p>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:2px;background:var(--color-bg)">
-                <sc-for list="{{ q.events }}" as="e" hint-placeholder-count="6">
+                <sc-for list="{{ q.events }}" as="e" hint-placeholder-count="8">
                   <button onClick="{{ e.onClick }}" style="text-align:left;cursor:pointer;padding:12px;font-family:var(--font-body);display:flex;flex-direction:column;gap:4px;min-height:92px;border:2px solid {{ e.border }};background:{{ e.bg }};color:{{ e.color }}">
                     <span style="font-size:18px;font-weight:800">{{ e.t }}</span>
                     <span style="font-size:13px;font-weight:600;line-height:1.3">{{ e.label }}</span>
@@ -233,10 +254,10 @@
       <sc-if value="{{ v.quiz }}" hint-placeholder-val="{{ false }}">
         <h6 style="color:var(--color-accent-700);margin:0 0 8px">05 — Knowledge check</h6>
         <h2 style="margin:0 0 8px">Practice questions</h2>
-        <p style="color:var(--color-neutral-700);margin:0 0 24px;max-width:74ch;font-size:14px">The formal knowledge assessment is 40 questions in one hour and requires at least 90 percent correct. This practice set uses the same threshold.</p>
+        <p style="color:var(--color-neutral-700);margin:0 0 24px;max-width:74ch;font-size:14px">This combined practice sequence has 22 questions: 8 core screening questions followed by 14 operating model and sponsor assurance questions. Each checkpoint needs at least 90% for its practice milestone. The separate formal core assessment is 40 questions in one hour, followed by the controlled screening assessment and supervised practice; website scores do not authorize screening.</p>
         <sc-if value="{{ quizActive }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex;gap:4px;margin-bottom:20px">
-            <sc-for list="{{ quizDots }}" as="d" hint-placeholder-count="8">
+            <sc-for list="{{ quizDots }}" as="d" hint-placeholder-count="22">
               <div style="flex:1;height:6px;background:{{ d.bg }}"></div>
             </sc-for>
           </div>
@@ -256,7 +277,7 @@
           <div style="border-top:2px solid var(--color-text);padding-top:20px">
             <div style="font-size:96px;font-weight:800;line-height:0.9;color:{{ score.color }}">{{ score.pct }}</div>
             <p style="font-size:18px;font-weight:800;margin:12px 0 6px">{{ score.line }}</p>
-            <p style="max-width:66ch;font-size:14px">{{ score.note }}</p>
+            <p style="font-size:15px">{{ score.checkpoints }}</p><p style="max-width:76ch;font-size:14px">{{ score.note }}</p>
             <button class="btn btn-secondary" onClick="{{ resetQuiz }}" style="margin-top:8px">Retake</button>
           </div>
         </sc-if>
@@ -287,7 +308,9 @@ const WEEKS = [
  ['Identification','10 taught hours + 1 independent hour','Practice identification, urgent routing and special situations.',[3,4,5]],
  ['Transfer','10 taught hours + 1 independent hour','Build transfer records, apply clocks and calibrate decisions.',[6,7,8]],
  ['Rehearsal','7 taught hours + 4 independent hours','Complete product training, technology exercises and rehearsal.',[9,10,11]],
- ['Assessment','4-hour assessment + 6 supervised hours','Remediate any failed domain before independent work.',[]],
+ ['Operating model','8 taught hours','Complete modules 13–16: portfolio scope, coverage, named authorization and sponsor agreements.',[12,13,14,15]],
+ ['Sponsor assurance','6 taught hours','Complete modules 17–19: audits and inspections, regulatory review, and sponsor transfers.',[16,17,18]],
+ ['Assessment','4-hour assessment + 6 supervised hours','Complete formal assessments and assessor-observed worksheets; remediate before independent work.',[]],
  ['Authorization','6+ supervised hours + authorization review','Extend supervision if the case mix or performance is insufficient.',[]]
 ];
 const DISP = ['Potential case for client PV assessment','Incomplete safety concern','Special situation or quality concern','No qualifying safety information identified'];
@@ -316,10 +339,51 @@ const QUIZ = [
  ['Duplicates','A new post looks like a case already transferred. What do you do?',['Delete it as a duplicate','Keep it visible, link the possible duplicate and explain the proposed link','Merge the text into the earlier case silently'],1,'Possible duplicates remain visible for client review under the agreement; a screener must not silently delete a safety concern.'],
  ['Privacy','The author’s profile photo suggests an older adult. Should you record an age?',['Yes, estimate it','No — do not infer age, country, diagnosis or causality from a profile or image','Only if it helps the narrative'],1,'Packets must preserve what the source said and clearly distinguish unknown information.']
 ];
+const ASSURANCE = window.assuranceLessons || [];
+MODS.push(...ASSURANCE.map(l => [l.title,2,l.id<=16?5:6,l.doc+' | Operating Model and Sponsor Assurance',l.objective,l.scenario,l.output]));
+const CORE_QUIZ_COUNT = QUIZ.length;
+QUIZ.push(...ASSURANCE.flatMap(l => l.questions.map(q => [l.title,q[0],q[1],q[2],q[3]])));
+function initialAcademyState(storage, hash) {
+  const defaults = { schemaVersion:2, view:'map', mod:null, week:0, done:{}, ci:0, cases:{}, clock:{}, qa:null, qi:0, qans:{}, qdone:false, opsCases:{}, qcompleted:{} };
+  const object = v => v && typeof v==='object' && !Array.isArray(v) ? v : {};
+  const read = key => { try { return object(JSON.parse(storage.getItem(key)||'{}')); } catch (_) { return {}; } };
+  const old=read(LS), s={...defaults,...old,schemaVersion:2};
+  for(const key of ['done','cases','clock','qans','opsCases','qcompleted']) s[key]={...object(s[key])};
+  if(old.schemaVersion!==2) {
+    const extra=read('askSocial.assurancePractice.v0.1');
+    for(const l of ASSURANCE) {
+      if(object(extra.reviewed)[l.id]===true) s.done[l.id-1]=true;
+      const r=object(object(extra.scenarios)[l.id]);
+      if(Number.isInteger(r.choice)&&r.choice>=0&&r.choice<l.options.length) s.opsCases[l.id]={choice:r.choice,checked:r.checked===true};
+    }
+    for(let i=0;i<QUIZ.length-CORE_QUIZ_COUNT;i++) {
+      const answer=object(extra.answers)[i];
+      if(Number.isInteger(answer)&&answer>=0&&answer<QUIZ[CORE_QUIZ_COUNT+i][2].length) s.qans[CORE_QUIZ_COUNT+i]=answer;
+    }
+    s.qcompleted={core:old.qdone===true&&QUIZ.slice(0,CORE_QUIZ_COUNT).every((_,i)=>s.qans[i]!=null),assurance:extra.submitted===true&&QUIZ.slice(CORE_QUIZ_COUNT).every((_,i)=>s.qans[CORE_QUIZ_COUNT+i]!=null)};
+    s.qdone=s.qcompleted.core&&s.qcompleted.assurance;
+    if(old.qdone&&!s.qdone) { const firstMissing=QUIZ.findIndex((_,i)=>s.qans[i]==null); s.qi=firstMissing<0?CORE_QUIZ_COUNT:firstMissing; }
+    if(Number.isInteger(old.week)&&old.week>=4) s.week=old.week+2;
+  }
+  if(!['map','modules','cases','clock','quiz'].includes(s.view)) s.view='map';
+  if(!Number.isInteger(s.mod)||s.mod<0||s.mod>=MODS.length) s.mod=null;
+  for(const [key,max] of [['week',WEEKS.length-1],['ci',CASES.length-1],['qi',QUIZ.length-1]]) if(!Number.isInteger(s[key])||s[key]<0||s[key]>max)s[key]=0;
+  s.qa=s.qa===true?true:s.qa===false?false:null;
+  const direct=/^#module-(\d+)$/.exec(hash||'');
+  if(direct&&Number(direct[1])>=1&&Number(direct[1])<=MODS.length) {s.view='modules';s.mod=Number(direct[1])-1;}
+  try { storage.setItem(LS,JSON.stringify(s)); } catch (_) {}
+  return s;
+}
 class Component extends DCLogic {
-  state = (() => { const d = { view:'map', mod:null, week:0, done:{}, ci:0, cases:{}, clock:{}, qa:null, qi:0, qans:{}, qdone:false };
-    try { return { ...d, ...JSON.parse(localStorage.getItem(LS) || '{}') }; } catch(e) { return d; } })();
-  set(p) { this.setState(p, () => { try { const { view, mod, week, done, ci, cases, clock, qa, qi, qans, qdone } = this.state; localStorage.setItem(LS, JSON.stringify({ view, mod, week, done, ci, cases, clock, qa, qi, qans, qdone })); } catch(e) {} }); }
+  state = initialAcademyState(localStorage, location.hash);
+  set(p) { this.setState(p, () => {
+    try { localStorage.setItem(LS,JSON.stringify(this.state)); } catch (_) {}
+    if ('view' in p || 'mod' in p) {
+      const hash=this.state.view==='modules'&&this.state.mod!=null?'#module-'+(this.state.mod+1):'';
+      try { history.replaceState(null,'',location.pathname+location.search+hash); } catch (_) {}
+      window.scrollTo({top:0});
+    }
+  }); }
   pick(sel, ok, show) {
     if (show && ok) return { border:'var(--color-text)', bg:'var(--color-text)', color:'var(--color-bg)' };
     if (show && sel && !ok) return { border:'var(--color-danger)', bg:'var(--color-danger-100)', color:'var(--color-danger-800)' };
@@ -330,13 +394,21 @@ class Component extends DCLogic {
     const s = this.state, fac = this.props.facilitatorMode ?? false, layout = this.props.layout ?? 'Sidebar';
     const go = (view, extra) => () => this.set({ view, mod:null, ...extra });
     const openMod = i => () => this.set({ view:'modules', mod:i });
-    const doneN = Object.values(s.done).filter(Boolean).length;
+    const doneN = MODS.filter((_,i)=>s.done[i]===true).length;
     const caseOk = i => { const r = s.cases[i]; return r && r.checked && CASES[i][2].includes(r.d) && r.u === CASES[i][3]; };
     const casesOkN = CASES.filter((_, i) => caseOk(i)).length;
     const clockN = CLOCK.filter((c, i) => s.clock[i] === c[2]).length + (s.qa === false ? 1 : 0);
     const qCorrect = QUIZ.filter((q, i) => s.qans[i] === q[3]).length;
-    const total = 12 + 8 + 3 + 1, got = doneN + casesOkN + clockN + (s.qdone && qCorrect / QUIZ.length >= 0.9 ? 1 : 0);
-    const sec = [['map','01','Program map',''],['modules','02','Modules',doneN+'/12'],['cases','03','Practice cases',casesOkN+'/8'],['clock','04','Clock exercise',clockN+'/3'],['quiz','05','Knowledge check',s.qdone ? Math.round(qCorrect/QUIZ.length*100)+'%' : '']];
+    const coreCorrect=QUIZ.slice(0,CORE_QUIZ_COUNT).filter((q,i)=>s.qans[i]===q[3]).length;
+    const assuranceCorrect=QUIZ.slice(CORE_QUIZ_COUNT).filter((q,i)=>s.qans[CORE_QUIZ_COUNT+i]===q[3]).length;
+    const corePass=s.qcompleted.core===true&&coreCorrect/CORE_QUIZ_COUNT>=0.9;
+    const assurancePass=s.qcompleted.assurance===true&&assuranceCorrect/(QUIZ.length-CORE_QUIZ_COUNT)>=0.9;
+    const knowledgeN=Number(corePass)+Number(assurancePass);
+    const opsOk=l=>s.opsCases[l.id]?.checked===true&&s.opsCases[l.id].choice===l.answer;
+    const opsN=ASSURANCE.filter(opsOk).length;
+    const total=MODS.length+CASES.length+ASSURANCE.length+CLOCK.length+1+2;
+    const got=doneN+casesOkN+opsN+clockN+knowledgeN;
+    const sec = [['map','01','Program map',''],['modules','02','Modules',doneN+'/'+MODS.length],['cases','03','Practice cases',(casesOkN+opsN)+'/'+(CASES.length+ASSURANCE.length)],['clock','04','Clock exercise',clockN+'/3'],['quiz','05','Knowledge check',knowledgeN+'/2']];
     const sections = sec.map(([id,num,label,badge]) => { const on = s.view === id; return { num, label, badge, onClick: go(id), bg: on ? 'var(--color-text)' : 'transparent', color: on ? 'var(--color-bg)' : 'var(--color-text)', rule: on ? 'var(--color-accent)' : 'transparent' }; });
     const wk = WEEKS[s.week];
     const m = s.mod != null ? MODS[s.mod] : null;
@@ -344,21 +416,30 @@ class Component extends DCLogic {
     const cur = s.cases[s.ci] || {}, cc = CASES[s.ci], showKey = fac || cur.checked;
     const curOk = CASES[s.ci][2].includes(cur.d) && cur.u === cc[3];
     const qq = QUIZ[Math.min(s.qi, QUIZ.length-1)], qa = s.qans[s.qi];
-    const pct = Math.round(qCorrect / QUIZ.length * 100), pass = pct >= 90;
+    const pct = Math.round(qCorrect / QUIZ.length * 100), pass = corePass&&assurancePass;
+    const lesson=ASSURANCE.find(l=>l.id===s.mod+1), op=lesson?(s.opsCases[lesson.id]||{}):{};
+    const firstUnreviewed=MODS.findIndex((_,i)=>!s.done[i]);
+    const lastModule=s.mod===MODS.length-1;
     return {
       isSide: layout === 'Sidebar', isTop: layout !== 'Sidebar',
-      progressLabel: got + ' of ' + total + ' milestones', progressPct: Math.round(got/total*100) + '%',
+      progressLabel: got + ' of ' + total + ' practice milestones', progressPct: Math.round(got/total*100) + '%',
       sections,
       v: { map: s.view==='map', modules: s.view==='modules' && s.mod==null, module: s.view==='modules' && s.mod!=null, cases: s.view==='cases', clock: s.view==='clock', quiz: s.view==='quiz' },
-      goMod1: openMod(0), goCases: go('cases'),
+      goMod1: firstUnreviewed<0?go('quiz'):openMod(firstUnreviewed), continueLabel: firstUnreviewed<0?'Continue to knowledge check →':(firstUnreviewed===0?'Start Module 1 →':'Continue to Module '+(firstUnreviewed+1)+' →'), goCases: go('cases'),
       weeks: WEEKS.map((w,i) => ({ w:i+1, title:w[0], onClick:() => this.set({ week:i }), bg: i===s.week ? 'var(--color-accent)' : (i<4 ? 'var(--color-surface)' : 'var(--color-neutral-300)'), color: i===s.week ? 'var(--color-bg)' : 'var(--color-text)' })),
-      week: { hrs: 'Week ' + (s.week+1) + ' · ' + wk[1], text: wk[2], mods: wk[3].length ? wk[3].map(i => ({ label:'Module '+(i+1)+' · '+MODS[i][0], onClick: openMod(i) })) : [{ label: s.week===4 ? 'Practice with the knowledge check' : 'Review the practice cases', onClick: go(s.week===4 ? 'quiz' : 'cases') }] },
+      week: { hrs: 'Week ' + (s.week+1) + ' · ' + wk[1], text: wk[2], mods: wk[3].length ? wk[3].map(i => ({ label:'Module '+(i+1)+' · '+MODS[i][0], onClick: openMod(i) })) : [{ label: s.week===6 ? 'Practice with the knowledge check' : 'Review the practice cases', onClick: go(s.week===6 ? 'quiz' : 'cases') }] },
       outcomes: ['Recognize potential adverse events and suspected adverse drug reactions in everyday language, including uncertain, indirect and misspelled descriptions.','Distinguish a potential safety concern, an incomplete case, a possible individual case safety report and a separate quality complaint.','Extract source evidence, flag potential seriousness, preserve timestamps and deliver an accurate client notification within the applicable agreement.','Explain a screening decision, identify uncertainty and seek timely PV adjudication.','Apply the approved client and product rules and work within their authorized role.'].map((t,i) => ({ n:'0'+(i+1), t })),
       modules: MODS.map((x,i) => ({ nn: String(i+1).padStart(2,'0'), t:x[0], hrs:x[1], week:x[2], doneLabel: s.done[i] ? 'REVIEWED' : '', bg: s.done[i] ? 'var(--color-surface)' : 'var(--color-bg)', onClick: openMod(i) })),
-      mod: m ? { nn:String(s.mod+1).padStart(2,'0'), t:m[0], meta: m[1]+' taught hours · Week '+m[2]+' · '+m[3], obj:m[4], ex:m[5], ev:m[6], btnClass: s.done[s.mod] ? 'btn btn-secondary' : 'btn btn-primary', btnLabel: s.done[s.mod] ? 'Lesson reviewed — undo practice flag' : 'Mark lesson reviewed for practice', hasLink: !!m[7], linkLabel: linkMap[m[7]] || '', linkClick: go(m[7]) } : {},
+      mod: m ? { nn:String(s.mod+1).padStart(2,'0'), t:m[0], meta: m[1]+' taught hours · Week '+m[2]+' · '+m[3], obj:m[4], ex:m[5], ev:m[6], isOps:!!lesson, isFirst:s.mod===0, nextLabel:lastModule?'Knowledge check →':'Next →', continueLabel:lastModule?'Continue to knowledge check →':'Continue to Module '+(s.mod+2)+' →', btnClass: s.done[s.mod] ? 'btn btn-secondary' : 'btn btn-primary', btnLabel: s.done[s.mod] ? 'Lesson reviewed — undo practice flag' : 'Mark lesson reviewed for practice', hasLink: !!m[7] && s.mod!==11, linkLabel: linkMap[m[7]] || '', linkClick: go(m[7]) } : {},
       toggleDone: () => this.set({ done: { ...s.done, [s.mod]: !s.done[s.mod] } }),
       closeMod: () => this.set({ mod:null }),
-      prevMod: () => this.set({ mod: (s.mod + 11) % 12 }), nextMod: () => this.set({ mod: (s.mod + 1) % 12 }),
+      prevMod: () => { if(s.mod>0)this.set({mod:s.mod-1}); }, nextMod: () => lastModule?this.set({view:'quiz',mod:null}):this.set({mod:s.mod+1}),
+      opsTeaching:lesson?lesson.teaching.map(text=>({text})):[],
+      opsWorksheet:lesson?lesson.worksheet.map(text=>({text})):[],
+      ops:lesson?{scenario:lesson.scenario,critical:lesson.critical,cannotCheck:op.choice==null,checked:!!op.checked,verdict:opsOk(lesson)?'Matches the teaching key.':'Review your reasoning.',feedback:lesson.feedback}:{},
+      opsOptions:lesson?lesson.options.map((label,i)=>({label,onClick:()=>this.set({opsCases:{...s.opsCases,[lesson.id]:{choice:i,checked:false}}}),...this.pick(op.choice===i,i===lesson.answer,!!op.checked)})):[],
+      checkOps:()=>{if(lesson&&op.choice!=null)this.set({opsCases:{...s.opsCases,[lesson.id]:{...op,checked:true}}});},
+      opsScenarioLinks:ASSURANCE.map(l=>({label:'Module '+l.id+' · '+(opsOk(l)?'Matched key':'Open scenario'),onClick:openMod(l.id-1)})),
       caseList: CASES.map((c,i) => { const on = i===s.ci, r = s.cases[i]; return { n:i+1, t:c[0], status: !r || !r.checked ? 'Open' : (caseOk(i) ? 'Matched key' : 'Review'), onClick:() => this.set({ ci:i }), bg: on ? 'var(--color-text)' : 'transparent', color: on ? 'var(--color-bg)' : 'var(--color-text)' }; }),
       cs: { n:s.ci+1, t:cc[0], q:cc[1], key:cc[4], showKey, accepted: cc[2].map(i => DISP[i]).join(' or ') + ' · Urgent: ' + (cc[3] ? 'Yes' : 'No'),
         verdict: !cur.checked ? 'Facilitator view' : (curOk ? 'Matches the facilitator key' : 'Differs from the facilitator key — compare your reasoning'),
@@ -377,9 +458,9 @@ class Component extends DCLogic {
       quizDots: QUIZ.map((q,i) => ({ bg: s.qans[i]==null ? (i===s.qi ? 'var(--color-text)' : 'var(--color-neutral-300)') : (s.qans[i]===q[3] ? 'var(--color-text)' : 'var(--color-danger)') })),
       qz: { n:s.qi+1, total:QUIZ.length, domain:qq[0], q:qq[1], answered: qa!=null, res: qa===qq[3] ? 'Correct.' : 'Incorrect.', resColor: qa===qq[3] ? 'var(--color-text)' : 'var(--color-danger)', why: qq[4], nextLabel: s.qi === QUIZ.length-1 ? 'See score' : 'Next question',
         opts: qq[2].map((label,i) => ({ label, onClick:() => { if (qa==null) this.set({ qans:{ ...s.qans, [s.qi]:i } }); }, ...this.pick(qa===i, qq[3]===i, qa!=null || fac) })) },
-      nextQ: () => s.qi === QUIZ.length-1 ? this.set({ qdone:true }) : this.set({ qi:s.qi+1 }),
-      score: { pct: pct+'%', color: pass ? 'var(--color-text)' : 'var(--color-danger)', line: qCorrect+' of '+QUIZ.length+' correct · '+(pass ? 'Meets the 90 percent threshold' : 'Below the 90 percent threshold'), note: pass ? 'The formal assessment adds a three-hour blinded screening of 120 unseen mentions and at least 12 supervised hours before authorization.' : 'Identify the domains you missed, revisit the matching modules, and retake. Formal retests use a different assessment form.' },
-      resetQuiz: () => this.set({ qi:0, qans:{}, qdone:false })
+      nextQ: () => { const qcompleted={...s.qcompleted}; if(s.qi===CORE_QUIZ_COUNT-1)qcompleted.core=true; if(s.qi===QUIZ.length-1)qcompleted.assurance=true; this.set(s.qi===QUIZ.length-1?{qdone:true,qcompleted}:{qi:s.qi+1,qcompleted}); },
+      score: {pct:pct+'%',color:pass?'var(--color-text)':'var(--color-danger)',line:qCorrect+' of '+QUIZ.length+' correct · '+(pass?'Both practice checkpoints passed':'Review the checkpoint results'),checkpoints:'Core screening: '+coreCorrect+'/'+CORE_QUIZ_COUNT+' · '+(corePass?'Passed':'Not passed')+' | Sponsor assurance: '+assuranceCorrect+'/'+(QUIZ.length-CORE_QUIZ_COUNT)+' · '+(assurancePass?'Passed':'Not passed'),note:'Each checkpoint requires at least 90%. These practice results are not authorization. Formal assessment, observed worksheets, supervised practice and client-specific approval remain separate.'},
+      resetQuiz: () => this.set({ qi:0, qans:{}, qdone:false, qcompleted:{} })
     };
   }
 }
