@@ -37,3 +37,29 @@ covers the actual template, inline scenarios and knowledge progression.
 All stored completion is browser-local practice. The site supplies no named
 authorization, supervisor signatures, centralized qualification records,
 executed sponsor agreements or operational-validation evidence.
+
+## Interactive module exercises
+
+Every module (1–19) now includes an in-page interactive exercise, so the learner can complete
+each exercise named in the curriculum without a facilitator or an external repository. Content
+follows the guide's item counts: for example 20 annotated mentions (module 2), 15 case-element
+worksheets (module 4), a 20-example routing matrix (module 6), five notification packets
+(module 7), 20 calibration mentions with an independent second reviewer (module 9) and 20
+client-rulebook examples (module 10). Modules 13–19 turn each assessed worksheet into written
+answers that the learner compares with a model answer and self-marks against a checklist.
+In total there are 202 items with 254 scored parts.
+
+Item types: single choice (with optional multiple accepted answers), select-all, word tagging,
+ordering, and written answer with model answer and checklist. All content is invented; "Drug A",
+"Velarin", "tirofazone" and "Northbay Therapeutics" are fictional.
+
+Files: `public/academy/assets/exercises.js` (engine), `assets/exercises.css`, and
+`exercises-data-core-a.js`, `-core-b.js`, `-core-c.js`, `exercises-data-assurance.js` (content).
+The engine mounts into `#pv-exercise-host` in the module view and stores progress under its own
+key, `pvAcademy.exercises.v1`, so the 39-milestone tracker, storage schema 2 and its migration are
+unchanged. Exercise scores do not count toward the 39 milestones and, like all browser progress,
+are practice only: not assessor acceptance, qualification or authorization.
+
+Run `node scripts/qa/test-academy-exercises.mjs` to check content integrity: every answer index is
+valid, every tag key is present in its text, item counts meet the guide, and every key scores as
+correct.
