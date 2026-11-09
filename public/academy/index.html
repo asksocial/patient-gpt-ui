@@ -10,6 +10,12 @@
 <script src="vendor/react-dom.production.min.js"></script>
 <script src="assurance-data.js"></script>
 <script src="assets/dc-runtime.js"></script>
+<link rel="stylesheet" href="assets/exercises.css">
+<script src="exercises-data-core-a.js" defer></script>
+<script src="exercises-data-core-b.js" defer></script>
+<script src="exercises-data-core-c.js" defer></script>
+<script src="exercises-data-assurance.js" defer></script>
+<script src="assets/exercises.js" defer></script>
 </head>
 <body>
 <div style="padding:10px 24px;background:#e3f4f0;color:#0b2822;font-family:Arial,sans-serif;font-size:13px;line-height:1.5">All completion flags are browser-local practice. Named qualification and supervisor authorization are maintained separately.</div>
@@ -112,7 +118,7 @@
       <sc-if value="{{ v.modules }}" hint-placeholder-val="{{ false }}">
         <h6 style="color:var(--color-accent-700);margin:0 0 8px">02 — Modules</h6>
         <h2 style="margin:0 0 8px">Nineteen sequential modules</h2>
-        <p style="color:var(--color-neutral-700);margin:0 0 24px">Open a module for its objective, exercise and evidence. Use the practice flag to track your review; assessor acceptance and authorization are recorded separately.</p>
+        <p style="color:var(--color-neutral-700);margin:0 0 24px">Open a module for its objective, its interactive exercise and the evidence it builds. Use the practice flag to track your review; assessor acceptance and authorization are recorded separately.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
           <sc-for list="{{ modules }}" as="m" hint-placeholder-count="19">
             <button onClick="{{ m.onClick }}" style="text-align:left;border:0;cursor:pointer;padding:18px;background:{{ m.bg }};font-family:var(--font-body);color:var(--color-text);display:flex;flex-direction:column;gap:8px;min-height:150px" style-hover="background:var(--color-neutral-200)">
@@ -151,11 +157,10 @@
           </div>
           <button class="btn btn-primary" onClick="{{ checkOps }}" disabled="{{ ops.cannotCheck }}" style="margin-top:16px">Check scenario reasoning</button>
           <sc-if value="{{ ops.checked }}" hint-placeholder-val="{{ false }}"><p role="status" style="padding:14px;background:var(--color-surface);max-width:78ch"><strong>{{ ops.verdict }}</strong> {{ ops.feedback }}</p></sc-if>
-          <h3 style="margin:28px 0 10px">Assessed worksheet</h3>
-          <ol><sc-for list="{{ opsWorksheet }}" as="w" hint-placeholder-count="3"><li style="margin:8px 0;max-width:76ch">{{ w.text }}</li></sc-for></ol>
           <p style="font-size:14px;max-width:78ch"><strong>Critical error:</strong> {{ ops.critical }}</p>
-          <p style="font-size:14px;max-width:78ch">Complete the worksheet in the approved training repository with a qualified assessor. Retain actual outputs, versions, observed actions, comments and remediation. A matched practice answer does not constitute worksheet acceptance or authorization. Do not enter personnel details, real safety information or credentials here.</p>
+          <p style="font-size:14px;max-width:78ch">Complete the worksheet in the interactive exercise below: write each answer, compare it with the model answer and self-mark the checklist. Practice results stay in this browser and do not constitute worksheet acceptance or authorization. Use fictional details only; do not enter personnel details, real safety information or credentials.</p>
         </sc-if>
+        <div id="pv-exercise-host" data-module="{{ mod.nn }}"></div>
         <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;align-items:center">
           <button class="{{ mod.btnClass }}" onClick="{{ toggleDone }}" style="min-width:240px;justify-content:flex-start">{{ mod.btnLabel }}</button>
           <sc-if value="{{ mod.hasLink }}" hint-placeholder-val="{{ false }}"><button class="btn btn-ghost" onClick="{{ mod.linkClick }}">{{ mod.linkLabel }} →</button></sc-if>
@@ -202,7 +207,7 @@
               <div style="margin-top:24px;border-top:2px solid var(--color-text)">
                 <div style="padding:10px 14px;font-weight:800;background:{{ cs.verdictBg }};color:{{ cs.verdictColor }}">{{ cs.verdict }}</div>
                 <div style="padding:16px 14px;background:var(--color-surface)">
-                  <h6 style="color:var(--color-accent-700)">Facilitator key — expected action</h6>
+                  <h6 style="color:var(--color-accent-700)">Answer key — expected action</h6>
                   <p style="margin:0 0 10px;font-size:15px;text-wrap:pretty;max-width:70ch">{{ cs.key }}</p>
                   <p style="margin:0;font-size:13px;color:var(--color-neutral-700)">Accepted: {{ cs.accepted }}</p>
                 </div>
@@ -446,7 +451,7 @@ class Component extends DCLogic {
       opsScenarioLinks:ASSURANCE.map(l=>({label:'Module '+l.id+' · '+(opsOk(l)?'Matched key':'Open scenario'),onClick:openMod(l.id-1)})),
       caseList: CASES.map((c,i) => { const on = i===s.ci, r = s.cases[i]; return { n:i+1, t:c[0], status: !r || !r.checked ? 'Open' : (caseOk(i) ? 'Matched key' : 'Review'), onClick:() => this.set({ ci:i }), bg: on ? 'var(--color-text)' : 'transparent', color: on ? 'var(--color-bg)' : 'var(--color-text)' }; }),
       cs: { n:s.ci+1, t:cc[0], q:cc[1], key:cc[4], showKey, accepted: cc[2].map(i => DISP[i]).join(' or ') + ' · Urgent: ' + (cc[3] ? 'Yes' : 'No'),
-        verdict: !cur.checked ? 'Facilitator view' : (curOk ? 'Matches the facilitator key' : 'Differs from the facilitator key — compare your reasoning'),
+        verdict: !cur.checked ? 'Facilitator view' : (curOk ? 'Matches the answer key' : 'Differs from the answer key — compare your reasoning'),
         verdictBg: !cur.checked ? 'var(--color-accent)' : (curOk ? 'var(--color-text)' : 'var(--color-danger)'), verdictColor: 'var(--color-bg)' },
       dispOpts: DISP.map((label,i) => ({ label, onClick:() => this.set({ cases:{ ...s.cases, [s.ci]:{ ...cur, d:i, checked:false } } }), ...this.pick(cur.d===i, cc[2].includes(i), showKey) })),
       urgOpts: [['Yes',true],['No',false]].map(([label,val]) => ({ label, onClick:() => this.set({ cases:{ ...s.cases, [s.ci]:{ ...cur, u:val, checked:false } } }), ...this.pick(cur.u===val, cc[3]===val, showKey) })),
