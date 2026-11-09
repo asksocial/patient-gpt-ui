@@ -288,7 +288,7 @@
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;layout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Sidebar&quot;,&quot;Top tabs&quot;],&quot;default&quot;:&quot;Sidebar&quot;,&quot;tsType&quot;:&quot;'Sidebar'|'Top tabs'&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;facilitatorMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
-const LS = 'pvAcademy.v1';
+const LS = 'pvAcademy.v2';
 const MODS = [
  ['PV foundations and AskSocial responsibilities',2,1,'Book Chapter 1 | Official readings [2,4]','Explain the path from an online mention to client safety review, using plain language. Teach adverse event, adverse drug reaction, individual case safety report or ICSR, marketing authorisation holder or MAH, and the roles of screening, QA and client PV.','Trace one fictional mention through receipt, screening, escalation, acknowledgement and reconciliation. Ask learners to identify who owns each action and what happens outside working hours.','A completed responsibility map and a short explanation of why a suspected event does not require proof before internal routing.'],
  ['Medicine and patient language',3,1,'Book Chapters 12, 13 and 22','Identify what the author experienced without diagnosing. Teach brand and generic names, indication versus event, timing, concomitant products, dechallenge and rechallenge as observations, negation, uncertainty and common patient expressions.','Annotate 20 fictional mentions containing slang, typographical errors, sarcasm, quoted text and symptoms present before treatment. Include “not sure it is related” and “my heart is racing” examples.','The learner marks the exact product and event words, identifies the subject, separates reported facts from interpretation and explains unresolved ambiguity. “Racing heart” must not silently become a confirmed cardiac diagnosis.','cases'],
@@ -347,7 +347,8 @@ function initialAcademyState(storage, hash) {
   const defaults = { schemaVersion:2, view:'map', mod:null, week:0, done:{}, ci:0, cases:{}, clock:{}, qa:null, qi:0, qans:{}, qdone:false, opsCases:{}, qcompleted:{} };
   const object = v => v && typeof v==='object' && !Array.isArray(v) ? v : {};
   const read = key => { try { return object(JSON.parse(storage.getItem(key)||'{}')); } catch (_) { return {}; } };
-  const old=read(LS), s={...defaults,...old,schemaVersion:2};
+  const current=read(LS);
+  const old=Object.keys(current).length?current:read('pvAcademy.v1'), s={...defaults,...old,schemaVersion:2};
   for(const key of ['done','cases','clock','qans','opsCases','qcompleted']) s[key]={...object(s[key])};
   if(old.schemaVersion!==2) {
     const extra=read('askSocial.assurancePractice.v0.1');

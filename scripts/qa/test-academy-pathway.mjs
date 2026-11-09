@@ -9,7 +9,7 @@ function academy(core={},extra={},hash='') {
   const records=new Map([['pvAcademy.v1',JSON.stringify(core)],['askSocial.assurancePractice.v0.1',JSON.stringify(extra)]]);
   const context={window:{scrollTo(){}},localStorage:{getItem:k=>records.get(k)||null,setItem:(k,v)=>records.set(k,v)},location:{hash,pathname:'/academy/index.html',search:''},history:{replaceState(){}},DCLogic:class {props={};setState(p,done){this.state={...this.state,...p};done?.();}}};
   vm.createContext(context);vm.runInContext(lessons,context);vm.runInContext(source+'\nglobalThis.testAcademy={app:new Component(),mods:MODS,weeks:WEEKS,quiz:QUIZ,cases:CASES,clock:CLOCK,assurance:ASSURANCE,reload:()=>initialAcademyState(localStorage,"")};',context);
-  return context.testAcademy;
+  return {...context.testAcademy,records};
 }
 const fresh=academy();
 assert.equal(fresh.mods.length,19);assert.equal(fresh.weeks.length,8);assert.equal(fresh.quiz.length,22);
@@ -24,6 +24,10 @@ const base=academy();const coreAnswers=Object.fromEntries(base.quiz.slice(0,8).m
 const oldCore=academy({done:{0:true,11:true},cases:{0:{d:0,u:false,checked:true}},qans:coreAnswers,qdone:true,week:4,view:'quiz'});
 assert.equal(oldCore.app.state.done[0],true);assert.equal(oldCore.app.state.done[11],true);
 assert.equal(oldCore.app.state.cases[0].checked,true);assert.equal(oldCore.app.state.week,6);
+assert.equal(JSON.parse(oldCore.records.get('pvAcademy.v1')).week,4,'Original core storage must remain unchanged');
+assert.ok(oldCore.records.has('pvAcademy.v2'));
+oldCore.records.set('pvAcademy.v1',JSON.stringify({done:{},schemaVersion:1}));
+assert.equal(oldCore.reload().done[11],true,'An older tab must not overwrite the new tracker');
 assert.equal(oldCore.app.state.qi,8);assert.equal(oldCore.app.state.qdone,false);
 assert.equal(oldCore.app.state.qcompleted.core,true);assert.equal(oldCore.app.state.qcompleted.assurance,false);
 assert.equal(oldCore.app.renderVals().sections[4].badge,'1/2');

@@ -18,13 +18,15 @@ checkpoints. The combined knowledge sequence has eight core and fourteen
 assurance questions. Each checkpoint must independently reach 90%; a strong
 assurance score cannot conceal a failed core checkpoint.
 
-Storage schema 2 retains `pvAcademy.v1`. It migrates original core completion,
+Storage schema 2 writes `pvAcademy.v2` and reads the original `pvAcademy.v1`
+only as a migration source. An older open tab cannot overwrite the new tracker.
+It migrates original core completion,
 case, clock and quiz data and imports reviewed lessons, operating scenarios,
 and quiz answers from `askSocial.assurancePractice.v0.1`. A previously submitted
 core quiz stays a core checkpoint, rather than being treated as a completed
 22-question quiz. A submitted assurance quiz retains its own checkpoint.
 Migration runs once; later undo or retake actions are not overwritten by old
-standalone progress. Both old storage keys are retained; no original key is
+standalone progress. Both old storage keys are retained unchanged; no original key is
 deleted. Historical assessment/authorization weeks map to the new schedule.
 
 Run `node scripts/qa/test-academy-pathway.mjs` from the repository root for
