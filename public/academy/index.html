@@ -94,6 +94,9 @@
           </div>
         </div>
 
+        <h3 style="margin:32px 0 8px">Rooted in established practice</h3>
+        <p style="font-size:14px;max-width:76ch;margin:0 0 8px">Module content maps to the chapters of a standard pharmacovigilance text, written by multidisciplinary experts in pharmaceutical and patient safety. Each core module names the chapters it draws on.</p>
+        <p style="font-size:14px;max-width:76ch;margin:0;padding:12px 16px;border-left:4px solid var(--color-accent);background:var(--color-surface)">{{ bookCitation }}</p>
         <h3 style="margin:32px 0 8px">39 practice milestones</h3><p style="font-size:14px;max-width:76ch">19 lesson review flags + 8 mention cases + 7 operating scenarios + 3 clock checks + 2 knowledge checkpoints. Knowledge checkpoints cover 8 core and 14 assurance questions, each requiring at least 90% for its practice milestone. Assessor acceptance and qualification remain separate.</p>
         <h3 style="margin:40px 0 14px">What you should be able to do</h3>
         <div style="display:flex;flex-direction:column;border-top:2px solid var(--color-text)">
@@ -142,6 +145,16 @@
             <span style="font-size:13px;font-weight:600">{{ mod.meta }}</span>
           </div>
         </div>
+        <sc-if value="{{ mod.hasBook }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:16px 0 14px;border-bottom:2px solid var(--color-divider)">
+            <h6 style="color:var(--color-accent-700);margin:0 0 6px">Textbook foundation</h6>
+            <p style="font-size:13px;margin:0 0 8px;max-width:90ch;color:var(--color-neutral-700)">{{ bookCitation }}</p>
+            <ul style="margin:0;padding-left:18px;font-size:14px;max-width:90ch">
+              <sc-for list="{{ mod.chapters }}" as="c" hint-placeholder-count="2"><li style="margin:3px 0"><strong>Chapter {{ c.n }}</strong> · {{ c.t }}</li></sc-for>
+            </ul>
+            <sc-if value="{{ mod.hasBookNote }}" hint-placeholder-val="{{ false }}"><p style="font-size:13px;margin:8px 0 0;color:var(--color-neutral-700)">{{ mod.bookNote }}</p></sc-if>
+          </div>
+        </sc-if>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));border-bottom:2px solid var(--color-divider)">
           <div style="padding:20px 20px 20px 0;border-right:2px solid var(--color-divider)"><h6 style="color:var(--color-accent-700)">Objective</h6><p style="font-size:14px;text-wrap:pretty;margin:0">{{ mod.obj }}</p></div>
           <div style="padding:20px;border-right:2px solid var(--color-divider)"><h6 style="color:var(--color-accent-700)">Exercise</h6><p style="font-size:14px;text-wrap:pretty;margin:0">{{ mod.ex }}</p></div>
@@ -321,6 +334,35 @@ const WEEKS = [
  ['Assessment','4-hour assessment + 6 supervised hours','Complete formal assessments and assessor-observed worksheets; remediate before independent work.',[]],
  ['Authorization','6+ supervised hours + authorization review','Extend supervision if the case mix or performance is insufficient.',[]]
 ];
+// Course textbook. Chapter titles as published by Elsevier (2nd edition, 2024).
+const BOOK_CITATION = 'Doan T, Lievano F, Scarazzini L, Schubert C, Hendrickson B, editors. Pharmacovigilance: A Practical Approach. 2nd ed. Philadelphia: Elsevier; 2024.';
+const BOOK_CHAPTERS = {
+  1:'Does Regulation Drive Science or Does Science Drive Regulation?',
+  11:'Methods of Signal Detection and Signal Management',
+  12:'Causality Assessment',
+  13:'Examples of Adverse Drug Reactions: Drug-Induced Liver Injury, Renal, Skin, Immune-Mediated Events, and Major Adverse Cardiac Events',
+  18:'Pharmacovigilance in Pregnancy',
+  19:'Pharmacovigilance in Pediatrics',
+  20:'Pharmacovigilance in the Elderly',
+  22:'Application of Human Factors and Health Literacy in Pharmacovigilance',
+  23:'Medical Device Safety Oversight and Surveillance',
+  24:'Information Technology in Pharmacovigilance: Current State and Future Directions'
+};
+// Splits a module reading line ("Book Chapters 18–20 and 23 where applicable | Official readings [2,4]")
+// into the cited chapters, any qualifying note, and the remaining non-book references.
+function bookRefs(text) {
+  const segs = String(text).split(' | ');
+  const bookSeg = segs.find(x => /^Book Chapters?\s/.test(x));
+  const other = segs.filter(x => x !== bookSeg).join(' | ');
+  if (!bookSeg) return { chapters:[], note:'', other };
+  const rest = bookSeg.replace(/^Book Chapters?\s/, '');
+  const list = (/^[\d\s,–\-and]+/.exec(rest) || [''])[0];
+  const nums = [];
+  list.replace(/(\d+)\s*[–-]\s*(\d+)|(\d+)/g, (_, a, b, c) => { if (c) nums.push(+c); else for (let n = +a; n <= +b; n++) nums.push(n); return ''; });
+  const tail = rest.slice(list.length).trim();
+  const note = tail === 'where applicable' ? 'Read the special-population chapters where they apply to the mention.' : tail === 'plus relevant population chapters' ? 'Add the special-population chapters (18–20) relevant to the client’s product.' : tail;
+  return { chapters: nums.map(n => ({ n, t: BOOK_CHAPTERS[n] || '' })), note, other };
+}
 const DISP = ['Potential case for client PV assessment','Incomplete safety concern','Special situation or quality concern','No qualifying safety information identified'];
 const CASES = [
  ['Uncertain connection','“Not sure it is related, but I have had blurry vision since starting Drug A.”',[0,1],false,'Flag a potential safety concern. Mark product, visual symptom, first-person experience and temporal wording. Assess available reporter and patient information under the approved rules. Do not reject because the author expresses uncertainty.'],
@@ -429,8 +471,9 @@ class Component extends DCLogic {
     const lesson=ASSURANCE.find(l=>l.id===s.mod+1), op=lesson?(s.opsCases[lesson.id]||{}):{};
     const firstUnreviewed=MODS.findIndex((_,i)=>!s.done[i]);
     const lastModule=s.mod===MODS.length-1;
+    const bk=m?bookRefs(m[3]):{chapters:[],note:'',other:''};
     return {
-      isSide: layout === 'Sidebar', isTop: layout !== 'Sidebar',
+      isSide: layout === 'Sidebar', isTop: layout !== 'Sidebar', bookCitation: BOOK_CITATION,
       progressLabel: got + ' of ' + total + ' practice milestones', progressPct: Math.round(got/total*100) + '%',
       sections,
       v: { map: s.view==='map', modules: s.view==='modules' && s.mod==null, module: s.view==='modules' && s.mod!=null, cases: s.view==='cases', clock: s.view==='clock', quiz: s.view==='quiz' },
@@ -439,7 +482,7 @@ class Component extends DCLogic {
       week: { hrs: 'Week ' + (s.week+1) + ' · ' + wk[1], text: wk[2], mods: wk[3].length ? wk[3].map(i => ({ label:'Module '+(i+1)+' · '+MODS[i][0], onClick: openMod(i) })) : [{ label: s.week===6 ? 'Practice with the knowledge check' : 'Review the practice cases', onClick: go(s.week===6 ? 'quiz' : 'cases') }] },
       outcomes: ['Recognize potential adverse events and suspected adverse drug reactions in everyday language, including uncertain, indirect and misspelled descriptions.','Distinguish a potential safety concern, an incomplete case, a possible individual case safety report and a separate quality complaint.','Extract source evidence, flag potential seriousness, preserve timestamps and deliver an accurate client notification within the applicable agreement.','Explain a screening decision, identify uncertainty and seek timely PV adjudication.','Apply the approved client and product rules and work within their authorized role.'].map((t,i) => ({ n:'0'+(i+1), t })),
       modules: MODS.map((x,i) => ({ nn: String(i+1).padStart(2,'0'), t:x[0], hrs:x[1], week:x[2], doneLabel: s.done[i] ? 'REVIEWED' : '', bg: s.done[i] ? 'var(--color-surface)' : 'var(--color-bg)', onClick: openMod(i) })),
-      mod: m ? { nn:String(s.mod+1).padStart(2,'0'), t:m[0], meta: m[1]+' taught hours · Week '+m[2]+' · '+m[3], obj:m[4], ex:m[5], ev:m[6], isOps:!!lesson, isFirst:s.mod===0, nextLabel:lastModule?'Knowledge check →':'Next →', continueLabel:lastModule?'Continue to knowledge check →':'Continue to Module '+(s.mod+2)+' →', btnClass: s.done[s.mod] ? 'btn btn-secondary' : 'btn btn-primary', btnLabel: s.done[s.mod] ? 'Lesson reviewed — undo practice flag' : 'Mark lesson reviewed for practice', hasLink: !!m[7] && s.mod!==11, linkLabel: linkMap[m[7]] || '', linkClick: go(m[7]) } : {},
+      mod: m ? { nn:String(s.mod+1).padStart(2,'0'), t:m[0], meta: m[1]+' taught hours · Week '+m[2]+(bk.other?' · '+bk.other:''), hasBook: bk.chapters.length>0, chapters: bk.chapters, hasBookNote: !!bk.note, bookNote: bk.note, obj:m[4], ex:m[5], ev:m[6], isOps:!!lesson, isFirst:s.mod===0, nextLabel:lastModule?'Knowledge check →':'Next →', continueLabel:lastModule?'Continue to knowledge check →':'Continue to Module '+(s.mod+2)+' →', btnClass: s.done[s.mod] ? 'btn btn-secondary' : 'btn btn-primary', btnLabel: s.done[s.mod] ? 'Lesson reviewed — undo practice flag' : 'Mark lesson reviewed for practice', hasLink: !!m[7] && s.mod!==11, linkLabel: linkMap[m[7]] || '', linkClick: go(m[7]) } : {},
       toggleDone: () => this.set({ done: { ...s.done, [s.mod]: !s.done[s.mod] } }),
       closeMod: () => this.set({ mod:null }),
       prevMod: () => { if(s.mod>0)this.set({mod:s.mod-1}); }, nextMod: () => lastModule?this.set({view:'quiz',mod:null}):this.set({mod:s.mod+1}),
