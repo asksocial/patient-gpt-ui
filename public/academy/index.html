@@ -11,6 +11,7 @@
 <script src="assets/dc-runtime.js"></script>
 </head>
 <body>
+<div style="padding:12px 24px;background:#e3f4f0;color:#0b2822;font-family:Arial,sans-serif;font-size:14px;line-height:1.5"><a href="assurance.html" style="color:#005a4d;font-weight:700">Operating Model and Sponsor Assurance — modules 13–19 →</a><span style="display:block">All completion flags are browser-local practice. Named qualification and supervisor authorization are maintained separately.</span></div>
 <x-dc>
 <helmet>
 <link rel="stylesheet" href="assets/styles.css">
@@ -106,7 +107,7 @@
       <sc-if value="{{ v.modules }}" hint-placeholder-val="{{ false }}">
         <h6 style="color:var(--color-accent-700);margin:0 0 8px">02 — Modules</h6>
         <h2 style="margin:0 0 8px">Twelve core modules</h2>
-        <p style="color:var(--color-neutral-700);margin:0 0 24px">Open a module for its objective, exercise and evidence. Mark it complete once your evidence is signed off.</p>
+        <p style="color:var(--color-neutral-700);margin:0 0 24px">Open a module for its objective, exercise and evidence. Use the practice flag to track your review; assessor acceptance and authorization are recorded separately.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
           <sc-for list="{{ modules }}" as="m" hint-placeholder-count="12">
             <button onClick="{{ m.onClick }}" style="text-align:left;border:0;cursor:pointer;padding:18px;background:{{ m.bg }};font-family:var(--font-body);color:var(--color-text);display:flex;flex-direction:column;gap:8px;min-height:150px" style-hover="background:var(--color-neutral-200)">
@@ -353,8 +354,8 @@ class Component extends DCLogic {
       weeks: WEEKS.map((w,i) => ({ w:i+1, title:w[0], onClick:() => this.set({ week:i }), bg: i===s.week ? 'var(--color-accent)' : (i<4 ? 'var(--color-surface)' : 'var(--color-neutral-300)'), color: i===s.week ? 'var(--color-bg)' : 'var(--color-text)' })),
       week: { hrs: 'Week ' + (s.week+1) + ' · ' + wk[1], text: wk[2], mods: wk[3].length ? wk[3].map(i => ({ label:'Module '+(i+1)+' · '+MODS[i][0], onClick: openMod(i) })) : [{ label: s.week===4 ? 'Practice with the knowledge check' : 'Review the practice cases', onClick: go(s.week===4 ? 'quiz' : 'cases') }] },
       outcomes: ['Recognize potential adverse events and suspected adverse drug reactions in everyday language, including uncertain, indirect and misspelled descriptions.','Distinguish a potential safety concern, an incomplete case, a possible individual case safety report and a separate quality complaint.','Extract source evidence, flag potential seriousness, preserve timestamps and deliver an accurate client notification within the applicable agreement.','Explain a screening decision, identify uncertainty and seek timely PV adjudication.','Apply the approved client and product rules and work within their authorized role.'].map((t,i) => ({ n:'0'+(i+1), t })),
-      modules: MODS.map((x,i) => ({ nn: String(i+1).padStart(2,'0'), t:x[0], hrs:x[1], week:x[2], doneLabel: s.done[i] ? 'COMPLETE' : '', bg: s.done[i] ? 'var(--color-surface)' : 'var(--color-bg)', onClick: openMod(i) })),
-      mod: m ? { nn:String(s.mod+1).padStart(2,'0'), t:m[0], meta: m[1]+' taught hours · Week '+m[2]+' · '+m[3], obj:m[4], ex:m[5], ev:m[6], btnClass: s.done[s.mod] ? 'btn btn-secondary' : 'btn btn-primary', btnLabel: s.done[s.mod] ? 'Completed — mark incomplete' : 'Mark evidence signed off', hasLink: !!m[7], linkLabel: linkMap[m[7]] || '', linkClick: go(m[7]) } : {},
+      modules: MODS.map((x,i) => ({ nn: String(i+1).padStart(2,'0'), t:x[0], hrs:x[1], week:x[2], doneLabel: s.done[i] ? 'REVIEWED' : '', bg: s.done[i] ? 'var(--color-surface)' : 'var(--color-bg)', onClick: openMod(i) })),
+      mod: m ? { nn:String(s.mod+1).padStart(2,'0'), t:m[0], meta: m[1]+' taught hours · Week '+m[2]+' · '+m[3], obj:m[4], ex:m[5], ev:m[6], btnClass: s.done[s.mod] ? 'btn btn-secondary' : 'btn btn-primary', btnLabel: s.done[s.mod] ? 'Lesson reviewed — undo practice flag' : 'Mark lesson reviewed for practice', hasLink: !!m[7], linkLabel: linkMap[m[7]] || '', linkClick: go(m[7]) } : {},
       toggleDone: () => this.set({ done: { ...s.done, [s.mod]: !s.done[s.mod] } }),
       closeMod: () => this.set({ mod:null }),
       prevMod: () => this.set({ mod: (s.mod + 11) % 12 }), nextMod: () => this.set({ mod: (s.mod + 1) % 12 }),
