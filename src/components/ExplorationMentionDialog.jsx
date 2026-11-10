@@ -28,6 +28,15 @@ export default function ExplorationMentionDialog({ mention, theme, onClose }) {
     <dialog ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId}
       className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-6xl overflow-visible border-0 bg-transparent p-0 text-[#123b32] backdrop:bg-black/80"
       onCancel={event => { event.preventDefault(); onClose(); }}
+      onKeyDown={event => {
+        if (event.key !== "Tab") return;
+        const controls = event.currentTarget.querySelectorAll('button:not(:disabled), a[href]');
+        const first = controls[0], last = controls[controls.length - 1];
+        if ((event.shiftKey && document.activeElement === first) || (!event.shiftKey && document.activeElement === last)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first)?.focus();
+        }
+      }}
       onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
       <div className="max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl border border-[#d6e0db] bg-white p-6 shadow-2xl sm:p-8">
         <div className="flex items-start justify-between gap-4">
