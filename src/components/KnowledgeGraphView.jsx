@@ -358,8 +358,6 @@ export default function KnowledgeGraphView({
                   level={{ high: 3, moderate: 2, directional: 1 }[node.confidence] || 0} />
                 <CardStatus label="Corroboration" value={node.triangulation} tone="corroboration"
                   level={{ strong: 3, moderate: 2, directional: 1, single_source: 1 }[node.triangulation] || 0} />
-              </div>
-              <div className="mt-2.5">
                 <CardStatus label="Trajectory" value={trajectory} tone={trend.tone}
                   arrow={trend.arrow} />
               </div>
