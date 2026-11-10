@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { clientGroupForClassification } from "../../answering/personas/clientAudienceGroups";
 import { buildQuestionEvidence } from "../../answering/search/buildQuestionEvidence";
 import { resolveQuestionGeography, sourceCountryLabel } from "../../answering/search/geography";
 import { searchRecordText, subjectsForQuestion, topicsForQuestion } from "../../answering/search/searchSubjects";
@@ -14,6 +16,13 @@ import { getCanonicalCorpusRevision, getCanonicalCorpusSourceFiles } from "./loa
 import { classifyGlp1Audience } from "../../ingestion/glp1Audience";
 type CorpusBundle = { summary: PersonaIntelligenceSummary; records: PersonaRecord[]; findingRecords: PersonaRecord[] };
 const cache = new Map<string, CorpusBundle>();
+// Content hashes stay stable across separately bundled server functions;
+// deployment paths and extraction timestamps are not corpus identities.
+export function getAudienceCorpusRevision(area: string) {
+  const hash = createHash("sha256").update(normalizeTherapeuticAreaId(area));
+  for (const file of getCanonicalCorpusSourceFiles(area)) hash.update(readFileSync(file));
+  return hash.digest("hex");
+}
 
 /** Full input corpus, before query filtering/ranking. CSV source rows include
  * excluded content; curated corpora use their complete canonical records. */
@@ -47,6 +56,7 @@ function loadCorpusBundle(therapeuticArea: string, findings: CanonicalFinding[])
     records.push({ findingId: finding.findingId || source.id, summary: finding.summary, rawMetadata: { fields }, audienceClassification: finding.audienceClassification || classifyCorpusAudience(fields, profile, { retained: true, persona: finding.personas || (Array.isArray(source.persona) ? source.persona : source.persona ? [source.persona] : []) }) });
   }
   const summary = buildPersonaIntelligence(records, { scope: "full_corpus", analyticalCount: findings.length });
+  summary.evidenceContext = { therapeuticArea, question: "", corpusRevision: getAudienceCorpusRevision(therapeuticArea) };
   if (area !== "glp_1") {
     summary.recordUnit = additional.some(finding => (finding as SourceFinding).sourceType === "curated" || finding.evidence?.some(evidence => evidence.sourceType === "curated")) ? "records" : "posts";
     summary.additionalExclusionLabel = `other filtered ${summary.recordUnit}`;
@@ -75,6 +85,7 @@ export function selectSearchCorpusForQuestion(therapeuticArea: string, findings:
   const matchingSource = bundle.records.filter(focus.matches);
   const matchingFindings = findings.filter((_, index) => focus.matches(bundle.findingRecords[index]));
   const summary = buildPersonaIntelligence(matchingSource, { scope: "question_corpus", analyticalCount: matchingFindings.length });
+  summary.evidenceContext = { ...bundle.summary.evidenceContext!, question };
   summary.recordUnit = bundle.summary.recordUnit;
   summary.additionalExclusionLabel = bundle.summary.additionalExclusionLabel;
   const matchedRecords = bundle.findingRecords.filter(focus.matches);
@@ -110,4 +121,31 @@ export function filterSearchInsightsForQuestion(therapeuticArea: string, finding
     const audienceClassification = classifyCorpusAudience(fields, profile, { retained: true, persona: insight.persona ? [String(insight.persona)] : [] });
     return focus.matches({ rawMetadata: { fields }, audienceClassification });
   });
+}
+
+/** Retrieve the exact source population counted by an audience conversation row. */
+export function loadAudienceConversationPosts(therapeuticArea: string, findings: CanonicalFinding[], options: {
+  question?: string; group: string; conversationType: string; role?: string; page?: number;
+}) {
+  const bundle = loadCorpusBundle(therapeuticArea, findings);
+  const profile = getDiseaseProfile(normalizeTherapeuticAreaId(therapeuticArea), therapeuticArea);
+  const focus = buildSearchQuestionFocus(options.question || "", profile);
+  const matching = bundle.records.filter(record => {
+    const classification = record.audienceClassification;
+    return classification && focus.matches(record)
+      && clientGroupForClassification(classification) === options.group
+      && classification.contentSegment === options.conversationType
+      && (!options.role || classification.audience === options.role);
+  });
+  const pageSize = 20;
+  const pages = Math.max(1, Math.ceil(matching.length / pageSize));
+  const page = Math.min(pages, Math.max(1, Math.floor(Number.isFinite(options.page) ? options.page! : 1)));
+  return { total: matching.length, page, pages, pageSize, items: matching.slice((page - 1) * pageSize, page * pageSize).map(record => {
+    const fields = record.rawMetadata?.fields || {};
+    const url = String(fields.URL || "");
+    return { id: record.findingId || record.id || "", text: [fields.Title, fields["Opening Text"], fields["Hit Sentence"]].filter(Boolean).map(String).filter((text, index, all) => all.indexOf(text) === index).join("\n\n") || record.summary || "Source text unavailable.",
+      url: /^https?:\/\//i.test(url) ? url : undefined,
+      country: String(fields.Country || ""), platform: String(fields["Source Type"] || ""),
+      audience: record.audienceClassification!.audience, conversationType: record.audienceClassification!.contentSegment };
+  }) };
 }

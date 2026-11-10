@@ -1,7 +1,10 @@
+"use client";
+import { useState } from "react";
+import AudienceConversationPosts from "./AudienceConversationPosts";
 import styles from "./PersonaIntelligencePanel.module.css";
 import { groupClientAudiences } from "../answering/personas/clientAudienceGroups";
 
-function AudienceSubtypeTable({ segments, combined = false, unit = "posts" }) {
+function AudienceSubtypeTable({ segments, combined = false, unit = "posts", onSelect }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-white/10">
       <table className="w-full text-left text-sm">
@@ -13,7 +16,7 @@ function AudienceSubtypeTable({ segments, combined = false, unit = "posts" }) {
           <th scope="row" className="min-w-48 px-4 py-3 font-medium text-white/85"><span>{segment.label}</span><p className="mt-1 text-xs font-normal leading-5 text-white/50">{segment.description}</p></th>
           <td className="px-4 py-3 text-right tabular-nums text-white/80">{segment.count.toLocaleString()}</td>
           <td className="px-4 py-3 text-right tabular-nums text-white/80">{segment.percent}%</td>
-          <td className="min-w-52 px-4 py-3 text-white/70">{segment.conversations.slice(0, 2).map(item => <p key={item.id} className="mb-1">{item.label} <span className="text-white/45">({item.count.toLocaleString()})</span></p>)}</td>
+          <td className="min-w-52 px-4 py-3 text-white/70">{segment.conversations.slice(0, 2).map(item => <p key={item.id} className="mb-1">{onSelect ? <button type="button" className={styles.conversationLink} onClick={() => onSelect({ ...item, ...(combined ? {} : { role: segment.id, roleLabel: segment.label }) })}>{item.label} ({item.count.toLocaleString()})</button> : <>{item.label} ({item.count.toLocaleString()})</>}</p>)}</td>
           <td className="min-w-48 px-4 py-3 text-xs text-white/65">{segment.authorOrSourceEvidenceCount > 0 ? <p className="mb-2 text-white/45">{segment.authorOrSourceEvidenceCount.toLocaleString()} with account/source attribution</p> : null}<details><summary className="cursor-pointer font-medium text-cyan-300">View examples & basis</summary>
             <ul className="mt-3 space-y-4">{segment.examples.map(example => <li key={example.id}>
               <p className="leading-5">{example.excerpt}</p>
@@ -27,19 +30,21 @@ function AudienceSubtypeTable({ segments, combined = false, unit = "posts" }) {
   );
 }
 
-function PublicConversationBreakdown({ segment, denominator, universe, unit = "posts" }) {
+function PublicConversationBreakdown({ segment, denominator, universe, unit = "posts", onSelect }) {
   return (
     <details open className="rounded-xl border border-white/10 p-4">
       <summary className="cursor-pointer font-semibold text-white/85">Inside public discussion · {segment.count.toLocaleString()} {unit}</summary>
       <p className="mt-2 text-xs leading-5 text-white/55">These {unit} do not establish the writer&apos;s personal or professional role. Their content can still be segmented. Every row below is a subset of public discussion; the share uses all {denominator.toLocaleString()} {universe} {unit}.</p>
       <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Conversation type</th><th scope="col" className="py-2 text-right">{unit === "records" ? "Records" : "Posts"}</th><th scope="col" className="py-2 text-right">Share of {universe} {unit}</th></tr></thead>
-        <tbody>{segment.conversations.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{Math.round(item.count / denominator * 10000) / 100}%</td></tr>)}</tbody>
+        <tbody>{segment.conversations.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{onSelect ? <button type="button" className={styles.conversationLink} onClick={() => onSelect({ ...item, role: segment.id, roleLabel: segment.label })}>{item.label}</button> : item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{Math.round(item.count / denominator * 10000) / 100}%</td></tr>)}</tbody>
       </table></div>
     </details>
   );
 }
 
-function AudienceGroup({ group, denominator, universe, unit = "posts" }) {
+function AudienceGroup({ group, denominator, universe, unit = "posts", context }) {
+  const [selection, setSelection] = useState(null);
+  const onSelect = context ? setSelection : undefined;
   const combinedPatientGroup = group.id === "patients_circle";
   const conversations = new Map();
   for (const subtype of group.subtypes) for (const item of subtype.conversations) {
@@ -63,14 +68,15 @@ function AudienceGroup({ group, denominator, universe, unit = "posts" }) {
     </summary>
     <div className="space-y-4 border-t border-white/10 p-4">
       <p className="text-sm leading-6 text-white/65">{group.description}</p>
-      {group.subtypes.length ? <AudienceSubtypeTable segments={combinedPatientGroup ? [combinedSegment] : group.subtypes} combined={combinedPatientGroup} unit={unit} /> : <p className="text-sm text-white/55">No {unit} in this group.</p>}
+      {group.subtypes.length ? <AudienceSubtypeTable segments={combinedPatientGroup ? [combinedSegment] : group.subtypes} combined={combinedPatientGroup} unit={unit} onSelect={onSelect} /> : <p className="text-sm text-white/55">No {unit} in this group.</p>}
       {combinedPatientGroup ? <details open className="rounded-xl border border-white/10 p-4">
         <summary className="cursor-pointer font-semibold text-white/85">Conversation types · {group.count.toLocaleString()} {unit}</summary>
         <table className="mt-3 w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Conversation type</th><th scope="col" className="py-2 text-right">{unit === "records" ? "Records" : "Posts"}</th><th scope="col" className="py-2 text-right">Share of {universe} {unit}</th></tr></thead><tbody>
-          {combinedSegment.conversations.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{Math.round(item.count / denominator * 10000) / 100}%</td></tr>)}
+          {combinedSegment.conversations.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{onSelect ? <button type="button" className={styles.conversationLink} onClick={() => onSelect(item)}>{item.label}</button> : item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{Math.round(item.count / denominator * 10000) / 100}%</td></tr>)}
         </tbody></table>
       </details> : null}
-      {publicSubtype ? <PublicConversationBreakdown segment={publicSubtype} denominator={denominator} universe={universe} unit={unit} /> : null}
+      {publicSubtype ? <PublicConversationBreakdown segment={publicSubtype} denominator={denominator} universe={universe} unit={unit} onSelect={onSelect} /> : null}
+      {selection && context ? <AudienceConversationPosts key={`${context.therapeuticArea}:${context.corpusRevision}:${context.question}:${selection.id}:${selection.role || ""}`} context={context} group={group} selection={selection} onClose={() => setSelection(null)} /> : null}
     </div>
   </details>;
 }
@@ -103,11 +109,11 @@ export default function PersonaIntelligencePanel({ summary }) {
     </div>
     <div role="region" aria-label="Audience groups">
       <div className={styles.columns} aria-hidden="true"><span>Audience group</span><span className={styles.barHeading}>Share of corpus</span><span className={styles.posts}>{unit === "records" ? "Records" : "Posts"}</span><span className={styles.share}>Share</span><span /></div>
-      {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={denominator} universe={universe} unit={unit} />)}
+      {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={denominator} universe={universe} unit={unit} context={summary.evidenceContext} />)}
     </div>
     {exclusion ? <div role="region" aria-label="Exclusion bucket" className={styles.exclusion}>
       <p>Excluded from audience groups; included in the {denominator.toLocaleString()} denominator.</p>
-      <AudienceGroup group={exclusion} denominator={denominator} universe={universe} unit={unit} />
+      <AudienceGroup group={exclusion} denominator={denominator} universe={universe} unit={unit} context={summary.evidenceContext} />
     </div> : null}
     <div className={styles.footer}>
       <p>{fullCorpus && summary.analyticalCount != null ? `${denominator.toLocaleString()} total = ${summary.analyticalCount.toLocaleString()} retained for thematic analytics + ${(exclusion?.count || 0).toLocaleString()} off-topic + ${extraExcluded.toLocaleString()} ${summary.additionalExclusionLabel || "spam/promotional"}` : `Shares use all ${denominator.toLocaleString()} selected ${unit}.`}</p>

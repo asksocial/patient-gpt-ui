@@ -11,6 +11,7 @@ export type PersonaRecord = {
 import { AUDIENCE_ROLES, CONVERSATION_SEGMENTS, type AudienceRole, type ConversationSegment } from "../../ingestion/audienceSegments";
 
 export type PersonaIntelligenceSummary = {
+  evidenceContext?: { therapeuticArea: string; question: string; corpusRevision: string };
   questionEvidence?: QuestionEvidence;
   corpusCharts?: CorpusCharts;
   clientGroupingVersion: 2;

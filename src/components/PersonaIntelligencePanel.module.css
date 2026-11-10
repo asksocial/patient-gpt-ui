@@ -49,3 +49,18 @@
   .method > summary { text-align: left; }
 }
 @media (prefers-reduced-motion: reduce) { .chevron { transition: none; } }
+
+.conversationLink { color: #11766b; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font: inherit; background: transparent; border: 0; padding: 2px 0; }
+.conversationLink:hover { color: #0b5149; }
+.conversationLink:focus-visible, .pagination button:focus-visible { outline: 2px solid #11766b; outline-offset: 3px; }
+.evidence { padding: 20px; border: 1px solid #d4dfd9; border-radius: 12px; background: #fff; color: #173b32; overflow-wrap: anywhere; }
+.evidenceHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.evidenceHeading h4 { font-weight: 600; margin: 0; }
+.evidence > p { margin: 12px 0; font-size: 14px; }
+.postList { list-style: none; margin: 16px 0; padding: 0; }
+.postList li { padding: 16px 0; border-top: 1px solid #d4dfd9; }
+.postMeta { color: #64786d; font-size: 12px; }
+.postText { white-space: pre-wrap; line-height: 1.65; margin: 8px 0; }
+.pagination { display: flex; gap: 16px; margin-top: 16px; }
+.pagination button { border: 1px solid #d4dfd9; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+.pagination button:disabled { opacity: .45; cursor: default; }
