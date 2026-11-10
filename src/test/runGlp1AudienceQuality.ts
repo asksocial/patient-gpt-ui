@@ -127,7 +127,7 @@ for (const question of ["What are people saying right now?", "What education bar
   const result = askSocial(question, corpus);
   const persona = result.answer.sections.find(section => section.key === "persona_intelligence")!;
   if (question === "What are people saying right now?") {
-    assert.match(result.answer.directAnswer, /Weight and metabolic outcomes and appetite and eating/);
+    assert.match(result.answer.directAnswer, /Weight, metabolic outcomes and effectiveness and Access, cost and availability/i);
     assert.ok(!/[0-9%]/.test(result.answer.directAnswer), "Analytical overview stays qualitative");
   }
   assert(result.answer.usedFindingIds.length <= 50, "Ranked answer evidence remains bounded");
@@ -185,21 +185,22 @@ for (const chart of [charts.burdens, charts.markets]) {
   assert.equal(chart.denominator, 4737, "Charts use all retained analytical posts, independent of the 50 ranked examples");
   assert.equal(chart.segments.reduce((n, s) => n + s.count, 0), chart.denominator, "Donut slices partition the complete denominator");
 }
-assert.equal(charts.burdens.highlightCount, 376);
-assert.equal(charts.burdens.segments.find(s => s.id === "overlap")!.count, 20);
+assert.equal(charts.burdens.highlightCount, 2998);
+assert.equal(charts.burdens.segments.find(s => s.id === "remainder")!.count, 1739);
+assert.equal(charts.burdens.labelVersion, 1);
 assert.equal(charts.markets.highlightLabel, "United States");
 assert.equal(charts.markets.highlightCount, 1687);
 assert.deepEqual(charts.markets.segments.slice(0, 3).map(s => s.count), [1687, 882, 526]);
 const oldChartless = structuredClone(current);
 delete oldChartless.corpusCharts;
 const chartRefreshed = refreshGlp1PersonaComposition({ analyticalAnswer: { sections: [{ key: "persona_intelligence", personaIntelligence: oldChartless }] } }, "GLP-1");
-assert.equal(chartRefreshed.analyticalAnswer.sections[0].personaIntelligence.corpusCharts?.burdens.highlightCount, 376);
+assert.equal(chartRefreshed.analyticalAnswer.sections[0].personaIntelligence.corpusCharts?.burdens.highlightCount, 2998);
 assert.equal(oldChartless.corpusCharts, undefined, "Chart refresh must not mutate saved reports");
-console.log("PASS full-corpus donut totals, unique burden overlap, source markets and saved-report chart refresh");
+console.log("PASS full-corpus donut totals, exclusive experience labels, source markets and saved-report chart refresh");
 
 const staleBurdenReport = { analyticalAnswer: { directAnswer: "About 26% and 10% of high-signal findings", sections: [{ key: "top_burdens" }, { key: "persona_intelligence", personaIntelligence: current }] } };
 const reconciled = refreshGlp1PersonaComposition(staleBurdenReport, "GLP-1");
-assert.match(reconciled.analyticalAnswer.directAnswer, /Weight and metabolic outcomes and appetite and eating/);
+assert.match(reconciled.analyticalAnswer.directAnswer, /Weight, metabolic outcomes and effectiveness and Access, cost and availability/i);
 assert.ok(!/[0-9%]/.test(reconciled.analyticalAnswer.directAnswer), "Saved analytical overview stays qualitative");
 assert.deepEqual(reconciled.analyticalAnswer.sections[1].personaIntelligence.corpusCharts, current.corpusCharts, "Qualitative wording must not change any corpus chart values");
 assert.equal(staleBurdenReport.analyticalAnswer.directAnswer, "About 26% and 10% of high-signal findings");

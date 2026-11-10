@@ -12,7 +12,7 @@ export function refreshGlp1PersonaComposition<T extends { analyticalAnswer?: { d
   const summary = loadGlp1PersonaIntelligence();
   const burdenAnswer = sections.some(section => section.key === "top_burdens") && summary.corpusCharts
     ? buildCorpusBurdenAnswer(summary.corpusCharts.burdens) : content.analyticalAnswer?.directAnswer;
-  const needsRefresh = sections.some(section => section.key === "persona_intelligence" && section.personaIntelligence?.scope === "full_corpus" && (section.personaIntelligence?.clientGroupingVersion !== 2 || section.personaIntelligence?.corpusCharts?.version !== 1));
+  const needsRefresh = sections.some(section => section.key === "persona_intelligence" && section.personaIntelligence?.scope === "full_corpus" && (section.personaIntelligence?.clientGroupingVersion !== 2 || section.personaIntelligence?.corpusCharts?.version !== 1 || section.personaIntelligence?.corpusCharts?.burdens?.labelVersion !== summary.corpusCharts?.burdens.labelVersion));
   if (!needsRefresh && burdenAnswer === content.analyticalAnswer?.directAnswer) return content;
   return { ...content, analyticalAnswer: { ...content.analyticalAnswer, directAnswer: burdenAnswer, sections: sections.map(section =>
     section.key === "persona_intelligence" && section.personaIntelligence?.scope === "full_corpus" && section.personaIntelligence.denominator === summary.denominator

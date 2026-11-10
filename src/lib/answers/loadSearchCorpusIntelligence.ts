@@ -10,6 +10,7 @@ import { getDiseaseProfile } from "../../ingestion/profiles";
 import { classifyCorpusAudience } from "../../ingestion/classifyCorpusAudience";
 import { buildPersonaIntelligence, type PersonaRecord, type PersonaIntelligenceSummary } from "../../answering/personas/buildPersonaIntelligence";
 import { buildCorpusCharts } from "../../answering/personas/buildCorpusCharts";
+import { buildGlp1ExperienceCharts } from "../../answering/personas/glp1ExperienceThemes";
 import type { CanonicalFinding } from "../../answering/models/finding";
 import { normalizeTherapeuticAreaId } from "../analytics/coverage";
 import { getCanonicalCorpusRevision, getCanonicalCorpusSourceFiles } from "./loadCanonicalFindingsForAsk";
@@ -61,7 +62,7 @@ function loadCorpusBundle(therapeuticArea: string, findings: CanonicalFinding[])
     summary.recordUnit = additional.some(finding => (finding as SourceFinding).sourceType === "curated" || finding.evidence?.some(evidence => evidence.sourceType === "curated")) ? "records" : "posts";
     summary.additionalExclusionLabel = `other filtered ${summary.recordUnit}`;
   }
-  summary.corpusCharts = buildCorpusCharts(sourceFindings.map(finding => ({ symptoms: finding.symptoms, country: finding.countries?.[0] || (Array.isArray(finding.country) ? finding.country[0] : finding.country) })));
+  summary.corpusCharts = area === "glp_1" ? buildGlp1ExperienceCharts(sourceFindings) : buildCorpusCharts(sourceFindings.map(finding => ({ symptoms: finding.symptoms, country: finding.countries?.[0] || (Array.isArray(finding.country) ? finding.country[0] : finding.country) })));
   const bySourceId = new Map(records.filter(record => idFor(record.rawMetadata?.fields || {})).map(record => [idFor(record.rawMetadata?.fields || {}), record]));
   const byFindingId = new Map(records.map(record => [record.findingId, record]));
   const findingRecords = sourceFindings.map(finding => {
@@ -91,7 +92,10 @@ export function selectSearchCorpusForQuestion(therapeuticArea: string, findings:
   const matchedRecords = bundle.findingRecords.filter(focus.matches);
   summary.questionEvidence = buildQuestionEvidence(question, matchingFindings.map((finding, index) => ({ ...finding, audienceClassification: matchedRecords[index]?.audienceClassification })), profile.diseaseNames, evidenceOptions);
   const subjects = subjectsForQuestion(question);
-  summary.corpusCharts = buildCorpusCharts(matchingFindings.map(finding => ({ symptoms: subjects.length ? subjects.flatMap(subject => topicsForQuestion(subject, question).filter(topic => topic.pattern.test(searchRecordText(finding))).map(topic => topic.label)) : finding.symptoms, country: sourceCountryLabel(finding.rawMetadata?.fields?.Country || finding.countries?.[0] || (finding as CanonicalFinding & { country?: string }).country) })), { showAllMarkets: resolveQuestionGeography(question).labels.length > 0 });
+  const chartOptions = { showAllMarkets: resolveQuestionGeography(question).labels.length > 0 };
+  summary.corpusCharts = normalizeTherapeuticAreaId(therapeuticArea) === "glp_1" && !subjects.length
+    ? buildGlp1ExperienceCharts(matchingFindings, chartOptions)
+    : buildCorpusCharts(matchingFindings.map(finding => ({ symptoms: subjects.length ? subjects.flatMap(subject => topicsForQuestion(subject, question).filter(topic => topic.pattern.test(searchRecordText(finding))).map(topic => topic.label)) : finding.symptoms, country: sourceCountryLabel(finding.rawMetadata?.fields?.Country || finding.countries?.[0] || (finding as CanonicalFinding & { country?: string }).country) })), chartOptions);
   if (subjects.length) {
     summary.corpusCharts.burdens.segments = summary.corpusCharts.burdens.segments.map(segment => ({ ...segment, label: segment.id === "overlap" ? "Both leading topics" : segment.id === "remainder" ? "Other matching topics" : segment.label }));
     summary.corpusCharts.burdens.note = "The leading topics and their overlap partition matching retained records. Other records may discuss additional matched topics. Shares are not patient prevalence or economic-burden estimates.";

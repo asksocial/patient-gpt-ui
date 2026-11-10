@@ -1,6 +1,8 @@
 import { topicNarrative } from "../narrative/clientNarrative";
 import { questionEvidenceAnswer } from "../search/buildQuestionEvidence";
 export type CorpusChart = {
+  title?: string;
+  labelVersion?: number;
   denominator: number;
   segments: Array<{ id: string; label: string; count: number }>;
   highlightCount: number;
@@ -10,7 +12,7 @@ export type CorpusChart = {
 export type CorpusCharts = { version: 1; burdens: CorpusChart; markets: CorpusChart };
 
 /** Each donut partitions posts exactly once, including multi-burden posts. */
-export function buildCorpusCharts(findings: Array<{ symptoms?: string[]; country?: string }>, options: { showAllMarkets?: boolean } = {}): CorpusCharts {
+export function buildCorpusCharts(findings: Array<{ symptoms?: string[]; country?: string }>, options: { showAllMarkets?: boolean; allBurdens?: boolean } = {}): CorpusCharts {
   const denominator = findings.length;
   const symptoms = new Map<string, number>();
   const countries = new Map<string, number>();
@@ -20,13 +22,16 @@ export function buildCorpusCharts(findings: Array<{ symptoms?: string[]; country
     if (f.country) countries.set(f.country, (countries.get(f.country) || 0) + 1);
   }
   const ranked = (counts: Map<string, number>) => [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  const top = ranked(symptoms).slice(0, 2).map(([name]) => name);
+  const top = ranked(symptoms).slice(0, options.allBurdens ? undefined : 2).map(([name]) => name);
   const title = (s: string) => (s.charAt(0).toUpperCase() + s.slice(1)).replaceAll("_", " ");
   const counts = top.map(() => 0);
   let overlap = 0;
   for (const f of normalized) {
     const hits = top.map(s => f.symptoms.includes(s));
-    if (hits.every(Boolean) && hits.length === 2) overlap++;
+    if (options.allBurdens) {
+      const first = hits.indexOf(true);
+      if (first >= 0) counts[first]++;
+    } else if (hits.every(Boolean) && hits.length === 2) overlap++;
     else hits.forEach((hit, index) => { if (hit) counts[index]++; });
   }
   const matched = counts.reduce((sum, n) => sum + n, overlap);
@@ -45,7 +50,7 @@ export function buildCorpusCharts(findings: Array<{ symptoms?: string[]; country
 
 /** Qualitative synthesis of the corpus themes; numeric shares stay in charts. */
 export function buildCorpusBurdenAnswer(chart: CorpusChart): string {
-  const leading = chart.segments.filter(segment => !["remainder", "overlap"].includes(segment.id) && segment.count > 0).map(segment => segment.label.replace(/ only$/, ""));
+  const leading = chart.segments.filter(segment => !["remainder", "overlap"].includes(segment.id) && segment.count > 0).slice(0, 2).map(segment => segment.label.replace(/ only$/, ""));
   const overlap = chart.segments.some(segment => segment.id === "overlap" && segment.count > 0);
   return topicNarrative({
     themes: leading,
