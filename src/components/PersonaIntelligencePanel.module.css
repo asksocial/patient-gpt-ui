@@ -53,9 +53,22 @@
 .conversationLink { color: #11766b; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font: inherit; background: transparent; border: 0; padding: 2px 0; }
 .conversationLink:hover { color: #0b5149; }
 .conversationLink:focus-visible, .pagination button:focus-visible { outline: 2px solid #11766b; outline-offset: 3px; }
-.evidence { padding: 20px; border: 1px solid #d4dfd9; border-radius: 12px; background: #fff; color: #173b32; overflow-wrap: anywhere; }
-.evidenceHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
-.evidenceHeading h4 { font-weight: 600; margin: 0; }
+.evidenceDialog { width: min(800px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); padding: 0; border: 1px solid #d4dfd9; border-radius: 16px; background: #fff; color: #173b32; box-shadow: 0 24px 80px #173b3233; overflow: hidden; }
+.evidenceDialog[open] { display: flex; flex-direction: column; }
+.evidenceDialog::backdrop { background: #102b24a6; }
+.evidenceHeading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 20px; border-bottom: 1px solid #d4dfd9; background: #f1f7f4; flex-shrink: 0; overflow-wrap: anywhere; }
+.evidenceHeading h4 { font-size: 20px; line-height: 1.4; font-weight: 600; margin: 6px 0; }
+.evidenceEyebrow { margin: 0; color: #11766b; font-size: 12px; font-weight: 600; }
+.evidenceContext { margin: 0; color: #64786d; font-size: 13px; line-height: 1.6; }
+.closeEvidence { flex-shrink: 0; border: 1px solid #b8cbc2; border-radius: 8px; padding: 8px 12px; background: #fff; color: #11766b; font: inherit; font-size: 13px; cursor: pointer; }
+.closeEvidence:hover { background: #e2efe8; }
+.closeEvidence:focus-visible, .evidence:focus-visible { outline: 2px solid #11766b; outline-offset: -3px; }
+.evidence { padding: 4px 20px 20px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .evidenceHeading { flex-direction: column; gap: 12px; padding: 16px; }
+  .evidenceHeading h4 { font-size: 18px; }
+  .evidence { padding: 4px 16px 16px; }
+}
 .evidence > p { margin: 12px 0; font-size: 14px; }
 .postList { list-style: none; margin: 16px 0; padding: 0; }
 .postList li { padding: 16px 0; border-top: 1px solid #d4dfd9; }
