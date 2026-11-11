@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePvPrincipal, pvErrorResponse } from "../../../../lib/pv/auth";
 import { createPvSource, listPvSources } from "../../../../lib/pv/service";
 
+import { loadGlp1SourceRegistry } from "../../../../lib/pv/sources/glp1Registry";
+
 export const dynamic = "force-dynamic";
-export async function GET() {
-  try { return NextResponse.json({ ok: true, sources: await listPvSources(await requirePvPrincipal()) }); }
+export async function GET(request: NextRequest) {
+  try {
+    const principal = await requirePvPrincipal();
+    const therapeuticArea = request.nextUrl.searchParams.get("therapeuticArea");
+    const corpusRegistry = !therapeuticArea || therapeuticArea.toLowerCase() === "glp-1" ? loadGlp1SourceRegistry() : null;
+    return NextResponse.json({ ok: true, sources: await listPvSources(principal), corpusRegistry });
+  }
   catch (error) { const failure = pvErrorResponse(error); return NextResponse.json({ ok: false, error: failure.message }, { status: failure.status }); }
 }
 export async function POST(request: NextRequest) {

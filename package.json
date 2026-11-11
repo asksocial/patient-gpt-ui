@@ -70,6 +70,7 @@
     "test:glp-1-pv": "tsx src/test/runGlp1PvQuality.ts",
     "test:glp-1-executive": "tsx src/test/runGlp1ExecutiveRefreshQuality.ts",
     "test:glp-1": "tsx src/test/runGlp1CorpusQuality.ts",
+    "test:glp-1-source-registry": "tsx src/test/runGlp1SourceRegistryQuality.ts",
     "test:audience-conversations": "tsx src/test/runAudienceConversationDrilldownQuality.ts",
     "test:search-corpus": "tsx src/test/runSearchCorpusIntelligenceQuality.ts",
     "test:glp-1-audiences": "tsx src/test/runGlp1AudienceQuality.ts",

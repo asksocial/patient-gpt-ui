@@ -374,3 +374,24 @@ Their audience selection and evidence labels now use the current GLP-1 role
 classification, preventing quoted patient/doctor language and parent-channel
 metadata from overriding the updated source role. Each module records the
 classifier version and the 634 patient-related findings in its input corpus.
+
+
+## Source Registry (November 11, 2026)
+
+The Source Registry now derives its GLP-1 corpus inventory from all 5,000
+original export rows: 1,353 normalized source domains. Each entry preserves
+observed source names and types, mention counts, markets, languages, date
+range, and up to three original-source links. Counts include thematic
+exclusions and records held from PV screening; inventory membership is not
+evidence of PV screening or agreed monitoring coverage.
+
+The inventory is scoped to GLP-1 (or the all-topic view), searchable, filtered
+by source type, and paginated in groups of 25. A SHA-256 revision identifies
+the source export and invalidates the cache when its content changes. It
+shares the existing authenticated PV sources endpoint; tenant-specific governed
+sources and their approved monitoring settings remain in the existing registry.
+No sponsor, ownership, cadence, approval, or screening-run data is inferred.
+
+`npm run test:glp-1-source-registry` verifies complete reconciliation,
+multilingual and print coverage, domain normalization, missing attribution,
+and safe original-source links.

@@ -11,6 +11,7 @@ const nextConfig = {
     ];
   },
   outputFileTracingIncludes: {
+    "/api/pv/sources": ["./data/glp-1.csv"],
     "/api/intelligence/conversations": ["./data/*.csv", "./src/ingestion/curated/gene_therapy.json"],
     "/api/executive/brief": ["./data/glp-1.csv"],
     "/api/chat/session": ["./data/*.csv"],
