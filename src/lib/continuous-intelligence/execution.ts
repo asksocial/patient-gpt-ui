@@ -2,28 +2,32 @@ import { loadCanonicalFindingsForAsk } from "../answers/loadCanonicalFindingsFor
 import { askSocial } from "../../app/api/ask";
 import { getSupabaseServerClient } from "../supabase/server";
 import { classifyAlertSeverity, nextMonitoringRun, type MonitoringCadence, type MonitoringChannel } from "./monitoring";
+import { filterMonitoringFindings, normalizeMonitoringCriteria } from "./scope";
 
 export async function executeMonitoringProfile(profile: any) {
   const startedAt = new Date().toISOString();
   const corpus = loadCanonicalFindingsForAsk(profile.therapeutic_area);
   if (corpus.status !== "available") throw new Error(corpus.reason);
-  const intelligence = askSocial(profile.query, corpus.findings);
-  const primaryTheme = [...(intelligence.themeSummary || [])]
+  const criteria = normalizeMonitoringCriteria(profile.criteria);
+  const scopedFindings = filterMonitoringFindings(corpus.findings, criteria);
+  const intelligence = scopedFindings.length ? askSocial(profile.query, scopedFindings) : null;
+  const primaryTheme = [...(intelligence?.themeSummary || [])]
     .sort((left: any, right: any) => (right.prevalence?.eligiblePercent || right.percent || 0) - (left.prevalence?.eligiblePercent || left.percent || 0))[0];
-  const signalValue = Number(primaryTheme?.prevalence?.eligiblePercent ?? primaryTheme?.percent ?? 0);
+  const signalValue = primaryTheme ? Number(primaryTheme.prevalence?.eligiblePercent ?? primaryTheme.percent ?? 0) : null;
   const supabase = getSupabaseServerClient();
   const { data: previous } = await supabase.from("intelligence_monitor_runs").select("signal_value")
-    .eq("profile_id", profile.id).eq("status", "completed").order("completed_at", { ascending: false }).limit(1).maybeSingle();
+    .eq("profile_id", profile.id).eq("status", "completed").not("signal_value", "is", null).order("completed_at", { ascending: false }).limit(1).maybeSingle();
   const previousValue = previous?.signal_value == null ? null : Number(previous.signal_value);
-  const changeValue = previousValue == null ? 0 : Math.round((signalValue - previousValue) * 100) / 100;
+  const changeValue = signalValue == null ? null : previousValue == null ? 0 : Math.round((signalValue - previousValue) * 100) / 100;
   const completedAt = new Date().toISOString();
   const summary = primaryTheme
     ? `${primaryTheme.label} is the leading monitored theme at ${signalValue.toFixed(1)}%.`
     : "No supported theme met the monitoring criteria.";
   const payload = {
-    schemaVersion: "continuous_intelligence_run_v1", query: profile.query, therapeuticArea: profile.therapeutic_area,
+    schemaVersion: "continuous_intelligence_run_v2", query: profile.query, therapeuticArea: profile.therapeutic_area,
+    criteria, scope: { matchedFindings: scopedFindings.length, totalFindings: corpus.findings.length, geographyBasis: "source_country_metadata" },
     primaryTheme: primaryTheme ? { id: primaryTheme.themeId, label: primaryTheme.label, prevalencePercent: signalValue, confidence: primaryTheme.confidenceLabel } : null,
-    themeSummary: (intelligence.themeSummary || []).slice(0, 10), generatedAt: completedAt,
+    themeSummary: (intelligence?.themeSummary || []).slice(0, 10), generatedAt: completedAt,
   };
   const { data: run, error: runError } = await supabase.from("intelligence_monitor_runs").insert({
     profile_id: profile.id, principal_id: profile.principal_id, workspace_id: profile.workspace_id, status: "completed", summary,
@@ -37,7 +41,7 @@ export async function executeMonitoringProfile(profile: any) {
   });
 
   const threshold = Number(profile.threshold || 0);
-  const shouldAlert = previousValue != null && Math.abs(changeValue) >= threshold;
+  const shouldAlert = signalValue != null && previousValue != null && changeValue !== 0 && Math.abs(changeValue!) >= threshold;
   if (shouldAlert) {
     await supabase.from("intelligence_alerts").insert({
       principal_id: profile.principal_id, workspace_id: profile.workspace_id, profile_id: profile.id, run_id: run.id,

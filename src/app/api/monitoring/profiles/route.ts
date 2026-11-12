@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const profile = await createMonitoringProfile(platformPrincipalFromEntitlements(entitlements), {
       workspaceId: body?.workspaceId, name: String(body?.name || ""), monitorType: body?.monitorType || "theme_shift",
       therapeuticArea: String(body?.therapeuticArea || ""), query: String(body?.query || ""), cadence: body?.cadence || "weekly",
-      threshold: Number(body?.threshold ?? 5), deliveryChannels: body?.deliveryChannels,
+      threshold: Number(body?.threshold ?? 5), deliveryChannels: body?.deliveryChannels, criteria: body?.criteria,
     });
     return NextResponse.json({ ok: true, profile }, { status: 201 });
   } catch (error: any) { return NextResponse.json({ ok: false, error: error.message }, { status: 400 }); }

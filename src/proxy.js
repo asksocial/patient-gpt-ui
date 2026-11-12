@@ -11,6 +11,8 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Monitoring authenticates its scheduler bearer secret in the route handler.
+  if (req.nextUrl.pathname === "/api/cron/monitoring") return;
   if (!isPublicRoute(req)) {
     await auth.protect();
   }

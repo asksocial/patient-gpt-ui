@@ -3,7 +3,7 @@ import { executeMonitoringProfile } from "../../../../lib/continuous-intelligenc
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 
 export async function GET(request: NextRequest) {
-  const secret = process.env.ASKSOCIAL_CRON_SECRET;
+  const secret = process.env.CRON_SECRET || process.env.ASKSOCIAL_CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }

@@ -48,6 +48,14 @@ const aliases: Record<string, string> = {
   china: "CN", chinese: "CN", "mainland china": "CN", japanese: "JP", indian: "IN", brazilian: "BR", canadian: "CA", australian: "AU", german: "DE", french: "FR", singaporean: "SG", indonesian: "ID", philippine: "PH", filipino: "PH", thai: "TH", malaysian: "MY", "uae": "AE", "united arab emirates": "AE", "russian federation": "RU", russia: "RU", "czech republic": "CZ", turkey: "TR", "türkiye": "TR",
 };
 for (const [name, code] of Object.entries(aliases)) countryNames.set(name, code);
+export const sourceGeographyOptions = [
+  ...regions.map(region => ({ value: region.label, label: region.label, kind: "region" as const })),
+  ...[...new Set(countryNames.values())].map(code => ({ value: code, label: names.of(code) || code, kind: "country" as const }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
+];
+export function sourceRegionCountryCodes(label: string): readonly string[] | undefined {
+  return regions.find(region => region.label.toLowerCase() === label.trim().toLowerCase())?.codes;
+}
 const escape = (term: string) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export function sourceCountryCode(value: unknown): string | undefined {
   const name = String(value || "").trim().toLowerCase();
