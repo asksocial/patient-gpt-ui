@@ -156,3 +156,10 @@
 [data-as-ui] .asksocial-tooltip { background: var(--as-card) !important; color: var(--as-body) !important; border: 0 !important; border-radius: var(--as-radius-popover); box-shadow: var(--as-shadow-modal); max-width: min(224px,calc(100vw - 48px)); }
 [data-as-ui] [class*="closeEvidence"] { min-width: 44px; min-height: 44px; display: grid; place-items: center; }
 @media (max-width:1200px) { [data-as-ui] .asksocial-topbar > div:first-child > div:first-child:has(> .as-platform-nav) { flex-basis: 100%; } }
+
+/* Disabled state wins over every action variant, including its text wrapper. */
+[data-as-ui] .as-button[data-variant]:disabled { background: var(--as-disabled) !important; color: var(--as-muted) !important; border-color: var(--as-field-border) !important; cursor: not-allowed !important; }
+[data-as-ui] .as-button[data-variant]:disabled .asksocial-action-content { color: var(--as-muted) !important; -webkit-text-fill-color: currentColor; }
+[data-as-ui] .ask-topbar-workspace select { padding-inline: 32px 40px !important; }
+.as-workspace-dot { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; background: var(--as-primary); border-radius: var(--as-radius-pill); pointer-events: none; z-index: 1; }
+[data-as-ui] [data-save-status] { font-size: 12px; }

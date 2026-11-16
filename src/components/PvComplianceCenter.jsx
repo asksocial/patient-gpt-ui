@@ -16,7 +16,7 @@ import { activityFetch as fetch } from "../lib/client/requestActivity";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { patientCriterionStatus, reporterCriterionStatus } from "../lib/pv/identifiability";
 import { resolvePvReviewCompletionNavigation } from "../lib/pv/reviewNavigation";
-import { handleTabKeys } from "./ui/presentation";
+import { handleTabKeys, sentenceCaseLabel } from "./ui/presentation";
 import { screeningDraftFingerprint } from "../lib/pv/icsr/screeningDraft";
 import { validateObservationForward } from "../lib/pv/screeningWorkflow";
 import Tooltip from "./ui/Tooltip";
@@ -409,7 +409,7 @@ export default function PvComplianceCenter({ initialTab = "overview", initialMes
       </section>
 
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" onKeyDown={handleTabKeys} aria-label="PV Compliance sections">
-        {TABS.map(([id, text]) => <ActionButton key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => navigateTab(id)} className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-medium transition ${tab === id ? "border-white bg-white text-black" : "border-white/10 bg-white/[0.03] text-white/50 hover:text-white"}`}>{text}</ActionButton>)}
+        {TABS.map(([id, text]) => <ActionButton key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => navigateTab(id)} className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-medium transition ${tab === id ? "border-white bg-white text-black" : "border-white/10 bg-white/[0.03] text-white/50 hover:text-white"}`}>{sentenceCaseLabel(text)}</ActionButton>)}
         {tab === "lifecycle" ? <ActionButton type="button" role="tab" aria-selected="true" className="shrink-0 rounded-xl border border-white bg-white px-3 py-2 text-xs font-medium text-black">Lifecycle · {label(lifecycleStatus)}</ActionButton> : null}
         {tab === "review" ? <ActionButton type="button" role="tab" aria-selected="true" className="shrink-0 rounded-xl border border-white bg-white px-3 py-2 text-xs font-medium text-black">Structured review</ActionButton> : null}
       </div>

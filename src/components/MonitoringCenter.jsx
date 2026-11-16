@@ -121,7 +121,7 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
           <fieldset className="min-w-0 rounded-xl border border-white/10 p-4">
             <legend className="px-1 text-sm font-medium text-white/75">Keywords and phrases</legend>
             <label htmlFor="monitor-keywords" className="text-xs text-white/55">Separate terms with commas or new lines. Leave blank to follow all keywords.</label>
-            <Field label="Wegovy, insurance coverage, affordability"><textarea id="monitor-keywords" value={keywords} onChange={event => setKeywords(event.target.value)} rows={3} placeholder="Wegovy, insurance coverage, affordability" className={inputClass} /></Field>
+            <textarea id="monitor-keywords" value={keywords} onChange={event => setKeywords(event.target.value)} rows={3} placeholder="Wegovy, insurance coverage, affordability" className={inputClass} />
             <label className="mt-3 block text-xs text-white/65">Keyword matching<select value={keywordMatch} onChange={event => setKeywordMatch(event.target.value)} className={inputClass}><option value="any">Match any keyword or phrase</option><option value="all">Match all keywords and phrases</option></select></label>
           </fieldset>
           <fieldset className="min-w-0 rounded-xl border border-white/10 p-4">
