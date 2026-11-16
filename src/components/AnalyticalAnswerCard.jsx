@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { splitAnalyticalAnswer } from "../lib/answers/analyticalAnswerPresentation";
 import AudienceConversationPosts from "./AudienceConversationPosts";
 import styles from "./AnalyticalAnswerCard.module.css";
 
@@ -18,10 +19,7 @@ export default function AnalyticalAnswerCard({ answer, summary }) {
   const sourceExamples = summary?.questionEvidence?.examples || (summary?.clientGroups || []).filter(group => !group.excluded).flatMap(group => group.subtypes.filter(subtype => ["patient", "caregiver", "family_peer", "patient_community"].includes(subtype.id)).flatMap(subtype => subtype.examples.map(example => ({ ...example, audience: subtype.label }))));
   const examples = sourceExamples.filter((item, index, all) => all.findIndex(other => other.id === item.id || other.excerpt === item.excerpt) === index).filter(item => item.sourceVerbatim && item.excerpt?.length >= 60 && !/^(QT|RT)\s|https?:\/\//i.test(item.excerpt) && /forum|social|comment|reddit|twitter|facebook|instagram|tiktok|youtube/i.test(item.sourceCategory || ""));
   const quotes = examples.slice(0, 2);
-  const sentences = String(answer || "").split(/(?<=[.!?])\s+/);
-  const caveatPattern = /further research|findings reflect|available conversations|time comparison is needed|cannot establish|not representative|directional|do not establish/i;
-  const main = sentences.filter(sentence => !caveatPattern.test(sentence)).join(" ").trim();
-  const caveats = sentences.filter(sentence => caveatPattern.test(sentence)).join(" ").trim();
+  const { main, caveats } = splitAnalyticalAnswer(answer);
   const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
   const range = summary?.dateRange;
   const markets = summary?.matchingMarketCount;

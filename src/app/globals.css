@@ -853,3 +853,7 @@ main[data-ask-empty="true"] .asksocial-answer-canvas { flex: 1; }
 .asksocial-v2 main[data-ask-empty="true"] [data-testid="primary-search-footer"] { border: 0; background: transparent; padding-top: 32px; }
 .asksocial-v2 main[data-ask-workspace="true"] [data-testid="primary-search-footer"] p { color: #56645f; font-size: 12px; }
 @media (max-width: 600px) { .asksocial-v2 main[data-ask-workspace="true"] .ask-query-card-empty { padding: 24px !important; } }
+
+/* Reset inherited inverse labels and wide minimums on the Ask-only save action. */
+.asksocial-v2 main[data-ask-workspace="true"] .asksocial-workspace-save-action { min-width: 0; width: auto; flex: 0 0 auto; -webkit-text-fill-color: currentColor; }
+.asksocial-v2 main[data-ask-workspace="true"] .asksocial-workspace-save-action > span { color: inherit !important; -webkit-text-fill-color: currentColor; }
