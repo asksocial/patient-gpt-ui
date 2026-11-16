@@ -370,13 +370,13 @@ body {
   transform: translateY(1px);
 }
 
-.asksocial-v2 main button.bg-white:not(.as-nav-trigger):not(.as-nav-item) {
+.asksocial-v2 main button.bg-white:not(.as-nav-trigger):not(.as-nav-item):not(:disabled) {
   background: var(--as-sage-active) !important;
   color: #ffffff !important;
   box-shadow: none;
 }
 
-.asksocial-v2 main button.bg-white:not(.as-nav-trigger):not(.as-nav-item):hover {
+.asksocial-v2 main button.bg-white:not(.as-nav-trigger):not(.as-nav-item):not(:disabled):hover {
   background: #086657 !important;
   box-shadow: none;
 }
