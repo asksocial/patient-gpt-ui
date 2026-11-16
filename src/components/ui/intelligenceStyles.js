@@ -1,17 +1,6 @@
-// Shared by Executive Brief priority pills and module confidence pills.
-export const PRIORITY_STYLES = {
-  high: "bg-rose-500/15 text-rose-300",
-  medium: "bg-amber-500/15 text-amber-300",
-  low: "bg-white/10 text-white/55",
-};
-
-export const CONFIDENCE_STYLES = {
-  high: PRIORITY_STYLES.high,
-  medium: PRIORITY_STYLES.medium,
-  moderate: PRIORITY_STYLES.medium,
-  directional: PRIORITY_STYLES.low,
-  insufficient: PRIORITY_STYLES.low,
-};
+// Semantic labels retain their values; only the shared visual treatment changes.
+export const PRIORITY_STYLES = { high: "as-badge-caution font-semibold", medium: "as-badge-caution", low: "as-badge-neutral" };
+export const CONFIDENCE_STYLES = { high: "as-badge-success", medium: "as-badge-caution", moderate: "as-badge-caution", directional: "as-badge-neutral", insufficient: "as-badge-neutral" };
 
 export function formatConfidenceLabel(value) {
   return String(value || "").replaceAll("_", " ").replace(/\b[a-z]/g, letter => letter.toUpperCase());

@@ -6,7 +6,7 @@ import { groupClientAudiences } from "../answering/personas/clientAudienceGroups
 
 function AudienceSubtypeTable({ segments, combined = false, unit = "posts", onSelect }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/10">
+    <div className="as-inset overflow-x-auto rounded-xl border border-white/10">
       <table className="w-full text-left text-sm">
         <caption className="px-4 py-3 text-left font-semibold text-white/85">{combined ? "Conversations and source evidence" : "Audience subtypes and classification evidence"}</caption>
         <thead className="border-y border-white/10 bg-white/[0.03] text-xs text-white/55"><tr>
@@ -64,20 +64,20 @@ function AudienceGroup({ group, denominator, universe, unit = "posts", context }
   return <tbody className={`${styles.group} ${!group.count || group.excluded ? styles.muted : ""}`}>
     <tr className={styles.row}>
       <th scope="row"><button type="button" className={styles.name} aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`} aria-expanded={expanded} aria-controls={detailsId} onClick={() => setExpanded(!expanded)}><span className={styles.chevron} data-expanded={expanded} aria-hidden="true">›</span>{group.label}</button></th>
-      <td><span className={styles.track} role="img" aria-label={`${group.label}: ${formatShare(group.count, denominator)}`}><span style={{ width: `${denominator ? Math.min(100, group.count / denominator * 100) : 0}%` }} /></span></td>
+      <td className="as-numeric"><span className={styles.track} role="img" aria-label={`${group.label}: ${formatShare(group.count, denominator)}`}><span style={{ width: `${denominator ? Math.min(100, group.count / denominator * 100) : 0}%` }} /></span></td>
       <td className={styles.posts}>{group.count.toLocaleString()}</td>
       <td className={styles.share}><strong>{formatShare(group.count, denominator)}</strong></td>
       <td className={styles.action}><button type="button" aria-expanded={expanded} aria-controls={detailsId} onClick={() => setExpanded(!expanded)}>{action}</button></td>
     </tr>
-    <tr hidden={!expanded} id={detailsId}><td colSpan={5}>
+    <tr hidden={!expanded} id={detailsId}><td colSpan={5} className="as-numeric">
     <div className="space-y-4 border-t border-white/10 p-4">
       <p className="text-sm leading-6 text-white/65">{group.description}</p>
       {group.subtypes.length ? <AudienceSubtypeTable segments={combinedPatientGroup ? [combinedSegment] : group.subtypes} combined={combinedPatientGroup} unit={unit} onSelect={onSelect} /> : <p className="text-sm text-white/55">No {unit} in this group.</p>}
       {combinedPatientGroup ? <details open className="rounded-xl border border-white/10 p-4">
         <summary className="cursor-pointer font-semibold text-white/85">Conversation types · {group.count.toLocaleString()} {unit}</summary>
-        <table className="mt-3 w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Conversation type</th><th scope="col" className="py-2 text-right">{unit === "records" ? "Records" : "Posts"}</th><th scope="col" className="py-2 text-right">Share of {universe} {unit}</th></tr></thead><tbody>
+        <div className="as-table-scroll" role="region" aria-label="Scrollable data table" tabIndex={0}><table className="mt-3 w-full text-left text-sm"><thead className="text-xs text-white/50"><tr><th scope="col" className="py-2">Conversation type</th><th scope="col" className="py-2 text-right">{unit === "records" ? "Records" : "Posts"}</th><th scope="col" className="py-2 text-right">Share of {universe} {unit}</th></tr></thead><tbody>
           {combinedSegment.conversations.map(item => <tr key={item.id} className="border-t border-white/10 text-white/75"><th scope="row" className="py-2 font-normal">{onSelect ? <button type="button" className={styles.conversationLink} onClick={() => onSelect(item)}>{item.label}</button> : item.label}</th><td className="py-2 text-right tabular-nums">{item.count.toLocaleString()}</td><td className="py-2 text-right tabular-nums">{Math.round(item.count / denominator * 10000) / 100}%</td></tr>)}
-        </tbody></table>
+        </tbody></table></div>
       </details> : null}
       {publicSubtype ? <PublicConversationBreakdown segment={publicSubtype} denominator={denominator} universe={universe} unit={unit} onSelect={onSelect} /> : null}
       {selection && context ? <AudienceConversationPosts key={`${context.therapeuticArea}:${context.corpusRevision}:${context.question}:${selection.id}:${selection.role || ""}`} context={context} group={group} selection={selection} onClose={() => setSelection(null)} /> : null}
@@ -101,12 +101,12 @@ export default function PersonaIntelligencePanel({ summary }) {
   return <div className={styles.panel}>
     <p className={styles.intro}>{denominator.toLocaleString()} {focused ? `matching ${unit}` : fullCorpus ? unit : `selected ${unit}`} · {audiences.length} audience groups · shares measure {unit}, not authors</p>
     <div className={styles.tableScroll} role="region" aria-label="Audience groups" tabIndex={0}>
-      <table className={styles.table}>
+      <div className="as-table-scroll" role="region" aria-label="Scrollable data table" tabIndex={0}><table className={styles.table}>
         <thead><tr className={styles.columns}><th scope="col">Audience group</th><th scope="col">Share of corpus</th><th scope="col" className={styles.posts}>{unit === "records" ? "Records" : "Posts"}</th><th scope="col" className={styles.share}>Share</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
         {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={denominator} universe={universe} unit={unit} context={summary.evidenceContext} />)}
         {exclusion ? <tbody><tr><td colSpan={5} className={styles.exclusionNote}>Excluded from audience groups; included in the {denominator.toLocaleString()} denominator.</td></tr></tbody> : null}
         {exclusion ? <AudienceGroup group={exclusion} denominator={denominator} universe={universe} unit={unit} context={summary.evidenceContext} /> : null}
-      </table>
+      </table></div>
     </div>
     <div className={styles.footer}>
       <p>{fullCorpus && summary.analyticalCount != null ? `${denominator.toLocaleString()} total = ${summary.analyticalCount.toLocaleString()} retained for thematic analytics + ${(exclusion?.count || 0).toLocaleString()} off-topic + ${extraExcluded.toLocaleString()} ${summary.additionalExclusionLabel || "spam/promotional"}` : `Shares use all ${denominator.toLocaleString()} selected ${unit}.`}</p>

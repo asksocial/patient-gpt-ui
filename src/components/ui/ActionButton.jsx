@@ -10,7 +10,8 @@ export function WorkingLabel() {
   return <span className="asksocial-working-label" role="status" aria-live="polite"><Spinner className="h-4 w-4" /><span>Working…</span></span>;
 }
 
-export default function ActionButton({ children, onClick = undefined, disabled = false, className = "", ref = undefined, ...props }) {
+export default function ActionButton({ children, onClick = undefined, disabled = false, className = "", variant = undefined, ref = undefined, ...props }) {
+  const resolvedVariant = variant || (props["aria-pressed"] !== undefined ? "secondary" : /(?:^|\s)bg-white(?:\s|$)/.test(className) ? "primary" : /(?:^|\s)border(?:\s|$)/.test(className) ? "secondary" : "tertiary");
   const [busy, setBusy] = useState(false);
   const element = useRef(null);
   useImperativeHandle(ref, () => element.current);
@@ -28,13 +29,13 @@ export default function ActionButton({ children, onClick = undefined, disabled =
       };
     };
   });
-  return <button {...props} ref={(node) => {
+  return <button {...props} data-variant={resolvedVariant} ref={(node) => {
     if (node) actionOwners.set(node, owner);
     element.current = node;
   }} disabled={disabled || busy} aria-busy={busy || undefined}
     aria-label={busy ? "Working…" : props["aria-label"]}
     data-working-action={busy || undefined}
-    className={`${className}${busy ? " asksocial-working-action" : ""}`}
+    className={`as-button ${className}${busy ? " asksocial-working-action" : ""}`}
     onClick={(event) => {
       if (!busy && onClick) return runAction(owner, () => onClick(event));
     }}>

@@ -22,5 +22,5 @@ export default async function AdminLayout({
     redirect("/workspace");
   }
 
-  return children;
+  return <div data-as-ui="admin">{children}<footer className="as-admin-footer">© 2026 Eavesdrop LLC. All rights reserved.</footer></div>;
 }

@@ -10,10 +10,10 @@ export default function CitationManifest({ citations = [] }) {
   if (!citations.length) return null;
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+    <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
+          <h3 className="text-sm font-semibold text-white">
             Sources &amp; verification
           </h3>
           <p className="mt-1 text-sm leading-5 text-white/45">

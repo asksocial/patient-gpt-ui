@@ -1,5 +1,10 @@
 "use client";
 
+
+import { SurfaceCard } from "./ui/Surface";
+import { ModalSurface } from "./ui/Surface";
+
+
 import ActionButton, { ActionForm } from "./ui/ActionButton";
 import Spinner from "./ui/Spinner";
 import ConversationThemeEvidence from "./ConversationThemeEvidence";
@@ -23,6 +28,7 @@ import CorpusDonutCards from "./CorpusDonutCards";
 import AnalyticalAnswerCard from "./AnalyticalAnswerCard";
 import AskQueryCard from "./AskQueryCard";
 import AskStarters from "./AskStarters";
+import { PageHeading } from "./ui/Surface";
 import { buildAskStarters } from "../config/askStarters";
 import ModuleIntelligenceView from "./ModuleIntelligenceView";
 import MonitoringCenter from "./MonitoringCenter";
@@ -230,9 +236,9 @@ function formatInsightTypeLabel(value) {
 
 function Panel({ title, subtitle, children }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+    <SurfaceCard className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="mb-4">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
+        <h3 className="text-sm font-semibold text-white">
           {title}
         </h3>
         {subtitle ? (
@@ -240,7 +246,7 @@ function Panel({ title, subtitle, children }) {
         ) : null}
       </div>
       {children}
-    </section>
+    </SurfaceCard>
   );
 }
 
@@ -289,14 +295,14 @@ function KeyMarketDifferences({ insights = [] }) {
 
   return (
     <Panel
-      title="Key Market Differences"
+      title="Key market differences"
       subtitle="High-level comparison across the most relevant countries in the retrieved curated intelligence"
     >
       <div className="space-y-3">
         {bullets.map((item) => (
           <div
             key={item.country}
-            className="rounded-xl border border-white/10 bg-black/30 px-4 py-3"
+            className="as-inset rounded-xl border border-white/10 bg-black/30 px-4 py-3"
           >
             <p className="text-sm leading-6 text-white/75">
               <span className="font-semibold text-white">{item.country}:</span>{" "}
@@ -324,14 +330,14 @@ function RelevantCuratedInsights({ insights = [] }) {
 
   return (
     <Panel
-      title="Relevant Curated Insights"
+      title="Relevant curated insights"
       subtitle="Structured country, persona, platform, barrier, trust, and information signals used to ground the answer"
     >
       <div className="space-y-6">
         {orderedCountries.map((country) => (
           <div key={country}>
             <div className="mb-3 flex items-center gap-2">
-              <h4 className="text-sm font-semibold uppercase tracking-[0.16em] text-white/85">
+              <h4 className="text-sm font-semibold text-white/85">
                 {country}
               </h4>
               <span className="h-px flex-1 bg-white/10" />
@@ -341,7 +347,7 @@ function RelevantCuratedInsights({ insights = [] }) {
               {grouped[country].map((insight, idx) => (
                 <div
                   key={insight.id || `${insight.title}-${idx}`}
-                  className="rounded-xl border border-white/10 bg-black/30 p-4"
+                  className="as-inset rounded-xl border border-white/10 bg-black/30 p-4"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <h5 className="text-sm font-semibold text-white">
@@ -381,8 +387,8 @@ function RelevantCuratedInsights({ insights = [] }) {
                   ) : null}
 
                   {insight.evidence_excerpt ? (
-                    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                    <div className="as-inset mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                      <p className="text-[11px] font-semibold text-white/40">
                         Evidence Excerpt
                       </p>
                       <p className="mt-2 text-sm leading-6 text-white/55">
@@ -407,14 +413,14 @@ function SourceMentionList({ title, mentions = [] }) {
 
   return (
     <div className="mt-5 border-t border-white/10 pt-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300/80">
+      <p className="text-[11px] font-semibold text-cyan-300/80">
         {title}
       </p>
       <div className="mt-3 space-y-3">
         {mentions.map((mention) => (
           <article
             key={mention.id}
-            className="rounded-xl border border-white/10 bg-black/30 p-4"
+            className="as-card rounded-xl border border-white/10 bg-black/30 p-4"
           >
             {mention.title && mention.title.length <= 160 && evidenceTextKey(mention.title) !== evidenceTextKey(mention.excerpt) ? <h5 className="text-sm font-semibold text-white">
               {mention.title}
@@ -477,7 +483,7 @@ function AssistantAnswer({
     <div className="space-y-4">
       {showDirectAnswer ? (
         <Panel
-          title="Direct Answer"
+          title="Direct answer"
           subtitle="Report-backed, social-enhanced summary"
         >
           <p className="text-[15px] leading-7 text-white/80">
@@ -497,14 +503,14 @@ function AssistantAnswer({
       >
         {curatedIntelligenceAvailable ? (
           <Panel
-            title="From Curated Intelligence"
+            title="From curated intelligence"
             subtitle="Baseline themes from existing reports"
           >
             <div className="space-y-4">
               {curatedThemes.map((theme, idx) => (
                 <div
                   key={`${theme.name}-${idx}`}
-                  className="rounded-xl border border-white/10 bg-black/30 p-4"
+                  className="as-inset rounded-xl border border-white/10 bg-black/30 p-4"
                 >
                   <h4 className="text-sm font-semibold text-white">
                     {theme.name}
@@ -535,7 +541,7 @@ function AssistantAnswer({
               conversationThemes.map((theme, idx) => (
                 <div
                   key={`${theme.name}-${idx}`}
-                  className="rounded-xl border border-white/10 bg-black/30 p-4"
+                  className="as-inset rounded-xl border border-white/10 bg-black/30 p-4"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <h4 className="text-sm font-semibold text-white">
@@ -636,15 +642,15 @@ function AssistantAnswer({
                 </div>
               ))
             ) : (
-              <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-white/40">
+              <div className="as-inset rounded-xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-white/40">
                 No social themes were returned for this response.
               </div>
             )}
           </div>
 
           {emergingNarratives.length ? (
-            <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
+            <div className="as-inset mt-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+              <p className="text-xs font-semibold text-amber-300">
                 Emerging Narratives
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -685,7 +691,7 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
       <AnalyticalAnswerCard answer={analyticalAnswer.directAnswer} summary={corpusSummary} />
 
       {corpusSummary ? <CorpusDonutCards summary={corpusSummary} /> : null}
-      {corpusSummary ? <section id="persona-breakdown" className="ask-persona-card"><h3>Persona intelligence</h3><PersonaIntelligencePanel summary={corpusSummary} /></section> : null}
+      {corpusSummary ? <section id="persona-breakdown" className="as-card ask-persona-card"><h3>Persona intelligence</h3><PersonaIntelligencePanel summary={corpusSummary} /></section> : null}
 
       {sections.filter((section) => !corpusSummary || !section.personaIntelligence).filter((section) => !corpusSummary?.questionEvidence || section.personaIntelligence).filter((section) => section.key !== "live_data_check").filter((section) => section.key !== "strategic_implications" && !/^what this means$/i.test(section.title || "") && !(corpusSummary && ["top_burdens", "market_variation"].includes(section.key))).map((section, index) => (
         <Panel
@@ -748,7 +754,7 @@ function ModeAnalysisView({ analysis }) {
         {sections.map((section) => (
           <article
             key={section.id}
-            className="rounded-xl border border-white/10 bg-black/30 p-4"
+            className="as-card rounded-xl border border-white/10 bg-black/30 p-4"
           >
             <h4 className="text-sm font-semibold text-white">
               {section.title}
@@ -765,7 +771,7 @@ function ModeAnalysisView({ analysis }) {
 
       {taxonomySignals.length ? (
         <div className="mt-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">
+          <p className="text-xs font-semibold text-white/40">
             Domain taxonomy signals
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -782,8 +788,8 @@ function ModeAnalysisView({ analysis }) {
         </div>
       ) : null}
 
-      <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-200/70">
+      <div className="as-inset mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
+        <p className="text-xs font-semibold text-amber-200/70">
           Analysis boundary
         </p>
         <p className="mt-2 text-xs leading-5 text-amber-100/65">
@@ -826,7 +832,7 @@ function AssistantMessage({ responsePayload }) {
 function LoadingMessage() {
   return (
     <div className="flex justify-start">
-      <div className="rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/50">
+      <div className="as-inset rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/50">
         Thinking…
       </div>
     </div>
@@ -839,9 +845,9 @@ function DestinationPlaceholder({
   contextLabel,
 }) {
   return (
-    <section className="flex min-h-[420px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center">
+    <section className="as-card flex min-h-[420px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center">
       <div className="max-w-xl">
-        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-lg text-white/65">
+        <div className="as-inset mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-lg text-white/65">
           ◇
         </div>
         <h2 className="mt-5 text-xl font-semibold text-white">
@@ -851,7 +857,7 @@ function DestinationPlaceholder({
           {description}
         </p>
         {contextLabel ? (
-          <p className="mt-4 text-xs font-medium uppercase tracking-[0.16em] text-emerald-300/70">
+          <p className="mt-4 text-xs font-medium text-emerald-300/70">
             Current module · {contextLabel}
           </p>
         ) : null}
@@ -1916,18 +1922,18 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                 >
                   {activeWorkspace || (activeDestination === "ask" && availableWorkspaces.length > 0) ? (
                     <div className="relative">
-                      <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="asksocial-workspace-select cursor-pointer appearance-none rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] pl-4 pr-12 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">
+                      <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="asksocial-workspace-select cursor-pointer appearance-none rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] pl-4 pr-12 py-2 text-[11px] font-semibold text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">
                         {!activeWorkspace ? <option value="" disabled>Select workspace</option> : null}
                         {availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}
                       </select>
                       <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="pointer-events-none absolute right-[18px] top-1/2 h-4 w-4 -translate-y-1/2 text-white"><path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </div>
-                  ) : activeDestination !== "ask" ? <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"><span>{activeDestination === "ask" ? "Save as workspace" : "Save current session as workspace"}</span></ActionButton> : null}
+                  ) : activeDestination !== "ask" ? <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"><span>{activeDestination === "ask" ? "Save as workspace" : "Save current session as workspace"}</span></ActionButton> : null}
                   {activeWorkspace ? (
                     <p
                       aria-live="polite"
                       data-save-status={workspaceSaveStatus}
-                      className={`mt-1 text-[9px] font-medium uppercase tracking-[0.14em] ${workspaceSaveStatus === "error" ? "text-rose-300/80" : "text-cyan-200/45"}`}
+                      className={`mt-1 text-[9px] font-medium ${workspaceSaveStatus === "error" ? "text-rose-300/80" : "text-cyan-200/45"}`}
                     >
                       {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
                     </p>
@@ -1945,7 +1951,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
       className="asksocial-v2 asksocial-shell min-h-screen bg-black text-white"
       data-rail-collapsed={leftRailCollapsed ? "true" : "false"}
     >
-      {workspaceSaveDialogOpen ? <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="save-current-session-title"><ActionForm onSubmit={saveCurrentSessionAsWorkspace} className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300/70">Workspace</p><h2 id="save-current-session-title" className="mt-2 text-xl font-semibold text-white">Save current session as workspace</h2><p className="mt-2 text-sm leading-6 text-white/45">Name this workspace to retain the active conversation and automatically save subsequent intelligence generated while it is selected.</p><label className="mt-5 block text-xs font-medium text-white/50">Workspace name<input autoFocus value={workspaceDraftName} onChange={(event) => { setWorkspaceDraftName(event.target.value); if (workspaceCreateError) setWorkspaceCreateError(""); }} placeholder="e.g., Botulinum toxin PV review" className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none focus:border-cyan-300/40" /></label>{workspaceCreateError ? <p role="alert" className="mt-3 text-xs text-amber-300">{workspaceCreateError}</p> : null}<div className="mt-6 flex justify-end gap-3"><ActionButton type="button" onClick={() => setWorkspaceSaveDialogOpen(false)} disabled={workspaceCreateBusy} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">Cancel</ActionButton><ActionButton type="submit" disabled={workspaceCreateBusy || !workspaceDraftName.trim()} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{workspaceCreateBusy ? "Saving…" : "Save workspace"}</ActionButton></div></ActionForm></div> : null}
+      {workspaceSaveDialogOpen ? <ModalSurface className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="save-current-session-title" onRequestClose={()=>setWorkspaceSaveDialogOpen(false)} dismissDisabled={workspaceCreateBusy}><ActionForm onSubmit={saveCurrentSessionAsWorkspace} className="w-full max-w-lg rounded-3xl border border-white/15 bg-[var(--as-field)] p-6 shadow-2xl"><p className="text-xs font-semibold text-cyan-300/70">Workspace</p><h2 id="save-current-session-title" className="mt-2 text-xl font-semibold text-white">Save current session as workspace</h2><p className="mt-2 text-sm leading-6 text-white/45">Name this workspace to retain the active conversation and automatically save subsequent intelligence generated while it is selected.</p><label className="mt-5 block text-xs font-medium text-white/50">Workspace name<input autoFocus value={workspaceDraftName} onChange={(event) => { setWorkspaceDraftName(event.target.value); if (workspaceCreateError) setWorkspaceCreateError(""); }} placeholder="e.g., Botulinum toxin PV review" className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm text-white outline-none focus:border-cyan-300/40" /></label>{workspaceCreateError ? <p role="alert" className="mt-3 text-xs text-amber-300">{workspaceCreateError}</p> : null}<div className="mt-6 flex justify-end gap-3"><ActionButton type="button" onClick={() => setWorkspaceSaveDialogOpen(false)} disabled={workspaceCreateBusy} className="cursor-pointer rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:cursor-not-allowed disabled:opacity-40">Cancel</ActionButton><ActionButton type="submit" disabled={workspaceCreateBusy || !workspaceDraftName.trim()} className="cursor-pointer rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{workspaceCreateBusy ? "Saving…" : "Save workspace"}</ActionButton></div></ActionForm></ModalSurface> : null}
       <div
         data-asksocial-layout
         className={
@@ -2192,7 +2198,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
           )}
         </aside>
 
-        <main data-asksocial-workarea data-ask-workspace={activeDestination === "ask" ? "true" : undefined} data-ask-empty={activeDestination === "ask" && showAskEmptyState ? "true" : undefined} className="flex min-h-screen min-w-0 flex-col">
+        <main data-asksocial-workarea data-as-ui="workspace" data-density={activeDestination.startsWith("pv_") || activeDestination === "intelligence_workspaces" ? "dense" : undefined} data-ask-workspace={activeDestination === "ask" ? "true" : undefined} data-ask-empty={activeDestination === "ask" && showAskEmptyState ? "true" : undefined} className="flex min-h-screen min-w-0 flex-col">
           <header className="asksocial-topbar order-1 sticky top-0 z-20 border-b-0 border-white/10 bg-black/85 px-6 pt-5 pb-0 backdrop-blur-xl">
             <div className="mb-5 flex items-start gap-3 border-b border-white/10 pb-4">
               <div className="min-w-0 flex-1">
@@ -2216,67 +2222,15 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                   }
                 />
               </div>
-              {activeDestination === "ask" ? <div className="ask-topbar-workspace">{workspaceControl}{hasAskResults ? <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action">Save as workspace</ActionButton> : null}</div> : null}
+              <div className="ask-topbar-workspace">{workspaceControl}{hasAskResults ? <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action">Save as workspace</ActionButton> : null}</div>
             </div>
-            {activeDestination !== "ask" ? <div className="asksocial-workarea-header-card flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                  {destinationCopy.eyebrow}
-                </p>
-                <h1 className="text-2xl font-semibold tracking-tight text-white">
-                  {activeDestination === "ask"
-                    ? currentSearchResult.question || activeSession?.title || destinationCopy.title
-                    : destinationCopy.title}
-                </h1>
-                <p className="max-w-3xl text-sm leading-6 text-white/60">
-                  {activeDestination ===
-                    "ask" &&
-                  activeSession
-                    ? `Working across ${activeSession.therapeutic_area}. Last updated ${formatDate(
-                        activeSession.updated_at
-                      )}.`
-                    : destinationCopy.description}
-                </p>
-                {activeDestination.startsWith("pv_") ? (
-                  <div className="asksocial-pv-context-chips mt-2 flex flex-wrap gap-2">
-                    <span>Human review required</span>
-                    <span>Potential records, not AE determinations</span>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="flex shrink-0 flex-wrap items-start justify-end gap-2 self-end xl:ml-auto xl:self-start">
-                <div
-                  data-testid="active-workspace-indicator"
-                  aria-label={activeWorkspace ? `Current workspace: ${activeWorkspace.name}` : "Save current session as workspace"}
-                  className="text-right"
-                >
-                  {activeWorkspace ? (
-                    <div className="relative">
-                      <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="asksocial-workspace-select cursor-pointer appearance-none rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] pl-4 pr-12 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">
-                        {availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}
-                      </select>
-                      <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="pointer-events-none absolute right-[18px] top-1/2 h-4 w-4 -translate-y-1/2 text-white"><path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    </div>
-                  ) : <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"><span>Save current session as workspace</span></ActionButton>}
-                  {activeWorkspace ? (
-                    <>
-                      <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.14em] text-cyan-200/45">Active Workspace</p>
-                      <span aria-live="polite" className="sr-only">
-                        {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
-                      </span>
-                    </>
-                  ) : null}
-                </div>
-
-              </div>
-            </div> : null}
+            {activeDestination !== "ask" ? <PageHeading title={destinationCopy.title} subtitle={destinationCopy.description} /> : null}
 
             {activeDestination ===
               "ask" &&
             selectedCoverage?.status ===
               "conversation_only" ? (
-                <div className="mt-2 max-w-3xl rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-200/75">
+                <div className="as-inset mt-2 max-w-3xl rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-200/75">
                   Conversation-only coverage: {selectedCoverage.reason}
                 </div>
             ) : null}
@@ -2285,7 +2239,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
           <div data-asksocial-workarea-content data-search-page={activeDestination === "ask" ? "true" : undefined} className="relative order-3 flex-1 px-6 pt-3 pb-6">
             {activeDestination === "ask" && (loading || openingSession) ? (
               <div className="pointer-events-none absolute top-1.5 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2" data-inline-activity data-testid="search-loading-indicator">
-                <div role="status" aria-live="polite" className="inline-flex items-center gap-2.5 whitespace-nowrap rounded-full border border-[#dce5e1] bg-white px-6 py-3.5 text-base font-semibold text-[#087f72] shadow-md">
+                <div role="status" aria-live="polite" className="as-inset inline-flex items-center gap-2.5 whitespace-nowrap rounded-full border border-[var(--as-track)] bg-white px-6 py-3.5 text-base font-semibold text-[var(--as-primary)] shadow-md">
                   <Spinner className="h-6 w-6" />
                   <span>Working…</span>
                 </div>
@@ -2307,7 +2261,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
             ) : activeDestination ===
               "ask" ? (
               <div className="space-y-4">
-              <section className="asksocial-answer-canvas flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
+              <section className="as-card asksocial-answer-canvas flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
                 {showAskEmptyState ? (
                   <AskStarters starters={starterQuestions} onChoose={chooseStarter} disabled={!therapeuticArea || loadingAreas} />
                 ) : (
@@ -2328,7 +2282,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                 ) : null}
 
                 {error ? (
-                  <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+                  <div className="as-inset rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
                     {error}
                   </div>
                 ) : null}
@@ -2426,7 +2380,6 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
           </div>
           ) : null}
 
-          {activeDestination === "ask" ? (
             <footer
               data-testid="primary-search-footer"
               className="order-4 border-t border-white/10 px-6 py-4"
@@ -2435,7 +2388,6 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                 © 2026 Eavesdrop LLC. All rights reserved.
               </p>
             </footer>
-          ) : null}
         </main>
       </div>
     </div>

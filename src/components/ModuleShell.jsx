@@ -1,5 +1,7 @@
 "use client";
 
+
+import { SurfaceCard } from "./ui/Surface";
 import ActionButton from "./ui/ActionButton";
 
 import {
@@ -27,8 +29,8 @@ function ListCard({
   empty,
 }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-      <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">
+    <SurfaceCard className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <h3 className="text-xs font-semibold text-white/40">
         {title}
       </h3>
       <div className="mt-4 space-y-2">
@@ -38,7 +40,7 @@ function ListCard({
               key={
                 item.id || item
               }
-              className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white/70"
+              className="as-inset rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white/70"
             >
               {item.name ||
                 labelTab(item)}
@@ -50,7 +52,7 @@ function ListCard({
           </p>
         )}
       </div>
-    </section>
+    </SurfaceCard>
   );
 }
 
@@ -75,7 +77,7 @@ export default function ModuleShell({
 
   return (
     <div className="space-y-5">
-      {module.id !== "medical_affairs" ? <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.025] p-1.5">
+      {module.id !== "medical_affairs" ? <div className="as-inset overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.025] p-1.5">
         <div className="flex min-w-max gap-1">
           {experience.tabs.map(
             (tab) => (
@@ -153,7 +155,7 @@ export default function ModuleShell({
       ) : activeTab ===
         "agents" ? (
         <ListCard
-          title="Available Intelligence Modes"
+          title="Available intelligence modes"
           items={experience.agents}
           empty="No specialized modes are licensed."
         />
@@ -177,7 +179,7 @@ export default function ModuleShell({
           empty="No module evaluation criteria are configured."
         />
       ) : (
-        <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-8">
+        <section className="as-card rounded-3xl border border-white/10 bg-white/[0.02] p-8">
           <h2 className="text-lg font-semibold text-white">
             {labelTab(activeTab)}
           </h2>

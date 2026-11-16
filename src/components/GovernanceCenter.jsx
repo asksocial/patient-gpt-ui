@@ -1,5 +1,8 @@
 "use client";
 
+
+import { ContentSkeleton, ErrorState } from "./ui/Surface";
+import { SurfaceCard } from "./ui/Surface";
 import { activityFetch as fetch } from "../lib/client/requestActivity";
 
 import {
@@ -13,21 +16,21 @@ function GovernanceList({
   renderItem,
 }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-      <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-white/55">
+    <SurfaceCard className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <h2 className="text-sm font-semibold text-white/55">
         {title}
       </h2>
       <div className="mt-4 space-y-2">
         {items.map((item) => (
           <div
             key={item.id || item.routeId}
-            className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white/70"
+            className="as-inset rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white/70"
           >
             {renderItem(item)}
           </div>
         ))}
       </div>
-    </section>
+    </SurfaceCard>
   );
 }
 
@@ -69,30 +72,18 @@ export default function GovernanceCenter() {
     load();
   }, []);
 
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
-        {error}
-      </div>
-    );
-  }
-  if (!governance) {
-    return (
-      <div className="text-sm text-white/40">
-        Loading governance controls…
-      </div>
-    );
-  }
+  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
+  if (!governance) return <ContentSkeleton label="Loading governance controls…" rows={4} />;
 
   return (
     <div className="space-y-5">
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="as-layout-section grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {Object.entries(
           governance.controls
         ).map(([key, enabled]) => (
           <div
             key={key}
-            className="rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.06] p-4"
+            className="as-inset rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.06] p-4"
           >
             <p className="text-sm font-medium text-white">
               {key
@@ -153,8 +144,8 @@ export default function GovernanceCenter() {
         />
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-white/55">
+      <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <h2 className="text-sm font-semibold text-white/55">
           Measurement and evaluations
         </h2>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -174,9 +165,9 @@ export default function GovernanceCenter() {
             return (
               <div
                 key={layer}
-                className="rounded-xl border border-white/10 bg-black/30 p-4"
+                className="as-inset rounded-xl border border-white/10 bg-black/30 p-4"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/70">
+                <p className="text-xs font-semibold text-emerald-300/70">
                   {layer}
                 </p>
                 <p className="mt-2 text-2xl font-semibold text-white">

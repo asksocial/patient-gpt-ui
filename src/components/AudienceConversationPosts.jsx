@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { activityFetch } from "../lib/client/requestActivity";
 import styles from "./PersonaIntelligencePanel.module.css";
+import { ContentSkeleton } from "./ui/Surface";
 
 export default function AudienceConversationPosts({ context, group, selection, onClose }) {
   const dialog = useRef(null);
@@ -45,10 +46,10 @@ export default function AudienceConversationPosts({ context, group, selection, o
         <h4 id={headingId}>{selection.label}</h4>
         <p id={contextId} className={styles.evidenceContext}>{group.label}{selection.roleLabel ? ` · ${selection.roleLabel}` : ""} · {context.question ? "Matching the current question" : "Full corpus"}</p>
       </div>
-      <button type="button" className={styles.closeEvidence} onClick={onClose} autoFocus>Close mentions</button>
+      <button type="button" className={styles.closeEvidence} onClick={onClose} aria-label="Close mentions" autoFocus><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
     </div>
     <section ref={panel} tabIndex={-1} className={styles.evidence} aria-label="Supporting mentions">
-    {error ? <div role="alert"><p>{error}</p><button type="button" className={styles.conversationLink} onClick={() => { setError(""); setAttempt(value => value + 1); }}>Retry posts</button></div> : !result ? <p role="status">Loading posts…</p> : <>
+    {error ? <div role="alert"><p>{error}</p><button type="button" className={styles.conversationLink} onClick={() => { setError(""); setAttempt(value => value + 1); }}>Retry posts</button></div> : !result ? <ContentSkeleton label="Loading posts…" /> : <>
       <p role="status">{result.total.toLocaleString()} matching posts · Page {result.page} of {result.pages}</p>
       {!result.total ? <p>No posts match this conversation type in this audience and question.</p> : <ul className={styles.postList}>{result.items.map(item => <li key={item.id}>
         <p className={styles.postMeta}>{[item.platform, item.country].filter(Boolean).join(" · ")}</p>

@@ -1,4 +1,5 @@
 "use client";
+import { getRankColor } from "./ui/chartStyles";
 
 
 import { formatGraphMarket, graphArcLayout, graphSourceNames, graphMatchesTopic, graphTrajectory } from "../answering/knowledge/graphPresentation";
@@ -12,14 +13,7 @@ function words(value) {
     .join(" ");
 }
 
-const CARD_STATUS_TONES = {
-  confidence: "border-[#c3e8e2] bg-[#e3f4f1] text-[#187f72]",
-  corroboration: "border-[#ded5fa] bg-[#eee9fb] text-[#6650ad]",
-  stable: "border-[#cfdef9] bg-[#e7effc] text-[#345f9b]",
-  declining: "border-[#f5d9bc] bg-[#fcf0e3] text-[#98570f]",
-  rising: "border-[#c3e8e2] bg-[#e3f4f1] text-[#187f72]",
-  unknown: "border-[#dce3e0] bg-[#edf1ef] text-[#61736d]",
-};
+const CARD_STATUS_TONES = { confidence: "as-badge-success", corroboration: "as-badge-neutral", stable: "as-badge-neutral", declining: "as-badge-caution", rising: "as-badge-success", unknown: "as-badge-neutral" };
 
 function CardStatus({ label, value, tone, level, arrow }) {
   return (
@@ -64,15 +58,15 @@ function groupRelationships(nodes, edges) {
 function RelationshipTable({ group, nodes }) {
   const name = (id) => nodes.find((node) => node.themeId === id)?.label || words(id);
   return (
-    <table aria-label={group.title} className="w-full min-w-[760px] table-fixed border-collapse text-left">
+    <div className="as-table-scroll" role="region" aria-label="Scrollable data table" tabIndex={0}><table aria-label={group.title} className="w-full min-w-[760px] table-fixed border-collapse text-left">
       <colgroup><col className="w-[37%]" /><col className="w-[45%]" /><col className="w-[18%]" /></colgroup>
       <thead>
-        <tr className="border-b border-[#cfdad4]">
+        <tr className="border-b border-[var(--as-track)]">
           <th scope="col" className="pb-4 pr-7 align-bottom">
-            <h3 className="max-w-sm text-lg font-bold leading-snug text-[#12352e] sm:text-xl">{group.title}</h3>
+            <h3 className="max-w-sm text-lg font-bold leading-snug text-[var(--as-text)] sm:text-xl">{group.title}</h3>
           </th>
-          <th scope="col" className="pb-4 pr-7 align-bottom text-sm font-normal text-[#8a9993] sm:text-base">Strength</th>
-          <th scope="col" className="pb-4 align-bottom text-sm font-normal text-[#8a9993] sm:text-base">Confidence</th>
+          <th scope="col" className="pb-4 pr-7 align-bottom text-sm font-normal text-[var(--as-muted)] sm:text-base">Strength</th>
+          <th scope="col" className="pb-4 align-bottom text-sm font-normal text-[var(--as-muted)] sm:text-base">Confidence</th>
         </tr>
       </thead>
       <tbody>
@@ -88,21 +82,21 @@ function RelationshipTable({ group, nodes }) {
           const confidence = relationship.confidence || "insufficient";
           const level = { high: 3, moderate: 2, directional: 1 }[confidence] || 0;
           return (
-            <tr key={`${relationship.sourceThemeId}-${relationship.targetThemeId}-${index}`} className="border-b border-[#dde5e1] transition-colors hover:bg-[#edf2ef]">
-              <th scope="row" className="break-words py-4 pr-7 text-base font-normal leading-relaxed text-[#253b33] sm:py-5 sm:text-lg">{label}</th>
+            <tr key={`${relationship.sourceThemeId}-${relationship.targetThemeId}-${index}`} className="border-b border-[var(--as-track)] transition-colors hover:bg-[var(--as-track)]">
+              <th scope="row" className="break-words py-4 pr-7 text-base font-normal leading-relaxed text-[var(--as-text)] sm:py-5 sm:text-lg">{label}</th>
               <td className="py-4 pr-7 sm:py-5">
                 <div className="flex items-center gap-5">
                   <div role="meter" aria-label={`${label} relationship strength`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={strength}
-                    className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[#e1e8e5]">
-                    <div className="h-full rounded-full bg-[#209585]" style={{ width: `${strength}%` }} />
+                    className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--as-track)]">
+                    <div className="h-full rounded-full bg-[var(--as-primary)]" role="img" aria-label={`Relationship strength: ${strength}%`} style={{ width: `${strength}%` }} />
                   </div>
-                  <span className="w-12 shrink-0 text-right text-lg font-bold tabular-nums text-[#12352e] sm:text-xl">{strength}%</span>
+                  <span className="w-12 shrink-0 text-right text-lg font-bold tabular-nums text-[var(--as-text)] sm:text-xl">{strength}%</span>
                 </div>
               </td>
               <td className="py-4 sm:py-5">
-                <div className="flex items-center gap-3 text-sm text-[#667770] sm:text-base">
+                <div className="flex items-center gap-3 text-sm text-[var(--as-muted)] sm:text-base">
                   <span aria-hidden="true" className="inline-flex shrink-0 gap-1">
-                    {[1, 2, 3].map((dot) => <span key={dot} className={`h-2 w-2 rounded-full ${dot <= level ? "bg-[#209585]" : "bg-[#c6e9e3]"}`} />)}
+                    {[1, 2, 3].map((dot) => <span key={dot} className={`h-2 w-2 rounded-full ${dot <= level ? "bg-[var(--as-tint)]" : "bg-[var(--as-track)]"}`} />)}
                   </span>
                   <span>{words(confidence)}</span>
                 </div>
@@ -111,7 +105,7 @@ function RelationshipTable({ group, nodes }) {
           );
         })}
       </tbody>
-    </table>
+    </table></div>
   );
 }
 
@@ -179,9 +173,9 @@ function normalizeThemes({ snapshot, themes, brief, longitudinalTracking }) {
 
 function EmptyState({ therapeuticArea }) {
   return (
-    <div className="flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-10 text-center">
+    <div className="as-inset flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-10 text-center">
       <div className="max-w-xl">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-xl text-cyan-300">
+        <div className="as-inset mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-xl text-cyan-300">
           ◇
         </div>
         <h2 className="mt-5 text-xl font-semibold text-white">
@@ -233,17 +227,17 @@ export default function KnowledgeGraphView({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-3xl border border-[#dde5e1] bg-[#f6f8f7] p-5 sm:p-8">
+      <section className="as-card rounded-3xl border border-[var(--as-track)] bg-[var(--as-card)] p-5 sm:p-8">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#087f72]">
+            <p className="text-sm font-bold text-[var(--as-primary)]">
               Evidence-qualified topology
             </p>
-            <h2 className="mt-2 text-3xl font-bold text-[#12352e]">
+            <h2 className="mt-2 text-3xl font-bold text-[var(--as-text)]">
               {therapeuticArea || snapshot?.therapeuticArea || brief?.therapeuticArea}
             </h2>
           </div>
-          <p className="text-base text-[#667770]">
+          <p className="text-base text-[var(--as-muted)]">
             {datasetFindingCount
               ? `${datasetFindingCount} analyzed findings`
               : "Based on the latest available analysis"}
@@ -258,7 +252,7 @@ export default function KnowledgeGraphView({
             className="block w-full"
             style={{ minWidth: Math.min(graphWidth, Math.max(680, nodes.length * 130)) }}
           >
-            <line x1="48" y1={baseline} x2={graphWidth - 48} y2={baseline} stroke="#e0e7e3" strokeWidth="1.5" />
+            <line x1="48" y1={baseline} x2={graphWidth - 48} y2={baseline} stroke="var(--as-track)" strokeWidth="1.5" />
             {edges.map((relationship, index) => {
               const source = positions.get(relationship.sourceThemeId);
               const target = positions.get(relationship.targetThemeId);
@@ -272,7 +266,7 @@ export default function KnowledgeGraphView({
                   key={`${relationship.sourceThemeId}-${relationship.targetThemeId}-${index}`}
                   d={`M ${left} ${baseline} A ${distance / 2} ${distance * 0.31} 0 0 1 ${right} ${baseline}`}
                   fill="none"
-                  stroke="#8e9b96"
+                  stroke="var(--as-data-other)"
                   strokeWidth={1.2 + strength * 7}
                   strokeLinecap="round"
                   strokeDasharray={relationship.relationshipType === "contrasts_with" ? "7 6" : undefined}
@@ -286,13 +280,13 @@ export default function KnowledgeGraphView({
               return (
                 <g key={node.themeId} transform={`translate(${position.x} ${baseline})`}>
                   <title>{`${node.label} · ${node.eligiblePercent}% eligible prevalence · ${words(node.confidence)} confidence · ${words(node.triangulation)} corroboration`}</title>
-                  <circle r={position.radius} fill={index === 0 ? "#0e7467" : "#209585"} stroke="#f6f8f7" strokeWidth="3" />
-                  <text textAnchor="middle" fill="#2e403a" fontSize="18" fontWeight="600">
+                  <circle r={position.radius} fill={getRankColor(index, nodes.length)} stroke="var(--as-track)" strokeWidth="3" />
+                  <text textAnchor="middle" fill="var(--as-text)" fontSize="18" fontWeight="600">
                     {position.lines.map((line, lineIndex) => (
                       <tspan key={lineIndex} x="0" y={82 + lineIndex * 23}>{line}</tspan>
                     ))}
                   </text>
-                  <text x="0" y={82 + position.lines.length * 23 + 5} textAnchor="middle" fill="#667770" fontSize="18">
+                  <text x="0" y={82 + position.lines.length * 23 + 5} textAnchor="middle" fill="var(--as-text)" fontSize="18">
                     {node.eligiblePercent}%
                   </text>
                 </g>
@@ -300,14 +294,14 @@ export default function KnowledgeGraphView({
             })}
           </svg>
         </div>
-        <div className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-[#667770] sm:text-base">
+        <div className="mt-5 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-[var(--as-muted)] sm:text-base">
           <span className="inline-flex items-center gap-3">
-            <span aria-hidden="true" className="h-3.5 w-3.5 rounded-full bg-[#209585]" />
+            <span aria-hidden="true" className="h-3.5 w-3.5 rounded-full bg-[var(--as-tint)]" />
             Area = prevalence
           </span>
           {[["Weak", 1.5], ["Moderate", 4], ["Strong", 7]].map(([label, thickness]) => (
             <span key={label} className="inline-flex items-center gap-3">
-              <span aria-hidden="true" className="inline-block w-10 rounded-full bg-[#8e9b96]" style={{ height: thickness }} />
+              <span aria-hidden="true" className="inline-block w-10 rounded-full bg-[var(--as-primary)]" style={{ height: thickness }} />
               {label}
             </span>
           ))}
@@ -317,7 +311,7 @@ export default function KnowledgeGraphView({
         </p>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-2">
+      <section className="as-layout-section grid gap-5 xl:grid-cols-2">
         {nodes.map((node, index) => {
           const percent = Math.max(0, Math.min(100, Number(node.eligiblePercent) || 0));
           const largestPercent = Math.max(1, ...nodes.map((item) => Number(item.eligiblePercent) || 0));
@@ -326,18 +320,18 @@ export default function KnowledgeGraphView({
           return (
             <article
               key={node.themeId}
-              className="flex min-w-0 flex-col rounded-3xl border border-[#dde5e1] bg-[#f6f8f7] p-5 sm:p-7"
+              className="as-card flex min-w-0 flex-col rounded-3xl border border-[var(--as-track)] bg-[var(--as-card)] p-5 sm:p-7"
             >
               <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-3">
-                <span aria-hidden="true" className="text-sm font-medium tabular-nums text-[#8a9993]">
+                <span aria-hidden="true" className="text-sm font-medium tabular-nums text-[var(--as-muted)]">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <h3 className="min-w-0 text-lg font-bold leading-snug text-[#12352e] sm:text-xl">{onOpenTheme ? <button type="button" onClick={()=>onOpenTheme(node.themeId)} className="text-left underline underline-offset-4">{node.label}</button> : node.label}</h3>
-                <p className="whitespace-nowrap text-3xl font-bold leading-none tracking-tight tabular-nums text-[#12352e] sm:text-4xl">
-                  {percent}<span className="ml-0.5 text-lg font-semibold text-[#65746e]">%</span>
+                <h3 className="min-w-0 text-lg font-bold leading-snug text-[var(--as-text)] sm:text-xl">{onOpenTheme ? <button type="button" onClick={()=>onOpenTheme(node.themeId)} className="text-left underline underline-offset-4">{node.label}</button> : node.label}</h3>
+                <p className="whitespace-nowrap text-3xl font-bold leading-none tracking-tight tabular-nums text-[var(--as-text)] sm:text-4xl">
+                  {percent}<span className="ml-0.5 text-lg font-semibold text-[var(--as-muted)]">%</span>
                 </p>
                 {node.description ? (
-                  <p className="col-start-2 col-end-4 mt-2 text-sm leading-6 text-[#71817b] sm:text-base">
+                  <p className="col-start-2 col-end-4 mt-2 text-sm leading-6 text-[var(--as-muted)] sm:text-base">
                     {node.description}
                   </p>
                 ) : null}
@@ -349,9 +343,9 @@ export default function KnowledgeGraphView({
                 aria-valuemax={largestPercent}
                 aria-valuenow={percent}
                 aria-valuetext={`${percent}% eligible prevalence`}
-                className="mt-5 h-1.5 overflow-hidden rounded-full bg-[#e1e8e5]"
+                className="mt-5 h-1.5 overflow-hidden rounded-full bg-[var(--as-track)]"
               >
-                <div className="h-full rounded-full bg-[#299e8c]" style={{ width: `${(percent / largestPercent) * 100}%` }} />
+                <div className="h-full rounded-full bg-[var(--as-primary)]" role="img" aria-label={`Theme share: ${percent}%`} style={{ width: `${(percent / largestPercent) * 100}%` }} />
               </div>
               <div className="mt-6 flex flex-wrap gap-2.5">
                 <CardStatus label="Confidence" value={node.confidence} tone="confidence"
@@ -361,7 +355,7 @@ export default function KnowledgeGraphView({
                 <CardStatus label="Trajectory" value={trajectory} tone={trend.tone}
                   arrow={trend.arrow} />
               </div>
-              <dl className="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 border-t border-[#dde5e1] pt-5 text-sm leading-6">
+              <dl className="mt-6 grid grid-cols-[auto_minmax(0,1fr)] gap-x-5 gap-y-2 border-t border-[var(--as-track)] pt-5 text-sm leading-6">
                 {[
                   ["Sources", sourceDetails(node.independentSourceCategories, node.independentSourceCategoryCount, " · ").replace(/\bOr\b/g, "or")],
                   ["Channels", sourceDetails(node.channels, node.channelCount)],
@@ -370,8 +364,8 @@ export default function KnowledgeGraphView({
                   ["Audiences", node.audiences?.length ? node.audiences.map(words).join(", ") : null],
                 ].map(([label, value]) => value ? (
                   <div key={label} className="contents">
-                    <dt className="text-[#94a29c]">{label}</dt>
-                    <dd className="min-w-0 break-words text-[#4e615a]">{value}</dd>
+                    <dt className="text-[var(--as-muted)]">{label}</dt>
+                    <dd className="min-w-0 break-words text-[var(--as-muted)]">{value}</dd>
                   </div>
                 ) : null)}
               </dl>
@@ -380,8 +374,8 @@ export default function KnowledgeGraphView({
         })}
       </section>
 
-      <section className="rounded-3xl border border-[#dde5e1] bg-[#f6f8f7] p-5 sm:p-8">
-        <h2 className="text-base font-bold uppercase tracking-[0.18em] text-[#12352e]">
+      <section className="as-card rounded-3xl border border-[var(--as-track)] bg-[var(--as-card)] p-5 sm:p-8">
+        <h2 className="text-base font-bold text-[var(--as-text)]">
           Supported relationships
         </h2>
         {edges.length ? (
@@ -391,7 +385,7 @@ export default function KnowledgeGraphView({
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-sm leading-6 text-[#667770]">
+          <p className="mt-3 text-sm leading-6 text-[var(--as-muted)]">
             Themes are available, but this analysis did not produce sufficiently supported relationship edges. AskSocial does not infer missing connections.
           </p>
         )}

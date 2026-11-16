@@ -1,5 +1,7 @@
 "use client";
 
+
+import { Field, SurfaceCard } from "./ui/Surface";
 import ActionButton, { ActionForm } from "./ui/ActionButton";
 
 import { activityFetch as fetch } from "../lib/client/requestActivity";
@@ -7,7 +9,7 @@ import { activityFetch as fetch } from "../lib/client/requestActivity";
 import { useEffect, useState } from "react";
 
 function Card({ children }) {
-  return <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">{children}</div>;
+  return <SurfaceCard as="div">{children}</SurfaceCard>;
 }
 
 export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
@@ -93,12 +95,12 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
       <div className="space-y-4">
         <Card>
           <ActionForm onSubmit={runSearch} className="flex flex-col gap-3 sm:flex-row">
-            <input
+            <Field label="Search intelligence" className="flex-1"><input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search evidence, reports, answers, and patient intelligence across workspaces"
               className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-cyan-400/40"
-            />
+            /></Field>
             <ActionButton type="submit" disabled={loading} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-50">
               {loading ? "Searching…" : "Search"}
             </ActionButton>
@@ -131,7 +133,7 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
           <Card>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.14em] text-white/40">{selectedResult.kind} · {selectedResult.intelligence_workspaces?.name || "Workspace"}</p>
+                <p className="text-xs text-white/40">{selectedResult.kind} · {selectedResult.intelligence_workspaces?.name || "Workspace"}</p>
                 <h3 className="mt-2 text-lg font-semibold text-white">{selectedResult.title}</h3>
               </div>
               <ActionButton type="button" onClick={() => setSelectedResult(null)} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Close</ActionButton>
@@ -146,7 +148,7 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <Card>
-        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Saved searches</h2>
+        <h2 className="text-sm font-semibold text-white">Saved searches</h2>
         <div className="mt-4 space-y-2">
           {savedSearches.length ? savedSearches.map((search) => (
             <ActionButton key={search.id} onClick={() => { setQuery(search.query); return onUsePrompt?.(search.query); }} className="block w-full rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-white/20">
@@ -158,10 +160,10 @@ export default function IntelligenceLibrary({ view = "search", onUsePrompt }) {
       </Card>
 
       <Card>
-        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Prompt library</h2>
+        <h2 className="text-sm font-semibold text-white">Prompt library</h2>
         <ActionForm onSubmit={saveNewPrompt} className="mt-4 space-y-3">
-          <input value={promptName} onChange={(event) => setPromptName(event.target.value)} placeholder="Prompt name" className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none" />
-          <textarea value={promptText} onChange={(event) => setPromptText(event.target.value)} placeholder="Reusable AskSocial prompt" rows={3} className="w-full resize-none rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none" />
+          <Field label="Prompt name"><input value={promptName} onChange={(event) => setPromptName(event.target.value)} placeholder="Prompt name" className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none" /></Field>
+          <Field label="Reusable AskSocial prompt"><textarea value={promptText} onChange={(event) => setPromptText(event.target.value)} placeholder="Reusable AskSocial prompt" rows={3} className="w-full resize-none rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none" /></Field>
           <ActionButton type="submit" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black">Save prompt</ActionButton>
         </ActionForm>
         <div className="mt-5 space-y-2">

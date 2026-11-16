@@ -21,7 +21,7 @@ export default function EvidenceMentionCard({
   const remainingTagCount = Math.max(0, tags.filter(Boolean).length - visibleTags.length);
 
   return (
-    <article className="rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-cyan-300/20 hover:bg-cyan-300/[0.025]">
+    <article className="as-card rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-cyan-300/20 hover:bg-cyan-300/[0.025]">
       <ActionButton
         type="button"
         onClick={onOpen}
@@ -29,7 +29,7 @@ export default function EvidenceMentionCard({
         className="block w-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-300/70">{eyebrow}</p>
+          <p className="text-[11px] font-semibold text-cyan-300/70">{eyebrow}</p>
           {badge ? <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.07] px-2.5 py-1 text-[10px] font-medium capitalize text-cyan-200/75">{badge}</span> : null}
         </div>
         <h4 className="mt-3 line-clamp-2 text-sm font-semibold leading-5 text-white/85">{displayValue(title, eyebrow)}</h4>
@@ -46,8 +46,8 @@ export default function EvidenceMentionCard({
 
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
         {metrics.slice(0, 4).map((metric) => (
-          <div key={metric.label} className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-white/30">{metric.label}</p>
+          <div key={metric.label} className="as-inset rounded-lg border border-white/[0.07] bg-white/[0.02] p-3">
+            <p className="text-[10px] text-white/30">{metric.label}</p>
             <p className={`mt-1 truncate text-white/65 ${metric.capitalize ? "capitalize" : ""}`} title={displayValue(metric.value)}>{displayValue(metric.value)}</p>
           </div>
         ))}

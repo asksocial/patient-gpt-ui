@@ -52,26 +52,26 @@ export default async function Home() {
   const isSignedIn = Boolean(userId);
 
   return (
-    <main className="min-h-screen bg-[#edf3f0] text-[#0c2923]">
+    <main data-as-ui="public" className="min-h-screen bg-[var(--as-card)] text-[var(--as-text)]">
       <header className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-3 px-5 py-6 sm:px-8 lg:px-10">
         <LandingWordmark />
-        <div className="flex shrink-0 items-center rounded-full bg-white p-1.5 shadow-[0_8px_26px_rgba(12,41,35,0.05)]">
+        <div className="flex shrink-0 items-center rounded-full bg-white p-1.5 shadow-[var(--as-shadow-card)]">
           {!isSignedIn ? (
             <>
               <SignInButton mode="modal">
-                <button className="rounded-full px-3 py-2.5 sm:px-5 text-sm font-semibold text-[#405a53] transition hover:bg-[#f2f6f4] hover:text-[#0c2923] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0c7a69]/30">
+                <button className="rounded-full px-3 py-2.5 sm:px-5 text-sm font-semibold text-[var(--as-muted)] transition hover:bg-[var(--as-card)] hover:text-[var(--as-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--as-tint)]/30">
                   Login
                 </button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="rounded-full bg-[#0c7a69] px-3 py-2.5 sm:px-5 text-sm font-semibold text-white transition hover:bg-[#086657] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0c7a69]/30">
+                <button className="rounded-full bg-[var(--as-primary)] px-3 py-2.5 sm:px-5 text-sm font-semibold text-white transition hover:bg-[var(--as-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--as-tint)]/30">
                   Sign up
                 </button>
               </SignUpButton>
             </>
           ) : (
             <>
-              <Link href="/workspace" className="rounded-full bg-[#0c7a69] px-3 py-2.5 sm:px-5 text-sm font-semibold text-white transition hover:bg-[#086657] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0c7a69]/30">
+              <Link href="/workspace" className="rounded-full bg-[var(--as-primary)] px-3 py-2.5 sm:px-5 text-sm font-semibold text-white transition hover:bg-[var(--as-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--as-tint)]/30">
                 Open Workspace
               </Link>
               <div className="ml-2 flex items-center pr-1"><UserButton /></div>
@@ -81,36 +81,36 @@ export default async function Home() {
       </header>
 
       <div className="mx-auto w-full max-w-[1480px] space-y-6 px-5 pb-12 sm:px-8 lg:px-10 lg:pb-16">
-        <section className="overflow-hidden rounded-[2rem] bg-white px-6 py-12 shadow-[0_1px_2px_rgba(12,41,35,0.03),0_18px_50px_rgba(12,41,35,0.04)] sm:px-10 lg:px-16 lg:py-16">
+        <section className="as-card overflow-hidden rounded-[var(--as-radius-card)] bg-white px-6 py-12 shadow-[var(--as-shadow-card)] sm:px-10 lg:px-16 lg:py-16">
           <div className="grid items-center gap-12 xl:grid-cols-[1.05fr_0.95fr] xl:gap-20">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center rounded-full bg-[#e2f3ee] px-4 py-2 text-xs font-semibold text-[#0c7a69] sm:text-sm">
+              <div className="inline-flex items-center rounded-full bg-[var(--as-track)] px-4 py-2 text-xs font-semibold text-[var(--as-primary)] sm:text-sm">
                 AI-powered audience intelligence
               </div>
-              <h1 className="mt-8 max-w-[760px] text-[clamp(2.75rem,5.2vw,5.75rem)] font-semibold leading-[1.02] tracking-[-0.065em] text-[#0b2822]">
+              <h1 className="mt-8 max-w-[760px] text-[clamp(2.75rem,5.2vw,5.75rem)] font-semibold leading-[1.02] text-[var(--as-text)]">
                 Understand what people are really saying—and why it matters.
               </h1>
-              <p className="mt-8 max-w-2xl text-lg leading-8 text-[#536a63] sm:text-xl">
+              <p className="mt-8 max-w-2xl text-lg leading-8 text-[var(--as-muted)] sm:text-xl">
                 AskSocial uses AI to discover and interpret relevant conversations,
                 experiences, questions, concerns, and emerging narratives from
                 across the open web.
               </p>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-[#536a63]">
+              <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--as-muted)]">
                 Ask questions in plain language. Uncover the human signals buried
                 beneath the noise. Turn them into intelligence you can act on.
               </p>
-              <p className="mt-6 text-base font-semibold text-[#0c7a69]">
+              <p className="mt-6 text-base font-semibold text-[var(--as-primary)]">
                 Ask the internet. Understand the people behind it.
               </p>
               <div className="mt-8">
                 {!isSignedIn ? (
                   <SignUpButton mode="modal">
-                    <button className="inline-flex items-center gap-4 rounded-full bg-[#0c7a69] px-6 py-3.5 text-base font-semibold text-white transition hover:bg-[#086657] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0c7a69]/30">
+                    <button className="inline-flex items-center gap-4 rounded-full bg-[var(--as-primary)] px-6 py-3.5 text-base font-semibold text-white transition hover:bg-[var(--as-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--as-tint)]/30">
                       <span className="inline-flex items-center gap-4">Get Started <span aria-hidden="true">→</span></span>
                     </button>
                   </SignUpButton>
                 ) : (
-                  <Link href="/workspace" className="inline-flex items-center gap-4 rounded-full bg-[#0c7a69] px-6 py-3.5 text-base font-semibold text-white transition hover:bg-[#086657] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0c7a69]/30">
+                  <Link href="/workspace" className="inline-flex items-center gap-4 rounded-full bg-[var(--as-primary)] px-6 py-3.5 text-base font-semibold text-white transition hover:bg-[var(--as-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--as-tint)]/30">
                     Launch Workspace <span aria-hidden="true">→</span>
                   </Link>
                 )}
@@ -120,16 +120,16 @@ export default async function Home() {
           </div>
         </section>
 
-        <section aria-label="AskSocial capabilities" className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <section aria-label="AskSocial capabilities" className="as-layout-section grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {FEATURES.map((feature) => <FeatureCard key={feature.title} {...feature} />)}
         </section>
 
-        <section id="how-it-works" className="rounded-[2rem] bg-white px-6 py-12 shadow-[0_1px_2px_rgba(12,41,35,0.03),0_18px_50px_rgba(12,41,35,0.04)] sm:px-10 lg:px-14 lg:py-14">
+        <section id="how-it-works" className="as-card rounded-[var(--as-radius-card)] bg-white px-6 py-12 shadow-[var(--as-shadow-card)] sm:px-10 lg:px-14 lg:py-14">
           <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-start">
             <div className="max-w-xl">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0c7a69]">How it works</div>
-              <h2 className="mt-4 text-4xl font-semibold leading-tight tracking-[-0.04em] text-[#0b2822] sm:text-5xl">From the open web to actionable intelligence</h2>
-              <p className="mt-5 text-base leading-7 text-[#536a63]">
+              <div className="text-xs font-semibold text-[var(--as-primary)]">How it works</div>
+              <h2 className="mt-4 text-4xl font-semibold leading-tight text-[var(--as-text)] sm:text-5xl">From the open web to actionable intelligence</h2>
+              <p className="mt-5 text-base leading-7 text-[var(--as-muted)]">
                 AskSocial turns fragmented online conversation into structured
                 intelligence you can explore conversationally.
               </p>
@@ -138,9 +138,9 @@ export default async function Home() {
               {STEPS.map(([number, title, text]) => <StepCard key={number} number={number} title={title} text={text} />)}
             </div>
           </div>
-          <aside className="mt-10 rounded-2xl bg-[#edf3f0] p-6 sm:p-7">
-            <h3 className="text-lg font-semibold text-[#0b2822]">Already have research or social listening reports?</h3>
-            <p className="mt-3 max-w-4xl text-base leading-7 text-[#536a63]">
+          <aside className="mt-10 rounded-2xl bg-[var(--as-card)] p-6 sm:p-7">
+            <h3 className="text-lg font-semibold text-[var(--as-text)]">Already have research or social listening reports?</h3>
+            <p className="mt-3 max-w-4xl text-base leading-7 text-[var(--as-muted)]">
               Bring your existing research with you. AskSocial can incorporate curated
               intelligence alongside online evidence, giving teams continuity between
               what they already know and what is emerging now.
@@ -148,49 +148,49 @@ export default async function Home() {
           </aside>
         </section>
 
-        <section className="rounded-[2rem] bg-white px-6 py-12 shadow-[0_1px_2px_rgba(12,41,35,0.03),0_18px_50px_rgba(12,41,35,0.04)] sm:px-10 lg:px-14 lg:py-14">
+        <section className="as-card rounded-[var(--as-radius-card)] bg-white px-6 py-12 shadow-[var(--as-shadow-card)] sm:px-10 lg:px-14 lg:py-14">
           <div className="grid gap-10 lg:grid-cols-2">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0c7a69]">Human signals across the open web</div>
-              <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Social is bigger than social media.</h2>
-              <p className="mt-5 text-base leading-7 text-[#536a63]">
+              <div className="text-xs font-semibold text-[var(--as-primary)]">Human signals across the open web</div>
+              <h2 className="mt-4 text-3xl font-semibold sm:text-4xl">Social is bigger than social media.</h2>
+              <p className="mt-5 text-base leading-7 text-[var(--as-muted)]">
                 People reveal what they think, experience, fear, question, and need
                 across thousands of places online. AskSocial brings those fragmented
                 signals together and turns them into intelligence you can interrogate.
               </p>
             </div>
-            <div className="rounded-2xl bg-[#f6f9f7] p-6 sm:p-8">
-              <h2 className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">From mentions to evidence.</h2>
-              <p className="mt-5 text-base leading-7 text-[#536a63]">
+            <div className="rounded-2xl bg-[var(--as-card)] p-6 sm:p-8">
+              <h2 className="text-3xl font-semibold sm:text-4xl">From mentions to evidence.</h2>
+              <p className="mt-5 text-base leading-7 text-[var(--as-muted)]">
                 AskSocial goes beyond counting conversation. It identifies the
                 experiences, questions, beliefs, and narratives within it, then
                 connects insights to supporting evidence so you can explore the
                 sources behind an answer.
               </p>
-              <p className="mt-5 text-sm font-semibold text-[#0c7a69]">Human experiences → Supporting evidence → Strategic answers</p>
+              <p className="mt-5 text-sm font-semibold text-[var(--as-primary)]">Human experiences → Supporting evidence → Strategic answers</p>
             </div>
           </div>
         </section>
 
-        <section aria-labelledby="time-horizons-title" className="rounded-[2rem] bg-white px-6 py-12 shadow-[0_1px_2px_rgba(12,41,35,0.03),0_18px_50px_rgba(12,41,35,0.04)] sm:px-10 lg:px-14 lg:py-14">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0c7a69]">Historical + Current + Emerging</div>
-          <h2 id="time-horizons-title" className="mt-4 max-w-3xl text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Understand what persists. Explore what changes.</h2>
-          <p className="mt-5 max-w-3xl text-base leading-7 text-[#536a63]">Connect past experiences with today’s conversation and the narratives beginning to take shape.</p>
+        <section aria-labelledby="time-horizons-title" className="as-card rounded-[var(--as-radius-card)] bg-white px-6 py-12 shadow-[var(--as-shadow-card)] sm:px-10 lg:px-14 lg:py-14">
+          <div className="text-xs font-semibold text-[var(--as-primary)]">Historical + Current + Emerging</div>
+          <h2 id="time-horizons-title" className="mt-4 max-w-3xl text-3xl font-semibold sm:text-4xl">Understand what persists. Explore what changes.</h2>
+          <p className="mt-5 max-w-3xl text-base leading-7 text-[var(--as-muted)]">Connect past experiences with today’s conversation and the narratives beginning to take shape.</p>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {TIME_HORIZONS.map(([label, question, text]) => (
-              <article key={label} className="rounded-2xl bg-[#f6f9f7] p-6">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0c7a69]">{label}</div>
-                <h3 className="mt-4 text-xl font-semibold leading-7 text-[#0b2822]">{question}</h3>
-                <p className="mt-4 text-sm leading-6 text-[#536a63]">{text}</p>
+              <article key={label} className="as-card rounded-2xl bg-[var(--as-card)] p-6">
+                <div className="text-xs font-semibold text-[var(--as-primary)]">{label}</div>
+                <h3 className="mt-4 text-xl font-semibold leading-7 text-[var(--as-text)]">{question}</h3>
+                <p className="mt-4 text-sm leading-6 text-[var(--as-muted)]">{text}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="rounded-[2rem] bg-[#0b2822] px-6 py-12 text-white sm:px-10 lg:flex lg:items-end lg:justify-between lg:gap-10 lg:px-14 lg:py-14">
+        <section className="as-card rounded-[var(--as-radius-card)] bg-[var(--as-field)] px-6 py-12 text-white sm:px-10 lg:flex lg:items-end lg:justify-between lg:gap-10 lg:px-14 lg:py-14">
           <div className="max-w-3xl">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#83dfcf]">Intelligence for decisions</div>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">Ask the internet. Understand the people behind it.</h2>
+            <div className="text-xs font-semibold text-[var(--as-primary)]">Intelligence for decisions</div>
+            <h2 className="mt-4 text-4xl font-semibold sm:text-5xl">Ask the internet. Understand the people behind it.</h2>
             <p className="mt-5 max-w-2xl text-base leading-7 text-white/65">
               Turn fragmented online conversation into evidence-backed answers.
               Discover what matters to your audiences, understand why it matters,
@@ -200,10 +200,10 @@ export default async function Home() {
           <div className="mt-8 shrink-0 lg:mt-0">
             {!isSignedIn ? (
               <SignUpButton mode="modal">
-                <button className="rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[#0b2822] transition hover:bg-[#edf3f0] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50">Create Account</button>
+                <button className="rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[var(--as-text)] transition hover:bg-[var(--as-card)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50">Create account</button>
               </SignUpButton>
             ) : (
-              <Link href="/workspace" className="inline-flex rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[#0b2822] transition hover:bg-[#edf3f0] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50">Open Workspace</Link>
+              <Link href="/workspace" className="inline-flex rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[var(--as-text)] transition hover:bg-[var(--as-card)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50">Open workspace</Link>
             )}
           </div>
         </section>
@@ -216,14 +216,14 @@ function LandingWordmark() {
   return (
     <div className="flex min-w-0 items-center gap-2 sm:gap-3" aria-label="AskSocial, AI-powered audience intelligence">
       <svg aria-hidden="true" viewBox="0 0 54 36" className="hidden h-9 w-[54px] shrink-0 sm:block">
-        <path fill="#0b2822" d="M0 0h31v25H13L0 36V0Z" />
-        <path fill="#39bba5" d="M35 6h19v25H35z" />
+        <path fill="var(--as-data-other)" d="M0 0h31v25H13L0 36V0Z" />
+        <path fill="var(--as-primary)" d="M35 6h19v25H35z" />
       </svg>
       <div className="min-w-0">
-        <div className="flex items-baseline text-[1.75rem] leading-none tracking-[-0.06em] text-[#0b2822]">
+        <div className="flex items-baseline text-[1.75rem] leading-none text-[var(--as-text)]">
           <span className="font-normal">Ask</span><strong className="font-bold">Social</strong>
         </div>
-        <div className="mt-1 max-w-[150px] text-[10px] font-medium sm:max-w-none text-[#63766f] sm:text-sm">AI-powered audience intelligence</div>
+        <div className="mt-1 max-w-[150px] text-[10px] font-medium sm:max-w-none text-[var(--as-muted)] sm:text-sm">AI-powered audience intelligence</div>
       </div>
     </div>
   );
@@ -237,21 +237,21 @@ function IntelligencePreview() {
     ["Emerging", "New use cases", "gold"],
   ];
   const tones = {
-    mint: "bg-[#dff3ec] text-[#16715f]",
-    blue: "bg-[#e3eef9] text-[#315f87]",
-    rose: "bg-[#fae3dc] text-[#a1433d]",
-    gold: "bg-[#fff0d2] text-[#865b08]",
+    mint: "bg-[var(--as-tint)] text-[var(--as-primary)]",
+    blue: "bg-[var(--as-tint)] text-[var(--as-primary)]",
+    rose: "bg-[var(--as-tint)] text-[var(--as-primary)]",
+    gold: "bg-[var(--as-tint)] text-[var(--as-primary)]",
   };
 
   return (
-    <div className="mx-auto w-full max-w-[650px] rounded-[2rem] bg-[#0b2822] p-5 shadow-[0_24px_70px_rgba(12,41,35,0.14)] sm:p-7">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/55"><span><span aria-hidden="true" className="mr-2 text-[#83dfcf]">✦</span>Ask</span><span className="text-[10px] tracking-[0.1em]">Illustrative answer</span></div>
-      <div className="mt-5 rounded-2xl bg-[#f4f0e6] px-5 py-5 text-lg font-semibold leading-7 text-[#0b2822] sm:text-xl">What themes are driving confusion or concern?</div>
-      <div className="mt-4 grid gap-3 rounded-2xl bg-[#edf3f0] p-4 sm:grid-cols-2">
+    <div className="mx-auto w-full max-w-[650px] rounded-[var(--as-radius-card)] bg-[var(--as-field)] p-5 shadow-[var(--as-shadow-card)] sm:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-white/55"><span>Ask</span><span className="text-[10px]">Illustrative answer</span></div>
+      <div className="mt-5 rounded-2xl bg-[var(--as-track)] px-5 py-5 text-lg font-semibold leading-7 text-[var(--as-text)] sm:text-xl">What themes are driving confusion or concern?</div>
+      <div className="mt-4 grid gap-3 rounded-2xl bg-[var(--as-card)] p-4 sm:grid-cols-2">
         {insights.map(([label, title, tone]) => (
           <div key={label} className="rounded-2xl bg-white p-4">
             <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${tones[tone]}`}>{label}</span>
-            <p className="mt-3 text-base font-semibold text-[#0b2822]">{title}</p>
+            <p className="mt-3 text-base font-semibold text-[var(--as-text)]">{title}</p>
           </div>
         ))}
       </div>
@@ -265,16 +265,16 @@ function IntelligencePreview() {
 
 function FeatureCard({ icon, tone, title, text }) {
   const iconTone = {
-    mint: "bg-[#dff3ec] text-[#0c7a69]",
-    blue: "bg-[#e3eef9] text-[#315f87]",
-    gold: "bg-[#fff0d2] text-[#865b08]",
+    mint: "bg-[var(--as-tint)] text-[var(--as-primary)]",
+    blue: "bg-[var(--as-tint)] text-[var(--as-primary)]",
+    gold: "bg-[var(--as-tint)] text-[var(--as-primary)]",
   }[tone];
 
   return (
-    <article className="rounded-[1.75rem] bg-white p-7 shadow-[0_1px_2px_rgba(12,41,35,0.03),0_14px_38px_rgba(12,41,35,0.035)] sm:p-8">
+    <article className="as-card rounded-[var(--as-radius-card)] bg-white p-7 shadow-[var(--as-shadow-card)] sm:p-8">
       <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${iconTone}`}><FeatureIcon name={icon} /></span>
-      <h2 className="mt-6 text-2xl font-semibold tracking-[-0.035em] text-[#0b2822]">{title}</h2>
-      <p className="mt-4 text-base leading-7 text-[#536a63]">{text}</p>
+      <h2 className="mt-6 text-2xl font-semibold text-[var(--as-text)]">{title}</h2>
+      <p className="mt-4 text-base leading-7 text-[var(--as-muted)]">{text}</p>
     </article>
   );
 }
@@ -291,10 +291,10 @@ function FeatureIcon({ name }) {
 
 function StepCard({ number, title, text }) {
   return (
-    <article className="rounded-2xl bg-[#f6f9f7] p-5">
-      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0c7a69]">{number}</div>
-      <h3 className="mt-3 text-xl font-semibold text-[#0b2822]">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-[#536a63]">{text}</p>
+    <article className="as-card rounded-2xl bg-[var(--as-card)] p-5">
+      <div className="text-xs font-semibold text-[var(--as-primary)]">{number}</div>
+      <h3 className="mt-3 text-xl font-semibold text-[var(--as-text)]">{title}</h3>
+      <p className="mt-3 text-sm leading-6 text-[var(--as-muted)]">{text}</p>
     </article>
   );
 }

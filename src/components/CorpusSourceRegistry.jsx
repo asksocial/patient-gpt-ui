@@ -22,7 +22,7 @@ export default function CorpusSourceRegistry({ registry }) {
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
   const start = (currentPage - 1) * PAGE_SIZE;
-  return <section aria-label="GLP-1 corpus source inventory" className="rounded-2xl border border-white/10 bg-black/20 p-5">
+  return <section aria-label="GLP-1 corpus source inventory" className="as-card rounded-2xl border border-white/10 bg-black/20 p-5">
     <h2 className="text-lg font-semibold text-white/85">GLP-1 Corpus Sources</h2>
     <p className="mt-2 text-sm text-white/65">{registry.sourceCount.toLocaleString()} source domains · {registry.recordCount.toLocaleString()} source mentions · Full GLP-1 corpus</p>
     <p className="mt-2 text-xs leading-5 text-white/50">Populated from the original export, including records excluded from thematic analytics or held from PV screening. Markets and languages reflect mention metadata. These are corpus sources; ongoing monitoring, sponsor ownership, and screening cadence are configured separately below.</p>

@@ -11,13 +11,13 @@ function ThemeSupportQuote({ text, terms = [] }) {
   if (!escaped.length) return text;
   const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
   return String(text).split(pattern).map((part, index) => terms.some(term => evidenceTextKey(term) === evidenceTextKey(part))
-    ? <mark key={index} className="rounded bg-[#deeee6] px-0.5 text-[#123b32]">{part}</mark>
+    ? <mark key={index} className="rounded bg-[var(--as-tint)] px-0.5 text-[var(--as-text)]">{part}</mark>
     : part);
 }
 
 export function ThemeMentionCards({ theme, examples }) {
   return <div className="mt-3 grid gap-3 lg:grid-cols-2">
-    {examples.map(example => <article key={example.id} className="rounded-xl border border-white/10 p-4">
+    {examples.map(example => <article key={example.id} className="as-card rounded-xl border border-white/10 p-4">
       <p className="mb-2 text-xs font-semibold text-cyan-200">Supports: {theme}</p>
       <blockquote className="text-sm leading-6 text-white/80"><ThemeSupportQuote text={example.excerpt} terms={example.matchedTerms} /></blockquote>
       <p className="mt-2 text-xs text-white/50">Relevant source wording: {example.matchedTerms.map(term => `“${term}”`).join(", ")}</p>
@@ -47,9 +47,9 @@ export function ThemeMentionList({ therapeuticArea, question, topicId, theme, on
     }, 200);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [therapeuticArea, question, topicId, query, page, retry]);
-  return <section className="space-y-5">
+  return <section className="as-card space-y-5">
     <BackButton onClick={onBack} />
-    <header><p className="text-xs font-semibold uppercase tracking-widest text-cyan-200">Supporting conversation evidence</p>
+    <header><p className="text-xs font-semibold text-cyan-200">Supporting conversation evidence</p>
       <h1 className="mt-2 text-2xl font-semibold text-white">{result?.theme || theme || "Theme mentions"}</h1>
       <p className="mt-2 text-sm leading-6 text-white/60">Other relevant mentions supporting this theme. The two samples shown on Search are excluded from this list.</p>
     </header>
@@ -101,7 +101,7 @@ export default function ConversationThemeEvidence({ theme, examples, topics = []
     {matching.length < 2 ? <p className="mt-3 text-xs text-white/60">Only one distinct supporting mention is available for this theme.</p> : null}
     {therapeuticArea && question ? <a ref={linkRef} href={href} onClick={event => { if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) { event.preventDefault(); setOpen(true); } }} className="mt-4 inline-block text-sm font-semibold text-cyan-200 underline underline-offset-4">View all {remaining} other relevant mentions for {theme} →</a> : null}
     {open ? <div role="dialog" aria-modal="true" aria-label={`Other mentions for ${theme}`} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" onClick={event => { if (event.target === event.currentTarget) close(); }}>
-      <div data-theme-dialog className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-white/15 bg-[#102722] p-6 shadow-xl">
+      <div data-theme-dialog className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-white/15 bg-[var(--as-tint)] p-6 shadow-xl">
         <ThemeMentionList therapeuticArea={therapeuticArea} question={question} topicId={matching[0].topicId} theme={theme} onBack={close} />
       </div>
     </div> : null}

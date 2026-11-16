@@ -2,6 +2,8 @@
 
 import { CLIENT_NARRATIVE_VERSION } from "../answering/narrative/clientNarrative";
 import { executiveNarrative } from "../answering/narrative/intelligenceNarratives";
+
+import { SurfaceCard } from "./ui/Surface";
 import ActionButton from "./ui/ActionButton";
 
 import Tooltip from "./ui/Tooltip";
@@ -54,9 +56,9 @@ function formatDate(value) {
 
 function Section({ title, subtitle, children }) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 md:p-6">
+    <SurfaceCard className="as-card rounded-3xl border border-white/10 bg-white/[0.03] p-5 md:p-6">
       <div className="mb-5">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
+        <h2 className="text-sm font-semibold text-white">
           {title}
         </h2>
         {subtitle ? (
@@ -66,14 +68,14 @@ function Section({ title, subtitle, children }) {
         ) : null}
       </div>
       {children}
-    </section>
+    </SurfaceCard>
   );
 }
 
 function Metric({ label, value, detail }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">
+    <div className="as-inset rounded-2xl border border-white/10 bg-black/30 p-4">
+      <p className="text-xs font-semibold text-white/40">
         {label}
       </p>
       <p className="mt-3 text-3xl font-semibold tracking-tight text-white">
@@ -100,7 +102,7 @@ function TableHeading({ label, tooltip }) {
         <ActionButton
           type="button"
           aria-label={`${label}: ${tooltip}`}
-          className="inline-flex cursor-help items-center gap-1.5 text-left uppercase tracking-[0.14em] text-white/35 transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+          className="inline-flex cursor-help items-center gap-1.5 text-left text-white/35 transition-colors hover:text-white/65 focus:outline-none focus-visible:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/60"
         >
           <span>{label}</span>
           <span
@@ -117,9 +119,9 @@ function TableHeading({ label, tooltip }) {
 
 function EmptyState({ reason }) {
   return (
-    <div className="flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-10 text-center">
+    <div className="as-inset flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-10 text-center">
       <div className="max-w-xl">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-xl text-cyan-300">
+        <div className="as-inset mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-xl text-cyan-300">
           ↗
         </div>
         <h2 className="mt-5 text-xl font-semibold text-white">
@@ -148,10 +150,10 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
 
   return (
     <div className="space-y-5">
-      <section className="overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-white/[0.03] to-violet-500/10 p-6 md:p-8">
+      <section className="as-card overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-white/[0.03] to-violet-500/10 p-6 md:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1 [container-type:inline-size]">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-cyan-300">
               <span>Executive Intelligence</span>
               <span className="text-white/20">•</span>
               <span>{brief.therapeuticArea}</span>
@@ -168,8 +170,8 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
             </div>
           </div>
 
-          <div className="min-w-56 shrink-0 rounded-2xl border border-white/10 bg-black/25 p-4 text-xs text-white/45">
-            <p className="font-semibold uppercase tracking-[0.16em] text-white/65">
+          <div className="as-inset min-w-56 shrink-0 rounded-2xl border border-white/10 bg-black/25 p-4 text-xs text-white/45">
+            <p className="font-semibold text-white/65">
               Analysis window
             </p>
             <p className="mt-3">
@@ -195,7 +197,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
         {themes.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="border-b border-white/10 text-xs uppercase tracking-[0.14em] text-white/35">
+              <thead className="border-b border-white/10 text-xs text-white/35">
                 <tr>
                   <TableHeading
                     label="Theme"
@@ -248,7 +250,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
         {signals.length ? (
           <div className="grid gap-4 lg:grid-cols-2">
             {signals.map((signal) => (
-              <article key={signal.signalId} className="rounded-2xl border border-white/10 bg-black/30 p-5">
+              <article key={signal.signalId} className="as-card rounded-2xl border border-white/10 bg-black/30 p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${SIGNAL_STYLES[signal.type] || SIGNAL_STYLES.stability}`}>
                     {words(signal.type)}
@@ -277,7 +279,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
         {watchlist.length ? (
           <div className="space-y-3">
             {watchlist.map((item) => (
-              <article key={item.themeId} className="rounded-2xl border border-amber-500/15 bg-amber-500/[0.06] p-4">
+              <article key={item.themeId} className="as-card rounded-2xl border border-amber-500/15 bg-amber-500/[0.06] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-sm font-semibold text-white">{item.label}</h3>
                   <span className="text-xs text-amber-300/80">{words(item.confidence)}</span>
@@ -296,7 +298,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
         {actions.length ? (
           <div className="space-y-3">
             {actions.map((action, index) => (
-              <article key={action.actionId} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+              <article key={action.actionId} className="as-card rounded-2xl border border-white/10 bg-black/30 p-4">
                 <div className="flex items-center gap-2">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-semibold text-black">{index + 1}</span>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PRIORITY_STYLES[action.priority] || PRIORITY_STYLES.low}`}>
@@ -318,7 +320,7 @@ export default function ExecutiveIntelligenceView({ brief, unavailableReason, on
 
       <Section title="Evidence guardrails" subtitle="Coverage and limitations carried into the leadership interpretation">
         <div className="grid gap-4">
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+          <div className="as-inset rounded-2xl border border-white/10 bg-black/30 p-4">
             {warnings.length ? (
               <ul className="space-y-2 text-sm leading-6 text-amber-200/70">
                 {warnings.map((warning) => <li key={warning}>• {warning}</li>)}

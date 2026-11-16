@@ -21,7 +21,7 @@ export default function PvReviewHowTo() {
   }, [open]);
   return <>
     <ActionButton type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className="rounded-xl border border-cyan-300/25 px-4 py-2.5 text-sm font-medium text-cyan-200">How To Guide</ActionButton>
-    <dialog ref={dialog} aria-labelledby="pv-review-how-to-title" onCancel={() => setOpen(false)} onClose={() => setOpen(false)} className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-lg overflow-y-auto border-l border-white/15 bg-white p-6 text-[#0c2923] shadow-2xl backdrop:bg-black/60">
+    <dialog ref={dialog} aria-labelledby="pv-review-how-to-title" onCancel={() => setOpen(false)} onClose={() => setOpen(false)} className="fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-lg overflow-y-auto border-l border-white/15 bg-white p-6 text-[var(--as-text)] shadow-2xl backdrop:bg-black/60">
       <div className="flex items-start justify-between gap-4">
         <div><h2 id="pv-review-how-to-title" className="text-xl font-semibold">How to review a PV mention</h2><p className="mt-2 text-sm leading-6 text-white/55">Follow the evidence and choose the appropriate review path.</p></div>
         <ActionButton type="button" onClick={() => setOpen(false)} className="rounded-lg border border-white/20 px-3 py-2 text-sm">Close guide</ActionButton>

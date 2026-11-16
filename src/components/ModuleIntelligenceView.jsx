@@ -1,5 +1,13 @@
 "use client";
 
+
+import { SurfaceCard } from "./ui/Surface";
+import { ModalSurface, Field } from "./ui/Surface";
+
+
+import ShareBar from "./ui/ShareBar";
+import { ContentSkeleton, ErrorState } from "./ui/Surface";
+
 import ActionButton, { ActionForm } from "./ui/ActionButton";
 
 import { activityFetch as fetch } from "../lib/client/requestActivity";
@@ -14,9 +22,9 @@ import RecommendedActions from "./RecommendedActions";
 import { CONFIDENCE_STYLES, formatConfidenceLabel } from "./ui/intelligenceStyles";
 import { moduleExecutiveSummary } from "../lib/module-intelligence/summaryCopy";
 
-function SignalCard({ section, onOpen }) {
+function SignalCard({ section, onOpen, rank }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+    <SurfaceCard className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-semibold text-white/80">{section.label}</h3>
@@ -32,17 +40,15 @@ function SignalCard({ section, onOpen }) {
           {section.findingCount} findings ↗
         </ActionButton>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#e2e9e5]">
-        <div className="h-full rounded-full bg-[#11766b]" style={{ width: `${Math.min(100, section.prevalencePercent)}%` }} />
-      </div>
-    </section>
+      {section.prevalencePercent > 0 ? <><p className="mt-2 text-xs text-white/45">Share of matching records</p><ShareBar value={section.prevalencePercent} label={section.label} rank={rank} /></> : <p className="as-zero-tags">No matching records</p>}
+    </SurfaceCard>
   );
 }
 
 function CountList({ title, items, onOpen }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-      <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">{title}</h3>
+    <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <h3 className="text-xs font-semibold text-white/40">{title}</h3>
       <div className="mt-4 space-y-2">
         {items.length ? items.map((item) => (
           <ActionButton key={item.label} type="button" onClick={() => onOpen(item)} aria-label={`View ${item.count} mentions for ${item.label.replaceAll("_", " ")}`} className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-left text-sm hover:border-cyan-300/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
@@ -63,7 +69,7 @@ function FullMentionDialog({ evidence, moduleName, onClose }) {
   if (!evidence) return null;
 
   return (
-    <div
+    <ModalSurface
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       role="dialog"
       aria-modal="true"
@@ -71,11 +77,11 @@ function FullMentionDialog({ evidence, moduleName, onClose }) {
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-    >
-      <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl">
+     onRequestClose={onClose}>
+      <div className="as-inset max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[var(--as-field)] p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p>
+            <p className="text-xs text-cyan-300/70">Full mention</p>
             <h2 className="mt-2 text-xl font-semibold text-white">
               {evidenceDisplayTitle(evidence, moduleName)}
             </h2>
@@ -99,12 +105,12 @@ function FullMentionDialog({ evidence, moduleName, onClose }) {
         </div>
         {evidence.author ? <p className="mt-4 text-xs text-white/40">Author or account: <span className="text-white/65">{evidence.author}</span></p> : null}
         {evidence.url ? (
-          <a href={evidence.url} target="_blank" rel="noreferrer noopener" className="mt-6 inline-flex items-center rounded-xl border border-cyan-300/35 bg-cyan-300/[0.10] px-5 py-3 text-sm font-semibold text-cyan-200 shadow-[0_0_24px_rgba(103,232,249,0.08)] transition hover:border-cyan-200/60 hover:bg-cyan-300/[0.16] hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70">
+          <a href={evidence.url} target="_blank" rel="noreferrer noopener" className="mt-6 inline-flex items-center rounded-xl border border-cyan-300/35 bg-cyan-300/[0.10] px-5 py-3 text-sm font-semibold text-cyan-200 shadow-[var(--as-shadow-card)] transition hover:border-cyan-200/60 hover:bg-cyan-300/[0.16] hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70">
             Open original source ↗
           </a>
         ) : null}
       </div>
-    </div>
+    </ModalSurface>
   );
 }
 
@@ -219,11 +225,13 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
     return loadEvidencePage(1, "", contextualOnly, null);
   }
 
+  if (!result && loading) return <ContentSkeleton label="Loading analysis…" rows={4} />;
+
   if (!result) {
     return (
       <div className="space-y-5">
-        <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/70">{module.name} Intelligence</p>
+        <section className="as-card rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
+          <p className="text-xs font-semibold text-cyan-300/70">{module.name} Intelligence</p>
           <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea}</h2>
           <p className="mx-auto mt-3 text-sm leading-6 text-white/50">
             Generate evidence-qualified {module.description.charAt(0).toLowerCase() + module.description.slice(1)} The analysis applies this module’s audience, source, taxonomy, and decision lens.
@@ -236,7 +244,7 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
           >
             {loading ? "Analyzing…" : `Generate ${module.name} Intelligence`}
           </ActionButton>
-          {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
+          {error ? <ErrorState message={error} onRetry={() => runAnalysis()} /> : null}
         </section>
       </div>
     );
@@ -251,10 +259,10 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
           onClose={closeMention}
         />
 
-        <section className="min-h-[70vh] rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6" aria-label={`${module.name} evidence table`}>
+        <section className="as-card min-h-[70vh] rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6" aria-label={`${module.name} evidence table`}>
           <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
             <div className="min-w-0 flex-1 basis-64">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/70">{module.name} Intelligence</p>
+              <p className="text-xs font-semibold text-cyan-300/70">{module.name} Intelligence</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">{evidenceFilter ? `${evidenceFilter.label} mentions` : contextualOnly ? "Module-related evidence" : "All retained corpus evidence"}</h2>
             </div>
             <BackButton onClick={() => navigation.back(() => setEvidenceBrowserOpen(false))} label={`Back to ${module.name}`} />
@@ -273,14 +281,14 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
             onSubmit={(event) => { event.preventDefault(); return loadEvidencePage(1); }}
           >
             <label className="sr-only" htmlFor="module-evidence-search">Search evidence by keyword</label>
-            <input
+            <Field label="Search mentions by keyword…"><input
               id="module-evidence-search"
               type="search"
               value={evidenceQuery}
               onChange={(event) => setEvidenceQuery(event.target.value)}
               placeholder="Search mentions by keyword…"
               className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-cyan-300/40"
-            />
+            /></Field>
             <ActionButton type="submit" disabled={evidenceLoading} className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
               {evidenceLoading ? "Searching…" : "Search"}
             </ActionButton>
@@ -290,7 +298,7 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
           </ActionForm>
 
           {evidenceError ? <p className="mt-4 text-sm text-rose-300">{evidenceError}</p> : null}
-          {evidenceLoading && !evidenceCatalog ? <p className="mt-6 text-sm text-white/40">Loading the retained evidence corpus…</p> : null}
+          {evidenceLoading && !evidenceCatalog ? <ContentSkeleton label="Loading the retained evidence corpus…" /> : null}
 
           {evidenceCatalog ? (
             <>
@@ -299,9 +307,9 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
                 {evidenceCatalog.relevancePolicy === "prequalified" ? <span className="rounded-full border border-cyan-300/20 px-2 py-1 text-cyan-200/70">Pre-qualified relevance · quality-ranked</span> : null}
               </div>
 
-              <div className="mt-3 overflow-x-auto rounded-2xl border border-white/10">
+              <div className="as-inset mt-3 overflow-x-auto rounded-2xl border border-white/10">
                 <table className="w-full min-w-[1120px] table-fixed text-left text-sm">
-                  <thead className="border-b border-white/10 bg-black/35 text-xs uppercase tracking-[0.12em] text-white/40">
+                  <thead className="border-b border-white/10 bg-black/35 text-xs text-white/40">
                     <tr>
                       <th className="w-[24%] px-4 py-3 font-semibold">Label</th>
                       <th className="w-[30%] px-4 py-3 font-semibold">Mention</th>
@@ -362,7 +370,7 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
         moduleName={module.name}
         onClose={closeMention}
       />
-      <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
+      <section className="as-card rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         <h2 className="text-xl font-semibold text-white">{result.headline}</h2>
         <p className="mt-3 text-sm leading-6 text-white/65">{moduleExecutiveSummary(result.executiveSummary, result)}</p>
         <ActionButton type="button" onClick={runAnalysis} disabled={loading} className="mt-5 rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-white/65 hover:bg-white/[0.06] disabled:opacity-40">
@@ -371,13 +379,13 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {result.sections.map((section) => <SignalCard key={section.id} section={section} onOpen={() => openEvidenceBrowser({ key: "sectionId", value: section.id, label: section.label })} />)}
+        {[...result.sections].sort((a, b) => b.prevalencePercent - a.prevalencePercent).map((section, rank) => <SignalCard rank={rank} key={section.id} section={section} onOpen={() => openEvidenceBrowser({ key: "sectionId", value: section.id, label: section.label })} />)}
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">Representative module evidence</h3>
+            <h3 className="text-xs font-semibold text-white/40">Representative module evidence</h3>
             <p className="mt-2 text-xs text-white/35">Two distinct mentions for each primary theme, selected from directly supporting source wording. Automated source scores rank examples; they do not establish topical relevance, accuracy or reviewed evidence quality.</p>
           </div>
           <ActionButton type="button" onClick={() => openEvidenceBrowser()} className="rounded-xl border border-cyan-300/30 bg-cyan-300/[0.08] px-4 py-2.5 text-xs font-semibold text-cyan-200 transition hover:border-cyan-200/55 hover:bg-cyan-300/[0.14]">
@@ -422,8 +430,8 @@ export default function ModuleIntelligenceView({ module, therapeuticArea, worksp
 
       <RecommendedActions actions={result.recommendations} />
 
-      <section className="rounded-2xl border border-amber-500/15 bg-amber-500/[0.05] p-5">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">Data-quality limitations</h3>
+      <section className="as-card rounded-2xl border border-amber-500/15 bg-amber-500/[0.05] p-5">
+        <h3 className="text-xs font-semibold text-amber-200/70">Data-quality limitations</h3>
         <ul className="mt-3 space-y-2 text-xs leading-5 text-white/45">
           {result.dataQuality.limitations.map((item) => <li key={item}>• {item}</li>)}
         </ul>

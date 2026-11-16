@@ -1,4 +1,6 @@
 import "./globals.css";
+import "../styles/platform.css";
+import { authAppearance } from "../components/ui/authAppearance";
 import AppActivityIndicator from "../components/AppActivityIndicator";
 import { ClerkProvider } from "@clerk/nextjs";
 
@@ -9,7 +11,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={authAppearance}>
       <html lang="en">
         <body><AppActivityIndicator />{children}</body>
       </html>

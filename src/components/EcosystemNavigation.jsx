@@ -1,6 +1,7 @@
 "use client";
 
 import ActionButton from "./ui/ActionButton";
+import { sentenceCaseLabel } from "./ui/presentation";
 
 import {
   useEffect,
@@ -67,7 +68,7 @@ function NavigationItem({
       }`}
     >
       <span className="truncate">
-        {item.label}
+        {sentenceCaseLabel(item.label)}
       </span>
       {item.kind === "module" && active ? (
         <span
@@ -108,6 +109,32 @@ export default function EcosystemNavigation({
   function navigate(itemId) {
     setOpenGroup(null);
     onNavigate(itemId);
+  }
+
+  function handleNavigationKeys(event) {
+    const trigger = event.target.closest("[aria-controls]");
+    const menu = event.target.closest(".as-nav-menu");
+    if (event.key === "Escape") {
+      const menuId = menu?.id;
+      setOpenGroup(null);
+      if (menuId) navigationRef.current?.querySelector(`[aria-controls="${menuId}"]`)?.focus();
+      return;
+    }
+    if (trigger && ["ArrowDown", "ArrowUp"].includes(event.key)) {
+      event.preventDefault();
+      const id = trigger.getAttribute("aria-controls");
+      setOpenGroup(id.replace("navigation-group-", ""));
+      requestAnimationFrame(() => {
+        const items = navigationRef.current?.querySelectorAll(`#${id} button`);
+        items?.[event.key === "ArrowUp" ? items.length - 1 : 0]?.focus();
+      });
+    } else if (menu && ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      const items = [...menu.querySelectorAll("button:not(:disabled)")];
+      const index = items.indexOf(event.target);
+      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      items[next]?.focus();
+    }
   }
 
   useEffect(() => {
@@ -154,6 +181,7 @@ export default function EcosystemNavigation({
   return (
     <nav
       ref={navigationRef}
+      onKeyDown={handleNavigationKeys}
       aria-label="Platform navigation"
       className="as-platform-nav flex flex-wrap items-center gap-1"
     >
@@ -167,7 +195,7 @@ export default function EcosystemNavigation({
             : "text-white/65 hover:bg-white/[0.06] hover:text-white"
         }`}
       >
-        <span className="as-nav-symbol" aria-hidden="true">✦</span>
+
         <span>Ask</span>
       </ActionButton>
       {navigationGroups.map((group) => {
@@ -179,7 +207,7 @@ export default function EcosystemNavigation({
           group.items.some(
             (item) =>
               item.id === activeItem
-          );
+          ) || (group.id === "pv_compliance" && activeItem?.startsWith("pv_"));
 
         const expanded =
           openGroup === group.id;
@@ -220,7 +248,7 @@ export default function EcosystemNavigation({
                 <path
                   d="m6 8 4 4 4-4"
                   stroke="currentColor"
-                  strokeWidth="1.5"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -230,10 +258,10 @@ export default function EcosystemNavigation({
             {expanded ? (
               <div
                 id={`navigation-group-${group.id}`}
-                className="as-nav-menu absolute left-0 top-full z-50 mt-2 min-w-72 space-y-0.5 rounded-2xl border border-white/10 bg-zinc-950 p-2 shadow-2xl shadow-black/60"
+                className="as-inset as-nav-menu absolute left-0 top-full z-50 mt-2 min-w-72 space-y-0.5 rounded-2xl border border-white/10 bg-zinc-950 p-2 shadow-2xl shadow-black/60"
               >
                 <div className="px-3 pb-2 pt-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200/55">
+                  <p className="text-[10px] font-semibold text-cyan-200/55">
                     {presentation.label}
                   </p>
                   <p className="mt-1 text-xs leading-5 text-white/35">

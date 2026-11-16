@@ -1,5 +1,9 @@
 "use client";
 
+
+
+import { SurfaceCard } from "./ui/Surface";
+import { Field } from "./ui/Surface";
 import ActionButton, { ActionForm } from "./ui/ActionButton";
 
 import { activityFetch as fetch } from "../lib/client/requestActivity";
@@ -34,9 +38,9 @@ function Badge({ children, tone = "default" }) {
 
 function Card({ title, subtitle, children }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
+    <SurfaceCard className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-[var(--as-shadow-card)]">
       <div className="mb-4">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
+        <h3 className="text-sm font-semibold text-white">
           {title}
         </h3>
         {subtitle ? (
@@ -44,7 +48,7 @@ function Card({ title, subtitle, children }) {
         ) : null}
       </div>
       {children}
-    </section>
+    </SurfaceCard>
   );
 }
 
@@ -56,7 +60,7 @@ function AssistantAnswer({ answer }) {
   return (
     <div className="space-y-4">
       <Card
-        title="Direct Answer"
+        title="Direct answer"
         subtitle="Report-backed, social-enhanced summary"
       >
         <p className="text-[15px] leading-7 text-white/80">
@@ -66,14 +70,14 @@ function AssistantAnswer({ answer }) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card
-          title="From Curated Intelligence"
+          title="From curated intelligence"
           subtitle="Baseline themes from existing reports"
         >
           <div className="space-y-4">
             {curatedThemes.map((theme, idx) => (
               <div
                 key={`${theme.name}-${idx}`}
-                className="rounded-xl border border-white/10 bg-black/30 p-4"
+                className="as-inset rounded-xl border border-white/10 bg-black/30 p-4"
               >
                 <h4 className="text-sm font-semibold text-white">
                   {theme.name}
@@ -98,7 +102,7 @@ function AssistantAnswer({ answer }) {
             {liveThemes.map((theme, idx) => (
               <div
                 key={`${theme.name}-${idx}`}
-                className="rounded-xl border border-white/10 bg-black/30 p-4"
+                className="as-inset rounded-xl border border-white/10 bg-black/30 p-4"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <h4 className="text-sm font-semibold text-white">
@@ -136,8 +140,8 @@ function AssistantAnswer({ answer }) {
           </div>
 
           {emergingNarratives.length ? (
-            <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
+            <div className="as-inset mt-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+              <p className="text-xs font-semibold text-amber-300">
                 Emerging narratives
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -153,7 +157,7 @@ function AssistantAnswer({ answer }) {
       </div>
 
       <Card
-        title="What This Means"
+        title="What this means"
         subtitle="Strategic synthesis for decision-making"
       >
         <p className="text-[15px] leading-7 text-white/80">
@@ -177,7 +181,7 @@ function UserMessage({ text }) {
 function AssistantMessage({ answer }) {
   return (
     <div className="flex justify-start">
-      <div className="w-full max-w-5xl rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 shadow-2xl shadow-black/20 md:p-5">
+      <div className="as-inset w-full max-w-5xl rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 shadow-2xl shadow-black/20 md:p-5">
         <AssistantAnswer answer={answer} />
       </div>
     </div>
@@ -187,7 +191,7 @@ function AssistantMessage({ answer }) {
 function LoadingMessage() {
   return (
     <div className="flex justify-start">
-      <div className="rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/50 shadow-sm">
+      <div className="as-inset rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/50 shadow-sm">
         Thinking…
       </div>
     </div>
@@ -263,7 +267,7 @@ export default function AskSocialChat() {
         <header className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl shadow-black/20">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+              <p className="text-xs font-semibold text-white/40">
                 AskSocial
               </p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
@@ -277,21 +281,21 @@ export default function AskSocialChat() {
             </div>
 
             <div className="w-full max-w-sm">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+              <label className="mb-2 block text-xs font-semibold text-white/40">
                 Topic
               </label>
-              <select
+              <Field label="Hepatitis B"><select
                 value={therapeuticArea}
                 onChange={(e) => setTherapeuticArea(e.target.value)}
                 className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition focus:border-white/30"
               >
                 <option>Hepatitis B</option>
-              </select>
+              </select></Field>
             </div>
           </div>
         </header>
 
-        <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-2xl shadow-black/20">
+        <section className="as-card rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-2xl shadow-black/20">
           <div className="flex flex-wrap gap-2">
             {STARTER_QUESTIONS.map((item) => (
               <ActionButton
@@ -307,9 +311,9 @@ export default function AskSocialChat() {
           </div>
         </section>
 
-        <section className="flex min-h-[420px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
+        <section className="as-card flex min-h-[420px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
           {messages.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
+            <div className="as-inset flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
               <div>
                 <h2 className="text-lg font-semibold text-white">
                   Start with a question
@@ -334,7 +338,7 @@ export default function AskSocialChat() {
           {loading ? <LoadingMessage /> : null}
 
           {error ? (
-            <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+            <div className="as-inset rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
               {error}
             </div>
           ) : null}
@@ -345,17 +349,17 @@ export default function AskSocialChat() {
           className="sticky bottom-4 rounded-3xl border border-white/10 bg-black/95 p-4 shadow-2xl shadow-black/30 backdrop-blur"
         >
           <div className="flex flex-col gap-3">
-            <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
+            <label className="text-xs font-semibold text-white/40">
               Ask AskSocial
             </label>
 
-            <textarea
+            <Field label="Ask about baseline themes, emerging narratives, trust dynamics, or what changed since the last report"><textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask about baseline themes, emerging narratives, trust dynamics, or what changed since the last report..."
               rows={3}
               className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
-            />
+            /></Field>
 
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-white/40">

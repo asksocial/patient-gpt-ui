@@ -32,7 +32,7 @@ function RegionCard({
   const copy =
     REGION_COPY[region];
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+    <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-4">
       <h3 className="text-sm font-semibold text-white">
         {copy.title}
       </h3>
@@ -55,10 +55,10 @@ export default function AgentWorkspaceRegions({
   suggestedActions,
 }) {
   return (
-    <section className="space-y-4 rounded-3xl border border-violet-500/15 bg-violet-500/[0.035] p-4">
+    <section className="as-card space-y-4 rounded-3xl border border-violet-500/15 bg-violet-500/[0.035] p-4">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300/70">
+          <p className="text-xs font-semibold text-violet-300/70">
             Active workstream
           </p>
           <h2 className="mt-1 text-lg font-semibold text-white">
@@ -141,7 +141,7 @@ export default function AgentWorkspaceRegions({
           <p className="text-sm text-white/65">
             Draft will remain editable and retain its evidence history.
           </p>
-          <div className="mt-3 flex gap-2 text-[11px] uppercase tracking-wide text-white/35">
+          <div className="mt-3 flex gap-2 text-[11px] text-white/35">
             <span>DOCX</span>
             <span>PPTX</span>
             <span>XLSX</span>

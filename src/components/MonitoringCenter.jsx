@@ -1,5 +1,7 @@
 "use client";
 
+
+import { Field, ContentSkeleton } from "./ui/Surface";
 import ActionButton, { ActionForm } from "./ui/ActionButton";
 
 import { activityFetch as fetch } from "../lib/client/requestActivity";
@@ -26,6 +28,7 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
 
+  const [initialLoading, setInitialLoading] = useState(true);
   async function load() {
     try {
       const [profilesResponse, alertsResponse] = await Promise.all([
@@ -39,8 +42,8 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
         setDeliveries(alertsData.deliveries || []);
       }
     } catch {
-      setMessage("Continuous Intelligence could not be loaded.");
-    }
+      setMessage("Continuous Intelligence could not be loaded. Try refreshing this view.");
+    } finally { setInitialLoading(false); }
   }
 
   useEffect(() => {
@@ -105,10 +108,11 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
     finally { setBusy(""); }
   }
 
+  if (initialLoading) return <ContentSkeleton label="Loading monitoring profiles…" rows={5} />;
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Schedule intelligence</h2>
+      <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <h2 className="text-sm font-semibold text-white">Schedule intelligence</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-white/55">Follow keywords, specific countries or regions, or combine both. Each scheduled review uses matching evidence in the available {therapeuticArea || "selected topic"} corpus.</p>
         {!workspaceId ? <p role="status" className="mt-3 text-sm text-amber-200">Select or create a workspace to save scheduled intelligence.</p> : null}
         <ActionForm onSubmit={createProfile} className="mt-5 grid gap-3 lg:grid-cols-2">
@@ -117,13 +121,13 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
           <fieldset className="min-w-0 rounded-xl border border-white/10 p-4">
             <legend className="px-1 text-sm font-medium text-white/75">Keywords and phrases</legend>
             <label htmlFor="monitor-keywords" className="text-xs text-white/55">Separate terms with commas or new lines. Leave blank to follow all keywords.</label>
-            <textarea id="monitor-keywords" value={keywords} onChange={event => setKeywords(event.target.value)} rows={3} placeholder="Wegovy, insurance coverage, affordability" className={inputClass} />
+            <Field label="Wegovy, insurance coverage, affordability"><textarea id="monitor-keywords" value={keywords} onChange={event => setKeywords(event.target.value)} rows={3} placeholder="Wegovy, insurance coverage, affordability" className={inputClass} /></Field>
             <label className="mt-3 block text-xs text-white/65">Keyword matching<select value={keywordMatch} onChange={event => setKeywordMatch(event.target.value)} className={inputClass}><option value="any">Match any keyword or phrase</option><option value="all">Match all keywords and phrases</option></select></label>
           </fieldset>
           <fieldset className="min-w-0 rounded-xl border border-white/10 p-4">
             <legend className="px-1 text-sm font-medium text-white/75">Geography</legend>
             <label htmlFor="monitor-geography" className="text-xs text-white/55">Add countries or regions. Leave blank for all available markets.</label>
-            <div className="flex items-end gap-2"><input id="monitor-geography" list="monitor-geography-options" value={geographyInput} onChange={event => setGeographyInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); addGeography(); } }} placeholder="Search e.g. United States, Europe, Japan" className={inputClass} /><ActionButton type="button" onClick={addGeography} disabled={!geographyInput.trim()} className="rounded-xl border border-white/20 px-4 py-2.5 text-sm text-white disabled:opacity-40">Add</ActionButton></div>
+            <div className="flex items-end gap-2"><Field label="Country or region"><input id="monitor-geography" list="monitor-geography-options" value={geographyInput} onChange={event => setGeographyInput(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); addGeography(); } }} placeholder="Search e.g. United States, Europe, Japan" className={inputClass} /></Field><ActionButton type="button" onClick={addGeography} disabled={!geographyInput.trim()} className="rounded-xl border border-white/20 px-4 py-2.5 text-sm text-white disabled:opacity-40">Add</ActionButton></div>
             <datalist id="monitor-geography-options">{sourceGeographyOptions.map(option => <option key={option.value} value={option.label}>{option.kind === "region" ? "Region" : option.value}</option>)}</datalist>
             <div className="mt-3 flex flex-wrap gap-2" aria-label="Selected geographies">{geographies.map(value => <span key={value} className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 px-3 py-1 text-xs text-cyan-100">{geographyLabel(value)}<button type="button" aria-label={`Remove ${geographyLabel(value)}`} onClick={() => setGeographies(current => current.filter(item => item !== value))}>×</button></span>)}</div>
             <p className="mt-3 text-xs leading-5 text-white/45">Geography uses source-country metadata. Records with unknown geography are excluded when a geography is selected.</p>
@@ -147,11 +151,11 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
       </section>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Monitoring profiles</h2>
+        <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <h2 className="text-sm font-semibold text-white">Monitoring profiles</h2>
           <div className="mt-4 space-y-3">
             {profiles.length ? profiles.map((profile) => (
-              <article key={profile.id} className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <article key={profile.id} className="as-card rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div><h3 className="text-sm font-medium text-white/75">{profile.name}</h3><p className="mt-1 text-xs leading-5 text-white/35">{profile.query}</p></div>
                   <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[11px] text-emerald-300">{profile.status}</span>
@@ -164,19 +168,19 @@ export default function MonitoringCenter({ workspaceId, therapeuticArea }) {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Alerts</h2>
+        <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <h2 className="text-sm font-semibold text-white">Alerts</h2>
           <div className="mt-4 space-y-3">
             {alerts.length ? alerts.map((alert) => (
-              <article key={alert.id} className="rounded-xl border border-amber-400/15 bg-amber-400/[0.05] p-4"><div className="flex items-center gap-2"><span className="text-[11px] uppercase text-amber-300">{alert.severity}</span><span className="text-xs text-white/30">{new Date(alert.created_at).toLocaleString()}</span></div><h3 className="mt-2 text-sm font-medium text-white/75">{alert.title}</h3><p className="mt-1 text-xs leading-5 text-white/40">{alert.summary}</p></article>
+              <article key={alert.id} className="as-card rounded-xl border border-amber-400/15 bg-amber-400/[0.05] p-4"><div className="flex items-center gap-2"><span className="text-[11px] text-amber-300">{alert.severity}</span><span className="text-xs text-white/30">{new Date(alert.created_at).toLocaleString()}</span></div><h3 className="mt-2 text-sm font-medium text-white/75">{alert.title}</h3><p className="mt-1 text-xs leading-5 text-white/40">{alert.summary}</p></article>
             )) : <p className="text-sm text-white/35">No threshold alerts have been created.</p>}
           </div>
         </section>
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Report distribution</h2>
-        <div className="mt-4 grid gap-2 lg:grid-cols-2">{deliveries.slice(0, 12).map((delivery) => <div key={delivery.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3"><div><p className="text-sm text-white/65">{delivery.subject}</p><p className="mt-1 text-xs text-white/30">{delivery.channel.replace("_", " ")} · {delivery.status_detail}</p></div><span className="text-xs text-white/40">{delivery.status}</span></div>)}</div>
+      <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <h2 className="text-sm font-semibold text-white">Report distribution</h2>
+        <div className="mt-4 grid gap-2 lg:grid-cols-2">{deliveries.slice(0, 12).map((delivery) => <div key={delivery.id} className="as-inset flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3"><div><p className="text-sm text-white/65">{delivery.subject}</p><p className="mt-1 text-xs text-white/30">{delivery.channel.replace("_", " ")} · {delivery.status_detail}</p></div><span className="text-xs text-white/40">{delivery.status}</span></div>)}</div>
       </section>
     </div>
   );

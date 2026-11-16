@@ -1,5 +1,7 @@
 "use client";
 
+
+import { Field } from "../../../components/ui/Surface";
 import ActionButton, { ActionForm } from "../../../components/ui/ActionButton";
 
 import { activityFetch as fetch } from "../../../lib/client/requestActivity";
@@ -75,7 +77,7 @@ function AccessSelector({
   onChange: (state: AccessState) => void;
 }) {
   return (
-    <div className="grid grid-cols-3 rounded-xl border border-white/10 bg-black p-1">
+    <div className="as-inset grid grid-cols-3 rounded-xl border border-white/10 bg-black p-1">
       {(["inherit", "grant", "deny"] as AccessState[]).map(
         (state) => (
           <ActionButton
@@ -454,17 +456,17 @@ export default function EntitlementsAdminPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-10 text-white">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+        <p className="text-xs font-semibold tracking-[0.18em] text-cyan-300">
           AskSocial Admin
         </p>
         <h1 className="mt-3 text-3xl font-semibold">
-          User Access Administration
+          User access administration
         </h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-white/55">
           Select a user, then assign their topics, licensed modules, and PV Compliance access from one governed screen. User settings take precedence over organization settings and platform defaults.
         </p>
 
-        <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+        <section className="as-card mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
           <ActionForm
             onSubmit={(event) => {
               event.preventDefault();
@@ -472,7 +474,7 @@ export default function EntitlementsAdminPage() {
             }}
             className="grid gap-4 md:grid-cols-[180px_1fr_auto]"
           >
-            <select
+            <Field label="Access subject type"><select
               aria-label="Access subject type"
               value={subjectType}
               onChange={(event) => {
@@ -484,11 +486,11 @@ export default function EntitlementsAdminPage() {
             >
               <option value="user">User</option>
               <option value="organization">Organization</option>
-            </select>
+            </select></Field>
 
             {subjectType === "user" ? (
               <div className="grid gap-2 sm:grid-cols-[minmax(180px,0.7fr)_minmax(240px,1fr)]">
-                <input
+                <Field label="Search name or email"><input
                   aria-label="Search users"
                   value={userQuery}
                   onChange={(event) => {
@@ -498,8 +500,8 @@ export default function EntitlementsAdminPage() {
                   }}
                   placeholder="Search name or email"
                   className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm outline-none focus:border-white/30"
-                />
-                <select
+                /></Field>
+                <Field label="Select user"><select
                   aria-label="Select user"
                   value={subjectId}
                   disabled={usersLoading}
@@ -518,10 +520,10 @@ export default function EntitlementsAdminPage() {
                       {user.email ? ` — ${user.email}` : ""}
                     </option>
                   ))}
-                </select>
+                </select></Field>
               </div>
             ) : (
-              <input
+              <Field label="org_"><input
                 aria-label="Clerk organization ID"
                 value={subjectId}
                 onChange={(event) => {
@@ -530,7 +532,7 @@ export default function EntitlementsAdminPage() {
                 }}
                 placeholder="org_..."
                 className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm outline-none focus:border-white/30"
-              />
+              /></Field>
             )}
 
             <ActionButton
@@ -554,11 +556,11 @@ export default function EntitlementsAdminPage() {
           </p>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+        <section className="as-card mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
           {displayName ? (
             <div className="flex flex-col gap-3 border-b border-white/10 pb-5 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-white/35">
+                <p className="text-xs tracking-[0.16em] text-white/35">
                   Editing access for
                 </p>
                 <h2 className="mt-1 text-xl font-semibold">{displayName}</h2>
@@ -586,7 +588,7 @@ export default function EntitlementsAdminPage() {
             </div>
           ) : (
             <div className="border-b border-white/10 pb-5">
-              <p className="text-xs uppercase tracking-[0.16em] text-white/35">
+              <p className="text-xs tracking-[0.16em] text-white/35">
                 Access configuration
               </p>
               <h2 className="mt-1 text-xl font-semibold">
@@ -597,11 +599,11 @@ export default function EntitlementsAdminPage() {
 
           {subjectType === "user" ? (
             <div className="mt-6 border-b border-white/10 pb-6">
-              <p className="text-xs uppercase tracking-[0.16em] text-cyan-300">
+              <p className="text-xs tracking-[0.16em] text-cyan-300">
                 1 · Topics
               </p>
               <h3 className="mt-1 text-lg font-semibold">
-                Assign Topics by user
+                Assign topics by user
               </h3>
               <p className="mt-1 text-sm leading-6 text-white/45">
                 Select every topic whose corpus and intelligence this user may access.
@@ -652,11 +654,11 @@ export default function EntitlementsAdminPage() {
           ) : null}
 
           <div className="mt-6 border-b border-white/10 pb-6">
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-300">
+            <p className="text-xs tracking-[0.16em] text-cyan-300">
               {subjectType === "user" ? "2" : "1"} · Modules
             </p>
             <h3 className="mt-1 text-lg font-semibold">
-              Assign Modules by {subjectType}
+              Assign modules by {subjectType}
             </h3>
             <p className="mt-1 text-sm leading-6 text-white/45">
               Enable, disable, or inherit each intelligence module. Effective status reflects the current access result.
@@ -681,11 +683,11 @@ export default function EntitlementsAdminPage() {
           </div>
 
           <div className="mt-6 border-b border-white/10 pb-6">
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-300">
+            <p className="text-xs tracking-[0.16em] text-cyan-300">
               {subjectType === "user" ? "3" : "2"} · Regulated workflow
             </p>
             <h3 className="mt-1 text-lg font-semibold">
-              Enable PV Compliance by {subjectType}
+              Enable PV compliance by {subjectType}
             </h3>
             <p className="mt-1 text-sm leading-6 text-white/45">
               Controls visibility of PV Compliance and authorization for its screening, structured-review, QA, sponsor-handoff, transfer, audit, and reconciliation services.
@@ -753,7 +755,7 @@ export default function EntitlementsAdminPage() {
         {message ? (
           <div
             role="status"
-            className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/70"
+            className="as-inset mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/70"
           >
             {message}
           </div>

@@ -1,6 +1,12 @@
 "use client";
 
+import { ModalSurface } from "./ui/Surface";
+
+
 import { moduleExecutiveSummary } from "../lib/module-intelligence/summaryCopy";
+
+import ShareBar from "./ui/ShareBar";
+import { ContentSkeleton, ErrorState } from "./ui/Surface";
 
 import ActionButton, { ActionForm } from "./ui/ActionButton";
 
@@ -17,20 +23,20 @@ import useDrilldownNavigation from "../lib/client/useDrilldownNavigation";
 function SignalList({ title, signals = [], evidenceCount, onOpenEvidence }) {
   const content = (
     <>
-      <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{title}</span>
+      <span className="block text-xs font-semibold text-white/45">{title}</span>
+      <span className="mt-2 block text-xs text-white/45">Share of matching patient evidence; signals may overlap.</span>
       <span className="mt-4 block space-y-3">
-        {signals.length ? signals.map((signal) => (
+        {signals.some(signal => signal.prevalencePercent > 0) ? [...signals].filter(signal => signal.prevalencePercent > 0).sort((a, b) => b.prevalencePercent - a.prevalencePercent).map((signal, rank) => (
           <span key={signal.id} className="block">
             <span className="flex items-center justify-between gap-3 text-sm">
               <span className="text-white/70">{signal.label}</span>
               <span className="text-white/40">{signal.prevalencePercent}% · {formatConfidenceLabel(signal.confidence)}</span>
             </span>
-            <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-[#e2e9e5]">
-              <span className="block h-full rounded-full bg-[#11766b]" style={{ width: `${Math.min(100, signal.prevalencePercent)}%` }} />
-            </span>
+            <ShareBar value={signal.prevalencePercent} label={signal.label} rank={rank} />
           </span>
         )) : <span className="block text-sm text-white/35">No supported signals in the current patient-voice subset.</span>}
       </span>
+      {signals.some(signal => signal.prevalencePercent === 0) ? <span className="as-zero-tags"><span>No matching records from</span>{signals.filter(signal => signal.prevalencePercent === 0).map(signal => <span className="as-badge" key={signal.id}>{signal.label}</span>)}</span> : null}
       {onOpenEvidence ? (
         <span className="mt-5 flex items-center justify-between border-t border-white/10 pt-3 text-xs font-semibold text-cyan-200/75">
           <span>{evidenceCount.toLocaleString()} supporting mention{evidenceCount === 1 ? "" : "s"}</span>
@@ -46,14 +52,15 @@ function SignalList({ title, signals = [], evidenceCount, onOpenEvidence }) {
         type="button"
         onClick={onOpenEvidence}
         aria-label={`View all evidence supporting ${title}`}
-        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+        variant="card"
+        className="as-card w-full rounded-2xl p-5 text-left transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
       >
         {content}
       </ActionButton>
     );
   }
 
-  return <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">{content}</section>;
+  return <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">{content}</section>;
 }
 
 function patientEvidenceTitle(item) {
@@ -71,10 +78,10 @@ function PatientEvidenceDialog({ evidence, onClose }) {
     ? evidence.matchedSignalLabels.join(", ")
     : "Not classified";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full patient evidence mention" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[#080808] p-6 shadow-2xl">
+    <ModalSurface className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Full patient evidence mention" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} onRequestClose={onClose}>
+      <div className="as-inset max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/15 bg-[var(--as-field)] p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
-          <div><p className="text-xs uppercase tracking-[0.16em] text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{patientEvidenceTitle(evidence)}</h2></div>
+          <div><p className="text-xs text-cyan-300/70">Full mention</p><h2 className="mt-2 text-xl font-semibold text-white">{patientEvidenceTitle(evidence)}</h2></div>
           <BackButton onClick={onClose} aria-label="Back to previous screen" />
         </div>
         {evidence.supportingPassages?.length ? <div className="mt-5 space-y-3 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.05] p-4">
@@ -95,7 +102,7 @@ function PatientEvidenceDialog({ evidence, onClose }) {
         {evidence.author ? <p className="mt-4 text-xs text-white/40">Author or account: <span className="text-white/65">{evidence.author}</span></p> : null}
         {evidence.url ? <a href={evidence.url} target="_blank" rel="noreferrer noopener" className="mt-6 inline-flex items-center rounded-xl border border-cyan-300/35 bg-cyan-300/[0.10] px-5 py-3 text-sm font-semibold text-cyan-200 transition hover:border-cyan-200/60 hover:bg-cyan-300/[0.16]">Open original source ↗</a> : null}
       </div>
-    </div>
+    </ModalSurface>
   );
 }
 
@@ -216,16 +223,18 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId, 
     return result?.evidenceDimensions?.find((item) => item.id === dimension)?.findingCount || 0;
   }
 
+  if (!result && loading) return <ContentSkeleton label="Loading analysis…" rows={4} />;
+
   if (!result) {
     return (
-      <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/70">Patient Intelligence</p>
+      <section className="as-card rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
+        <p className="text-xs font-semibold text-cyan-300/70">Patient Intelligence</p>
         <h2 className="mt-3 text-2xl font-semibold text-white">{therapeuticArea}</h2>
         <p className="mx-auto mt-3 text-sm leading-6 text-white/50">{isGlp1 ? "Analyze patient-related mentions across personal accounts, support communities, reported stories and family references. Patient/caregiver voices remain separately identified." : "Analyze journey stages, treatment barriers, emotional burden, treatments, and unmet needs using the evidence-qualified patient and caregiver subset."}</p>
         <ActionButton onClick={() => runAnalysis()} disabled={loading || !therapeuticArea} className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">
           {loading ? "Analyzing…" : "Generate Patient Intelligence"}
         </ActionButton>
-        {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
+        {error ? <ErrorState message={error} onRetry={() => runAnalysis()} /> : null}
       </section>
     );
   }
@@ -234,10 +243,10 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId, 
     return (
       <div className="space-y-5">
         <PatientEvidenceDialog evidence={selectedEvidence} onClose={closeMention} />
-        <section className="min-h-[70vh] rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6" aria-label={`${evidenceDimension.label} patient evidence table`}>
+        <section className="as-card min-h-[70vh] rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6" aria-label={`${evidenceDimension.label} patient evidence table`}>
           <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
             <div className="min-w-0 flex-1 basis-64">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/70">Patient Intelligence</p>
+              <p className="text-xs font-semibold text-cyan-300/70">Patient Intelligence</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">{evidenceDimension.label} evidence</h2>
             </div>
             <BackButton onClick={closeEvidenceBrowser} label="Back to Patient Intelligence" />
@@ -252,14 +261,14 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId, 
           </ActionForm>
 
           {evidenceError ? <p className="mt-4 text-sm text-rose-300">{evidenceError}</p> : null}
-          {evidenceLoading && !evidenceCatalog ? <p className="mt-6 text-sm text-white/40">Loading supporting patient evidence…</p> : null}
+          {evidenceLoading && !evidenceCatalog ? <ContentSkeleton label="Loading supporting patient evidence…" /> : null}
 
           {evidenceCatalog ? (
             <>
               <div className="mt-6 text-xs text-white/40">{evidenceCatalog.total.toLocaleString()} supporting mention{evidenceCatalog.total === 1 ? "" : "s"} · Page {evidenceCatalog.page} of {evidenceCatalog.pageCount}</div>
-              <div className="mt-3 overflow-x-auto rounded-2xl border border-white/10">
+              <div className="as-inset mt-3 overflow-x-auto rounded-2xl border border-white/10">
                 <table className="w-full min-w-[1120px] table-fixed text-left text-sm">
-                  <thead className="border-b border-white/10 bg-black/35 text-xs uppercase tracking-[0.12em] text-white/40">
+                  <thead className="border-b border-white/10 bg-black/35 text-xs text-white/40">
                     <tr><th className="w-[20%] px-4 py-3 font-semibold">Label</th><th className="w-[27%] px-4 py-3 font-semibold">Mention</th><th className="w-[12%] px-4 py-3 font-semibold">Source</th><th className="w-[9%] px-4 py-3 font-semibold">Audience</th><th className="w-[14%] px-4 py-3 font-semibold">Evidence tier</th><th className="w-[12%] px-4 py-3 font-semibold">Supporting Signals</th><th className="w-[6%] px-4 py-3 font-semibold">Quality</th></tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.07]">
@@ -294,7 +303,7 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId, 
     <div className="space-y-4">
       {retentionWarning ? <p role="status" className="rounded-xl border border-amber-300/30 p-3 text-sm">{retentionWarning}</p> : null}
       <PatientEvidenceDialog evidence={selectedEvidence} onClose={closeMention} />
-      <section className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
+      <section className="as-card rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-6">
         {isGlp1 ? <div className="flex flex-wrap gap-2" aria-label="Patient evidence scope">
           <ActionButton type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_related"} disabled={loading} onClick={() => runAnalysis("patient_related")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">All patient-related mentions</ActionButton>
           <ActionButton type="button" aria-pressed={result.dataQuality.evidenceScope === "patient_voice"} disabled={loading} onClick={() => runAnalysis("patient_voice")} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 aria-pressed:bg-cyan-300/15 aria-pressed:text-cyan-200 disabled:opacity-40">Patient/caregiver voice only</ActionButton>
@@ -312,8 +321,8 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId, 
           <SignalList title="Treatment signals" signals={result.treatmentSignals} />
         </div>
       </div>
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Representative patient evidence</h3>
+      <section className="as-card rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <h3 className="text-xs font-semibold text-white/45">Representative patient evidence</h3>
         <div className="mt-5 space-y-6">
           {(result.evidenceGroups || []).map(group => <div key={group.id}>
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -346,8 +355,8 @@ export default function PatientIntelligenceView({ therapeuticArea, workspaceId, 
       </section>
       <RecommendedActions actions={result.recommendations} />
 
-      <section className="rounded-2xl border border-amber-500/15 bg-amber-500/[0.05] p-5">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/70">Data-quality limitations</h3>
+      <section className="as-card rounded-2xl border border-amber-500/15 bg-amber-500/[0.05] p-5">
+        <h3 className="text-xs font-semibold text-amber-200/70">Data-quality limitations</h3>
         <ul className="mt-3 space-y-2 text-xs leading-5 text-white/45">{result.dataQuality.limitations.map((item) => <li key={item}>• {item}</li>)}</ul>
       </section>
     </div>
