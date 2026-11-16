@@ -137,8 +137,8 @@ export function loadAudienceConversationPosts(therapeuticArea: string, findings:
   const matching = bundle.records.filter(record => {
     const classification = record.audienceClassification;
     return classification && focus.matches(record)
-      && clientGroupForClassification(classification) === options.group
-      && classification.contentSegment === options.conversationType
+      && (options.group === "all" || clientGroupForClassification(classification) === options.group)
+      && (options.conversationType === "all" || classification.contentSegment === options.conversationType)
       && (!options.role || classification.audience === options.role);
   });
   const pageSize = 20;

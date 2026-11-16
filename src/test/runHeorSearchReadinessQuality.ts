@@ -92,7 +92,7 @@ assert.ok(searchRecordText(custom.findings[0]).includes("insurance"));
 const shell = fs.readFileSync("src/components/WorkspaceShell.jsx", "utf8");
 assert.ok(shell.includes('<ConversationThemeEvidence theme={theme.name} examples={questionExamples}'));
 assert.ok(shell.includes('focusedSummary ? "Supporting Conversation Evidence"'));
-assert.ok(fs.readFileSync("src/components/CorpusDonutCards.jsx", "utf8").includes('"Topics in This Question"'));
+assert.ok(fs.readFileSync("src/components/CorpusDonutCards.jsx", "utf8").includes('Top experience themes'));
 console.log(JSON.stringify({passed: true, demoPrompts: results, guards: ["qualitative question-specific summaries", "source-exact evidence", "matching topic charts", "saved answer upgrade", "thin cohorts", "unsupported rates", "unmatched concepts", "temporal limits", "future corpora"]}, null, 2));
 
 const mixedPost = { ...hypothetical[0], findingId: "mixed", summary: "Generated GLP-1 insurance summary", rawMetadata: { fields: { Title: "Unrelated discussion", "Opening Text": "Insurance companies are investing in AI.", "Hit Sentence": "GLP-1 is mentioned in a separate link.", Language: "English" } } } as unknown as CanonicalFinding;

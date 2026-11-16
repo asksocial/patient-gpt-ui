@@ -1,84 +1,64 @@
 "use client";
 
 import { useState } from "react";
+import { groupClientAudiences } from "../answering/personas/clientAudienceGroups";
 import styles from "./CorpusDonutCards.module.css";
 
-const COLORS = ["#11766b", "#3e73ba", "#e59a35", "#9360b5", "#d76063", "#829c38", "#247f96", "#a36d40", "#b44782", "#6273a3", "#607747", "#79645c"];
-const REMAINDER = "#dfe5e2";
-const formatPercent = (count, total) => `${total ? Number((count / total * 100).toFixed(1)) : 0}%`;
+const RAMP = ["#1B6457", "#2E8574", "#4FA594", "#7FC2B3", "#9ED3C7"];
+const rankColor = (index, total) => RAMP[index] || `hsl(164 32% ${85 + (index - RAMP.length + 1) / Math.max(1, total - RAMP.length) * 10}%)`;
+const OTHER = "#C7D1CE";
+const percent = (count, total) => total ? Number((count / total * 100).toFixed(1)) : 0;
+const isOther = item => item.id === "remainder" || /^(other|unspecified|unknown)(\b|\s*\/)/i.test(item.label);
+const ranked = segments => [...segments].filter(item => item.count > 0).sort((a, b) => Number(isOther(a)) - Number(isOther(b)) || b.count - a.count);
 
-function DonutCard({ title, chart, source, unit = "posts", focused = false }) {
-  const [hoveredId, setHoveredId] = useState(null);
-  const [focusedId, setFocusedId] = useState(null);
-  const activeId = hoveredId ?? focusedId;
-  const circumference = 2 * Math.PI * 80;
-  const segments = chart.segments.map((segment, index) => {
-    const length = chart.denominator ? segment.count / chart.denominator * circumference : 0;
-    const offset = chart.denominator ? chart.segments.slice(0, index).reduce((sum, s) => sum + s.count, 0) / chart.denominator * circumference : 0;
-    return { ...segment, length, offset, color: segment.id === "remainder" || segment.excluded ? REMAINDER : COLORS[index % COLORS.length] };
-  });
-  const leading = segments.filter(segment => segment.id !== "remainder" && !segment.excluded).reduce((best, segment) => !best || segment.count > best.count ? segment : best, null);
-  const active = segments.find(segment => segment.id === activeId);
-  const displayed = active || leading;
-  return (
-    <section aria-label={`${title} chart`} className="min-w-0 rounded-[24px] border p-5 xl:p-6" style={{ background: "#f5f8f6", borderColor: "#d6e0db", color: "#123b32" }}>
-      <h3 className="text-sm font-semibold uppercase tracking-[0.18em]">{title}</h3>
-      <p className="mt-2 text-xs leading-5" style={{ color: "#73847d" }}>{source}</p>
-      <div className="relative mx-auto my-7 w-full max-w-[280px] aspect-square">
-        <svg viewBox="0 0 200 200" role="group" aria-label={`${title} interactive chart`} className="h-full w-full overflow-visible" onPointerLeave={() => setHoveredId(null)}>
-          <circle cx="100" cy="100" r="80" fill="none" stroke={REMAINDER} strokeWidth="24" />
-          {segments.filter(s => s.count > 0).map(s => (
-            <g
-              key={s.id}
-              tabIndex={0}
-              role="img"
-              aria-label={`${s.label}: ${s.count.toLocaleString()} ${unit} (${formatPercent(s.count, chart.denominator)})`}
-              className={styles.segment}
-              data-active={s.id === activeId}
-              onPointerEnter={() => setHoveredId(s.id)}
-              onPointerLeave={() => setHoveredId(null)}
-              onFocus={() => setFocusedId(s.id)}
-              onBlur={() => setFocusedId(null)}
-            >
-              {/* Keep the hit area stationary while the visible segment lifts. */}
-              <circle cx="100" cy="100" r="80" fill="none" stroke="transparent" strokeWidth="28" strokeDasharray={`${s.length} ${circumference - s.length}`} strokeDashoffset={-s.offset} transform="rotate(-90 100 100)" pointerEvents="stroke" />
-              <g className={styles.segmentVisual} pointerEvents="none">
-                <circle cx="100" cy="100" r="80" fill="none" stroke={s.color} strokeWidth="24" strokeDasharray={`${s.length} ${circumference - s.length}`} strokeDashoffset={-s.offset} transform="rotate(-90 100 100)" />
-              </g>
-            </g>
-          ))}
-        </svg>
-        <div className="pointer-events-none absolute inset-[24%] flex flex-col items-center justify-center text-center" role="status" aria-live="polite" aria-atomic="true">
-          <strong className="text-[28px] font-semibold leading-tight" style={{ color: "#123b32" }}>{formatPercent(displayed?.count || 0, chart.denominator)}</strong>
-          <span className="mt-1 text-[11px] leading-tight" style={{ color: "#73847d" }}>{displayed?.label || "No findings"}</span>
-        </div>
-      </div>
-      <ul>
-        {segments.map(s => <li key={s.id} className="flex items-start gap-2.5 border-b py-3 text-[13px] leading-5" style={{ borderColor: "#dfe6e2", color: s.color === REMAINDER ? "#82928b" : "#354c43" }} title={`${s.count.toLocaleString()} of ${chart.denominator.toLocaleString()} ${unit}`}>
-          <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: s.color }} />
-          <span className="min-w-0 flex-1">{s.label}</span>
-          <strong className="shrink-0 tabular-nums">{formatPercent(s.count, chart.denominator)}</strong>
-        </li>)}
-      </ul>
-      <p className="mt-3 text-[11px] leading-5" style={{ color: "#73847d" }}>{focused ? "Share of matching" : "Share of"} {chart.denominator.toLocaleString()} {title === "Persona Intelligence" ? `source corpus ${unit}` : `validated analytical ${unit}`}.{chart.note ? ` ${chart.note}` : ""}</p>
-    </section>
-  );
+/** Both market and audience distributions share scale, ordering and accessibility. */
+export function DistributionPanel({ title, subtitle, chart, concentrationNote, zeroGroups = [], footer }) {
+  const segments = ranked(chart.segments);
+  const leader = segments.find(item => !isOther(item)) || segments[0];
+  if (!leader || !chart.denominator) return null;
+  const share = percent(leader.count, chart.denominator);
+  const label = segments.map(item => `${item.label}: ${percent(item.count, chart.denominator)}%`).join("; ");
+  return <section className={styles.card}>
+    <h3>{title}</h3><p className={styles.subtitle}>{subtitle}</p>
+    <div className={styles.headline}><strong>{share}%</strong><span>{leader.label}</span></div>
+    <div className={styles.stacked} role="img" aria-label={`${title}. ${label}`}>
+      {segments.map((item, index) => <span key={item.id} style={{ width: `${item.count / chart.denominator * 100}%`, background: isOther(item) ? OTHER : rankColor(index, segments.length) }} />)}
+    </div>
+    <ul className={styles.legend}>{segments.map((item, index) => <li key={item.id}>
+      <span className={styles.swatch} style={{ background: isOther(item) ? OTHER : rankColor(index, segments.length) }} aria-hidden="true" />
+      <span>{item.label}</span><strong>{percent(item.count, chart.denominator)}%</strong>
+    </li>)}</ul>
+    {leader.count / chart.denominator >= 0.6 ? <p className={styles.callout}>{concentrationNote}</p> : null}
+    {zeroGroups.length ? <div className={styles.zeroGroups}><p>No matching records from</p><div>{zeroGroups.map(item => <span key={item.id}>{item.label}</span>)}</div></div> : null}
+    {footer ? <a className={styles.footer} href="#persona-breakdown">See persona breakdown ↓</a> : null}
+  </section>;
 }
 
 export default function CorpusDonutCards({ summary }) {
+  const [showAll, setShowAll] = useState(false);
   if (!summary?.corpusCharts || !["full_corpus", "question_corpus"].includes(summary.scope)) return null;
-  const focused = summary.scope === "question_corpus";
-  const unit = summary.recordUnit || "posts";
-  const patient = summary.clientGroups.find(g => g.id === "patients_circle");
-  const persona = {
-    denominator: summary.denominator,
-    segments: [...summary.clientGroups].sort((a, b) => Number(a.excluded) - Number(b.excluded) || b.count - a.count),
-    highlightCount: patient?.count || 0,
-    highlightLabel: "Patients & Their Circle",
-  };
-  return <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3" aria-label="Corpus overview charts">
-    <DonutCard focused={focused} unit={unit} title={summary.corpusCharts.burdens.title || (summary.questionEvidence ? "Topics in This Question" : "Most-Supported Burdens")} chart={summary.corpusCharts.burdens} source={focused ? "Derived from matching analytical records" : "Derived from the validated analytical corpus"} />
-    <DonutCard focused={focused} unit={unit} title="Market Intelligence" chart={summary.corpusCharts.markets} source={focused ? "Derived from matching analytical records" : "Derived from the validated analytical corpus"} />
-    <DonutCard focused={focused} unit={unit} title="Persona Intelligence" chart={persona} source={focused ? "Derived from matching source records" : "Derived from the full source corpus"} />
+  const groups = (summary.clientGroups || groupClientAudiences(summary.segments, summary.denominator)).filter(item => !item.excluded);
+  const themes = ranked(summary.corpusCharts.burdens.segments);
+  const individual = themes.filter(item => !isOther(item));
+  const top = individual.slice(0, 4);
+  const remaining = themes.filter(item => !top.includes(item));
+  const otherCount = remaining.reduce((sum, item) => sum + item.count, 0);
+  const rows = [...top, ...(otherCount ? [{ id: "remainder", label: "Other themes", count: otherCount }] : [])];
+  const largest = Math.max(...top.map(item => item.count), 1);
+  const denominator = summary.corpusCharts.burdens.denominator;
+  return <div className={styles.grid} aria-label="Corpus overview charts">
+    <section className={styles.card}>
+      <h3>Top experience themes</h3><p className={styles.subtitle}>Share of matching records</p>
+      <div className={styles.themes} role="img" aria-label={`Top experience themes. ${rows.map(item => `${item.label}: ${percent(item.count, denominator)}%`).join("; ")}`}>
+        {rows.map((item, index) => <div key={item.id} className={styles.theme}>
+          <div><span>{item.label}</span><strong>{percent(item.count, denominator)}%</strong></div>
+          <div className={styles.track}><span style={{ width: `${Math.min(100, item.count / largest * 100)}%`, background: isOther(item) ? OTHER : RAMP[index] }} /></div>
+        </div>)}
+      </div>
+      <button type="button" className={styles.footer} aria-expanded={showAll} aria-controls="ask-all-themes" onClick={() => setShowAll(!showAll)}>See all themes →</button>
+      {showAll ? <ul id="ask-all-themes" className={styles.legend}>{themes.map(item => <li key={item.id}><span>{item.label}</span><strong>{percent(item.count, denominator)}%</strong></li>)}</ul> : null}
+    </section>
+    <DistributionPanel title="Where it's coming from" subtitle="Share of matching records by market" chart={summary.corpusCharts.markets} concentrationNote="Heavily weighted to one market — read cross-market patterns with care." />
+    <DistributionPanel title="Who's talking" subtitle="Share of matching source records by persona" chart={{ denominator: summary.denominator, segments: groups }} zeroGroups={groups.filter(item => item.count === 0)} concentrationNote="Mostly one persona — other perspectives are under-represented." footer />
   </div>;
 }

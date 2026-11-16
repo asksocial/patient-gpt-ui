@@ -1,0 +1,13 @@
+.card { padding: 24px; border-radius: 16px; background: #fff; color: #15201d; box-shadow: 0 1px 2px rgba(14,42,37,.06); }
+.title { margin: 10px 0; font-size: 30px; line-height: 1.25; letter-spacing: -.035em; font-weight: 700; }
+.subtitle { margin: 0 0 24px; max-width: 64ch; font-size: 16px; line-height: 1.65; color: #56645f; }
+.inputRow { margin-top: 12px; }
+.emptyInput { padding: 16px; border: 1px solid #dce3e1; border-radius: 14px; background: #f5f8f7; gap: 16px; }
+.emptyInput:focus-within { border-color: #1b6457; box-shadow: 0 0 0 2px #ddf0ea; }
+.input { flex: 1; min-width: 0; margin: 0; }
+.textarea { display: block; width: 100%; padding: 0; resize: none; overflow: hidden; border: 0; outline: 0; background: transparent; color: #15201d; font: inherit; }
+.emptyInput .textarea { min-height: 58px; font-size: 18px; line-height: 1.6; font-weight: 500; letter-spacing: normal; }
+.explore { flex-shrink: 0; min-height: 44px; border: 0; border-radius: 10px; padding: 0 20px; background: #1b6457; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.explore:focus-visible { outline: 2px solid #1b6457; outline-offset: 4px; }
+.explore:disabled { background: #e6ecea; color: #56645f; cursor: not-allowed; opacity: 1; }
+@media (max-width: 600px) { .title { font-size: 27px; } .emptyInput { padding: 14px; } }

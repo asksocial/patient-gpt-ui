@@ -27,6 +27,8 @@ export type PersonaIntelligenceSummary = {
     count: number; percent: number; likelyVoiceCount: number;
     breakdown: Array<{ id: string; label: string; count: number; percent: number }>;
   };
+  dateRange?: { start: string; end: string };
+  matchingMarketCount?: number;
   denominator: number;
   classifiedCount: number;
   roleCount: number;
@@ -35,7 +37,7 @@ export type PersonaIntelligenceSummary = {
     authorOrSourceEvidenceCount: number; reviewRequiredCount: number;
     conversations: Array<{ id: ConversationSegment; label: string; count: number }>;
     evidenceIds: string[];
-    examples: Array<{ id: string; excerpt: string; url?: string; roleEvidence: string[]; roleBasis: string }>;
+    examples: Array<{ id: string; excerpt: string; sourceVerbatim?: boolean; country?: string; sourceCategory?: string; url?: string; roleEvidence: string[]; roleBasis: string }>;
   }>;
 };
 
@@ -93,6 +95,9 @@ export function buildPersonaIntelligence(findings: PersonaRecord[], options: { s
         const url = String(fields.URL || "");
         return {
           id: f.findingId || f.id || "",
+          sourceVerbatim: Boolean(fields["Hit Sentence"] || fields["Opening Text"]),
+          country: String(fields.Country || "") || undefined,
+          sourceCategory: String(fields["Source Type"] || "") || undefined,
           excerpt: String(fields["Hit Sentence"] || fields["Opening Text"] || f.summary || "").slice(0, 400),
           url: /^https?:\/\//i.test(url) ? url : undefined,
           roleEvidence: f.audienceClassification!.roleEvidence,
@@ -101,7 +106,11 @@ export function buildPersonaIntelligence(findings: PersonaRecord[], options: { s
       }),
     })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
   };
+  const timestamps = findings.map(f => Date.parse(String(f.rawMetadata?.fields?.Date || ""))).filter(Number.isFinite).sort((a, b) => a - b);
+  const markets = new Set(findings.map(f => String(f.rawMetadata?.fields?.Country || "").trim()).filter(value => value && !/^(unknown|unspecified|other|n\/a)$/i.test(value)));
   const summary = {
+    dateRange: timestamps.length ? { start: new Date(timestamps[0]).toISOString(), end: new Date(timestamps[timestamps.length - 1]).toISOString() } : undefined,
+    matchingMarketCount: markets.size || undefined,
     scope: options.scope || "selected_findings" as const,
     analyticalCount: options.analyticalCount,
     excludedFromAnalysisCount: options.analyticalCount === undefined ? undefined : findings.length - options.analyticalCount,

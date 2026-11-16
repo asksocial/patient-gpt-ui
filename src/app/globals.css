@@ -333,21 +333,6 @@ body {
   box-shadow: 0 1px 2px rgba(12, 41, 35, 0.035), 0 16px 42px rgba(12, 41, 35, 0.05) !important;
 }
 
-.asksocial-intelligence-path span:first-child {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.8rem;
-  padding: 0.38rem 0.7rem;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: var(--as-sage-active-soft);
-  color: var(--as-sage-active);
-  font-size: 0.67rem;
-  font-weight: 620;
-  letter-spacing: 0.075em;
-  text-transform: uppercase;
-}
-
 .asksocial-v2 [data-testid="primary-search-composer"] {
   width: 100%;
   max-width: 1640px;
@@ -703,10 +688,6 @@ body {
     left: 0;
   }
 
-  .asksocial-intelligence-path {
-    display: none;
-  }
-
   .asksocial-v2[data-rail-collapsed="true"] .asksocial-rail-collapsed {
     position: sticky;
     z-index: 30;
@@ -824,3 +805,51 @@ body {
 }
 body:has([data-working-action]) .asksocial-activity-notice,
 body:has([data-inline-activity]) .asksocial-activity-notice { display: none; }
+
+/* Revised Ask workspace. Every rule stays inside the main work area. */
+.asksocial-v2 main[data-ask-workspace="true"] { background: #f2f4f3; --as-card-gap: 24px; --as-sage-copy: #56645f; --as-sage-ink: #15201d; }
+.asksocial-v2 main[data-ask-workspace="true"] > :is(header, [data-asksocial-workarea-content], [data-testid="primary-search-composer"], footer) { width: 100%; max-width: 1168px; margin-inline: auto; }
+main[data-ask-workspace="true"] .asksocial-topbar { background: #f2f4f3 !important; position: relative; padding-top: 20px; }
+main[data-ask-workspace="true"] .asksocial-topbar > div:first-child { flex-wrap: wrap; align-items: center; border: 0; margin-bottom: 0; padding-bottom: 0; }
+main[data-ask-workspace="true"] .as-nav-trigger.bg-white,
+main[data-ask-workspace="true"] .as-nav-trigger[aria-current="page"] { background: #1b6457 !important; color: white !important; }
+main[data-ask-workspace="true"] .as-nav-symbol { display: none; }
+main[data-ask-workspace="true"] .as-nav-trigger { color: #26332f !important; }
+.ask-topbar-workspace { min-width: 0; max-width: 100%; margin-left: auto; }
+.ask-topbar-workspace [data-testid="active-workspace-indicator"] > p { font-size: 11px; letter-spacing: normal; text-transform: none; }
+.ask-topbar-workspace .relative::before { content: ''; position: absolute; z-index: 1; left: 14px; top: 50%; width: 7px; height: 7px; transform: translateY(-50%); background: #1b6457; border-radius: 50%; pointer-events: none; }
+.asksocial-v2 main .ask-topbar-workspace select { width: 100%; max-width: 280px; padding-left: 30px; font-size: 12px; text-transform: none; letter-spacing: normal; background: white !important; color: #26332f !important; }
+.asksocial-v2 main[data-ask-workspace="true"] [data-testid="primary-search-composer"] form > div { padding: 24px; border: 0; border-radius: 16px; background: #fff !important; box-shadow: 0 1px 2px rgba(14,42,37,.06); }
+.ask-query-meta { margin: 0; color: #56645f; font-size: 12px; }
+.ask-query-input-row { display: flex; align-items: flex-end; gap: 24px; }
+.ask-query-heading { flex: 1; min-width: 0; margin: 0; }
+.asksocial-v2 main[data-ask-workspace="true"] .ask-query-heading textarea { display: block; width: 100%; resize: none; padding: 0; min-height: 72px; overflow: hidden; border: 0 !important; border-radius: 0; background: transparent !important; color: #15201d !important; font-size: 26px; font-weight: 600; line-height: 1.4; letter-spacing: -.03em; }
+.asksocial-v2 main[data-ask-workspace="true"] .ask-query-heading textarea::placeholder { color: #56645f; }
+.asksocial-v2 main[data-ask-workspace="true"] [data-testid="primary-search-composer"] button[type="submit"] { height: 44px; padding: 0 20px; border-radius: 10px; background: #1b6457 !important; color: #fff !important; white-space: nowrap; }
+.asksocial-v2 main[data-ask-workspace="true"] [data-testid="primary-search-composer"] button[type="submit"]:hover { background: #124a40 !important; }
+.asksocial-v2 main[data-ask-workspace="true"] .asksocial-answer-canvas { min-height: 0; padding: 0; border: 0; border-radius: 0; overflow: visible; background: transparent !important; box-shadow: none !important; }
+main[data-ask-workspace="true"] .ask-response > .space-y-4 > * + *, main[data-ask-workspace="true"] .ask-response .space-y-4 > section + section { margin-top: 24px; }
+.asksocial-v2 main[data-ask-workspace="true"] section { border: 0; border-radius: 16px; background: #fff !important; box-shadow: 0 1px 2px rgba(14,42,37,.06); }
+main[data-ask-workspace="true"] .ask-persona-card { padding: 28px; scroll-margin-top: 24px; }
+main[data-ask-workspace="true"] .ask-persona-card > h3 { margin: 0; font-size: 17px; font-weight: 700; }
+main[data-ask-workspace="true"] section h3 { text-transform: none; letter-spacing: normal; }
+main[data-ask-workspace="true"] [role="group"][aria-label="Search question mode"] { flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .asksocial-v2 main[data-ask-workspace="true"] > :is(header, [data-asksocial-workarea-content], [data-testid="primary-search-composer"], footer) { padding-left: 16px; padding-right: 16px; }
+  .ask-query-input-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .asksocial-v2 main[data-ask-workspace="true"] .ask-query-heading textarea { font-size: 23px; }
+  main[data-ask-workspace="true"] .ask-persona-card { padding: 24px; }
+}
+.ask-topbar-workspace [data-save-status]:not([data-save-status="error"]) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+/* Empty and answered Ask screens share the same frame and query component. */
+.asksocial-v2 main[data-ask-workspace="true"] .ask-query-card-empty { padding: 40px !important; }
+.asksocial-v2 main[data-ask-workspace="true"] .ask-query-card-empty textarea { border: 0 !important; border-radius: 0; padding: 0; background: transparent !important; color: #15201d !important; font-size: 18px; font-weight: 500; line-height: 1.6; box-shadow: none !important; }
+.asksocial-v2 main[data-ask-workspace="true"] .ask-query-card-empty textarea::placeholder { color: #56645f; opacity: 1; }
+.asksocial-v2 main[data-ask-workspace="true"] [data-testid="primary-search-composer"] button[type="submit"]:disabled { background: #e6ecea !important; color: #56645f !important; cursor: not-allowed; opacity: 1; }
+main[data-ask-workspace="true"] .ask-topbar-workspace { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.asksocial-v2 main[data-ask-workspace="true"] .asksocial-workspace-save-action { border: 1px solid #b9c9c3; border-radius: 10px; background: transparent !important; color: #1b6457 !important; padding: 9px 14px; font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: normal; }
+main[data-ask-empty="true"] .asksocial-answer-canvas { flex: 1; }
+.asksocial-v2 main[data-ask-empty="true"] [data-testid="primary-search-footer"] { border: 0; background: transparent; padding-top: 32px; }
+.asksocial-v2 main[data-ask-workspace="true"] [data-testid="primary-search-footer"] p { color: #56645f; font-size: 12px; }
+@media (max-width: 600px) { .asksocial-v2 main[data-ask-workspace="true"] .ask-query-card-empty { padding: 24px !important; } }

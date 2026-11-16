@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useId, useState } from "react";
 import AudienceConversationPosts from "./AudienceConversationPosts";
 import styles from "./PersonaIntelligencePanel.module.css";
 import { groupClientAudiences } from "../answering/personas/clientAudienceGroups";
@@ -44,6 +44,8 @@ function PublicConversationBreakdown({ segment, denominator, universe, unit = "p
 
 function AudienceGroup({ group, denominator, universe, unit = "posts", context }) {
   const [selection, setSelection] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const detailsId = useId();
   const onSelect = context ? setSelection : undefined;
   const combinedPatientGroup = group.id === "patients_circle";
   const conversations = new Map();
@@ -58,14 +60,16 @@ function AudienceGroup({ group, denominator, universe, unit = "posts", context }
     authorOrSourceEvidenceCount: group.subtypes.reduce((n, subtype) => n + subtype.authorOrSourceEvidenceCount, 0),
   };
   const publicSubtype = group.id === "general_public" ? group.subtypes.find(subtype => subtype.id === "public_discussion") : undefined;
-  return <details className={styles.group}>
-    <summary className={styles.row}>
-      <span className={styles.name}><span className={styles.chevron} aria-hidden="true">▸</span>{group.label}</span>
-      <span className={styles.track} aria-hidden="true"><span style={{ width: `${denominator ? group.count / denominator * 100 : 0}%`, background: GROUP_COLORS[group.id] }} /></span>
-      <span className={styles.posts}><span className={styles.mobileLabel}>Posts: </span>{group.count.toLocaleString()}</span>
-      <strong className={styles.share}>{formatShare(group.count, denominator)}</strong>
-      <span className={styles.action}>{group.excluded ? "View excluded records" : combinedPatientGroup ? "View conversations" : `View ${group.subtypes.length} ${group.subtypes.length === 1 ? "subtype" : "subtypes"}`}</span>
-    </summary>
+  const action = group.excluded ? "View excluded records" : combinedPatientGroup ? "View conversations" : `View ${group.subtypes.length} ${group.subtypes.length === 1 ? "subtype" : "subtypes"}`;
+  return <tbody className={`${styles.group} ${!group.count || group.excluded ? styles.muted : ""}`}>
+    <tr className={styles.row}>
+      <th scope="row"><button type="button" className={styles.name} aria-label={`${expanded ? "Collapse" : "Expand"} ${group.label}`} aria-expanded={expanded} aria-controls={detailsId} onClick={() => setExpanded(!expanded)}><span className={styles.chevron} data-expanded={expanded} aria-hidden="true">›</span>{group.label}</button></th>
+      <td><span className={styles.track} role="img" aria-label={`${group.label}: ${formatShare(group.count, denominator)}`}><span style={{ width: `${denominator ? Math.min(100, group.count / denominator * 100) : 0}%` }} /></span></td>
+      <td className={styles.posts}>{group.count.toLocaleString()}</td>
+      <td className={styles.share}><strong>{formatShare(group.count, denominator)}</strong></td>
+      <td className={styles.action}><button type="button" aria-expanded={expanded} aria-controls={detailsId} onClick={() => setExpanded(!expanded)}>{action}</button></td>
+    </tr>
+    <tr hidden={!expanded} id={detailsId}><td colSpan={5}>
     <div className="space-y-4 border-t border-white/10 p-4">
       <p className="text-sm leading-6 text-white/65">{group.description}</p>
       {group.subtypes.length ? <AudienceSubtypeTable segments={combinedPatientGroup ? [combinedSegment] : group.subtypes} combined={combinedPatientGroup} unit={unit} onSelect={onSelect} /> : <p className="text-sm text-white/55">No {unit} in this group.</p>}
@@ -77,14 +81,10 @@ function AudienceGroup({ group, denominator, universe, unit = "posts", context }
       </details> : null}
       {publicSubtype ? <PublicConversationBreakdown segment={publicSubtype} denominator={denominator} universe={universe} unit={unit} onSelect={onSelect} /> : null}
       {selection && context ? <AudienceConversationPosts key={`${context.therapeuticArea}:${context.corpusRevision}:${context.question}:${selection.id}:${selection.role || ""}`} context={context} group={group} selection={selection} onClose={() => setSelection(null)} /> : null}
-    </div>
-  </details>;
+    </div></td></tr>
+  </tbody>;
 }
 
-const GROUP_COLORS = {
-  general_public: "#11766b", media_advocacy: "#289f90", patients_circle: "#4eb3a5",
-  industry_markets: "#6ac3b6", health_wellness_influencers: "#8dd1c7", healthcare_science: "#addfd7", excluded_off_topic: "#b9c4c0",
-};
 const formatShare = (count, denominator) => `${denominator ? Number((count / denominator * 100).toFixed(1)) : 0}%`;
 
 /** Corpus-wide share bars with native, keyboard-accessible evidence disclosures. */
@@ -92,7 +92,6 @@ export default function PersonaIntelligencePanel({ summary }) {
   const groups = summary.clientGroups || groupClientAudiences(summary.segments, summary.denominator);
   const audiences = groups.filter(group => !group.excluded).sort((a, b) => b.count - a.count);
   const exclusion = groups.find(group => group.excluded);
-  const ordered = [...audiences, ...(exclusion ? [exclusion] : [])];
   const fullCorpus = summary.scope !== "selected_findings";
   const focused = summary.scope === "question_corpus";
   const universe = fullCorpus ? "corpus" : "selected";
@@ -101,20 +100,14 @@ export default function PersonaIntelligencePanel({ summary }) {
   const extraExcluded = Math.max(0, (summary.excludedFromAnalysisCount || 0) - (exclusion?.count || 0));
   return <div className={styles.panel}>
     <p className={styles.intro}>{denominator.toLocaleString()} {focused ? `matching ${unit}` : fullCorpus ? unit : `selected ${unit}`} · {audiences.length} audience groups · shares measure {unit}, not authors</p>
-    <div className={styles.composition}>
-      <div className={styles.stacked} role="img" aria-label={`Audience composition across ${denominator.toLocaleString()} ${unit}: ${ordered.map(group => `${group.label} ${formatShare(group.count, denominator)}`).join("; ")}`}>
-        {ordered.map(group => <span key={group.id} style={{ width: `${denominator ? group.count / denominator * 100 : 0}%`, background: GROUP_COLORS[group.id] }} title={`${group.label}: ${group.count.toLocaleString()} {unit} (${formatShare(group.count, denominator)})`} />)}
-      </div>
-      <ul className={styles.legend}>{ordered.map(group => <li key={group.id}><span style={{ background: GROUP_COLORS[group.id] }} aria-hidden="true" />{group.label} {formatShare(group.count, denominator)}</li>)}</ul>
+    <div className={styles.tableScroll} role="region" aria-label="Audience groups" tabIndex={0}>
+      <table className={styles.table}>
+        <thead><tr className={styles.columns}><th scope="col">Audience group</th><th scope="col">Share of corpus</th><th scope="col" className={styles.posts}>{unit === "records" ? "Records" : "Posts"}</th><th scope="col" className={styles.share}>Share</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
+        {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={denominator} universe={universe} unit={unit} context={summary.evidenceContext} />)}
+        {exclusion ? <tbody><tr><td colSpan={5} className={styles.exclusionNote}>Excluded from audience groups; included in the {denominator.toLocaleString()} denominator.</td></tr></tbody> : null}
+        {exclusion ? <AudienceGroup group={exclusion} denominator={denominator} universe={universe} unit={unit} context={summary.evidenceContext} /> : null}
+      </table>
     </div>
-    <div role="region" aria-label="Audience groups">
-      <div className={styles.columns} aria-hidden="true"><span>Audience group</span><span className={styles.barHeading}>Share of corpus</span><span className={styles.posts}>{unit === "records" ? "Records" : "Posts"}</span><span className={styles.share}>Share</span><span /></div>
-      {audiences.map(group => <AudienceGroup key={group.id} group={group} denominator={denominator} universe={universe} unit={unit} context={summary.evidenceContext} />)}
-    </div>
-    {exclusion ? <div role="region" aria-label="Exclusion bucket" className={styles.exclusion}>
-      <p>Excluded from audience groups; included in the {denominator.toLocaleString()} denominator.</p>
-      <AudienceGroup group={exclusion} denominator={denominator} universe={universe} unit={unit} context={summary.evidenceContext} />
-    </div> : null}
     <div className={styles.footer}>
       <p>{fullCorpus && summary.analyticalCount != null ? `${denominator.toLocaleString()} total = ${summary.analyticalCount.toLocaleString()} retained for thematic analytics + ${(exclusion?.count || 0).toLocaleString()} off-topic + ${extraExcluded.toLocaleString()} ${summary.additionalExclusionLabel || "spam/promotional"}` : `Shares use all ${denominator.toLocaleString()} selected ${unit}.`}</p>
       <details className={styles.method}>

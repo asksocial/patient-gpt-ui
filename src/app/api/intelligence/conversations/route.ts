@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
     const conversationType = params.get("conversationType") || "";
     const role = params.get("role") || "";
     const question = params.get("question") || "";
-    if (!therapeuticArea || !CLIENT_AUDIENCE_GROUPS.some(item => item.id === group)
-      || !Object.hasOwn(CONVERSATION_SEGMENTS, conversationType) || (role && !Object.hasOwn(AUDIENCE_ROLES, role)) || question.length > 10000) {
+    if (!therapeuticArea || (group !== "all" && !CLIENT_AUDIENCE_GROUPS.some(item => item.id === group))
+      || (conversationType !== "all" && !Object.hasOwn(CONVERSATION_SEGMENTS, conversationType)) || (role && !Object.hasOwn(AUDIENCE_ROLES, role)) || question.length > 10000) {
       return NextResponse.json({ ok: false, error: "A supported topic, audience group and conversation type are required." }, { status: 400, headers });
     }
     if (!await hasTherapeuticAreaAccess(access.userId, therapeuticArea, access.isAdmin)) return NextResponse.json({ ok: false, error: "Topic access is required." }, { status: 403, headers });

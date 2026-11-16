@@ -20,6 +20,10 @@ import IntelligenceLibrary from "./IntelligenceLibrary";
 import PatientIntelligenceView from "./PatientIntelligenceView";
 import PersonaIntelligencePanel from "./PersonaIntelligencePanel";
 import CorpusDonutCards from "./CorpusDonutCards";
+import AnalyticalAnswerCard from "./AnalyticalAnswerCard";
+import AskQueryCard from "./AskQueryCard";
+import AskStarters from "./AskStarters";
+import { buildAskStarters } from "../config/askStarters";
 import ModuleIntelligenceView from "./ModuleIntelligenceView";
 import MonitoringCenter from "./MonitoringCenter";
 import PvComplianceCenter from "./PvComplianceCenter";
@@ -33,13 +37,6 @@ import { getCurrentSearchResult } from "../lib/answers/currentSearchResult";
 import { sortTherapeuticAreas } from "../lib/therapeuticAreas";
 
 import { readWorkspaceContext, retainWorkspaceContext, restoreWorkspaceContext, readRetainedAnalyses, retainAnalysis } from "../lib/client/workspaceRetention";
-
-const QUICK_ACTIONS = [
-  "What are patients saying about cost and insurance?",
-  "What are patients saying about maintenance?",
-  "What are people saying about appetite and eating?",
-  "What are people saying about cost and insurance in Asian markets?",
-];
 
 function RailIcon({ name, className = "h-4 w-4" }) {
   const common = {
@@ -55,8 +52,6 @@ function RailIcon({ name, className = "h-4 w-4" }) {
     close: <><path d="m6 6 12 12M18 6 6 18" /></>,
     new: <><path d="M5 5.5h14v10H9l-4 3v-13Z" /><path d="M12 8.5v4M10 10.5h4" /></>,
     topic: <><circle cx="12" cy="12" r="8" /><path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8 4.8-2.2Z" /></>,
-    investigate: <><path d="m12 3 1.1 3.9L17 8l-3.9 1.1L12 13l-1.1-3.9L7 8l3.9-1.1L12 3Z" /><circle cx="17.5" cy="16.5" r="2.5" /><path d="m19.4 18.4 1.6 1.6" /></>,
-    questions: <><path d="M5 5.5h14v10H9l-4 3v-13Z" /><path d="M10.4 9.2a1.8 1.8 0 1 1 2.5 1.7c-.7.3-.9.7-.9 1.2M12 14h.01" /></>,
     intelligence: <><path d="m4 8 8-4 8 4-8 4-8-4Z" /><path d="m5.5 12 6.5 3.2 6.5-3.2M5.5 16l6.5 3.2 6.5-3.2" /></>,
     user: <><circle cx="12" cy="8.5" r="3" /><path d="M5.5 19c.7-3.2 3-5 6.5-5s5.8 1.8 6.5 5" /></>,
   };
@@ -687,18 +682,12 @@ function AnalyticalAssistantAnswer({ responsePayload }) {
 
   return (
     <div className="space-y-4">
-      <Panel
-        title="Analytical Answer"
-        subtitle="Finding-level, evidence-qualified social intelligence"
-      >
-        <p className="text-[15px] leading-7 text-white/80">
-          {analyticalAnswer.directAnswer}
-        </p>
-      </Panel>
+      <AnalyticalAnswerCard answer={analyticalAnswer.directAnswer} summary={corpusSummary} />
 
       {corpusSummary ? <CorpusDonutCards summary={corpusSummary} /> : null}
+      {corpusSummary ? <section id="persona-breakdown" className="ask-persona-card"><h3>Persona intelligence</h3><PersonaIntelligencePanel summary={corpusSummary} /></section> : null}
 
-      {sections.filter((section) => !corpusSummary?.questionEvidence || section.personaIntelligence).filter((section) => section.key !== "live_data_check").filter((section) => section.key !== "strategic_implications" && !/^what this means$/i.test(section.title || "") && !(corpusSummary && ["top_burdens", "market_variation"].includes(section.key))).map((section, index) => (
+      {sections.filter((section) => !corpusSummary || !section.personaIntelligence).filter((section) => !corpusSummary?.questionEvidence || section.personaIntelligence).filter((section) => section.key !== "live_data_check").filter((section) => section.key !== "strategic_implications" && !/^what this means$/i.test(section.title || "") && !(corpusSummary && ["top_burdens", "market_variation"].includes(section.key))).map((section, index) => (
         <Panel
           key={`${section.key || section.title}-${index}`}
           title={section.title || "Supporting Intelligence"}
@@ -812,7 +801,8 @@ function AssistantMessage({ responsePayload }) {
 
   return (
     <div className="flex justify-start">
-      <div className="w-full rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 md:p-5">
+      <div className="ask-response w-full">
+
         {hasAnalyticalAnswer ? (
           <div className="space-y-4">
             <AnalyticalAssistantAnswer responsePayload={responsePayload} />
@@ -901,7 +891,8 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [sessions, setSessions] = useState([]);
-  const [recentQuestions, setRecentQuestions] = useState([]);
+  const queryInputRef = useRef(null);
+  const [starterData, setStarterData] = useState(null);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -925,6 +916,28 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
   useActivity(loading || openingSession || workspaceCreateBusy || workspaceSaveStatus === "saving" || navigating);
 
   const currentSearchResult = useMemo(() => getCurrentSearchResult(messages), [messages]);
+  const showAskEmptyState = messages.length === 0 && !loading && !openingSession;
+  const hasAskResults = messages.some(message => message.role === "assistant" && message.responsePayload);
+  const starterKey = `${therapeuticArea}:${activeWorkspaceId}`;
+  const starterQuestions = starterData?.key === starterKey ? starterData.questions : buildAskStarters(therapeuticArea);
+
+  useEffect(() => {
+    if (!therapeuticArea || activeDestination !== "ask" || !showAskEmptyState || restoredScope !== persistenceScope) return;
+    const controller = new AbortController();
+    const params = new URLSearchParams({ therapeuticArea, ...(activeWorkspaceId ? { workspaceId: activeWorkspaceId } : {}) });
+    fetch(`/api/intelligence/starters?${params}`, { signal: controller.signal, cache: "no-store" })
+      .then(async response => {
+        const data = await response.json();
+        if (response.ok && data.ok && !controller.signal.aborted) setStarterData({ key: starterKey, questions: data.starters });
+      }).catch(() => { /* Per-topic config remains usable when metadata is unavailable. */ });
+    return () => controller.abort();
+  }, [therapeuticArea, activeWorkspaceId, activeDestination, showAskEmptyState, restoredScope, persistenceScope, starterKey]);
+
+  function chooseStarter(starter) {
+    setQuestion(starter);
+    queryInputRef.current?.focus();
+  }
+
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) || null,
@@ -1240,13 +1253,6 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
   const canSubmit = useMemo(() => {
     return !!question.trim() && !!therapeuticArea && !loading && !openingSession && restoredScope === persistenceScope;
   }, [question, therapeuticArea, loading, openingSession, restoredScope, persistenceScope]);
-
-  function pushRecentQuestion(q) {
-    setRecentQuestions((prev) => {
-      const next = [q, ...prev.filter((item) => item !== q)];
-      return next.slice(0, 8);
-    });
-  }
 
   async function selectWorkspace(workspaceId) {
     const nextWorkspaceId = workspaceId || "";
@@ -1716,7 +1722,6 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
     setError("");
     setLoading(true);
     setActiveSavedProductId("");
-    pushRecentQuestion(trimmed);
 
     const userMessage = {
       id: `${Date.now()}-user`,
@@ -1903,6 +1908,33 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
     setLeftRailCollapsed((current) => !current);
   }
 
+  const workspaceControl = (
+                <div
+                  data-testid="active-workspace-indicator"
+                  aria-label={activeWorkspace ? `Current workspace: ${activeWorkspace.name}` : "Save current session as workspace"}
+                  className="text-right"
+                >
+                  {activeWorkspace || (activeDestination === "ask" && availableWorkspaces.length > 0) ? (
+                    <div className="relative">
+                      <select aria-label="Select current workspace" value={activeWorkspaceId} onChange={(event) => void selectWorkspace(event.target.value)} className="asksocial-workspace-select cursor-pointer appearance-none rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] pl-4 pr-12 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60">
+                        {!activeWorkspace ? <option value="" disabled>Select workspace</option> : null}
+                        {availableWorkspaces.map((workspace) => <option key={workspace.id} value={workspace.id} disabled={workspace.role === "viewer"}>{workspace.name}{workspace.role === "viewer" ? " (view only)" : ""}</option>)}
+                      </select>
+                      <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="pointer-events-none absolute right-[18px] top-1/2 h-4 w-4 -translate-y-1/2 text-white"><path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </div>
+                  ) : activeDestination !== "ask" ? <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action cursor-pointer rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-300 outline-none transition hover:border-cyan-300/45 focus:border-cyan-300/60"><span>{activeDestination === "ask" ? "Save as workspace" : "Save current session as workspace"}</span></ActionButton> : null}
+                  {activeWorkspace ? (
+                    <p
+                      aria-live="polite"
+                      data-save-status={workspaceSaveStatus}
+                      className={`mt-1 text-[9px] font-medium uppercase tracking-[0.14em] ${workspaceSaveStatus === "error" ? "text-rose-300/80" : "text-cyan-200/45"}`}
+                    >
+                      {workspaceSaveStatus === "saving" ? "Saving workspace changes…" : workspaceSaveStatus === "error" ? "Workspace save needs attention" : workspaceSaveStatus === "saved" ? "Saved to workspace" : "Workspace persistence active"}
+                    </p>
+                  ) : null}
+                </div>
+  );
+
   if (restoredScope !== persistenceScope) return <div className="p-8" role="status">
     <p>{error || "Restoring your workspace…"}</p>
     {error ? <ActionButton type="button" onClick={() => window.location.reload()} className="mt-4 rounded-xl border px-4 py-2">Retry loading workspace</ActionButton> : null}
@@ -1943,8 +1975,6 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
               <div className="my-2 h-px w-8 bg-white/8" />
               <RailDockButton label="New conversation" icon="new" onClick={startNewConversation} />
               <RailDockButton label="Topic" icon="topic" onClick={toggleLeftRail} />
-              <RailDockButton label="Suggested investigations" icon="investigate" onClick={toggleLeftRail} />
-              <RailDockButton label="Recent questions" icon="questions" onClick={toggleLeftRail} />
               <RailDockButton label="Recent intelligence" icon="intelligence" onClick={toggleLeftRail} />
               <div className="mt-auto">
                 <RailDockButton label="User and workspace access" icon="user" onClick={toggleLeftRail} />
@@ -2015,52 +2045,6 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                 )}
               </select>
               <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="pointer-events-none absolute right-[18px] top-1/2 h-4 w-4 -translate-y-1/2 text-white/60"><path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                <RailIcon name="investigate" />
-                <span>Suggested investigations</span>
-              </p>
-              <div className="mt-3 space-y-2">
-                {QUICK_ACTIONS.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => submitQuestion(item)}
-                    disabled={loading || !therapeuticArea}
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/75 transition disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                <RailIcon name="questions" />
-                <span>Recent questions</span>
-              </p>
-              <div className="mt-3 space-y-2">
-                {recentQuestions.length === 0 ? (
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/40">
-                    Your recent questions will appear here.
-                  </div>
-                ) : (
-                  recentQuestions.map((item, idx) => (
-                    <button
-                      key={`${item}-${idx}`}
-                      type="button"
-                      onClick={() => submitQuestion(item)}
-                      disabled={loading || !therapeuticArea}
-                      className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/70 transition disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {item}
-                    </button>
-                  ))
-                )}
               </div>
             </div>
 
@@ -2208,7 +2192,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
           )}
         </aside>
 
-        <main data-asksocial-workarea className="flex min-h-screen min-w-0 flex-col">
+        <main data-asksocial-workarea data-ask-workspace={activeDestination === "ask" ? "true" : undefined} data-ask-empty={activeDestination === "ask" && showAskEmptyState ? "true" : undefined} className="flex min-h-screen min-w-0 flex-col">
           <header className="asksocial-topbar order-1 sticky top-0 z-20 border-b-0 border-white/10 bg-black/85 px-6 pt-5 pb-0 backdrop-blur-xl">
             <div className="mb-5 flex items-start gap-3 border-b border-white/10 pb-4">
               <div className="min-w-0 flex-1">
@@ -2232,8 +2216,9 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                   }
                 />
               </div>
+              {activeDestination === "ask" ? <div className="ask-topbar-workspace">{workspaceControl}{hasAskResults ? <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action">Save as workspace</ActionButton> : null}</div> : null}
             </div>
-            <div className="asksocial-workarea-header-card flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
+            {activeDestination !== "ask" ? <div className="asksocial-workarea-header-card flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
               <div className="flex flex-col gap-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
                   {destinationCopy.eyebrow}
@@ -2283,8 +2268,9 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                     </>
                   ) : null}
                 </div>
+
               </div>
-            </div>
+            </div> : null}
 
             {activeDestination ===
               "ask" &&
@@ -2322,30 +2308,8 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
               "ask" ? (
               <div className="space-y-4">
               <section className="asksocial-answer-canvas flex min-h-[520px] flex-col gap-4 rounded-3xl border border-white/10 bg-white/[0.02] p-4 md:p-5">
-                {messages.length === 0 || loading || openingSession ? (
-                  <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-10 text-center">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200/60">
-                        Intelligence workspace
-                      </p>
-                      <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-white">
-                        What would you like to understand?
-                      </h2>
-                      <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">
-                        Ask about baseline themes, emerging narratives, changing
-                        concerns, trust signals, country differences, platform
-                        behavior, or what has shifted since the last report.
-                      </p>
-                      <div className="asksocial-intelligence-path mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="From conversation to intelligence">
-                        {["Human conversations", "Evidence", "Patterns", "Intelligence", "Decisions"].map((stage, index) => (
-                          <div key={stage} className="flex items-center gap-2">
-                            <span>{stage}</span>
-                            {index < 4 ? <span aria-hidden="true" className="text-cyan-200/30">→</span> : null}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                {showAskEmptyState ? (
+                  <AskStarters starters={starterQuestions} onChoose={chooseStarter} disabled={!therapeuticArea || loadingAreas} />
                 ) : (
                   currentSearchResult.message ? (
                     <div data-testid="search-current-response">
@@ -2458,33 +2422,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
             data-testid="primary-search-composer"
             className="order-2 px-6 pt-3"
           >
-            <ActionForm onSubmit={handleSubmit}>
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-                <div className="flex flex-col gap-3">
-                  <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
-                    Intelligence query <span className="ml-2 font-normal normal-case tracking-normal text-white/25">Ask AskSocial</span>
-                  </label>
-
-                  <textarea
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="What would you like to understand about the conversation?"
-                    rows={3}
-                    className="w-full resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
-                  />
-
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={!canSubmit}
-                      className="rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Explore intelligence →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </ActionForm>
+            <AskQueryCard empty={showAskEmptyState} topic={therapeuticArea} updatedAt={activeSession?.updated_at ? formatDate(activeSession.updated_at) : undefined} question={question} onChange={setQuestion} onSubmit={handleSubmit} canSubmit={canSubmit} textareaRef={queryInputRef} />
           </div>
           ) : null}
 
@@ -2494,7 +2432,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
               className="order-4 border-t border-white/10 px-6 py-4"
             >
               <p className="text-xs text-white/40">
-                (c) 2026 Eavesdrop LLC. All Rights Reserved.
+                © 2026 Eavesdrop LLC. All rights reserved.
               </p>
             </footer>
           ) : null}

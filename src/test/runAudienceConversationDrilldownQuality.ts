@@ -7,6 +7,9 @@ assert.equal(corpus.status, "available");
 for (const question of ["", "What are patients saying about their treatment experiences?", "What are people saying in Brazil?"]) {
   const summary = loadSearchCorpusIntelligence("GLP-1", corpus.findings, question);
   assert.equal(summary.evidenceContext!.question, question);
+  const allPosts = loadAudienceConversationPosts("GLP-1", corpus.findings, { question, group: "all", conversationType: "all" });
+  assert.equal(allPosts.total, summary.denominator, "All-source drill-down uses the same matching-post denominator as the answer and persona breakdown");
+  assert.ok(allPosts.items.length <= 20, "All-source drill-down remains paginated");
   for (const group of summary.clientGroups.filter(group => group.count)) {
     const types = new Map<string, number>();
     for (const subtype of group.subtypes) for (const item of subtype.conversations) types.set(item.id, (types.get(item.id) || 0) + item.count);

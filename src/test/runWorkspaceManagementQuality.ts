@@ -10,6 +10,7 @@ const migration = source("supabase/migrations/202608080001_create_workspace_mana
 const persistence = source("src/lib/intelligence-platform/persistence.ts");
 const manager = source("src/components/WorkspaceManager.jsx");
 const shell = source("src/components/WorkspaceShell.jsx");
+const askWorkspaceControl = shell.slice(shell.indexOf("const workspaceControl"), shell.indexOf("if (restoredScope !== persistenceScope)"));
 const library = source("src/components/IntelligenceLibrary.jsx");
 const sessionRoute = source("src/app/api/chat/session/route.ts");
 
@@ -26,8 +27,8 @@ assert(shell.includes('data-testid="active-workspace-indicator"') && shell.inclu
 assert(!shell.includes('data-testid="active-module-indicator"'), "The workspace header must omit the Module pill.");
 assert(!shell.includes('window.localStorage.getItem(\n                  "asksocial.activeModule"') && !shell.includes('window.localStorage.setItem(\n          "asksocial.activeModule"'), "Module selection must not be inferred or restored before the user explicitly selects a module in the current experience.");
 assert(shell.includes("saveCurrentSessionAsWorkspace") && shell.includes('method: "POST"') && shell.includes("await selectWorkspace(workspace.id)"), "The header action must create, select, and attach the current session to its new workspace.");
-assert(shell.includes("text-cyan-300") && shell.includes("uppercase"), "The active-workspace indicator must be cyan and uppercase.");
-assert(shell.includes("Active Workspace") && shell.includes('aria-live="polite" className="sr-only"') && shell.includes("Saved to workspace"), "The workspace label must read Active Workspace while save-state announcements remain accessible.");
+assert(source("src/app/globals.css").includes(".ask-topbar-workspace") && shell.includes("activeWorkspace.name"), "The compact workspace pill must retain the selected workspace name.");
+assert(!askWorkspaceControl.includes("Active Workspace") && askWorkspaceControl.includes('aria-live="polite"') && shell.includes("Saved to workspace"), "The compact workspace pill omits its caption while save-state announcements remain accessible.");
 assert(!shell.includes('id="global-module-switcher"') && !shell.includes("Saved work becomes searchable across permitted workspaces."), "The redundant global module dropdown and legacy workspace selector must remain removed.");
 assert(shell.includes("!workspace.archivedAt") && shell.includes('disabled={workspace.role === "viewer"}'), "The selected-workspace dropdown must list only active associated workspaces and prevent selection of view-only destinations.");
 assert(shell.includes('if (nextWorkspaces.some((workspace) => workspace.id === current)) return current;\n        return "";'), "Loading a user’s workspaces must preserve Session only until an explicit selection is made.");

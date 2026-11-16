@@ -469,7 +469,7 @@ export async function saveIntelligenceWorkProduct(
 
 export async function listIntelligenceWorkProducts(
   principal: PlatformPrincipal,
-  input: { workspaceId?: string; kind?: WorkProductKind; limit?: number; productId?: string }
+  input: { workspaceId?: string; therapeuticArea?: string; kind?: WorkProductKind; limit?: number; productId?: string }
 ) {
   assertPrincipal(principal);
   if (input.workspaceId) await assertWorkspaceAccess(principal, input.workspaceId, "viewer");
@@ -486,6 +486,7 @@ export async function listIntelligenceWorkProducts(
     .limit(Math.max(1, Math.min(100, input.limit || 50)));
   if (input.productId) query = query.eq("id", input.productId);
   if (input.kind) query = query.eq("kind", input.kind);
+  if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load work products: ${error.message}`);
   return data || [];

@@ -13,13 +13,13 @@ assert(
     'data-testid="primary-search-composer"'
   ) &&
     workspaceShell.includes(
-      'className="order-2 px-6 pt-6"'
+      'className="order-2 px-6 pt-3"'
     ),
   "The primary Search composer must appear before the empty-state content."
 );
 assert(
   workspaceShell.includes(
-    'className="order-3 flex-1 px-6 py-6"'
+    'className="relative order-3 flex-1 px-6 pt-3 pb-6"'
   ),
   "The primary Search content must follow the composer."
 );
@@ -39,7 +39,7 @@ assert(
 );
 assert(
   workspaceShell.includes(
-    'className="w-full rounded-3xl rounded-bl-md border border-white/10 bg-white/[0.03] p-4 md:p-5"'
+    'className="ask-response w-full"'
   ) &&
     !workspaceShell.includes("w-full max-w-6xl rounded-3xl rounded-bl-md"),
   "Search answer sections must use the full composer width."
@@ -57,7 +57,7 @@ assert(
       'className="order-4 border-t border-white/10 px-6 py-4"'
     ) &&
     workspaceShell.includes(
-      "(c) 2026 Eavesdrop LLC. All Rights Reserved."
+      "© 2026 Eavesdrop LLC. All rights reserved."
     ),
   "The Search evidence-basis footer must remain below the primary content."
 );

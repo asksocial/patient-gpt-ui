@@ -12,7 +12,7 @@ export type QuestionEvidence = {
   treatmentLabel?: string;
   subjects: string[];
   topics: Array<{ id: string; label: string; count: number }>;
-  examples: Array<{ id: string; excerpt: string; url?: string; topic: string; topicId: string; matchedTerms: string[]; country?: string; language?: string; sourceCategory?: string }>;
+  examples: Array<{ id: string; excerpt: string; url?: string; topic: string; topicId: string; matchedTerms: string[]; country?: string; language?: string; sourceCategory?: string; sourceVerbatim?: boolean; audience?: string }>;
   marketCoverage?: Array<{ country: string; count: number; topics: string[] }>;
   observations: string[];
   researchUses: string[];
@@ -80,7 +80,7 @@ export function buildQuestionEvidence(question: string, findings: CanonicalFindi
       seen.add(id); seen.add(excerpt); if (url) seen.add(url);
       counts.set(topic.id, (counts.get(topic.id) || 0) + 1);
       if (options.topicId && topic.id !== options.topicId || !options.allExamples && examples.filter(e => e.topicId === topic.id).length >= 2) continue;
-      examples.push({ id, excerpt, url, topic: topic.label, topicId: topic.id, matchedTerms: support!.matchedTerms, country: countryOf(record), language: compact(fields.Language) || undefined, sourceCategory: compact(fields["Source Type"]) || undefined });
+      examples.push({ id, excerpt, sourceVerbatim: true, audience: record.audienceClassification?.designation, url, topic: topic.label, topicId: topic.id, matchedTerms: support!.matchedTerms, country: countryOf(record), language: compact(fields.Language) || undefined, sourceCategory: compact(fields["Source Type"]) || undefined });
     }
   }
   const observations: string[] = [];
