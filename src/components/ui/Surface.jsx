@@ -1,13 +1,13 @@
 "use client";
 
-import { sentenceCaseLabel } from "./presentation";
+import { titleCaseLabel } from "./presentation";
 import { Children, cloneElement, isValidElement, useEffect, useRef } from "react";
 
 export function SurfaceCard({ as: Element = "section", children, className = "", ...props }) {
   return <Element {...props} className={`as-card ${className}`}>{children}</Element>;
 }
 export function PageHeading({ title, subtitle, children }) {
-  return <div className="as-page-heading"><div><h1>{sentenceCaseLabel(title)}</h1>{subtitle ? <p>{subtitle}</p> : null}</div>{children}</div>;
+  return <div className="as-page-heading"><div><h1>{titleCaseLabel(title)}</h1>{subtitle ? <p>{subtitle}</p> : null}</div>{children}</div>;
 }
 export function Field({ label, children, className = "" }) {
   return <label className={`as-field-label ${className}`}><span>{label}</span>{children}</label>;

@@ -6,6 +6,13 @@ export function sentenceCaseLabel(value = "") {
     .replace(/\bmedical affairs\s*\/\s*heor\b/gi, "Medical Affairs/HEOR");
 }
 
+/** Navigation, tab and category labels use Title Case; descriptions remain prose. */
+export function titleCaseLabel(value = "") {
+  const acronyms = { heor: "HEOR", pv: "PV", qa: "QA", ae: "AE", adr: "ADR", icsr: "ICSR", odcs: "ODCS", api: "API", ai: "AI", hcp: "HCP", pdf: "PDF", csv: "CSV", glp: "GLP", e2b: "E2B", r3: "R3" };
+  return value.replace(/[A-Za-z][A-Za-z0-9]*/g, word => acronyms[word.toLowerCase()] || (/^[A-Z0-9]+$/.test(word) || /[a-z][A-Z]/.test(word) ? word : word[0].toUpperCase() + word.slice(1).toLowerCase()))
+    .replace(/Medical Affairs\s*\/\s*HEOR/g, "Medical Affairs/HEOR");
+}
+
 /** Native button activation keeps each existing tab's action as its sole handler. */
 export function handleTabKeys(event) {
   if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;

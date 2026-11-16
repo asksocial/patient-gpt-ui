@@ -1,5 +1,6 @@
 "use client";
 
+import { titleCaseLabel } from "./ui/presentation";
 import styles from "./AskStarters.module.css";
 
 const ICON_PATHS = {
@@ -16,8 +17,8 @@ export default function AskStarters({ starters, onChoose, disabled = false }) {
     {starters.length ? <><h2 className={styles.heading}>Start with one of these</h2>
       <div className={styles.grid}>{starters.map(item => <button type="button" key={item.id} className={styles.starter} onClick={() => onChoose(item.question)} disabled={disabled}>
         <span className={styles.icon} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{item.id === "countries" ? <circle cx="12" cy="12" r="9" /> : null}<path d={ICON_PATHS[item.id]} /></svg></span>
-        <span><span className={styles.category}>{item.category}</span><span className={styles.question}>{item.question}</span></span>
+        <span><span className={styles.category}>{titleCaseLabel(item.category)}</span><span className={styles.question}>{item.question}</span></span>
       </button>)}</div></> : null}
-    <p className={styles.method}>{["Human conversations", "Evidence", "Patterns", "Intelligence", "Decisions"].map((step, index) => <span key={step}>{index ? <span className={styles.arrow} aria-hidden="true">→</span> : null}<span className={index === 4 ? styles.decision : undefined}>{step}</span></span>)}</p>
+    <p className={styles.method}>{["Human conversations", "Evidence", "Patterns", "Intelligence", "Decisions"].map((step, index) => <span key={step}>{index ? <span className={styles.arrow} aria-hidden="true">→</span> : null}<span className={index === 4 ? styles.decision : undefined}>{titleCaseLabel(step)}</span></span>)}</p>
   </div>;
 }

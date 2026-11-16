@@ -1,7 +1,7 @@
 "use client";
 
 import ActionButton from "./ui/ActionButton";
-import { sentenceCaseLabel } from "./ui/presentation";
+import { titleCaseLabel } from "./ui/presentation";
 
 import {
   useEffect,
@@ -68,7 +68,7 @@ function NavigationItem({
       }`}
     >
       <span className="truncate">
-        {sentenceCaseLabel(item.label)}
+        {titleCaseLabel(item.label)}
       </span>
       {item.kind === "module" && active ? (
         <span
