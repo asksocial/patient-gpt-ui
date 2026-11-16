@@ -44,7 +44,7 @@ for (const [areaIndex, area] of areas.entries()) {
   snapshots.push(snapshot);
   snapshot.themeRecords.forEach((record, index) => { record.trajectory = trajectories[(index + areaIndex) % trajectories.length] as typeof record.trajectory; });
   const html = render({ snapshot, therapeuticArea: area });
-  assert.ok(html.includes("Knowledge graph containing 4 themes and 3 supported relationships"), area);
+  assert.ok(html.includes("Knowledge Graph containing 4 themes and 3 supported relationships"), area);
   assert.ok(html.includes("United Kingdom"), `${area}: actual markets`);
   assert.ok(html.includes(channel === "medical_society" ? "Medical Society" : "Government"), `${area}: actual channels`);
   assert.ok(html.includes(category === "caregiver_voice" ? "Caregiver Voice" : "Research or Science"), `${area}: actual categories`);
@@ -59,10 +59,10 @@ for (const [areaIndex, area] of areas.entries()) {
 assert.ok(graphMatchesTopic("GLP-1", "glp_1", "glp1"));
 assert.ok(graphMatchesTopic("Hepatitis B", "hep_b"));
 assert.ok(!graphMatchesTopic("Hepatitis B", "glp_1"));
-assert.ok(render({ snapshot: snapshots[0], therapeuticArea: "Hepatitis B" }).includes("Knowledge graph not available yet"));
-assert.ok(render({ themes: [{ themeId: "stale", label: "Wrong topic", percent: 90 }], dataTherapeuticArea: "GLP-1", therapeuticArea: "Gene Therapy" }).includes("Knowledge graph not available yet"));
+assert.ok(render({ snapshot: snapshots[0], therapeuticArea: "Hepatitis B" }).includes("Knowledge Graph not available yet"));
+assert.ok(render({ themes: [{ themeId: "stale", label: "Wrong topic", percent: 90 }], dataTherapeuticArea: "GLP-1", therapeuticArea: "Gene Therapy" }).includes("Knowledge Graph not available yet"));
 const emptySnapshot = { ...snapshots[0], themeRecords: [] };
-assert.ok(render({ snapshot: emptySnapshot, themes: [{ themeId: "stale", label: "Stale theme" }] }).includes("Knowledge graph not available yet"));
+assert.ok(render({ snapshot: emptySnapshot, themes: [{ themeId: "stale", label: "Stale theme" }] }).includes("Knowledge Graph not available yet"));
 const withoutEdges = render({ snapshot: { ...snapshots[0], relationships: [] }, relationships: snapshots[0].relationships });
 assert.ok(withoutEdges.includes("AskSocial does not infer missing connections."));
 assert.equal((withoutEdges.match(/<table /g) || []).length, 0);
@@ -76,7 +76,7 @@ const manyThemes = Array.from({ length: 12 }, (_, index) => ({
   ...snapshots[0].themeRecords[0], themeId: `custom_${index}`, label: `Topic-specific theme ${index}`, eligiblePercent: 50 / (index + 1),
 }));
 const manyHtml = render({ snapshot: { ...snapshots[0], themeRecords: manyThemes, relationships: [] } });
-assert.ok(manyHtml.includes("Knowledge graph containing 12 themes"), "Do not silently cap disease-specific taxonomies at ten themes");
+assert.ok(manyHtml.includes("Knowledge Graph containing 12 themes"), "Do not silently cap disease-specific taxonomies at ten themes");
 assert.equal((manyHtml.match(/<circle /g) || []).length, 12);
 const unknownSupport = render({ themes: [{ themeId: "unknown", label: "Missing source data", count: 1, percent: 10 }] });
 assert.ok(unknownSupport.includes("Not available in this analysis"));

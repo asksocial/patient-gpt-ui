@@ -1,6 +1,9 @@
 /** Presentation only: preserve acronyms while making interface labels sentence case. */
 export function sentenceCaseLabel(value = "") {
-  return value.split(/(\s+)/).map((word, index) => index === 0 || /^[A-Z\d/&-]+$/.test(word) ? word : word.split(/([/&-])/).map(part => /^[A-Z\d]+$/.test(part) ? part : part.toLowerCase()).join("")).join("");
+  return value.split(/(\s+)/).map((word, index) => index === 0 || /^[A-Z\d/&-]+$/.test(word) ? word : word.split(/([/&-])/).map(part => /^[A-Z\d]+$/.test(part) ? part : part.toLowerCase()).join("")).join("")
+    .replace(/\bexecutive brief\b/gi, "Executive Brief")
+    .replace(/\bknowledge graph\b/gi, "Knowledge Graph")
+    .replace(/\bmedical affairs\s*\/\s*heor\b/gi, "Medical Affairs/HEOR");
 }
 
 /** Native button activation keeps each existing tab's action as its sole handler. */

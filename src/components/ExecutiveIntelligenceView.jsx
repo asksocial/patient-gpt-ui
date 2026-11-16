@@ -125,7 +125,7 @@ function EmptyState({ reason }) {
           ↗
         </div>
         <h2 className="mt-5 text-xl font-semibold text-white">
-          Executive brief not available yet
+          Executive Brief not available yet
         </h2>
         <p className="mt-3 text-sm leading-6 text-white/50">
           {reason || "Run an analysis that produces a theme knowledge snapshot. AskSocial will then turn the supported prevalence, trajectory, triangulation, and strategic-implication signals into this leadership view."}

@@ -179,7 +179,7 @@ function EmptyState({ therapeuticArea }) {
           ◇
         </div>
         <h2 className="mt-5 text-xl font-semibold text-white">
-          Knowledge graph not available yet
+          Knowledge Graph not available yet
         </h2>
         <p className="mt-3 text-sm leading-6 text-white/50">
           Ask a question about {therapeuticArea || "the selected topic"} first. AskSocial will map evidence-qualified themes and their supported relationships here.
@@ -248,7 +248,7 @@ export default function KnowledgeGraphView({
           <svg
             viewBox={`0 0 ${graphWidth} ${graphHeight}`}
             role="img"
-            aria-label={`Knowledge graph containing ${nodes.length} themes and ${edges.length} supported relationships. Circle area represents eligible prevalence; arc thickness represents relationship strength.`}
+            aria-label={`Knowledge Graph containing ${nodes.length} themes and ${edges.length} supported relationships. Circle area represents eligible prevalence; arc thickness represents relationship strength.`}
             className="block w-full"
             style={{ minWidth: Math.min(graphWidth, Math.max(680, nodes.length * 130)) }}
           >

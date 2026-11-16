@@ -15,7 +15,7 @@ export const PLATFORM_DELIVERY_SEQUENCE =
       id:
         "knowledge_graph_and_ontology",
       name:
-        "Establish the knowledge graph and shared ontology",
+        "Establish the Knowledge Graph and shared ontology",
     },
     {
       id:
