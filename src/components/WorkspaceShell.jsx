@@ -2223,7 +2223,7 @@ function AuthenticatedWorkspaceShell({ persistenceScope }) {
                   }
                 />
               </div>
-              <div className="ask-topbar-workspace">{workspaceControl}{hasAskResults || (!activeWorkspace && activeDestination !== "ask") ? <ActionButton type="button" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action">Save as workspace</ActionButton> : null}</div>
+              <div className="ask-topbar-workspace">{workspaceControl}{hasAskResults || (!activeWorkspace && activeDestination !== "ask") ? <ActionButton type="button" variant="secondary" onClick={openWorkspaceSaveDialog} className="asksocial-workspace-save-action">Save as workspace</ActionButton> : null}</div>
             </div>
             {activeDestination !== "ask" ? <PageHeading title={destinationCopy.title} subtitle={destinationCopy.description} /> : null}
 
