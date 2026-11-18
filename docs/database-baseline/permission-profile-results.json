@@ -1,0 +1,678 @@
+{
+  "gate": "BLOCKED",
+  "matchingEffectivePrivileges": {
+    "anon": {
+      "append_intelligence_audit_event": false,
+      "change_user_provisioning": false,
+      "chat_sessions": {
+        "columns": [
+          "id",
+          "user_id",
+          "therapeutic_area",
+          "title",
+          "created_at",
+          "updated_at",
+          "is_pinned",
+          "workspace_id",
+          "organization_id"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "claim_evidence_monitors": false,
+      "create_evidence_corpus": false,
+      "evidence_corpora": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "evidence_ingestion_batches": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "evidence_ingestion_batches_import_sequence_seq": {
+        "select": false,
+        "update": false,
+        "usage": false
+      },
+      "has_active_managed_topic_scope": false,
+      "intelligence_audit_events": {
+        "columns": [
+          "id",
+          "principal_id",
+          "workspace_id",
+          "actor_id",
+          "action",
+          "resource_type",
+          "resource_id",
+          "outcome",
+          "metadata",
+          "previous_hash",
+          "event_hash",
+          "occurred_at",
+          "created_at"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "intelligence_workspace_members": {
+        "columns": [
+          "workspace_id",
+          "principal_id",
+          "user_id",
+          "role",
+          "added_by",
+          "created_at",
+          "updated_at"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "intelligence_workspaces": {
+        "columns": [
+          "id",
+          "principal_id",
+          "principal_type",
+          "name",
+          "description",
+          "therapeutic_area",
+          "module_ids",
+          "settings",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "archived_at",
+          "updated_by"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "pv_audit_events": {
+        "columns": [
+          "id",
+          "principal_id",
+          "actor_id",
+          "action",
+          "resource_type",
+          "resource_id",
+          "outcome",
+          "metadata",
+          "previous_hash",
+          "event_hash",
+          "occurred_at",
+          "created_at",
+          "chain_sequence",
+          "canonical_payload"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "read_evidence_foundation": false,
+      "user_provisioning": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "user_therapeutic_access": {
+        "columns": [
+          "id",
+          "clerk_user_id",
+          "therapeutic_area",
+          "created_at",
+          "organization_id"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "user_therapeutic_access_id_seq": {
+        "select": true,
+        "update": true,
+        "usage": true
+      }
+    },
+    "authenticated": {
+      "append_intelligence_audit_event": false,
+      "change_user_provisioning": false,
+      "chat_sessions": {
+        "columns": [
+          "id",
+          "user_id",
+          "therapeutic_area",
+          "title",
+          "created_at",
+          "updated_at",
+          "is_pinned",
+          "workspace_id",
+          "organization_id"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "claim_evidence_monitors": false,
+      "create_evidence_corpus": false,
+      "evidence_corpora": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "evidence_ingestion_batches": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "evidence_ingestion_batches_import_sequence_seq": {
+        "select": false,
+        "update": false,
+        "usage": false
+      },
+      "has_active_managed_topic_scope": true,
+      "intelligence_audit_events": {
+        "columns": [
+          "id",
+          "principal_id",
+          "workspace_id",
+          "actor_id",
+          "action",
+          "resource_type",
+          "resource_id",
+          "outcome",
+          "metadata",
+          "previous_hash",
+          "event_hash",
+          "occurred_at",
+          "created_at"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "intelligence_workspace_members": {
+        "columns": [
+          "workspace_id",
+          "principal_id",
+          "user_id",
+          "role",
+          "added_by",
+          "created_at",
+          "updated_at"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "intelligence_workspaces": {
+        "columns": [
+          "id",
+          "principal_id",
+          "principal_type",
+          "name",
+          "description",
+          "therapeutic_area",
+          "module_ids",
+          "settings",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "archived_at",
+          "updated_by"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "pv_audit_events": {
+        "columns": [
+          "id",
+          "principal_id",
+          "actor_id",
+          "action",
+          "resource_type",
+          "resource_id",
+          "outcome",
+          "metadata",
+          "previous_hash",
+          "event_hash",
+          "occurred_at",
+          "created_at",
+          "chain_sequence",
+          "canonical_payload"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "read_evidence_foundation": false,
+      "user_provisioning": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "user_therapeutic_access": {
+        "columns": [
+          "id",
+          "clerk_user_id",
+          "therapeutic_area",
+          "created_at",
+          "organization_id"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "user_therapeutic_access_id_seq": {
+        "select": true,
+        "update": true,
+        "usage": true
+      }
+    },
+    "authenticator": {
+      "append_intelligence_audit_event": false,
+      "change_user_provisioning": false,
+      "chat_sessions": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "claim_evidence_monitors": false,
+      "create_evidence_corpus": false,
+      "evidence_corpora": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "evidence_ingestion_batches": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "evidence_ingestion_batches_import_sequence_seq": {
+        "select": false,
+        "update": false,
+        "usage": false
+      },
+      "has_active_managed_topic_scope": false,
+      "intelligence_audit_events": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "intelligence_workspace_members": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "intelligence_workspaces": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "pv_audit_events": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "read_evidence_foundation": false,
+      "user_provisioning": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "user_therapeutic_access": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "user_therapeutic_access_id_seq": {
+        "select": false,
+        "update": false,
+        "usage": false
+      }
+    },
+    "service_role": {
+      "append_intelligence_audit_event": true,
+      "change_user_provisioning": true,
+      "chat_sessions": {
+        "columns": [
+          "id",
+          "user_id",
+          "therapeutic_area",
+          "title",
+          "created_at",
+          "updated_at",
+          "is_pinned",
+          "workspace_id",
+          "organization_id"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "claim_evidence_monitors": true,
+      "create_evidence_corpus": true,
+      "evidence_corpora": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "evidence_ingestion_batches": {
+        "columns": null,
+        "delete": false,
+        "insert": false,
+        "rls": true,
+        "select": false,
+        "truncate": false,
+        "update": false
+      },
+      "evidence_ingestion_batches_import_sequence_seq": {
+        "select": false,
+        "update": false,
+        "usage": false
+      },
+      "has_active_managed_topic_scope": true,
+      "intelligence_audit_events": {
+        "columns": [
+          "id",
+          "principal_id",
+          "workspace_id",
+          "actor_id",
+          "action",
+          "resource_type",
+          "resource_id",
+          "outcome",
+          "metadata",
+          "previous_hash",
+          "event_hash",
+          "occurred_at",
+          "created_at"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "intelligence_workspace_members": {
+        "columns": [
+          "workspace_id",
+          "principal_id",
+          "user_id",
+          "role",
+          "added_by",
+          "created_at",
+          "updated_at"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "intelligence_workspaces": {
+        "columns": [
+          "id",
+          "principal_id",
+          "principal_type",
+          "name",
+          "description",
+          "therapeutic_area",
+          "module_ids",
+          "settings",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "archived_at",
+          "updated_by"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "pv_audit_events": {
+        "columns": [
+          "id",
+          "principal_id",
+          "actor_id",
+          "action",
+          "resource_type",
+          "resource_id",
+          "outcome",
+          "metadata",
+          "previous_hash",
+          "event_hash",
+          "occurred_at",
+          "created_at",
+          "chain_sequence",
+          "canonical_payload"
+        ],
+        "delete": false,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": false
+      },
+      "read_evidence_foundation": true,
+      "user_provisioning": {
+        "columns": [
+          "id",
+          "email",
+          "clerk_user_id",
+          "recipient_clerk_user_id",
+          "organization_id",
+          "account_role",
+          "state",
+          "topics",
+          "invitation_id",
+          "delivery_state",
+          "delivery_started_at",
+          "revision",
+          "updated_at"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "user_therapeutic_access": {
+        "columns": [
+          "id",
+          "clerk_user_id",
+          "therapeutic_area",
+          "created_at",
+          "organization_id"
+        ],
+        "delete": true,
+        "insert": true,
+        "rls": true,
+        "select": true,
+        "truncate": true,
+        "update": true
+      },
+      "user_therapeutic_access_id_seq": {
+        "select": true,
+        "update": true,
+        "usage": true
+      }
+    }
+  },
+  "matchingHttpStatusCodes": {
+    "anon direct provisioning delete": 401,
+    "anon direct provisioning insert": 401,
+    "anon direct provisioning update": 401,
+    "anon provisioning table": 401,
+    "anon topic RLS": 200,
+    "authenticated Evidence Integrity RPC": 403,
+    "authenticated direct provisioning delete": 403,
+    "authenticated direct provisioning insert": 403,
+    "authenticated direct provisioning update": 403,
+    "authenticated provisioning table": 403,
+    "authenticated transition RPC": 403,
+    "foreign topic RLS": 200,
+    "invalid signature": 401,
+    "managed topic predicate": 200,
+    "own topic including inherited columns": 200,
+    "service direct Evidence Integrity table": 403,
+    "service direct provisioning delete": 200,
+    "service direct provisioning insert": 201,
+    "service direct provisioning update": 200,
+    "service foreign workspace denied": 400,
+    "service owner Evidence Integrity RPC": 200,
+    "service transition activate": 200,
+    "service transition reserve": 200,
+    "service viewer write denied": 400
+  },
+  "migrationSetSha256": "e3be7f57c93a8b5daa5306407d84213a6f980c4bb45e1238e3b36e9a262d3112",
+  "profile": "PostgreSQL 17.12 with Supabase API roles/default grants, PostgREST 14.18 and local signed synthetic JWTs",
+  "provisioningAuditEntriesBeforeAfterDirectWrites": [
+    2,
+    2
+  ],
+  "replays": [
+    {
+      "migrationCount": 40,
+      "nativePvSql": {
+        "pv_icsr_acceptance.sql as owner": "PASS",
+        "pv_icsr_acceptance.sql as service_role": "PASS",
+        "pv_identification_acceptance.sql as owner": "PASS",
+        "pv_identification_acceptance.sql as service_role": "PASS",
+        "pv_odcs_acceptance.sql as owner": "FAIL  Shared audit direct inserts must be denied",
+        "pv_odcs_acceptance.sql as service_role": "FAIL  Shared audit direct inserts must be denied",
+        "pv_operations_acceptance.sql as owner": "PASS",
+        "pv_operations_acceptance.sql as service_role": "PASS"
+      },
+      "schemaSha256": "1915edb55e87812f13619e41fa4184bb4b5f3ae30ebb52c0d0fa55c581ac500e"
+    },
+    {
+      "migrationCount": 40,
+      "nativePvSql": {
+        "pv_icsr_acceptance.sql as owner": "PASS",
+        "pv_icsr_acceptance.sql as service_role": "PASS",
+        "pv_identification_acceptance.sql as owner": "PASS",
+        "pv_identification_acceptance.sql as service_role": "PASS",
+        "pv_odcs_acceptance.sql as owner": "FAIL  Shared audit direct inserts must be denied",
+        "pv_odcs_acceptance.sql as service_role": "FAIL  Shared audit direct inserts must be denied",
+        "pv_operations_acceptance.sql as owner": "PASS",
+        "pv_operations_acceptance.sql as service_role": "PASS"
+      },
+      "schemaSha256": "1915edb55e87812f13619e41fa4184bb4b5f3ae30ebb52c0d0fa55c581ac500e"
+    }
+  ]
+}
