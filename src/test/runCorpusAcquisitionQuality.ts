@@ -69,7 +69,11 @@ function fixture(mode = "successful") {
       return makeResponse({ data: detail() });
     }
     if (path === "/v2/datasets/dataset-fixture") {
-      return makeResponse({ data: { id: "dataset-fixture", itemCount: items.length } });
+      return makeResponse({ data: {
+        id: "dataset-fixture", itemCount: items.length, actId: mapping.actorId, actRunId: "run-fixture",
+        userId: mode === "wrong-account" ? "UnexpectedOwner" : "SyntheticOwner",
+        generalAccess: mode === "public-dataset" ? "PUBLIC" : "RESTRICTED",
+      } });
     }
     if (path === "/v2/datasets/dataset-fixture/items") {
       const offset = Number(query?.offset);
@@ -87,7 +91,7 @@ function fixture(mode = "successful") {
     }
     throw new Error("Unexpected synthetic request");
   };
-  const provider = createApifyProvider(mapping, {
+  const provider = createApifyProvider({ ...mapping, exclusiveDatasetAccountId: "SyntheticOwner" }, {
     approvedActors: new Set([mapping.actorId]), transport, authorKey: "synthetic-".repeat(4),
   });
   return { provider, calls, pending: () => { status = "RUNNING"; } };
@@ -99,6 +103,7 @@ function execution(mode: string) {
     id: workId, plan_id: plan, provider: "apify", mapping_ref: provider.approval.ref,
     mapping_digest: provider.approval.fingerprint, platform: "synthetic", deadline: "2026-12-01T00:00:00Z",
     normalization_version: provider.approval.normalizationVersion,
+    exclusive_dataset_required: true,
     ...input, max_rows: input.maxRows, rows: input.maxRows, offset: 0, phase: "ready", lease_token: "synthetic-lease",
     submitted_at: null, run_id: null, dataset_id: null, collected_at: null, verified_cost: null,
     failures: 0, cancel_requested: false, abort_sent: false,
@@ -111,6 +116,8 @@ function execution(mode: string) {
   const store: AcquisitionStore = {
     async claim() { return completed || reviewed ? null : { ...work }; },
     async cancel() { work.cancel_requested = true; },
+    async openDatasetRead() { return work.lease_token; },
+    async closeDatasetRead() { return; },
     async advance(_work, ...[step, data]) {
       switch (step) {
         case "submit":
@@ -122,6 +129,9 @@ function execution(mode: string) {
           work.run_id = data.run_id;
           break;
         case "bind":
+          assert.equal(data.ownership?.account_id, "SyntheticOwner");
+          assert.equal(data.ownership?.dataset_id, data.dataset_id);
+          assert.equal(data.ownership?.run_id, work.run_id);
           work.phase = "paging";
           Object.assign(work, {
             dataset_id: data.dataset_id, rows: data.total, collected_at: data.collected_at, verified_cost: data.cents,
@@ -183,7 +193,7 @@ async function main() {
     ["successful", "succeeded"], ["empty", "succeeded"], ["lost-submit", "succeeded"],
     ["ambiguous", "retries"], ["rate-limit", "succeeded"], ["interrupted", "succeeded"],
     ["partial", "failed"], ["drift", "failed"], ["over-budget", "usage"], ["unknown-usage", "usage"],
-    ["withdrawal", "failed"],
+    ["withdrawal", "failed"], ["wrong-account", "schema"], ["public-dataset", "schema"],
   ]) {
     const run = execution(mode);
     await run.drain();

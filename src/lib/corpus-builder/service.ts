@@ -82,12 +82,17 @@ type Operations = {
     valid: boolean;
   }];
   source_lookup: [{ p_platform: string; p_post_id: string }, { id: UUID; withdrawn: boolean } | null];
-  withdraw: [{ p_record: UUID; p_reason: "withdrawn" | "expired" }, null];
+  expire_revisions: [{ p_cutoff: string; p_limit: number }, number];
+  purge_operations: [{ p_limit: number }, number];
+  revision_artifact_put: [{ p_revision: UUID; p_key: UUID; p_kind: "extract" | "embedding"; p_payload: unknown }, null];
+  revision_artifact_get: [{ p_revision: UUID; p_key: UUID }, unknown];
+  withdraw: [{ p_record: UUID; p_reason: "withdrawn" }, null];
 };
 
 const operations = new Set<keyof Operations>([
   "configure", "status", "queue", "reserve", "page", "finish", "job_status",
   "freeze_frame", "frame_manifest", "freeze_version", "version_status", "source_lookup", "withdraw",
+  "expire_revisions", "purge_operations", "revision_artifact_put", "revision_artifact_get",
 ]);
 
 export class CorpusBuilderError extends Error {

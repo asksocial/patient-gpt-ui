@@ -21,6 +21,7 @@ export type ApifyMapping = {
   build: string;
   buildId: string;
   platform: string;
+  exclusiveDatasetAccountId?: string;
   sourcePolicyRef: string;
   retentionPolicyRef: string;
   timeoutSeconds: number;
@@ -89,6 +90,7 @@ export function createApifyProvider(configuration: ApifyMapping, deps: {
   const inputKeys = Object.values(map.fields);
   const fieldName = /^[A-Za-z_][A-Za-z0-9_]{0,79}$/;
   if (!validProviderId(map.actorId) || !validProviderId(map.buildId) || !/^\d+\.\d+\.\d+$/.test(map.build) ||
+    (map.exclusiveDatasetAccountId !== undefined && !validProviderId(map.exclusiveDatasetAccountId)) ||
     !deps.approvedActors.has(map.actorId) || !/^[a-zA-Z0-9_.:-]{1,100}$/.test(map.ref) ||
     !/^[a-z0-9_]{1,32}$/.test(map.platform) || !map.sourcePolicyRef || !map.retentionPolicyRef ||
     (map.retainAuthor && (!map.output.author || !map.authorKeyVersion || Buffer.byteLength(authorKey ?? "") < 32)) ||
@@ -138,8 +140,25 @@ export function createApifyProvider(configuration: ApifyMapping, deps: {
     return run;
   }
 
+  async function dataset(datasetId: string) {
+    const result = await request({ method: "GET", path: `/v2/datasets/${identifier(datasetId)}` });
+    const data = object(object(result?.body).data);
+    if (data.id !== datasetId) throw new ProviderFailure("schema");
+    return data;
+  }
+
+  const accountId = map.exclusiveDatasetAccountId;
   return {
     approval,
+    inspectExclusiveDataset: accountId ? async (datasetId, runId) => {
+      const data = await dataset(datasetId);
+      if (data.userId !== accountId || data.actId !== map.actorId || data.actRunId !== runId ||
+        data.generalAccess !== "RESTRICTED") throw new ProviderFailure("schema");
+      return {
+        total: positiveInteger(data.itemCount, 1000000),
+        ownership: { method: "apify.dataset-owner-v1", account_id: accountId, dataset_id: datasetId, run_id: runId },
+      };
+    } : undefined,
     async submit(input) {
       validateAcquisitionInput(input);
       const result = await request({
@@ -203,10 +222,7 @@ export function createApifyProvider(configuration: ApifyMapping, deps: {
       };
     },
     async size(datasetId) {
-      const result = await request({ method: "GET", path: `/v2/datasets/${identifier(datasetId)}` });
-      const data = object(object(result?.body).data);
-      if (data.id !== datasetId) throw new ProviderFailure("schema");
-      return positiveInteger(data.itemCount, 1000000);
+      return positiveInteger((await dataset(datasetId)).itemCount, 1000000);
     },
     async page(datasetId, offset, limit) {
       positiveInteger(offset, 1000000);

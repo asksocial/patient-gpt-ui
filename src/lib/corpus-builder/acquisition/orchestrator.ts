@@ -1,5 +1,5 @@
 import type { BuilderSource } from "../service";
-import { ProviderFailure, validateAcquisitionInput, type AcquisitionProvider } from "./provider";
+import { ProviderFailure, validateAcquisitionInput, type AcquisitionProvider, type DatasetOwnership } from "./provider";
 
 export type Work = {
   id: string;
@@ -8,6 +8,7 @@ export type Work = {
   mapping_ref: string;
   mapping_digest: string;
   normalization_version: string;
+  exclusive_dataset_required: boolean;
   platform: string;
   query: string;
   start: string;
@@ -33,7 +34,7 @@ type ReviewCode = "ambiguous" | "schema" | "partial" | "usage" | "limit" | "dead
 type Transition =
   | ["submit", Record<string, never>]
   | ["run", { run_id: string }]
-  | ["bind", { run_id: string; dataset_id: string; collected_at: string; total: number; cents: number }]
+  | ["bind", { run_id: string; dataset_id: string; collected_at: string; total: number; cents: number; ownership?: DatasetOwnership }]
   | ["page", { dataset_id: string; offset: number; total: number; rows: BuilderSource[] }]
   | ["finish", { outcome: "succeeded" | "cancelled" | "failed"; cents: number; run_id?: string }]
   | ["abort_sent" | "wait" | "retry", { delay: number }]
@@ -43,6 +44,8 @@ export interface AcquisitionStore {
   claim(plan: string): Promise<Work | null>;
   advance(work: Work, ...transition: Transition): Promise<void>;
   cancel(workId: string): Promise<void>;
+  openDatasetRead(work: Work): Promise<string | null>;
+  closeDatasetRead(work: Work, token: string): Promise<void>;
 }
 
 export class AcquisitionStoreError extends Error {
@@ -77,7 +80,8 @@ export async function runAcquisitionStep(options: {
   const provider = options.providerFor(work.provider, work.mapping_ref);
   if (!provider || provider.approval.provider !== work.provider || provider.approval.ref !== work.mapping_ref ||
     provider.approval.fingerprint !== work.mapping_digest ||
-    provider.approval.normalizationVersion !== work.normalization_version || provider.approval.platform !== work.platform) {
+    provider.approval.normalizationVersion !== work.normalization_version || provider.approval.platform !== work.platform ||
+    (work.exclusive_dataset_required && !provider.inspectExclusiveDataset)) {
     await review("provider");
     return "processed";
   }
@@ -92,6 +96,15 @@ export async function runAcquisitionStep(options: {
   function retry(error?: ProviderFailure) {
     const delay = Math.min(3600, Math.max(5 * 2 ** work.failures, error?.retryAfterSeconds ?? 0));
     return advance("retry", { delay });
+  }
+
+  async function readDataset<T>(read: () => Promise<T>): Promise<T> {
+    const token = await store.openDatasetRead(work);
+    try {
+      return await read();
+    } finally {
+      if (token) await store.closeDatasetRead(work, token);
+    }
   }
 
   try {
@@ -154,12 +167,21 @@ export async function runAcquisitionStep(options: {
           await review("schema");
           break;
         }
-        const total = await provider.size(run.datasetId);
+        const inspected = await provider.inspectExclusiveDataset?.(run.datasetId, run.id);
+        const total = inspected?.total ?? await provider.size(run.datasetId);
         if (!Number.isSafeInteger(total) || total < 0 || total > work.max_rows) {
           await review("limit");
           break;
         }
-        await advance("bind", { run_id: run.id, dataset_id: run.datasetId, collected_at: run.collectedAt, total, cents: run.cents });
+        try {
+          await advance("bind", {
+            run_id: run.id, dataset_id: run.datasetId, collected_at: run.collectedAt, total, cents: run.cents,
+            ...(inspected ? { ownership: inspected.ownership } : {}),
+          });
+        } catch (error) {
+          if (!(error instanceof AcquisitionStoreError) || !error.code?.match(/^(22|23)/)) throw error;
+          await review("provider");
+        }
         break;
       }
       case "paging": {
@@ -172,12 +194,12 @@ export async function runAcquisitionStep(options: {
           break;
         }
         if (work.offset === work.rows) {
-          const finalTotal = await provider.size(work.dataset_id);
+          const finalTotal = await readDataset(() => provider.size(work.dataset_id!));
           await advance("finish", { outcome: finalTotal === work.rows ? "succeeded" : "failed", cents: work.verified_cost });
           break;
         }
         const count = Math.min(PAGE_SIZE, work.rows - work.offset);
-        const page = await provider.page(work.dataset_id, work.offset, count);
+        const page = await readDataset(() => provider.page(work.dataset_id!, work.offset, count));
         if (page.total !== work.rows || page.items.length !== count) {
           await advance("finish", { outcome: "failed", cents: work.verified_cost });
           break;

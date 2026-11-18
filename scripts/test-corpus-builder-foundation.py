@@ -74,7 +74,7 @@ def native_fixture(row_id, day=None, author=None):
     return row
 
 
-def exercise(http, sql):
+def exercise(http, sql, *, retention=False):
     scope = {"p_workspace": WORKSPACE, "p_principal": "org_builder", "p_actor": "builder-admin"}
 
     def invoke(operation, payload, role="service_role", override=None):
@@ -218,8 +218,13 @@ def exercise(http, sql):
     c_id = sql("select id from corpus_builder.social_records where native_post_id='C'")
     sql("update corpus_builder.source_content set expires_at=clock_timestamp()-interval '1 second' where content='synthetic content for C'")
     assert not ok("version_status", {"p_version": refreshed_version})["valid"]
-    ok("withdraw", {"p_record": c_id, "p_reason": "expired"})
-    assert sql("select count(*) from corpus_builder.version_invalidations where reason='expired'") == "3"
+    if retention:
+        deny("withdraw", {"p_record": c_id, "p_reason": "expired"}, code="22023")
+        assert ok("expire_revisions", {"p_cutoff": sql("select clock_timestamp()::text"), "p_limit": 5}) == 1
+        assert sql("select count(*) from corpus_builder.revision_expirations") == "1"
+    else:
+        ok("withdraw", {"p_record": c_id, "p_reason": "expired"})
+        assert sql("select count(*) from corpus_builder.version_invalidations where reason='expired'") == "3"
     assert sql("""with a as (
       select *,lag(event_digest) over (partition by workspace_id order by sequence) as prior
       from corpus_builder.audit_events
@@ -231,7 +236,7 @@ def exercise(http, sql):
     return {"frame": manifest["digest"], "manifest": version_status["digest"]}
 
 
-def build(args, files, label, *, extension=None, check_extension=None):
+def build(args, files, label, *, extension=None, check_extension=None, retention=False):
     with tempfile.TemporaryDirectory(prefix=f"asksocial-corpus-{label}-") as directory:
         root = Path(directory)
         pg_port = free_port()
@@ -321,7 +326,8 @@ def build(args, files, label, *, extension=None, check_extension=None):
             contracts = sql(catalog), sql(routines)
             sql((MIGRATIONS / FOUNDATION).read_text())
             if extension is not None:
-                sql(extension.read_text())
+                for migration in extension if isinstance(extension, tuple) else (extension,):
+                    sql(migration.read_text())
             assert contracts == (sql(catalog), sql(routines))
             assert sql(preservation) == before
             assert sql("""select bool_and(relrowsecurity and not has_table_privilege('service_role',oid,'SELECT,INSERT,UPDATE,DELETE')
@@ -373,7 +379,7 @@ def build(args, files, label, *, extension=None, check_extension=None):
             else:
                 raise RuntimeError("PostgREST did not become ready")
 
-            digests = exercise(http, sql)
+            digests = exercise(http, sql, retention=retention)
             if check_extension is not None:
                 digests.update(check_extension(http, sql))
             assert sql(preservation) == before

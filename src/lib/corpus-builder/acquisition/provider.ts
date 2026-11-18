@@ -27,12 +27,20 @@ export type ProviderRun = {
   cents: number | null;
 };
 
+export type DatasetOwnership = {
+  method: "apify.dataset-owner-v1";
+  account_id: string;
+  dataset_id: string;
+  run_id: string;
+};
+
 export interface AcquisitionProvider {
   readonly approval: Readonly<SourceApproval>;
   submit(input: AcquisitionInput): Promise<string>;
   reconcile(input: AcquisitionInput, submittedAt: string): Promise<string | null>;
   status(runId: string): Promise<ProviderRun>;
   size(datasetId: string): Promise<number>;
+  inspectExclusiveDataset?(datasetId: string, runId: string): Promise<{ total: number; ownership: DatasetOwnership }>;
   page(datasetId: string, offset: number, limit: number): Promise<{ total: number; items: unknown[] }>;
   normalize(item: unknown, collectedAt: string, workspace: string): BuilderSource;
   cancel(runId: string): Promise<void>;

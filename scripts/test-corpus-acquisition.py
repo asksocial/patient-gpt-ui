@@ -14,7 +14,7 @@ END_OF_FIRST = "2026-02-01T00:00:00Z"
 END_OF_SECOND = "2026-03-01T00:00:00Z"
 
 
-def exercise(http, sql):
+def exercise(http, sql, *, retention=False):
     scope = {"p_workspace": base.WORKSPACE, "p_principal": "org_builder", "p_actor": "builder-admin"}
     foreign = {"p_workspace": base.FOREIGN, "p_principal": "org_foreign", "p_actor": "other-admin"}
 
@@ -103,8 +103,12 @@ def exercise(http, sql):
     assert sql("select count(*) from corpus_builder.acquisition_callbacks") == "1"
 
     def binding(run, dataset, total, cents=20):
-        return {"run_id": run, "dataset_id": dataset, "total": total,
-                "collected_at": "2026-04-01T12:00:00Z", "cents": cents}
+        payload = {"run_id": run, "dataset_id": dataset, "total": total,
+                   "collected_at": "2026-04-01T12:00:00Z", "cents": cents}
+        if retention:
+            payload["ownership"] = {"method": "apify.dataset-owner-v1", "account_id": "SyntheticOwner",
+                                    "dataset_id": dataset, "run_id": run}
+        return payload
 
     current = claim()
     denied("corpus_acquisition_advance", transition(current, "bind", **binding("provider-first", "dataset-one", 2, 26)), "P0001")
@@ -136,7 +140,12 @@ def exercise(http, sql):
     empty = claim()
     advance(empty, "submit")
     advance(empty, "run", run_id="provider-empty")
-    advance(claim(), "bind", **binding("provider-empty", "dataset-empty", 0, 0))
+    empty_bind = binding("provider-empty", "dataset-empty", 0, 0)
+    if retention:
+        # Exercise the compatibility path for a pre-retention plan's unfinished work.
+        sql(f"update corpus_builder.acquisition_work set exclusive_dataset_required=false where id='{empty['id']}'")
+        del empty_bind["ownership"]
+    advance(claim(), "bind", **empty_bind)
     advance(claim(), "finish", outcome="succeeded", cents=0)
     assert claim() is None
 

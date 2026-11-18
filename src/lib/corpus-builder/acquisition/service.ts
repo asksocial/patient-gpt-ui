@@ -83,6 +83,8 @@ export function createAcquisitionService(deps: {
           p_work: work.id, p_lease: work.lease_token, p_step, p_data,
         }),
         cancel: p_work => rpc<void>("cancel", { p_work }),
+        openDatasetRead: work => rpc<string | null>("dataset_read_begin", { p_work: work.id, p_lease: work.lease_token }),
+        closeDatasetRead: (work, p_reader) => rpc<void>("dataset_read_end", { p_work: work.id, p_reader }),
       };
       return runAcquisitionStep({ planId, workspace, store, providerFor });
     },
@@ -91,6 +93,14 @@ export function createAcquisitionService(deps: {
     },
     async resume(workspace: string, work: string) {
       return (await access(workspace))<void>("resume", { p_work: work });
+    },
+    async approveDatasetRelease(workspace: string, work: string, discardIncomplete = false) {
+      return (await access(workspace))<string>("release_approve", {
+        p_work: work, p_discard_incomplete: discardIncomplete,
+      });
+    },
+    async setDatasetHold(workspace: string, work: string, kind: "legal" | "internal", active: boolean) {
+      return (await access(workspace))<void>("dataset_hold", { p_work: work, p_kind: kind, p_active: active });
     },
     async status(workspace: string, plan: string) {
       return (await access(workspace))<PlanStatus>("status", { p_plan: plan });
