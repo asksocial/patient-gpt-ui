@@ -231,7 +231,7 @@ def exercise(http, sql):
     return {"frame": manifest["digest"], "manifest": version_status["digest"]}
 
 
-def build(args, files, label):
+def build(args, files, label, *, extension=None, check_extension=None):
     with tempfile.TemporaryDirectory(prefix=f"asksocial-corpus-{label}-") as directory:
         root = Path(directory)
         pg_port = free_port()
@@ -316,9 +316,12 @@ def build(args, files, label):
                 (select jsonb_agg(pg_get_constraintdef(oid) order by conname) from pg_constraint where conrelid=c.oid))
                 order by c.relname)::text from pg_class c where c.relnamespace='public'::regnamespace and c.relkind='r'"""
             routines = """select jsonb_agg(jsonb_build_array(pg_get_functiondef(p.oid),p.proacl) order by oid::regprocedure::text)::text
-                from pg_proc p where pronamespace='public'::regnamespace and prokind='f' and left(proname,15)<>'corpus_builder_'"""
+                from pg_proc p where pronamespace='public'::regnamespace and prokind='f'
+                  and left(proname,15)<>'corpus_builder_' and left(proname,19)<>'corpus_acquisition_'"""
             contracts = sql(catalog), sql(routines)
             sql((MIGRATIONS / FOUNDATION).read_text())
+            if extension is not None:
+                sql(extension.read_text())
             assert contracts == (sql(catalog), sql(routines))
             assert sql(preservation) == before
             assert sql("""select bool_and(relrowsecurity and not has_table_privilege('service_role',oid,'SELECT,INSERT,UPDATE,DELETE')
@@ -371,6 +374,8 @@ def build(args, files, label):
                 raise RuntimeError("PostgREST did not become ready")
 
             digests = exercise(http, sql)
+            if check_extension is not None:
+                digests.update(check_extension(http, sql))
             assert sql(preservation) == before
             assert contracts == (sql(catalog), sql(routines))
             print(f"PASS {label}: authorized PostgREST lifecycle, budget race, immutability, source deletion and coexistence", flush=True)
