@@ -21,6 +21,7 @@ export const POST = withAdmin(async (req) => {
       .from("user_therapeutic_access")
       .select("therapeutic_area")
       .eq("clerk_user_id", clerk_user_id)
+      .eq("organization_id", "")
       .order("therapeutic_area", { ascending: true });
 
     if (error) {

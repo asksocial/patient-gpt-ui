@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { permitsTopic } from "../../../../lib/therapeuticAccess/scope";
 import { getCurrentEntitlements } from "../../../../lib/entitlements/server";
 import { loadCanonicalFindingsForAsk } from "../../../../lib/answers/loadCanonicalFindingsForAsk";
 import { selectSearchCorpusForQuestion } from "../../../../lib/answers/loadSearchCorpusIntelligence";
@@ -15,6 +16,9 @@ export async function GET(request: NextRequest) {
   const question = params.get("question")?.trim() || "";
   const topicId = params.get("topicId")?.trim() || "";
   if (!therapeuticArea || !question || !topicId || question.length > 10000) return NextResponse.json({ ok: false, error: "A topic, Search question and theme are required." }, { status: 400 });
+  if (!permitsTopic(entitlements.topicScope, therapeuticArea)) {
+    return NextResponse.json({ ok: false, error: "Topic access is required." }, { status: 403 });
+  }
   try {
     const corpus = loadCanonicalFindingsForAsk(therapeuticArea);
     if (corpus.status !== "available") return NextResponse.json({ ok: false, error: corpus.reason }, { status: 422 });

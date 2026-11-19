@@ -1,3 +1,4 @@
+import { permitsTopic } from "../../../../lib/therapeuticAccess/scope";
 import { NextRequest, NextResponse } from "next/server";
 import { loadCanonicalFindingsForModule } from "../../../../lib/answers/loadCanonicalFindingsForAsk";
 import { getCurrentEntitlements } from "../../../../lib/entitlements/server";
@@ -33,6 +34,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (!permitsTopic(entitlements.topicScope, therapeuticArea)) {
+      return NextResponse.json({ ok: false, error: "Topic access is required." }, { status: 403 });
+    }
     const corpus = loadCanonicalFindingsForModule(therapeuticArea, moduleId);
     if (corpus.status !== "available") {
       return NextResponse.json({ ok: false, error: corpus.reason }, { status: 422 });

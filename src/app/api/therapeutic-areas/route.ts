@@ -37,7 +37,7 @@ export async function GET() {
     const assignedTherapeuticAreas =
       entitlements.isAdmin
         ? activeTherapeuticAreas
-        : await getUserTherapeuticAreas(
+        : entitlements.topicScope ?? await getUserTherapeuticAreas(
             entitlements.userId
           );
     const assignedSet = new Set(

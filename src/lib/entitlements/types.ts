@@ -1,3 +1,4 @@
+import type { AccountRole } from "../auth/provisioning/model";
 import type {
   EntitlementKey,
 } from "./catalog";
@@ -33,6 +34,7 @@ export type ResolvedCapability = {
 
 export type EntitlementResolution = {
   userId: string;
+  accountRole?: AccountRole;
   organizationId?: string;
   isAdmin: boolean;
   granted: EntitlementKey[];

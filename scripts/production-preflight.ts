@@ -16,10 +16,14 @@ import {
   getKnowledgePersistenceMode,
 } from "../src/lib/knowledge/mode";
 
+import { assertSupabasePublishableKey } from "../src/lib/supabase/server";
+
 async function main() {
 loadEnvConfig(process.cwd());
 
 const requiredEnvironment = [
+  "ASKSOCIAL_APP_ORIGIN",
+  "SUPABASE_PUBLISHABLE_KEY",
   "CLERK_SECRET_KEY",
   "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
   "OPENAI_API_KEY",
@@ -41,6 +45,12 @@ if (missingEnvironment.length) {
     )}`
   );
 }
+
+const appOrigin = process.env.ASKSOCIAL_APP_ORIGIN!;
+if (new URL(appOrigin).origin !== appOrigin) {
+  throw new Error("ASKSOCIAL_APP_ORIGIN must be the exact application origin without a path or trailing slash.");
+}
+assertSupabasePublishableKey(process.env.SUPABASE_PUBLISHABLE_KEY);
 
 const canonicalFiles = [
   "data/glp-1.csv",
@@ -94,6 +104,11 @@ const supabase = createClient(
     },
   }
 );
+const { error: provisioningSchemaError } = await supabase.from("user_provisioning").select("id", { head: true }).limit(1);
+if (provisioningSchemaError) {
+  throw new Error("User Management schema is unavailable. Apply the provisioning migrations before deployment.");
+}
+
 const { data: areas, error } =
   await supabase
     .from("therapeutic_areas")

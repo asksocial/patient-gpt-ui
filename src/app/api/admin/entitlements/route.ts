@@ -1,3 +1,4 @@
+import { findManagedAccount } from "../../../../lib/auth/provisioning/store";
 import {
   clerkClient,
 } from "@clerk/nextjs/server";
@@ -52,9 +53,8 @@ async function loadSubject(
       await client.users.getUser(
         subjectId
       );
-    const metadata = publicMetadata(
-      user.publicMetadata
-    );
+    const metadata = publicMetadata(user.publicMetadata);
+    const managed = await findManagedAccount("clerk_user_id", user.id);
 
     return {
       subjectType,
@@ -70,7 +70,8 @@ async function loadSubject(
           ?.emailAddress ||
         subjectId,
       publicMetadata: metadata,
-      isAdmin:
+      managed,
+      isAdmin: managed ? managed.state === "active" && managed.account_role === "platform_admin" :
         await resolveAdminStatus({
           userId: subjectId,
           publicMetadata: metadata,
@@ -102,6 +103,7 @@ async function loadSubject(
       displayName:
         organization.name,
       publicMetadata: metadata,
+      managed: null,
       isAdmin: false,
       entitlementMetadata:
         normalizeEntitlementMetadata(
@@ -151,18 +153,18 @@ export const GET = withAdmin(
         );
       const therapeuticAreas =
         subjectType === "user"
-          ? await getUserTherapeuticAreas(
-              subjectId
-            )
+          ? subject.managed?.topics ?? await getUserTherapeuticAreas(subjectId)
           : null;
 
+      const { managed, ...subjectPreview } = subject;
       return NextResponse.json({
         ok: true,
         catalog:
           ENTITLEMENT_CATALOG,
         therapeuticAreaCatalog,
         subject: {
-          ...subject,
+          ...subjectPreview,
+          managedAccount: !!managed,
           therapeuticAreas,
         },
         effectivePreview:
@@ -189,6 +191,7 @@ export const GET = withAdmin(
               subjectType === "user"
                 ? subject.isAdmin
                 : false,
+            requireExplicitPvGrant: !!subject.managed,
             knowledgePersistenceEnabled:
               getKnowledgePersistenceMode() ===
               "persistent",
@@ -301,6 +304,9 @@ export const PATCH = withAdmin(
           subjectType,
           subjectId
         );
+      if (therapeuticAreasProvided && subject.managed) {
+        return NextResponse.json({ error: "Use User Management to change scoped topics for this account." }, { status: 409 });
+      }
       const previousTherapeuticAreas =
         therapeuticAreasProvided
           ? await getUserTherapeuticAreas(

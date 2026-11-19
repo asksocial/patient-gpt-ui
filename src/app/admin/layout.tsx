@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type {
   ReactNode,
 } from "react";
@@ -22,5 +23,14 @@ export default async function AdminLayout({
     redirect("/workspace");
   }
 
-  return <div data-as-ui="admin">{children}<footer className="as-admin-footer">© 2026 Eavesdrop LLC. All rights reserved.</footer></div>;
+  return (
+    <div data-as-ui="admin">
+      <nav aria-label="Administration" className="flex flex-wrap gap-5 border-b px-6 py-3 text-sm">
+        <Link href="/admin/entitlements">Entitlements</Link>
+        <Link href="/admin/users">User Management</Link>
+      </nav>
+      {children}
+      <footer className="as-admin-footer">© 2026 Eavesdrop LLC. All rights reserved.</footer>
+    </div>
+  );
 }

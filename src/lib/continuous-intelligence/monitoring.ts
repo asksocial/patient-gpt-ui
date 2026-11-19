@@ -1,5 +1,6 @@
 import { getSupabaseServerClient } from "../supabase/server";
-import type { PlatformPrincipal } from "../intelligence-platform/persistence";
+import { assertWorkspaceAccess, listIntelligenceWorkspaces, type PlatformPrincipal } from "../intelligence-platform/persistence";
+import { assertTopicScope, permitsTopic } from "../therapeuticAccess/scope";
 import { normalizeMonitoringCriteria } from "./scope";
 
 export type MonitoringCadence = "daily" | "weekly" | "monthly";
@@ -26,7 +27,9 @@ export async function listMonitoringProfiles(principal: PlatformPrincipal) {
   const { data, error } = await getSupabaseServerClient().from("intelligence_monitoring_profiles")
     .select("*").eq("principal_id", principal.principalId).order("created_at", { ascending: false });
   if (error) throw new Error(`Failed to load monitoring profiles: ${error.message}`);
-  return data || [];
+  if (!principal.topicScope) return data || [];
+  const workspaceIds = new Set((await listIntelligenceWorkspaces(principal)).map(row => row.id));
+  return (data || []).filter(row => workspaceIds.has(row.workspace_id) && permitsTopic(principal.topicScope, row.therapeutic_area));
 }
 
 export async function createMonitoringProfile(
@@ -39,6 +42,8 @@ export async function createMonitoringProfile(
   if (!input.workspaceId || !input.name.trim() || !input.query.trim() || !input.therapeuticArea.trim()) {
     throw new Error("Workspace, name, topic, and query are required.");
   }
+  assertTopicScope(principal.topicScope, input.therapeuticArea);
+  if (principal.topicScope) await assertWorkspaceAccess(principal, input.workspaceId, "editor");
   const criteria = normalizeMonitoringCriteria(input.criteria);
   if (!["daily", "weekly", "monthly"].includes(input.cadence)) throw new Error("Choose a supported monitoring cadence.");
   if (input.threshold != null && (!Number.isFinite(input.threshold) || input.threshold < 0)) throw new Error("Alert threshold must be a non-negative number.");
@@ -61,7 +66,9 @@ export async function listIntelligenceAlerts(principal: PlatformPrincipal, limit
     .select("*, intelligence_monitoring_profiles(name)").eq("principal_id", principal.principalId)
     .order("created_at", { ascending: false }).limit(Math.max(1, Math.min(100, limit)));
   if (error) throw new Error(`Failed to load alerts: ${error.message}`);
-  return data || [];
+  if (!principal.topicScope) return data || [];
+  const profileIds = new Set((await listMonitoringProfiles(principal)).map(row => row.id));
+  return (data || []).filter(row => profileIds.has(row.profile_id));
 }
 
 export async function listDeliveryOutbox(principal: PlatformPrincipal, limit = 50) {
@@ -69,5 +76,7 @@ export async function listDeliveryOutbox(principal: PlatformPrincipal, limit = 5
     .select("*").eq("principal_id", principal.principalId).order("created_at", { ascending: false })
     .limit(Math.max(1, Math.min(100, limit)));
   if (error) throw new Error(`Failed to load delivery history: ${error.message}`);
-  return data || [];
+  if (!principal.topicScope) return data || [];
+  const profileIds = new Set((await listMonitoringProfiles(principal)).map(row => row.id));
+  return (data || []).filter(row => profileIds.has(row.profile_id));
 }

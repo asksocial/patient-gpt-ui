@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
   try {
     const entitlements = await getCurrentEntitlements();
     if (!entitlements) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    if (entitlements.accountRole && !["platform_admin", "client_admin"].includes(entitlements.accountRole)) {
+      return NextResponse.json({ ok: false, error: "Workspace administration is required." }, { status: 403 });
+    }
     const body = await request.json();
     const requestedUserId = String(body?.userId || "");
     if (entitlements.organizationId) {
@@ -58,6 +61,9 @@ export async function DELETE(request: NextRequest) {
   try {
     const entitlements = await getCurrentEntitlements();
     if (!entitlements) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    if (entitlements.accountRole && !["platform_admin", "client_admin"].includes(entitlements.accountRole)) {
+      return NextResponse.json({ ok: false, error: "Workspace administration is required." }, { status: 403 });
+    }
     const workspaceId = request.nextUrl.searchParams.get("workspaceId") || "";
     const userId = request.nextUrl.searchParams.get("userId") || "";
     const result = await removeWorkspaceMember(platformPrincipalFromEntitlements(entitlements), { workspaceId, userId });

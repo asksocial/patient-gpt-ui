@@ -1,3 +1,4 @@
+import type { AccountRole } from "../auth/provisioning/model";
 import {
   ENTITLEMENT_CATALOG,
   ENTITLEMENT_KEYS,
@@ -153,6 +154,8 @@ export function resolveEntitlements(params: {
   userMetadata?: unknown;
   organizationMetadata?: unknown;
   knowledgePersistenceEnabled?: boolean;
+  requireExplicitPvGrant?: boolean;
+  accountRole?: AccountRole;
 }): EntitlementResolution {
   const state = new Map<
     EntitlementKey,
@@ -195,6 +198,7 @@ export function resolveEntitlements(params: {
   if (params.isAdmin) {
     for (const key of
       ENTITLEMENT_KEYS) {
+      if (params.requireExplicitPvGrant && key === "agent_pharmacovigilance_assistant") continue;
       const existing =
         state.get(key);
       state.set(key, {
@@ -238,6 +242,7 @@ export function resolveEntitlements(params: {
 
   return {
     userId: params.userId,
+    accountRole: params.accountRole,
     organizationId:
       params.organizationId,
     isAdmin: !!params.isAdmin,

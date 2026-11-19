@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { permitsTopic } from "../../../lib/therapeuticAccess/scope";
 import { loadGlp1PersonaIntelligence } from "../../../lib/answers/loadGlp1PersonaIntelligence";
 import { loadCanonicalFindingsForAsk } from "../../../lib/answers/loadCanonicalFindingsForAsk";
 import { getCurrentEntitlements } from "../../../lib/entitlements/server";
@@ -23,6 +24,9 @@ export async function GET(request: NextRequest) {
     const dimension = request.nextUrl.searchParams.get("dimension");
     if (!therapeuticArea || !isPatientEvidenceDimension(dimension)) {
       return NextResponse.json({ ok: false, error: "A therapeuticArea and supported patient evidence dimension are required." }, { status: 400 });
+    }
+    if (!permitsTopic(entitlements.topicScope, therapeuticArea)) {
+      return NextResponse.json({ ok: false, error: "Topic access is required." }, { status: 403 });
     }
     const corpus = loadCanonicalFindingsForAsk(therapeuticArea);
     if (corpus.status !== "available") return NextResponse.json({ ok: false, error: corpus.reason }, { status: 422 });
@@ -53,6 +57,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const therapeuticArea = String(body?.therapeuticArea || "").trim();
     if (!therapeuticArea) return NextResponse.json({ ok: false, error: "therapeuticArea is required" }, { status: 400 });
+    if (!permitsTopic(entitlements.topicScope, therapeuticArea)) {
+      return NextResponse.json({ ok: false, error: "Topic access is required." }, { status: 403 });
+    }
     const corpus = loadCanonicalFindingsForAsk(therapeuticArea);
     if (corpus.status !== "available") return NextResponse.json({ ok: false, error: corpus.reason }, { status: 422 });
     const composition = /^glp[ _-]?1$/i.test(therapeuticArea) ? loadGlp1PersonaIntelligence() : null;

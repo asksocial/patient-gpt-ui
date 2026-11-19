@@ -1,3 +1,4 @@
+import { permitsTopic } from "../../../../lib/therapeuticAccess/scope";
 import {
   auth,
 } from "@clerk/nextjs/server";
@@ -117,7 +118,8 @@ export async function POST(
         ),
       ]);
 
-    if (!baseline || !current) {
+    if (!baseline || !current || !permitsTopic(entitlements.topicScope, baseline.snapshot.therapeuticArea) ||
+      !permitsTopic(entitlements.topicScope, current.snapshot.therapeuticArea)) {
       return NextResponse.json(
         {
           ok: false,

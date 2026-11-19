@@ -126,6 +126,10 @@ export async function POST(
     const current = loadCurrentGlp1ExecutiveIntelligence(snapshot.therapeuticArea, snapshot.sourceQuery || "");
     if (current) snapshot = current.knowledgeSnapshot;
 
+    if (baselineSnapshot && !await hasTherapeuticAreaAccess(entitlements.userId, baselineSnapshot.therapeuticArea, entitlements.isAdmin)) {
+      return NextResponse.json({ ok: false, error: "Baseline topic access is required." }, { status: 403 });
+    }
+
     const comparison =
       baselineSnapshot
         ? compareThemeKnowledgeSnapshots(

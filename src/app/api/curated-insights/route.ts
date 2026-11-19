@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getCurrentEntitlements } from "../../../lib/entitlements/server";
+import { getSupabaseServerClient } from "../../../lib/supabase/server";
+import { permitsTopic } from "../../../lib/therapeuticAccess/scope";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const access = await getCurrentEntitlements();
+    if (!access) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     const { searchParams } = new URL(req.url);
 
     const therapeuticArea = searchParams.get("therapeuticArea");
@@ -19,15 +23,11 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const topic = access.topicScope?.find(grant => permitsTopic([grant], therapeuticArea));
+    if (access.topicScope && !topic) return NextResponse.json({ error: "Topic access is required." }, { status: 403 });
 
-    let query = supabase
-      .from("curated_insights")
-      .select("*")
-      .ilike("therapeutic_area", therapeuticArea);
+    let query = getSupabaseServerClient().from("curated_insights").select("*");
+    query = topic ? query.eq("therapeutic_area", topic) : query.ilike("therapeutic_area", therapeuticArea);
 
     if (persona) {
       query = query.ilike("persona", `%${persona}%`);

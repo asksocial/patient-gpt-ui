@@ -79,6 +79,7 @@ export async function getUserTherapeuticAreas(
         "clerk_user_id",
         normalizedUserId
       )
+      .eq("organization_id", "")
       .order("therapeutic_area", {
         ascending: true,
       });
@@ -196,7 +197,7 @@ export async function replaceUserTherapeuticAreas(
           })),
           {
             onConflict:
-              "clerk_user_id,therapeutic_area",
+              "clerk_user_id,organization_id,therapeutic_area",
             ignoreDuplicates: true,
           }
         );
@@ -219,6 +220,7 @@ export async function replaceUserTherapeuticAreas(
           "clerk_user_id",
           normalizedUserId
         )
+        .eq("organization_id", "")
         .in(
           "therapeutic_area",
           removals
@@ -235,6 +237,7 @@ export async function replaceUserTherapeuticAreas(
             "clerk_user_id",
             normalizedUserId
           )
+          .eq("organization_id", "")
           .in(
             "therapeutic_area",
             additions
@@ -250,6 +253,13 @@ export async function replaceUserTherapeuticAreas(
   return active.filter((area) =>
     requestedSet.has(area)
   );
+}
+
+export async function getCurrentUserTherapeuticAreas(userId: string): Promise<string[]> {
+  const { getSessionAccess, getManagedTopicScope } = await import("../auth/provisioning/session");
+  const access = await getSessionAccess();
+  if (access?.access !== "allowed" || access.user.id !== userId) return [];
+  return await getManagedTopicScope(access) ?? await getUserTherapeuticAreas(userId);
 }
 
 export async function hasTherapeuticAreaAccess(
@@ -270,7 +280,7 @@ export async function hasTherapeuticAreaAccess(
   }
 
   const assigned =
-    await getUserTherapeuticAreas(
+    await getCurrentUserTherapeuticAreas(
       userId
     );
 

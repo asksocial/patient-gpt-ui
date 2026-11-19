@@ -1,4 +1,5 @@
-import { createHash } from "node:crypto";
+import { assertTopicScope, permitsTopic } from "../therapeuticAccess/scope";
+import type { AccountRole } from "../auth/provisioning/model";
 import { getSupabaseServerClient } from "../supabase/server";
 import type { IntelligenceModuleId } from "./ids";
 
@@ -6,6 +7,8 @@ export type PlatformPrincipal = {
   principalId: string;
   principalType: "organization" | "user";
   actorId: string;
+  accountRole?: AccountRole;
+  topicScope?: readonly string[];
 };
 
 export type IntelligenceWorkspace = {
@@ -82,12 +85,15 @@ async function getWorkspaceAndRole(
 ) {
   const { data: workspace, error } = await getSupabaseServerClient()
     .from("intelligence_workspaces")
-    .select("id, principal_id, created_by")
+    .select("id, principal_id, created_by, therapeutic_area")
     .eq("id", workspaceId)
     .eq("principal_id", principal.principalId)
     .maybeSingle();
   if (error) throw new Error(`Failed to verify workspace: ${error.message}`);
   if (!workspace) throw new Error("Workspace not found.");
+  if (workspace.therapeutic_area) assertTopicScope(principal.topicScope, workspace.therapeutic_area);
+  if (principal.accountRole === "viewer" && minimumRole !== "viewer") throw new Error("Workspace write access is required.");
+  if (principal.accountRole === "client_admin") return { workspace, role: "owner" as const };
 
   const { data: membership, error: memberError } = await getSupabaseServerClient()
     .from("intelligence_workspace_members")
@@ -98,7 +104,7 @@ async function getWorkspaceAndRole(
     .maybeSingle();
 
   let role: WorkspaceRole;
-  if (memberError && isWorkspaceManagementMigrationMissing(memberError)) {
+  if (!principal.topicScope && memberError && isWorkspaceManagementMigrationMissing(memberError)) {
     role = workspace.created_by === principal.actorId ? "owner" : "editor";
   } else if (memberError) {
     throw new Error(`Failed to verify workspace membership: ${memberError.message}`);
@@ -113,17 +119,21 @@ async function getWorkspaceAndRole(
   if (ROLE_RANK[role] < ROLE_RANK[minimumRole]) {
     throw new Error(`Workspace ${minimumRole} access is required.`);
   }
-  return { workspace, role };
+  return { workspace, role: principal.accountRole === "viewer" ? "viewer" as const : role };
 }
 
 export function platformPrincipalFromEntitlements(entitlements: {
   userId: string;
   organizationId?: string;
+  accountRole?: AccountRole;
+  topicScope?: readonly string[];
 }): PlatformPrincipal {
   return {
     principalId: entitlements.organizationId || entitlements.userId,
     principalType: entitlements.organizationId ? "organization" : "user",
     actorId: entitlements.userId,
+    accountRole: entitlements.accountRole,
+    topicScope: entitlements.topicScope,
   };
 }
 
@@ -149,19 +159,22 @@ export async function listIntelligenceWorkspaces(principal: PlatformPrincipal) {
 
   if (error) throw new Error(`Failed to load workspaces: ${error.message}`);
 
+  data = (data || []).filter(row => !row.therapeutic_area || permitsTopic(principal.topicScope, row.therapeutic_area));
+  if (principal.accountRole === "client_admin") return data.map(row => mapWorkspace(row, "owner"));
+
   const { data: memberships, error: memberError } = await getSupabaseServerClient()
     .from("intelligence_workspace_members")
     .select("workspace_id, role")
     .eq("principal_id", principal.principalId)
     .eq("user_id", principal.actorId);
 
-  if (memberError && !isWorkspaceManagementMigrationMissing(memberError)) {
+  if (memberError && (principal.topicScope || !isWorkspaceManagementMigrationMissing(memberError))) {
     throw new Error(`Failed to load workspace memberships: ${memberError.message}`);
   }
 
   if (memberError) {
     return (data || []).map((row: any) =>
-      mapWorkspace(row, row.created_by === principal.actorId ? "owner" : "editor")
+      mapWorkspace(row, principal.accountRole === "viewer" ? "viewer" : row.created_by === principal.actorId ? "owner" : "editor")
     );
   }
 
@@ -170,7 +183,7 @@ export async function listIntelligenceWorkspaces(principal: PlatformPrincipal) {
   );
   return (data || [])
     .filter((row: any) => roles.has(row.id) || row.created_by === principal.actorId)
-    .map((row: any) => mapWorkspace(row, roles.get(row.id) || "owner"));
+    .map((row: any) => mapWorkspace(row, principal.accountRole === "viewer" ? "viewer" : roles.get(row.id) || "owner"));
 }
 
 export async function createIntelligenceWorkspace(
@@ -185,6 +198,8 @@ export async function createIntelligenceWorkspace(
   assertPrincipal(principal);
   const name = input.name.trim();
   if (!name) throw new Error("Workspace name is required.");
+  if (principal.accountRole === "viewer") throw new Error("Workspace write access is required.");
+  if (input.therapeuticArea) assertTopicScope(principal.topicScope, input.therapeuticArea);
 
   const { data, error } = await getSupabaseServerClient()
     .from("intelligence_workspaces")
@@ -254,7 +269,10 @@ export async function updateIntelligenceWorkspace(
     updates.name = input.name.trim();
   }
   if (typeof input.description === "string") updates.description = input.description.trim() || null;
-  if (typeof input.therapeuticArea === "string") updates.therapeutic_area = input.therapeuticArea.trim() || null;
+  if (typeof input.therapeuticArea === "string") {
+    if (input.therapeuticArea.trim()) assertTopicScope(principal.topicScope, input.therapeuticArea);
+    updates.therapeutic_area = input.therapeuticArea.trim() || null;
+  }
   if (Array.isArray(input.moduleIds)) updates.module_ids = input.moduleIds;
   if (typeof input.archived === "boolean") updates.archived_at = input.archived ? new Date().toISOString() : null;
 
@@ -440,6 +458,7 @@ export async function saveIntelligenceWorkProduct(
 ) {
   assertPrincipal(principal);
   await assertWorkspaceAccess(principal, input.workspaceId, "editor");
+  assertTopicScope(principal.topicScope, input.therapeuticArea);
   const { data, error } = await getSupabaseServerClient()
     .from("intelligence_work_products")
     .insert({
@@ -489,7 +508,7 @@ export async function listIntelligenceWorkProducts(
   if (input.therapeuticArea) query = query.eq("therapeutic_area", input.therapeuticArea);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load work products: ${error.message}`);
-  return data || [];
+  return (data || []).filter(row => permitsTopic(principal.topicScope, row.therapeutic_area));
 }
 
 export async function appendPlatformAuditEvent(
@@ -505,43 +524,17 @@ export async function appendPlatformAuditEvent(
   }
 ) {
   assertPrincipal(principal);
-  const supabase = getSupabaseServerClient();
-  const { data: previous, error: previousError } = await supabase
-    .from("intelligence_audit_events")
-    .select("event_hash")
-    .eq("principal_id", principal.principalId)
-    .order("occurred_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (previousError) throw new Error(`Failed to read audit chain: ${previousError.message}`);
-
-  const occurredAt = input.occurredAt || new Date().toISOString();
-  const previousHash = previous?.event_hash || "GENESIS";
-  const canonical = JSON.stringify({
-    principalId: principal.principalId,
-    actorId: principal.actorId,
-    ...input,
-    occurredAt,
-    previousHash,
+  const { data, error } = await getSupabaseServerClient().rpc("append_intelligence_audit_event", {
+    p_principal: principal.principalId,
+    p_actor: principal.actorId,
+    p_action: input.action,
+    p_resource_type: input.resourceType,
+    p_outcome: input.outcome,
+    p_resource_id: input.resourceId ?? null,
+    p_workspace: input.workspaceId ?? null,
+    p_metadata: input.metadata ?? {},
+    p_occurred_at: input.occurredAt ?? null,
   });
-  const eventHash = createHash("sha256").update(canonical).digest("hex");
-  const { data, error } = await supabase
-    .from("intelligence_audit_events")
-    .insert({
-      principal_id: principal.principalId,
-      workspace_id: input.workspaceId || null,
-      actor_id: principal.actorId,
-      action: input.action,
-      resource_type: input.resourceType,
-      resource_id: input.resourceId || null,
-      outcome: input.outcome,
-      metadata: input.metadata || {},
-      previous_hash: previousHash,
-      event_hash: eventHash,
-      occurred_at: occurredAt,
-    })
-    .select("*")
-    .single();
   if (error || !data) throw new Error(`Failed to append audit event: ${error?.message || "missing row"}`);
   return data;
 }

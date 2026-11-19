@@ -1,6 +1,6 @@
 "use client";
 
-
+import Link from "next/link";
 import { Field } from "../../../components/ui/Surface";
 import ActionButton, { ActionForm } from "../../../components/ui/ActionButton";
 
@@ -170,6 +170,7 @@ export default function EntitlementsAdminPage() {
     useState<string[]>([]);
   const [therapeuticAreas, setTherapeuticAreas] =
     useState<string[]>([]);
+  const [subjectManaged, setSubjectManaged] = useState(false);
   const [subjectType, setSubjectType] = useState("user");
   const [subjectId, setSubjectId] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -206,6 +207,7 @@ export default function EntitlementsAdminPage() {
   function resetSubject() {
     setDisplayName("");
     setSubjectIsAdmin(false);
+    setSubjectManaged(false);
     setStates({});
     setEffectiveCapabilities({});
     setTherapeuticAreas([]);
@@ -345,6 +347,7 @@ export default function EntitlementsAdminPage() {
         : [];
 
       setDisplayName(data.subject.displayName);
+      setSubjectManaged(data.subject.managedAccount === true);
       setSubjectIsAdmin(
         data.subject.isAdmin === true
       );
@@ -398,7 +401,7 @@ export default function EntitlementsAdminPage() {
         body: JSON.stringify({
           subjectType,
           subjectId: subjectId.trim(),
-          ...(subjectType === "user" ? { therapeuticAreas } : {}),
+          ...(subjectType === "user" && !subjectManaged ? { therapeuticAreas } : {}),
           entitlements: {
             grants: Object.entries(states)
               .filter(([, state]) => state === "grant")
@@ -437,7 +440,7 @@ export default function EntitlementsAdminPage() {
       );
       setMessage(
         subjectType === "user"
-          ? "Topics, modules, PV Compliance, and access capabilities saved."
+          ? subjectManaged ? "Modules, PV Compliance, and access capabilities saved." : "Topics, modules, PV Compliance, and access capabilities saved."
           : "Organization access capabilities saved."
       );
     } catch (error) {
@@ -569,7 +572,9 @@ export default function EntitlementsAdminPage() {
                 </p>
                 {subjectIsAdmin ? (
                   <p className="mt-2 inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-200">
-                    Administrator override · all capabilities are effectively enabled
+                    {subjectManaged
+                      ? "Administrator override applies to platform capabilities. PV Compliance uses its own entitlement."
+                      : "Administrator override · all capabilities are effectively enabled"}
                   </p>
                 ) : null}
               </div>
@@ -606,7 +611,9 @@ export default function EntitlementsAdminPage() {
                 Assign topics by user
               </h3>
               <p className="mt-1 text-sm leading-6 text-white/45">
-                Select every topic whose corpus and intelligence this user may access.
+                {subjectManaged ? (
+                  <Link className="underline" href="/admin/users">Change this account’s topics in User Management</Link>
+                ) : "Select every topic whose corpus and intelligence this user may access."}
               </p>
               <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {therapeuticAreaCatalog.length ? (
@@ -628,7 +635,7 @@ export default function EntitlementsAdminPage() {
                         <input
                           type="checkbox"
                           checked={checked}
-                          disabled={assignmentDisabled}
+                          disabled={assignmentDisabled || subjectManaged}
                           onChange={(event) =>
                             setTherapeuticAreas((current) =>
                               event.target.checked

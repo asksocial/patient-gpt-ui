@@ -24,6 +24,7 @@ export const POST = withAdmin(async (req) => {
       .from("user_therapeutic_access")
       .delete()
       .eq("clerk_user_id", clerk_user_id)
+      .eq("organization_id", "")
       .eq("therapeutic_area", therapeutic_area);
 
     if (error) {

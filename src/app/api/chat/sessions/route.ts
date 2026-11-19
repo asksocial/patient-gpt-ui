@@ -1,19 +1,20 @@
+import { permitsTopic } from "../../../../lib/therapeuticAccess/scope";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getChatAccess, restrictChatQuery } from "../../../../lib/chat/access";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 import {
   addLegacyWorkspaceField,
   isMissingSessionWorkspaceColumn,
 } from "../../../../lib/chat/sessionCompatibility";
-import { assertWorkspaceAccess } from "../../../../lib/intelligence-platform";
+import { assertWorkspaceAccess, platformPrincipalFromEntitlements } from "../../../../lib/intelligence-platform";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const access = await getChatAccess();
 
-    if (!userId) {
+    if (!access) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized" },
         { status: 401 }
@@ -22,10 +23,9 @@ export async function GET() {
 
     const supabase = getSupabaseServerClient();
 
-    let { data, error } = await supabase
+    let { data, error } = await restrictChatQuery(supabase
       .from("chat_sessions")
-      .select("id, workspace_id, therapeutic_area, title, created_at, updated_at")
-      .eq("user_id", userId)
+      .select("id, workspace_id, therapeutic_area, title, created_at, updated_at"), access)
       .order("updated_at", { ascending: false });
 
     if (
@@ -34,12 +34,11 @@ export async function GET() {
       )
     ) {
       const legacyResult =
-        await supabase
+        await restrictChatQuery(supabase
           .from("chat_sessions")
           .select(
             "id, therapeutic_area, title, created_at, updated_at"
-          )
-          .eq("user_id", userId)
+          ), access)
           .order("updated_at", {
             ascending: false,
           });
@@ -61,16 +60,16 @@ export async function GET() {
   } catch (error: any) {
     return NextResponse.json(
       { ok: false, error: error.message || "Failed to load sessions" },
-      { status: 500 }
+      { status: error?.status === 403 ? 403 : 500 }
     );
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const access = await getChatAccess(true);
 
-    if (!userId) {
+    if (!access) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized" },
         { status: 401 }
@@ -87,15 +86,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!permitsTopic(access.topicScope, therapeuticArea)) {
+      return NextResponse.json({ ok: false, error: "Topic access is required." }, { status: 403 });
+    }
     const supabase = getSupabaseServerClient();
 
     if (workspaceId) {
       try {
-        await assertWorkspaceAccess({
-          principalId: orgId || userId,
-          principalType: orgId ? "organization" : "user",
-          actorId: userId,
-        }, workspaceId, "editor");
+        await assertWorkspaceAccess(platformPrincipalFromEntitlements(access), workspaceId, "editor");
       } catch (workspaceError: any) {
         return NextResponse.json({ ok: false, error: workspaceError.message || "Workspace access denied" }, { status: 403 });
       }
@@ -108,8 +106,9 @@ export async function POST(req: NextRequest) {
       string,
       unknown
     > = {
-      user_id: userId,
-      therapeutic_area: therapeuticArea,
+      user_id: access.userId,
+      organization_id: access.chatOrganizationId || null,
+      therapeutic_area: access.topicScope?.find(topic => permitsTopic([topic], therapeuticArea)) ?? therapeuticArea,
       title,
     };
 
@@ -157,7 +156,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { ok: false, error: error.message || "Failed to create session" },
-      { status: 500 }
+      { status: error?.status === 403 ? 403 : 500 }
     );
   }
 }

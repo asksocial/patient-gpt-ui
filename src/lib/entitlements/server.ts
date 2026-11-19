@@ -1,5 +1,4 @@
 import {
-  auth,
   clerkClient,
 } from "@clerk/nextjs/server";
 import {
@@ -29,21 +28,11 @@ function objectValue(
 }
 
 export async function getCurrentEntitlements() {
-  const {
-    userId,
-    orgId,
-    sessionClaims,
-  } = await auth();
-
-  if (!userId) {
-    return null;
-  }
-
+  const { getManagedTopicScope, getSessionAccess } = await import("../auth/provisioning/session");
+  const access = await getSessionAccess();
+  if (access?.access !== "allowed") return null;
+  const { session: { userId, orgId, sessionClaims }, user, account } = access;
   const client = await clerkClient();
-  const user =
-    await client.users.getUser(
-      userId
-    );
   const publicMetadata =
     objectValue(
       user.publicMetadata
@@ -64,16 +53,18 @@ export async function getCurrentEntitlements() {
       )[ENTITLEMENT_METADATA_KEY];
   }
 
-  return resolveEntitlements({
-    userId,
+  const entitlements = resolveEntitlements({
+    userId: user.id,
     organizationId:
       orgId || undefined,
-    isAdmin:
+    isAdmin: account ? account.account_role === "platform_admin" :
       await resolveAdminStatus({
         userId,
         sessionClaims,
         publicMetadata,
       }),
+    requireExplicitPvGrant: !!account,
+    accountRole: account?.account_role,
     userMetadata:
       publicMetadata[
         ENTITLEMENT_METADATA_KEY
@@ -83,6 +74,7 @@ export async function getCurrentEntitlements() {
       getKnowledgePersistenceMode() ===
       "persistent",
   });
+  return { ...entitlements, topicScope: await getManagedTopicScope(access) };
 }
 
 export async function hasCurrentEntitlement(

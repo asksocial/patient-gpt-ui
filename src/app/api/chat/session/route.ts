@@ -1,20 +1,20 @@
 import { refreshSearchCorpusIntelligence } from "../../../../lib/answers/refreshSearchCorpusIntelligence";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getChatAccess, restrictChatQuery } from "../../../../lib/chat/access";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 import {
   addLegacyWorkspaceField,
   isMissingSessionWorkspaceColumn,
 } from "../../../../lib/chat/sessionCompatibility";
-import { assertWorkspaceAccess } from "../../../../lib/intelligence-platform";
+import { assertWorkspaceAccess, platformPrincipalFromEntitlements } from "../../../../lib/intelligence-platform";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const access = await getChatAccess();
 
-    if (!userId) {
+    if (!access) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized" },
         { status: 401 }
@@ -35,13 +35,12 @@ export async function GET(req: NextRequest) {
     let {
       data: session,
       error: sessionError,
-    } = await supabase
+    } = await restrictChatQuery(supabase
       .from("chat_sessions")
       .select(
         "id, user_id, workspace_id, therapeutic_area, title, is_pinned, created_at, updated_at"
       )
-      .eq("id", sessionId)
-      .eq("user_id", userId)
+      .eq("id", sessionId), access)
       .single();
 
     if (
@@ -50,13 +49,12 @@ export async function GET(req: NextRequest) {
       )
     ) {
       const legacyResult =
-        await supabase
+        await restrictChatQuery(supabase
           .from("chat_sessions")
           .select(
             "id, user_id, therapeutic_area, title, is_pinned, created_at, updated_at"
           )
-          .eq("id", sessionId)
-          .eq("user_id", userId)
+          .eq("id", sessionId), access)
           .single();
 
       session = legacyResult.data
@@ -93,20 +91,20 @@ export async function GET(req: NextRequest) {
         }
         return message.role === "assistant" ? { ...message, content: refreshSearchCorpusIntelligence(message.content, message.content?.therapeuticArea || session?.therapeutic_area || "", latestQuestion) } : message;
       }),
-    });
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error: any) {
     return NextResponse.json(
       { ok: false, error: error.message || "Failed to load session" },
-      { status: 500 }
+      { status: error?.status === 403 ? 403 : 500 }
     );
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
+    const access = await getChatAccess(true);
 
-    if (!userId) {
+    if (!access) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized" },
         { status: 401 }
@@ -145,11 +143,7 @@ export async function PATCH(req: NextRequest) {
     if (workspaceId === null || typeof workspaceId === "string") {
       if (workspaceId) {
         try {
-          await assertWorkspaceAccess({
-            principalId: orgId || userId,
-            principalType: orgId ? "organization" : "user",
-            actorId: userId,
-          }, workspaceId, "editor");
+          await assertWorkspaceAccess(platformPrincipalFromEntitlements(access), workspaceId, "editor");
         } catch (workspaceError: any) {
           return NextResponse.json({ ok: false, error: workspaceError.message || "Workspace access denied" }, { status: 403 });
         }
@@ -166,11 +160,10 @@ export async function PATCH(req: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await restrictChatQuery(supabase
       .from("chat_sessions")
       .update(updates)
-      .eq("id", sessionId)
-      .eq("user_id", userId)
+      .eq("id", sessionId), access)
       .select()
       .single();
 
@@ -195,16 +188,16 @@ export async function PATCH(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { ok: false, error: error.message || "Failed to update session" },
-      { status: 500 }
+      { status: error?.status === 403 ? 403 : 500 }
     );
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const access = await getChatAccess(true);
 
-    if (!userId) {
+    if (!access) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized" },
         { status: 401 }
@@ -222,11 +215,10 @@ export async function DELETE(req: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    const { data: session, error: lookupError } = await supabase
+    const { data: session, error: lookupError } = await restrictChatQuery(supabase
       .from("chat_sessions")
       .select("id")
-      .eq("id", sessionId)
-      .eq("user_id", userId)
+      .eq("id", sessionId), access)
       .single();
 
     if (lookupError || !session) {
@@ -236,11 +228,10 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await restrictChatQuery(supabase
       .from("chat_sessions")
       .delete()
-      .eq("id", sessionId)
-      .eq("user_id", userId);
+      .eq("id", sessionId), access);
 
     if (deleteError) {
       throw new Error(deleteError.message);
@@ -253,7 +244,7 @@ export async function DELETE(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { ok: false, error: error.message || "Failed to delete session" },
-      { status: 500 }
+      { status: error?.status === 403 ? 403 : 500 }
     );
   }
 }

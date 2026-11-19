@@ -1,5 +1,4 @@
 import {
-  auth,
   clerkClient,
 } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
@@ -75,6 +74,8 @@ export async function resolveAdminStatus({
     );
   }
 
+  const { findManagedAccount } = await import("./provisioning/store");
+  const managed = await findManagedAccount("clerk_user_id", userId);
   try {
     const client =
       await clerkClient();
@@ -83,6 +84,8 @@ export async function resolveAdminStatus({
         userId
       );
 
+    if (user.banned) return false;
+    if (managed) return managed.state === "active" && managed.account_role === "platform_admin";
     return (
       normalizedRole(
         objectValue(
@@ -96,6 +99,7 @@ export async function resolveAdminStatus({
       error
     );
 
+    if (managed) return false;
     return (
       getRoleFromClaims(
         sessionClaims
@@ -105,12 +109,11 @@ export async function resolveAdminStatus({
 }
 
 export async function isAdmin() {
-  const { userId, sessionClaims } = await auth();
-
-  return resolveAdminStatus({
-    userId,
-    sessionClaims,
-  });
+  const { getSessionAccess } = await import("./provisioning/session");
+  const access = await getSessionAccess();
+  if (access?.access !== "allowed") return false;
+  if (access.account) return access.account.account_role === "platform_admin";
+  return resolveAdminStatus({ userId: access.user.id, publicMetadata: access.user.publicMetadata });
 }
 
 export async function requireAdmin() {

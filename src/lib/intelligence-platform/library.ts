@@ -1,6 +1,7 @@
+import { assertTopicScope, permitsTopic } from "../therapeuticAccess/scope";
 import { getSupabaseServerClient } from "../supabase/server";
 import type { IntelligenceModuleId } from "./ids";
-import { listIntelligenceWorkspaces, type PlatformPrincipal } from "./persistence";
+import { assertWorkspaceAccess, listIntelligenceWorkspaces, type PlatformPrincipal } from "./persistence";
 
 function terms(value: string) {
   return Array.from(new Set(value.toLowerCase().split(/[^a-z0-9]+/).filter((term) => term.length > 1)));
@@ -32,7 +33,7 @@ export async function searchAcrossWorkspaces(
   if (error) throw new Error(`Failed to search intelligence: ${error.message}`);
 
   return (data || [])
-    .filter((record: any) => permittedWorkspaceIds.has(record.workspace_id))
+    .filter((record: any) => permittedWorkspaceIds.has(record.workspace_id) && permitsTopic(principal.topicScope, record.therapeutic_area))
     .filter((record: any) => !record.module_id || (input.moduleIds || []).includes(record.module_id))
     .map((record: any) => ({ ...record, score: scoreCrossWorkspaceRecord(query, record) }))
     .filter((record: any) => record.score > 0)
@@ -48,7 +49,10 @@ export async function listSavedSearches(principal: PlatformPrincipal) {
     .or(`owner_id.eq.${principal.actorId},is_shared.eq.true`)
     .order("updated_at", { ascending: false });
   if (error) throw new Error(`Failed to load saved searches: ${error.message}`);
-  return data || [];
+  if (!principal.topicScope) return data || [];
+  const workspaceIds = new Set((await listIntelligenceWorkspaces(principal)).map(row => row.id));
+  return (data || []).filter(row => (!row.workspace_id || workspaceIds.has(row.workspace_id)) &&
+    (row.filters?.therapeuticArea ? permitsTopic(principal.topicScope, row.filters.therapeuticArea) : row.owner_id === principal.actorId));
 }
 
 export async function saveSearch(
@@ -56,6 +60,8 @@ export async function saveSearch(
   input: { name: string; query: string; workspaceId?: string; filters?: Record<string, unknown>; isShared?: boolean }
 ) {
   if (!input.name.trim() || !input.query.trim()) throw new Error("Search name and query are required.");
+  if (principal.topicScope && input.workspaceId) await assertWorkspaceAccess(principal, input.workspaceId, "editor");
+  if (input.isShared || input.filters?.therapeuticArea) assertTopicScope(principal.topicScope, input.filters?.therapeuticArea);
   const { data, error } = await getSupabaseServerClient()
     .from("saved_intelligence_searches")
     .insert({
@@ -81,7 +87,10 @@ export async function listSavedPrompts(principal: PlatformPrincipal, moduleIds?:
     .or(`owner_id.eq.${principal.actorId},is_shared.eq.true`)
     .order("updated_at", { ascending: false });
   if (error) throw new Error(`Failed to load saved prompts: ${error.message}`);
-  return (data || []).filter((prompt: any) => !prompt.module_id || !moduleIds?.length || moduleIds.includes(prompt.module_id));
+  const workspaceIds = principal.topicScope ? new Set((await listIntelligenceWorkspaces(principal)).map(row => row.id)) : undefined;
+  return (data || []).filter(prompt =>
+    (!workspaceIds || (prompt.workspace_id ? workspaceIds.has(prompt.workspace_id) : prompt.owner_id === principal.actorId)) &&
+    (!prompt.module_id || !moduleIds?.length || moduleIds.includes(prompt.module_id)));
 }
 
 export async function savePrompt(
@@ -89,6 +98,7 @@ export async function savePrompt(
   input: { name: string; prompt: string; description?: string; workspaceId?: string; moduleId?: IntelligenceModuleId; tags?: string[]; isShared?: boolean }
 ) {
   if (!input.name.trim() || !input.prompt.trim()) throw new Error("Prompt name and content are required.");
+  if (principal.topicScope && input.workspaceId) await assertWorkspaceAccess(principal, input.workspaceId, "editor");
   const { data, error } = await getSupabaseServerClient()
     .from("saved_intelligence_prompts")
     .insert({

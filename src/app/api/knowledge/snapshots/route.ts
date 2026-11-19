@@ -1,3 +1,4 @@
+import { permitsTopic } from "../../../../lib/therapeuticAccess/scope";
 import {
   auth,
 } from "@clerk/nextjs/server";
@@ -109,6 +110,9 @@ export async function GET(
       );
     }
 
+    if (!permitsTopic(entitlements.topicScope, therapeuticArea)) {
+      return NextResponse.json({ ok: false, error: "Topic access is required." }, { status: 403 });
+    }
     const limit = Number(
       request.nextUrl.searchParams.get(
         "limit"
@@ -207,6 +211,9 @@ export async function POST(
       );
     }
 
+    if (!permitsTopic(entitlements.topicScope, snapshot.therapeuticArea)) {
+      return NextResponse.json({ ok: false, error: "Topic access is required." }, { status: 403 });
+    }
     const stored =
       await saveThemeKnowledgeSnapshot(
         resolved.principal,

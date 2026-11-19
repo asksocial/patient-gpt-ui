@@ -1,3 +1,4 @@
+import { findManagedAccount } from "../../../../../lib/auth/provisioning/store";
 import { createClient } from "@supabase/supabase-js";
 import { withAdmin } from "../../../../../lib/auth/isAdmin";
 
@@ -13,6 +14,10 @@ export const POST = withAdmin(async (req) => {
         { error: "Missing clerk_user_id or therapeutic_area" },
         { status: 400 }
       );
+    }
+
+    if (await findManagedAccount("clerk_user_id", clerk_user_id)) {
+      return Response.json({ error: "Manage scoped topics in User Management." }, { status: 409 });
     }
 
     const supabase = createClient(

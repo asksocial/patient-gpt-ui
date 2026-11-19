@@ -1,6 +1,7 @@
+import { assertTopicScope } from "../../../../lib/therapeuticAccess/scope";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentEntitlements } from "../../../../lib/entitlements/server";
-import { platformPrincipalFromEntitlements } from "../../../../lib/intelligence-platform";
+import { assertWorkspaceAccess, platformPrincipalFromEntitlements } from "../../../../lib/intelligence-platform";
 import { executeMonitoringProfile } from "../../../../lib/continuous-intelligence/execution";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 
@@ -13,6 +14,8 @@ export async function POST(request: NextRequest) {
     const { data: profile, error } = await getSupabaseServerClient().from("intelligence_monitoring_profiles").select("*")
       .eq("id", body?.profileId).eq("principal_id", principal.principalId).maybeSingle();
     if (error || !profile) return NextResponse.json({ ok: false, error: "Monitoring profile not found" }, { status: 404 });
+    if (principal.topicScope) await assertWorkspaceAccess(principal, profile.workspace_id, "editor");
+    assertTopicScope(principal.topicScope, profile.therapeutic_area);
     return NextResponse.json({ ok: true, ...(await executeMonitoringProfile(profile)) });
-  } catch (error: any) { return NextResponse.json({ ok: false, error: error.message || "Monitor execution failed" }, { status: 500 }); }
+  } catch (error: any) { return NextResponse.json({ ok: false, error: error.message || "Monitor execution failed" }, { status: error?.status === 403 ? 403 : 500 }); }
 }

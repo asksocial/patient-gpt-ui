@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getChatAccess, restrictChatQuery } from "../../../../lib/chat/access";
 import { getSupabaseServerClient } from "../../../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const access = await getChatAccess(true);
 
-    if (!userId) {
+    if (!access) {
       return NextResponse.json(
         { ok: false, error: "Unauthorized" },
         { status: 401 }
@@ -27,11 +27,10 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabaseServerClient();
 
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await restrictChatQuery(supabase
       .from("chat_sessions")
       .select("id")
-      .eq("id", sessionId)
-      .eq("user_id", userId)
+      .eq("id", sessionId), access)
       .single();
 
     if (sessionError || !session) {
@@ -55,10 +54,10 @@ export async function POST(req: NextRequest) {
       throw new Error(insertError.message);
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await restrictChatQuery(supabase
       .from("chat_sessions")
       .update({ updated_at: new Date().toISOString() })
-      .eq("id", sessionId);
+      .eq("id", sessionId), access);
 
     if (updateError) {
       throw new Error(updateError.message);
@@ -68,7 +67,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { ok: false, error: error.message || "Failed to save messages" },
-      { status: 500 }
+      { status: error?.status === 403 ? 403 : 500 }
     );
   }
 }
