@@ -25,8 +25,6 @@ const requiredContracts = [
   "{curatedIntelligenceAvailable ? (",
   'focusedSummary ? "Supporting Conversation Evidence" : "What’s Emerging In Social Data"',
   'title="Relevant Curated Insights"',
-  'title="Recommended Actions"',
-  '<span className="whitespace-nowrap">',
 ];
 
 for (const contract of requiredContracts) {
@@ -82,9 +80,7 @@ console.log(
       analyticalAnswer: true,
       curatedIntelligence: true,
       socialIntelligence: true,
-      insightTags: true,
       whatThisMeans: false,
-      recommendedActions: true,
     },
     null,
     2

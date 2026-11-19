@@ -38,7 +38,12 @@ assert(!intelligence.audienceSignals.some((item) => item.label === "unspecified_
 assert(intelligence.dataQuality.assessment === "adequate" && intelligence.dataQuality.contextualEvidenceFindingCount >= 4_000, "The expanded taxonomy must contextually classify the substantive majority of the corpus.");
 assert(intelligence.sections.length === 9, "The Clinical Trials taxonomy must cover nine decision-relevant dimensions.");
 assert(intelligence.sections.every((section) => section.findingCount > 0), "Recruitment, retention, protocol, and site-experience analyses must all receive evidence.");
-assert(intelligence.evidence.length === 16, "The Clinical Trials output must retain a full, deduplicated evidence set.");
+const representativeIds = new Set(intelligence.evidenceGroups.flatMap(group => group.items.map(item => item.findingId)));
+assert(intelligence.evidenceGroups.length === intelligence.sections.length &&
+  intelligence.evidenceGroups.every(group => group.items.length > 0) &&
+  intelligence.evidence.length === representativeIds.size &&
+  intelligence.evidence.every(item => representativeIds.has(item.findingId)),
+  "The flat evidence list must retain the full, deduplicated union of representative mentions from every theme.");
 assert(intelligence.evidence.filter((item) => item.evidenceClass === "clinical_study").length >= 5, "Direct clinical-study evidence must materially support the output.");
 assert(intelligence.evidence.every((item) => item.url?.startsWith("http")), "Every Clinical Trials evidence card must retain an actionable original-source URL.");
 assert(intelligence.evidence.every((item) => item.qualityBand && Number.isFinite(item.qualityScore)), "Representative evidence must expose quality labels and scores.");
@@ -56,6 +61,7 @@ assert(firstPage.filters.evidenceClasses.some((item) => item.label === "clinical
 const route = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/route.ts"), "utf8");
 const evidenceRoute = fs.readFileSync(path.resolve(process.cwd(), "src/app/api/module-intelligence/evidence/route.ts"), "utf8");
 const view = fs.readFileSync(path.resolve(process.cwd(), "src/components/ModuleIntelligenceView.jsx"), "utf8");
+const recommendedActions = fs.readFileSync(path.resolve(process.cwd(), "src/components/RecommendedActions.jsx"), "utf8");
 const evidenceCard = fs.readFileSync(path.resolve(process.cwd(), "src/components/EvidenceMentionCard.jsx"), "utf8");
 assert(route.includes("loadCanonicalFindingsForModule(therapeuticArea, moduleId)"), "The module API must route through module-specific corpus resolution.");
 assert(evidenceRoute.includes("buildModuleEvidenceCatalog") && evidenceRoute.includes("pageSize"), "The evidence API must provide governed server-side search and pagination.");
@@ -70,8 +76,9 @@ assert(view.includes("if (evidenceBrowserOpen)"), "View all evidence must open a
 assert(view.includes('pageSize: "25"'), "The evidence table must paginate the retained corpus at a practical table page size.");
 assert(view.includes('className="line-clamp-2 text-left leading-5 text-white/55 hover:text-white/75"'), "Table mentions must never exceed two lines.");
 assert(view.includes('href={item.url}') && view.includes("{item.sourceLabel} ↗"), "Every available table source must be an actionable original-source link.");
-assert(view.includes("Suggested next moves based on the strongest current signals"), "Module Recommended Actions must match the Search-screen presentation.");
-assert(view.includes("Action {idx + 1}"), "Module recommendations must use the same numbered action badges as Search.");
+assert(view.includes("<RecommendedActions actions={result.recommendations} />"), "Module results must use the shared recommended-actions component.");
+assert(recommendedActions.includes("Suggested next moves based on the strongest current signals") && recommendedActions.includes("Action {idx + 1}"),
+  "Module recommendations must explain the source of suggestions and use numbered action badges.");
 assert(evidenceCard.includes('className="mt-3 line-clamp-2 text-sm font-semibold leading-5 text-white/85"'), "Representative Clinical Trials evidence titles must never exceed two lines.");
 assert(evidenceCard.includes("line-clamp-4"), "Representative module evidence previews must never exceed four lines.");
 assert(view.lastIndexOf("Data-quality limitations") > view.lastIndexOf("View all evidence"), "Data-quality limitations must appear at the bottom of the module page.");

@@ -9,18 +9,11 @@ const workspaceShell = readFileSync(
 );
 
 assert(
-  workspaceShell.includes(
-    'data-testid="primary-search-composer"'
-  ) &&
-    workspaceShell.includes(
-      'className="order-2 px-6 pt-3"'
-    ),
+  /data-testid="primary-search-composer"\s+className="[^"]*\border-2\b/.test(workspaceShell),
   "The primary Search composer must appear before the empty-state content."
 );
 assert(
-  workspaceShell.includes(
-    'className="relative order-3 flex-1 px-6 pt-3 pb-6"'
-  ),
+  /data-search-page=\{[^}]+\}\s+className="[^"]*\border-3\b/.test(workspaceShell),
   "The primary Search content must follow the composer."
 );
 assert(

@@ -7,6 +7,8 @@ import { loadCanonicalFindingsForAsk, loadCanonicalFindingsForModule } from "../
 import { getTherapeuticAreaCoverage } from "../lib/analytics/coverage";
 import { buildModuleIntelligence, type GeneratableModuleId } from "../lib/module-intelligence/buildModuleIntelligence";
 import { buildPatientIntelligence } from "../lib/patient-intelligence/buildPatientIntelligence";
+import { buildSearchQuestionFocus } from "../answering/search/questionFocus";
+import { botulinumToxinProfile } from "../ingestion/profiles/botulinumToxinProfile";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -55,7 +57,18 @@ for (const themeId of ["natural_expression", "duration_maintenance", "safety_adv
 }
 assert(getRankingProfile("Botulinum toxin").profileId === "botulinum_toxin", "Botulinum toxin must use its dedicated evidence-ranking profile.");
 
-const intelligence = askSocial("What are people saying right now about benefits, safety, duration, and brand choice?", corpus.findings);
+const multiTopicQuestion = "What are people saying right now about benefits, safety, duration, and brand choice?";
+const focus = buildSearchQuestionFocus(multiTopicQuestion, botulinumToxinProfile);
+assert(focus.matches({ summary: "Botox wore off before my follow-up." }), "Duration evidence can match independently of other requested topics.");
+assert(focus.matches({ summary: "I switched from Dysport to Xeomin." }), "Discussion of switching can match without the words brand choice.");
+assert(!focus.matches({ summary: "I saw a listing for an appointment." }), "A multi-topic search still excludes unrelated records.");
+assert(!focus.matches({ summary: "I found a forum thread about price versus convenience." }), "An unrelated comparison is not evidence of brand choice.");
+const scopedFocus = buildSearchQuestionFocus(`${multiTopicQuestion} in Japan`, botulinumToxinProfile);
+assert(scopedFocus.matches({ country: "Japan", summary: "Botox wore off before my follow-up." }), "Recognized topics can match inside the requested geography.");
+assert(!scopedFocus.matches({ country: "Canada", summary: "Botox wore off before my follow-up." }), "Topic alternatives must still respect the requested geography.");
+const unknownFocus = buildSearchQuestionFocus("What are people saying about duration and xylophonebarnacle?", botulinumToxinProfile);
+assert(!unknownFocus.matches({ summary: "Botox wore off before my follow-up." }), "A recognized topic must not erase an unmatched explicit concept.");
+const intelligence = askSocial(multiTopicQuestion, corpus.findings);
 assert(intelligence.themeSummary.length > 0, "Botulinum toxin search must produce evidence-qualified themes.");
 assert(intelligence.knowledgeSnapshot?.therapeuticArea === "botulinum_toxin", "Botulinum toxin search must build a canonical knowledge snapshot.");
 assert(Boolean(intelligence.executiveIntelligence), "Botulinum toxin search must build an executive brief.");
