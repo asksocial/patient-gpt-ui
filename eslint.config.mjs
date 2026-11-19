@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated Academy runtime bundled for its vendored React version.
+    "public/academy/assets/dc-runtime.js",
   ]),
 ]);
 

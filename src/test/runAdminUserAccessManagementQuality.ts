@@ -276,15 +276,15 @@ const contracts = [
   ],
   [
     files.entitlementAdminPage,
-    "Assign Topics by user",
+    "Assign topics by user",
   ],
   [
     files.entitlementAdminPage,
-    "Assign Modules by",
+    "Assign modules by",
   ],
   [
     files.entitlementAdminPage,
-    "Enable PV Compliance by",
+    "Enable PV compliance by",
   ],
   [
     files.entitlementAdminPage,

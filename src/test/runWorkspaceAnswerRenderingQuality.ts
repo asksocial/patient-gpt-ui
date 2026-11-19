@@ -20,11 +20,11 @@ const askRoute = readFileSync(
 const requiredContracts = [
   "<AnalyticalAssistantAnswer responsePayload={responsePayload} />",
   "showDirectAnswer={false}",
-  'title="From Curated Intelligence"',
+  'title="From curated intelligence"',
   'typeof responsePayload?.curatedIntelligenceAvailable === "boolean"',
   "{curatedIntelligenceAvailable ? (",
   'focusedSummary ? "Supporting Conversation Evidence" : "What’s Emerging In Social Data"',
-  'title="Relevant Curated Insights"',
+  'title="Relevant curated insights"',
 ];
 
 for (const contract of requiredContracts) {

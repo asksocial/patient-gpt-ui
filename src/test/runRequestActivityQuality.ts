@@ -134,7 +134,7 @@ async function run() {
         if (!/\.(jsx|tsx|js)$/.test(path)) continue;
         const source = readFileSync(path, "utf8");
         if (!source.startsWith('"use client";') || !/\bfetch\(/.test(source)) continue;
-        assert.match(source, /import \{ activityFetch as fetch \} from /, `${relative(process.cwd(), path)} must track its client data requests.`);
+        assert.match(source, /import\s*\{\s*activityFetch\s+as\s+fetch\s*\}\s+from\s+/, `${relative(process.cwd(), path)} must track its client data requests.`);
         trackedFiles += 1;
       }
     }
@@ -148,11 +148,12 @@ async function run() {
     assert.doesNotMatch(searchSource, /RecommendedActions/);
     assert.match(searchSource, /data-testid="search-loading-indicator"/);
     assert.match(searchSource, /return submitQuestion\(question\)/);
-    assert.match(searchSource, /\(c\) 2026 Eavesdrop LLC. All Rights Reserved./);
+    assert.match(searchSource, /© 2026 Eavesdrop LLC\. All rights reserved\./);
     assert.doesNotMatch(readFileSync("src/components/ExecutiveIntelligenceView.jsx", "utf8"), />Directional themes</);
     assert.doesNotMatch(readFileSync("src/components/KnowledgeGraphView.jsx", "utf8"), /label: "Themes"|label: "Supported links"|label: "Corroborated themes"/);
     assert.match(readFileSync("src/app/layout.js", "utf8"), /<AppActivityIndicator \/>/);
-    assert.match(readFileSync("src/app/loading.jsx", "utf8"), /<ActivityNotice/);
+    assert.match(readFileSync("src/app/loading.jsx", "utf8"), /<ContentSkeleton label="Loading page…"/);
+    assert.match(readFileSync("src/components/ui/Surface.jsx", "utf8"), /role="status" aria-label=\{label\} aria-busy="true"/);
     assert.ok(snapshots.includes(2) && snapshots.at(-1) === 0);
     console.log(`PASS shared loading: ${trackedFiles} client screens, concurrent requests, full body transfer, success, errors, aborts, downloads, and route fallback`);
   } finally {

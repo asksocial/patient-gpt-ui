@@ -321,7 +321,7 @@ for (const phrase of ["QA export test · Not Reportable mentions", "QA TEST ONLY
 for (const phrase of ["Source Screening Coverage", "Log Source Screening Run", "nil return", "individual AE/ADR review status"]) {
   assert(sourceRegistrySource.includes(phrase), `Source Registry is missing source-screening operations UX: ${phrase}.`);
 }
-for (const phrase of ["History &amp; Audit", "Record History", "Audit Details", "<details"]) {
+for (const phrase of ["History &amp; Audit", "Record history", "Audit details", "<details"]) {
   assert(workbench.includes(phrase), `The consolidated record ledger is missing ${phrase}.`);
 }
 assert(!workbench.includes('Card title="Workflow history"') && !workbench.includes('Card title="Audit / provenance chain"'), "History and provenance must not remain as competing always-open cards.");

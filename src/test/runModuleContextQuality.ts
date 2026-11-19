@@ -19,10 +19,10 @@ for (const [id, pattern, text] of [
 const fixtures: Record<GeneratableModuleId,string> = {
   medical_affairs: '마운자로 맞고 구토와 변비 부작용이 생겼어요. 어떻게 해야 되나요?',
   clinical_trials: '마운자로 임상시험 참여자를 모집 중이며 참여 자격과 제외 기준을 확인합니다.',
-  corporate_affairs: '환자 단체가 정부 정책을 비판하고 신뢰 문제를 제기했습니다.',
+  corporate_affairs: '환자 단체가 마운자로 관련 정부 정책을 비판하고 신뢰 문제를 제기했습니다.',
   commercial: '위고비 가격이 비싸고 보험 처방 비용이 부담입니다.',
   competitive: '위고비와 마운자로를 비교하고 약을 바꾸는 차이를 알고 싶어요.',
-  advocacy: '환자 단체가 보험 비용과 접근성 문제를 설명하고 지원이 필요하다고 합니다.',
+  advocacy: '환자 단체가 마운자로 보험 비용과 접근성 문제를 설명하고 지원이 필요하다고 합니다.',
 };
 for (const [moduleId,text] of Object.entries(fixtures)) {
   const records=[finding(`${moduleId}-positive`,text),finding('irrelevant','Garden flowers grow in spring.')];
